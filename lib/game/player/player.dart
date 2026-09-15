@@ -1,0 +1,166 @@
+import 'dart:math';
+import 'dart:ui';
+
+import 'package:flame/collisions.dart';
+import 'package:flame/components.dart';
+
+import '../../core/constants/game_constants.dart';
+import '../../input/input_provider.dart';
+import '../abilities/ability_data.dart';
+import '../roughlike_game.dart';
+import '../systems/damage/damage_event.dart';
+import '../systems/damage/damageable.dart';
+import '../systems/effects/damage_number.dart';
+import '../weapons/weapon_data.dart';
+import 'player_abilities.dart';
+import 'player_currency.dart';
+import 'player_experience.dart';
+import 'player_items.dart';
+import 'player_movement.dart';
+import 'player_stats.dart';
+import 'player_upgrades.dart';
+import 'player_weapons.dart';
+
+/// The player-controlled character.
+///
+/// Owns a [PlayerStats] data block and delegates behaviour to focused child
+/// components ([PlayerMovement], [PlayerWeapons], [PlayerAbilities]; status
+/// effects join in later milestones) instead of accumulating gameplay logic
+/// directly on this class.
+class Player extends PositionComponent
+    with CollisionCallbacks, HasGameReference<RoughlikeGame>
+    implements Damageable {
+  Player({
+    required Vector2 position,
+    required InputProvider inputProvider,
+    required Vector2 arenaSize,
+    required WeaponData weapon,
+    required AbilityData ability,
+  }) : stats = PlayerStats(moveSpeed: GameConstants.playerBaseMoveSpeed),
+       experience = PlayerExperience(),
+       upgrades = PlayerUpgrades(),
+       currency = PlayerCurrency(),
+       items = PlayerItems(),
+       abilities = PlayerAbilities(ability: ability),
+       _inputProvider = inputProvider,
+       _arenaSize = arenaSize,
+       _weapon = weapon,
+       super(
+         position: position,
+         size: Vector2.all(GameConstants.playerRadius * 2),
+         anchor: Anchor.center,
+       );
+
+  final PlayerStats stats;
+  final PlayerExperience experience;
+  final PlayerUpgrades upgrades;
+  final PlayerCurrency currency;
+  final PlayerItems items;
+  final PlayerAbilities abilities;
+  final InputProvider _inputProvider;
+  final Vector2 _arenaSize;
+  final WeaponData _weapon;
+  final Map<String, PlayerWeapons> _weaponSlots = {};
+  final Random _dodgeRandom = Random();
+
+  /// Last non-zero movement direction, normalized. Used as the aim fallback
+  /// when a skill button is tapped rather than dragged. Defaults to "up"
+  /// (away from camera) since the player hasn't moved yet at spawn.
+  Vector2 facingDirection = Vector2(0, -1);
+
+  double get radius => GameConstants.playerRadius;
+
+  @override
+  double get currentHp => stats.hp;
+
+  @override
+  double get maxHp => stats.maxHp;
+
+  @override
+  bool get isDead => stats.hp <= 0;
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(
+      CircleComponent(
+        radius: radius,
+        anchor: Anchor.center,
+        position: size / 2,
+        paint: Paint()..color = const Color(0xFF2F80ED),
+      ),
+    );
+    add(CircleHitbox(collisionType: CollisionType.active));
+    add(
+      PlayerMovement(
+        inputProvider: _inputProvider,
+        stats: stats,
+        arenaSize: _arenaSize,
+      ),
+    );
+    addWeapon(_weapon);
+    add(abilities);
+  }
+
+  bool ownsWeapon(String weaponId) => _weaponSlots.containsKey(weaponId);
+
+  int get weaponSlotCount => _weaponSlots.length;
+
+  PlayerWeapons? weaponSlot(String weaponId) => _weaponSlots[weaponId];
+
+  /// Adds a new weapon slot, firing independently of every other one the
+  /// player already owns. No-ops if already owned or if
+  /// [GameConstants.maxWeaponSlots] is already full — the upgrade roller
+  /// stops offering unlocks at that point too (see UpgradeCatalog), this is
+  /// just the defensive backstop. Leveling an owned weapon happens through
+  /// slot-specific upgrades (e.g. Chain Lightning), not by re-adding it.
+  void addWeapon(WeaponData weapon) {
+    if (ownsWeapon(weapon.id) || weaponSlotCount >= GameConstants.maxWeaponSlots) {
+      return;
+    }
+    final slot = PlayerWeapons(weapon: weapon);
+    _weaponSlots[weapon.id] = slot;
+    add(slot);
+  }
+
+  void gainXp(int amount) {
+    final levelsGained = experience.addXp((amount * stats.xpMultiplier).round());
+    if (levelsGained > 0) {
+      game.onLevelUp(levelsGained);
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (!isDead && stats.regenPerSecond > 0) {
+      stats.hp = (stats.hp + stats.regenPerSecond * dt).clamp(0, stats.maxHp);
+    }
+  }
+
+  @override
+  void applyDamage(DamageEvent event) {
+    if (isDead) {
+      return;
+    }
+    if (_dodgeRoll()) {
+      return;
+    }
+    final mitigated = event.baseDamage * (1 - stats.armor).clamp(0, 1);
+    var next = stats.hp - mitigated;
+    if (next <= 0 && stats.hasSecondWind) {
+      stats.hasSecondWind = false;
+      next = 1;
+    }
+    stats.hp = next.clamp(0, stats.maxHp);
+    game.world.add(
+      DamageNumber(position: position + Vector2(0, -radius - 4), amount: mitigated),
+    );
+    if (isDead) {
+      game.onPlayerDeath();
+    }
+  }
+
+  bool _dodgeRoll() =>
+      stats.dodgeChance > 0 && _dodgeRandom.nextDouble() < stats.dodgeChance;
+}
