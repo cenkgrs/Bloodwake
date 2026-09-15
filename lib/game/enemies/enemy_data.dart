@@ -1,8 +1,14 @@
 import 'dart:ui';
 
-enum EnemyType { grunt, archer, tank, assassin, healer, commander }
+enum EnemyType { grunt, archer, tank, assassin, healer, commander, boss }
 
-enum AiType { chaseAndMelee, archerKite, assassinDashStrike, healerSupport }
+enum AiType {
+  chaseAndMelee,
+  archerKite,
+  assassinDashStrike,
+  healerSupport,
+  bossPhased,
+}
 
 /// Data-driven enemy archetype. New enemy types are new [EnemyData]
 /// constants, not new Dart classes — [Enemy] stays generic and reads
@@ -180,6 +186,25 @@ class EnemyCatalog {
     preferredRange: 180,
     supportRadius: 260,
     healAmount: 10,
+  );
+
+  /// Not in [all] — bosses never come out of the regular weighted roll.
+  /// SpawnDirector spawns this directly on boss waves (see
+  /// WaveManager.isBossWave), bypassing composition and wave-scaling
+  /// entirely; BossAi owns its own phase/attack tuning as constants rather
+  /// than more EnemyData fields, since there's only one boss so far.
+  static const boss = EnemyData(
+    type: EnemyType.boss,
+    aiType: AiType.bossPhased,
+    maxHp: 900,
+    moveSpeed: 70,
+    damage: 22,
+    attackRange: 70,
+    attackCooldown: 2.0,
+    xpReward: 150,
+    goldReward: 80,
+    radius: 52,
+    color: Color(0xFF6B0F1A),
   );
 
   static const List<EnemyData> all = [grunt, archer, tank, assassin, healer];

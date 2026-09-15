@@ -11,6 +11,7 @@ import '../systems/effects/status_effect.dart';
 import '../systems/experience/xp_gem.dart';
 import 'ai/archer_ai.dart';
 import 'ai/assassin_ai.dart';
+import 'ai/boss_ai.dart';
 import 'ai/chase_attack_ai.dart';
 import 'ai/healer_ai.dart';
 import 'enemy_data.dart';
@@ -84,6 +85,8 @@ class Enemy extends PositionComponent
         add(AssassinAi(data: data));
       case AiType.healerSupport:
         add(HealerAi(data: data));
+      case AiType.bossPhased:
+        add(BossAi(data: data));
     }
   }
 

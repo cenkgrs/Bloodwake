@@ -13,7 +13,8 @@ enum WaveState { spawning, resting }
 ///
 /// Nothing here is wave-number-specific ("if wave == 5 then...") —
 /// everything is a formula of [currentWave], so adding wave 50 costs
-/// nothing. Boss waves (M07) hook in here later the same way.
+/// nothing. [isBossWave] is the same idea: every 10th wave, not a special
+/// case for "wave 10".
 class WaveManager extends Component {
   WaveManager({this.restDuration = 4, this.onWaveCleared});
 
@@ -30,8 +31,13 @@ class WaveManager extends Component {
 
   double _restTimer = 0;
 
-  /// Total enemies this wave will ever spawn.
-  int get waveEnemyQuota => 6 + currentWave * 4;
+  /// Every 10th wave is a boss wave — a formula, not a hardcoded "wave 10".
+  bool get isBossWave => currentWave % 10 == 0;
+
+  /// Total enemies this wave will ever spawn. A boss wave's "quota" is the
+  /// boss alone (SpawnDirector spawns it directly, bypassing composition);
+  /// the boss's own summons during the fight don't count against this.
+  int get waveEnemyQuota => isBossWave ? 1 : 6 + currentWave * 4;
 
   /// How many can be alive at once — bounds worst-case enemies on screen
   /// without changing how many the wave totals.

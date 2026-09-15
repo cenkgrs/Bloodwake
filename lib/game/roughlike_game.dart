@@ -5,6 +5,7 @@ import '../input/mobile/mobile_input_provider.dart';
 import '../input/mobile/skill_button_component.dart';
 import 'abilities/ability_data.dart';
 import 'arena/arena_component.dart';
+import 'hud/boss_health_bar.dart';
 import 'hud/hud_component.dart';
 import 'items/item_data.dart';
 import 'items/item_shop_roller.dart';
@@ -136,5 +137,6 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
       ),
     );
     camera.viewport.add(HudComponent());
+    camera.viewport.add(BossHealthBar());
   }
 }

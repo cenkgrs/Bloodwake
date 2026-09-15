@@ -49,7 +49,10 @@ class SpawnDirector extends Component with HasGameReference<RoughlikeGame> {
     }
     _spawnTimer = waveManager.spawnInterval;
 
-    final data = _rollEnemyData();
+    // Boss waves bypass composition/wave-scaling entirely — the boss spawns
+    // with its own raw stats, not diluted by the elite roll or the flat
+    // per-wave multiplier meant for regular fodder.
+    final data = waveManager.isBossWave ? EnemyCatalog.boss : _rollEnemyData();
     game.world.add(Enemy(position: _spawnPosition(data.radius), data: data));
     waveManager.registerSpawn();
   }
