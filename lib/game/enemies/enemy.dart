@@ -4,9 +4,11 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 
 import '../roughlike_game.dart';
+import '../systems/audio/sfx_player.dart';
 import '../systems/damage/damage_event.dart';
 import '../systems/damage/damageable.dart';
 import '../systems/effects/damage_number.dart';
+import '../systems/effects/death_burst.dart';
 import '../systems/effects/status_effect.dart';
 import '../systems/experience/xp_gem.dart';
 import 'ai/archer_ai.dart';
@@ -33,6 +35,13 @@ class Enemy extends PositionComponent
   double _hp;
   late final CircleComponent _visual;
   final List<StatusEffectInstance> _statusEffects = [];
+  bool _isHidden = false;
+  double _flashTimer = 0;
+
+  static const double _flashDuration = 0.08;
+  static const Color _flashColor = Color(0xFFFFFFFF);
+
+  Color get _baseColor => _isHidden ? data.color.withAlpha(50) : data.color;
 
   @override
   double get currentHp => _hp;
@@ -93,6 +102,12 @@ class Enemy extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    if (_flashTimer > 0) {
+      _flashTimer -= dt;
+      if (_flashTimer <= 0) {
+        _visual.paint.color = _baseColor;
+      }
+    }
     if (isDead || _statusEffects.isEmpty) {
       return;
     }
@@ -116,8 +131,9 @@ class Enemy extends PositionComponent
       return;
     }
     _hp = (_hp - event.baseDamage).clamp(0, data.maxHp);
-    // Self-inflicted ticks (burn) fire every frame — a floating number per
-    // tick would just be spam, so only real hits get one.
+    // Self-inflicted ticks (burn) fire every frame — a floating number,
+    // hit-flash, and sound per tick would just be spam, so only real hits
+    // get the full reaction.
     if (!identical(event.source, this)) {
       game.world.add(
         DamageNumber(
@@ -126,6 +142,9 @@ class Enemy extends PositionComponent
           isCritical: event.isCritical,
         ),
       );
+      _flashTimer = _flashDuration;
+      _visual.paint.color = _flashColor;
+      SfxPlayer.hit();
     }
     if (isDead) {
       _die();
@@ -146,13 +165,24 @@ class Enemy extends PositionComponent
   /// tint rather than true invisibility — simple placeholder shapes only,
   /// per the prototype's art rules.
   void setHidden(bool hidden) {
-    _visual.paint.color = hidden ? data.color.withAlpha(50) : data.color;
+    _isHidden = hidden;
+    if (_flashTimer <= 0) {
+      _visual.paint.color = _baseColor;
+    }
   }
 
   void _die() {
     game.world.add(XpGem(position: position.clone(), value: data.xpReward));
     game.player.currency.add(data.goldReward + game.player.stats.bonusGoldPerKill);
     game.registerKill();
+    game.world.add(
+      DeathBurst(position: position.clone(), color: data.color, startRadius: data.radius),
+    );
+    if (data.type == EnemyType.boss) {
+      SfxPlayer.bossDeath();
+    } else {
+      SfxPlayer.enemyDeath();
+    }
     removeFromParent();
   }
 }

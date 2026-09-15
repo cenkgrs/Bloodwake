@@ -1,106 +1,150 @@
 import '../player/player.dart';
 import '../upgrades/upgrade_data.dart' show UpgradeRarity;
+import '../weapons/weapon_data.dart';
 import 'item_data.dart';
 
-void _armorPlating(Player p) => p.stats.armor += 0.15;
-void _evasionCharm(Player p) => p.stats.dodgeChance += 0.10;
-void _scope(Player p) => p.stats.attackRange += 0.20;
-void _magnet(Player p) => p.stats.pickupRadius *= 1.4;
-void _xpBooster(Player p) => p.stats.xpMultiplier += 0.25;
-void _regeneration(Player p) => p.stats.regenPerSecond += 2;
-void _luckyCoin(Player p) => p.stats.bonusGoldPerKill += 2;
-void _secondWind(Player p) => p.stats.hasSecondWind = true;
+void _platinumArmor(Player p) {
+  p.stats.armor += 0.10;
+  p.stats.maxHp += 20;
+  p.stats.hp += 20;
+}
 
-/// The shop pool: every entry finally gives a purpose to a PlayerStats
-/// field that's existed since M01 but nothing ever read (armor,
-/// dodgeChance, attackRange, xpMultiplier) — items are deliberately not a
-/// second copy of the free skill-upgrade pool, they unlock mechanics
-/// upgrades don't touch. Catalog size doubles as the practical slot count
-/// (GameConstants.maxWeaponSlots' item counterpart): own all of them and
-/// the shop has nothing left to offer.
+void _swiftBoots(Player p) {
+  p.stats.moveSpeed *= 1.15;
+  p.stats.dodgeChance += 0.10;
+}
+
+void _huntersScope(Player p) {
+  p.stats.attackRange += 0.20;
+  p.stats.criticalChance += 0.05;
+}
+
+void _vampiricAmulet(Player p) {
+  p.stats.lifesteal += 0.03;
+  p.stats.regenPerSecond += 2;
+}
+
+void _luckyCharm(Player p) {
+  p.stats.bonusGoldPerKill += 3;
+  p.stats.xpMultiplier += 0.20;
+}
+
+void _guardianAngel(Player p) => p.stats.hasSecondWind = true;
+
+bool _ownsSword(Player p) => p.ownsWeapon(WeaponCatalog.sword.id);
+void _goldSword(Player p) {
+  final slot = p.weaponSlot(WeaponCatalog.sword.id);
+  if (slot != null) {
+    slot.bonusDamageMultiplier *= 1.3;
+  }
+}
+
+bool _ownsLightning(Player p) => p.ownsWeapon(WeaponCatalog.lightning.id);
+void _thunderCore(Player p) {
+  final slot = p.weaponSlot(WeaponCatalog.lightning.id);
+  if (slot != null) {
+    slot.bonusDamageMultiplier *= 1.25;
+  }
+}
+
+/// The shop pool. Deliberately styled as equipment (a named piece with 1-2
+/// combined properties) rather than a second copy of the free skill-upgrade
+/// pool — "Platinum Armor" (+armor, +HP), not an abstract "+10% Armor"
+/// card. Two entries ("Gold Sword", "Thunder Core") boost a specific
+/// already-owned weapon instead of a global stat, via
+/// PlayerWeapons.bonusDamageMultiplier — the same slot-scoped-bonus pattern
+/// Chain Lightning (a free upgrade) already uses for chain count.
+///
+/// This file is the entire editable surface for shop content: add, remove,
+/// or retune an item by editing/adding an entry here and listing it in
+/// [all] — nothing else needs to change. If this ever moves to a remote
+/// config (Supabase or similar), this file is what a fetched item list
+/// would need to match the shape of.
 class ItemCatalog {
   ItemCatalog._();
 
-  static const armorPlating = ItemData(
-    id: 'armor_plating',
-    name: 'Armor Plating',
-    description: '+15% Armor (reduces incoming damage)',
+  static const platinumArmor = ItemData(
+    id: 'platinum_armor',
+    name: 'Platinum Armor',
+    description: '+10% Armor, +20 Max HP',
     rarity: UpgradeRarity.common,
-    cost: 15,
-    apply: _armorPlating,
+    cost: 20,
+    apply: _platinumArmor,
   );
 
-  static const evasionCharm = ItemData(
-    id: 'evasion_charm',
-    name: 'Evasion Charm',
-    description: '+10% Dodge Chance',
+  static const swiftBoots = ItemData(
+    id: 'swift_boots',
+    name: 'Swift Boots',
+    description: '+15% Move Speed, +10% Dodge Chance',
     rarity: UpgradeRarity.common,
-    cost: 15,
-    apply: _evasionCharm,
+    cost: 20,
+    apply: _swiftBoots,
   );
 
-  static const scope = ItemData(
-    id: 'scope',
-    name: 'Scope',
-    description: '+20% Attack Range',
+  static const huntersScope = ItemData(
+    id: 'hunters_scope',
+    name: "Hunter's Scope",
+    description: '+20% Attack Range, +5% Critical Chance',
     rarity: UpgradeRarity.common,
-    cost: 15,
-    apply: _scope,
+    cost: 20,
+    apply: _huntersScope,
   );
 
-  static const magnet = ItemData(
-    id: 'magnet',
-    name: 'Magnet',
-    description: '+40% Pickup Radius',
-    rarity: UpgradeRarity.common,
-    cost: 15,
-    apply: _magnet,
-  );
-
-  static const xpBooster = ItemData(
-    id: 'xp_booster',
-    name: 'XP Booster',
-    description: '+25% XP gained',
+  static const vampiricAmulet = ItemData(
+    id: 'vampiric_amulet',
+    name: 'Vampiric Amulet',
+    description: '+3% Lifesteal, +2 HP regen per second',
     rarity: UpgradeRarity.rare,
-    cost: 30,
-    apply: _xpBooster,
+    cost: 35,
+    apply: _vampiricAmulet,
   );
 
-  static const regeneration = ItemData(
-    id: 'regeneration',
-    name: 'Regeneration',
-    description: '+2 HP regen per second',
+  static const luckyCharm = ItemData(
+    id: 'lucky_charm',
+    name: 'Lucky Charm',
+    description: '+3 Gold per kill, +20% XP gained',
     rarity: UpgradeRarity.rare,
-    cost: 30,
-    apply: _regeneration,
+    cost: 35,
+    apply: _luckyCharm,
   );
 
-  static const luckyCoin = ItemData(
-    id: 'lucky_coin',
-    name: 'Lucky Coin',
-    description: '+2 Gold per kill',
-    rarity: UpgradeRarity.rare,
-    cost: 30,
-    apply: _luckyCoin,
-  );
-
-  static const secondWind = ItemData(
-    id: 'second_wind',
-    name: 'Second Wind',
+  static const guardianAngel = ItemData(
+    id: 'guardian_angel',
+    name: 'Guardian Angel',
     description: 'Survive one lethal hit at 1 HP (once per run)',
     rarity: UpgradeRarity.epic,
-    cost: 60,
-    apply: _secondWind,
+    cost: 65,
+    apply: _guardianAngel,
+  );
+
+  static const goldSword = ItemData(
+    id: 'gold_sword',
+    name: 'Gold Sword',
+    description: '+30% Sword damage',
+    rarity: UpgradeRarity.rare,
+    cost: 35,
+    apply: _goldSword,
+    isAvailable: _ownsSword,
+  );
+
+  static const thunderCore = ItemData(
+    id: 'thunder_core',
+    name: 'Thunder Core',
+    description: '+25% Lightning damage',
+    rarity: UpgradeRarity.rare,
+    cost: 35,
+    apply: _thunderCore,
+    isAvailable: _ownsLightning,
   );
 
   static const List<ItemData> all = [
-    armorPlating,
-    evasionCharm,
-    scope,
-    magnet,
-    xpBooster,
-    regeneration,
-    luckyCoin,
-    secondWind,
+    platinumArmor,
+    swiftBoots,
+    huntersScope,
+    vampiricAmulet,
+    luckyCharm,
+    guardianAngel,
+    goldSword,
+    thunderCore,
   ];
 }

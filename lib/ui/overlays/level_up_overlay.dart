@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../game/roughlike_game.dart';
 import '../../game/upgrades/upgrade_data.dart';
+import '../widgets/pop_in.dart';
 
 /// Shown whenever the player levels up: three random upgrade choices,
-/// picking one applies it and resumes the game. Card styling is
-/// deliberately plain — polish (rarity colors, icons, animations) is M08.
+/// picking one applies it and resumes the game. Cards stagger in via
+/// [PopIn]; styling itself stays plain — rarity colors/icons are a later
+/// polish pass.
 class LevelUpOverlay extends StatelessWidget {
   const LevelUpOverlay({required this.game, super.key});
 
@@ -34,13 +36,17 @@ class LevelUpOverlay extends StatelessWidget {
               style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 32),
-            ...game.currentUpgradeChoices.map(
-              (upgrade) => Padding(
+            ...game.currentUpgradeChoices.asMap().entries.map(
+              (entry) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                child: _UpgradeCard(
-                  upgrade: upgrade,
-                  level: game.player.upgrades.levelOf(upgrade),
-                  onTap: () => game.chooseUpgrade(upgrade),
+                child: PopIn(
+                  key: ValueKey(entry.value.id),
+                  delay: Duration(milliseconds: entry.key * 70),
+                  child: _UpgradeCard(
+                    upgrade: entry.value,
+                    level: game.player.upgrades.levelOf(entry.value),
+                    onTap: () => game.chooseUpgrade(entry.value),
+                  ),
                 ),
               ),
             ),

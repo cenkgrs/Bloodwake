@@ -6,6 +6,10 @@ import '../upgrades/upgrade_data.dart' show UpgradeRarity;
 /// upgrades are free random level-up picks, items are gold purchases in
 /// the wave-end shop, capped by GameConstants.maxItemSlots instead of a
 /// per-item max level.
+///
+/// [isAvailable] gates weapon-specific items ("Gold Sword" only makes sense
+/// once Sword is owned) the same way UpgradeData does for Chain Lightning —
+/// null means always offerable.
 class ItemData {
   const ItemData({
     required this.id,
@@ -14,6 +18,7 @@ class ItemData {
     required this.rarity,
     required this.cost,
     required this.apply,
+    this.isAvailable,
   });
 
   final String id;
@@ -22,4 +27,5 @@ class ItemData {
   final UpgradeRarity rarity;
   final int cost;
   final void Function(Player player) apply;
+  final bool Function(Player player)? isAvailable;
 }

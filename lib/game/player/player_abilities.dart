@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import '../abilities/ability_data.dart';
 import '../combat/projectiles/projectile.dart';
 import '../roughlike_game.dart';
+import '../systems/audio/sfx_player.dart';
 import '../systems/damage/critical_hit.dart';
 import 'player.dart';
 
@@ -43,6 +44,7 @@ class PlayerAbilities extends Component
         maxDistance: ability.range * parent.stats.attackRange,
       ),
     );
+    SfxPlayer.shoot();
     _cooldownRemaining = ability.cooldown;
   }
 }

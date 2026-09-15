@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../game/items/item_data.dart';
 import '../../game/roughlike_game.dart';
+import '../../game/systems/audio/sfx_player.dart';
+import '../widgets/pop_in.dart';
 
 /// Shown once per wave-end breather, after any pending level-ups. Buying is
 /// optional — items disappear from the offer list once bought (no
@@ -24,6 +26,7 @@ class _ShopOverlayState extends State<ShopOverlay> {
       return;
     }
     player.items.apply(item, player);
+    SfxPlayer.purchase();
     setState(() => widget.game.currentShopOffers.remove(item));
   }
 
@@ -62,13 +65,17 @@ class _ShopOverlayState extends State<ShopOverlay> {
                   style: TextStyle(color: Colors.white54, fontSize: 14),
                 ),
               ),
-            ...offers.map(
-              (item) => Padding(
+            ...offers.asMap().entries.map(
+              (entry) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                child: _ItemCard(
-                  item: item,
-                  affordable: gold >= item.cost,
-                  onBuy: () => _buy(item),
+                child: PopIn(
+                  key: ValueKey(entry.value.id),
+                  delay: Duration(milliseconds: entry.key * 70),
+                  child: _ItemCard(
+                    item: entry.value,
+                    affordable: gold >= entry.value.cost,
+                    onBuy: () => _buy(entry.value),
+                  ),
                 ),
               ),
             ),

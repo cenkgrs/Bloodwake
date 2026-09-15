@@ -15,7 +15,14 @@ List<ItemData> rollShopOffers(Player player, {int count = 3}) {
   if (player.items.count >= GameConstants.maxItemSlots) {
     return const [];
   }
-  final available = ItemCatalog.all.where((i) => !player.items.owns(i)).toList()
-    ..shuffle(_random);
+  final available =
+      ItemCatalog.all
+          .where(
+            (i) =>
+                !player.items.owns(i) &&
+                (i.isAvailable == null || i.isAvailable!(player)),
+          )
+          .toList()
+        ..shuffle(_random);
   return available.take(count).toList();
 }

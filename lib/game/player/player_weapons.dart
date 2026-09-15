@@ -6,6 +6,7 @@ import '../combat/projectiles/projectile.dart';
 import '../enemies/enemy.dart';
 import '../roughlike_game.dart';
 import '../systems/damage/critical_hit.dart';
+import '../systems/audio/sfx_player.dart';
 import '../systems/damage/damage_event.dart';
 import '../systems/effects/lightning_bolt.dart';
 import '../systems/effects/melee_slash_effect.dart';
@@ -34,10 +35,18 @@ class PlayerWeapons extends Component
   /// shared const [WeaponData], since only this player's copy should grow.
   int bonusChainCount = 0;
 
+  /// Runtime multiplier on top of this weapon's damage, e.g. from a
+  /// weapon-specific shop item ("Gold Sword" boosting only the Sword).
+  /// 1.0 = no bonus. Same reasoning as [bonusChainCount] — per-slot, not on
+  /// the shared const [WeaponData].
+  double bonusDamageMultiplier = 1;
+
   static const double _spreadAngle = 0.5;
   static const Color _slowColor = Color(0xFF7EC8E3);
 
   double get _effectiveRange => weapon.range * parent.stats.attackRange;
+
+  double get _baseDamage => weapon.damage * parent.stats.damage * bonusDamageMultiplier;
 
   @override
   void update(double dt) {
@@ -67,11 +76,12 @@ class PlayerWeapons extends Component
       case WeaponBehavior.melee:
         _fireMelee();
     }
+    SfxPlayer.shoot();
     _cooldownRemaining = weapon.cooldown / parent.stats.attackSpeed;
   }
 
   void _fireSingle(Enemy target) {
-    final roll = rollDamage(parent.stats, weapon.damage * parent.stats.damage);
+    final roll = rollDamage(parent.stats, _baseDamage);
     game.world.add(
       Projectile(
         position: parent.position.clone(),
@@ -92,7 +102,7 @@ class PlayerWeapons extends Component
       final t = count == 1 ? 0.5 : i / (count - 1);
       final angleOffset = (t - 0.5) * _spreadAngle;
       final direction = baseDirection.clone()..rotate(angleOffset);
-      final roll = rollDamage(parent.stats, weapon.damage * parent.stats.damage);
+      final roll = rollDamage(parent.stats, _baseDamage);
       game.world.add(
         Projectile(
           position: parent.position.clone(),
@@ -108,7 +118,7 @@ class PlayerWeapons extends Component
   }
 
   void _firePiercing(Enemy target) {
-    final roll = rollDamage(parent.stats, weapon.damage * parent.stats.damage);
+    final roll = rollDamage(parent.stats, _baseDamage);
     game.world.add(
       Projectile(
         position: parent.position.clone(),
@@ -134,7 +144,7 @@ class PlayerWeapons extends Component
     var remainingJumps = weapon.chainCount + bonusChainCount + 1;
 
     while (current != null && remainingJumps > 0) {
-      final roll = rollDamage(parent.stats, weapon.damage * parent.stats.damage);
+      final roll = rollDamage(parent.stats, _baseDamage);
       current.applyDamage(
         DamageEvent(source: parent, baseDamage: roll.damage, isCritical: roll.isCritical),
       );
@@ -165,7 +175,7 @@ class PlayerWeapons extends Component
       if (enemy.position.distanceToSquared(parent.position) > rangeSquared) {
         continue;
       }
-      final roll = rollDamage(parent.stats, weapon.damage * parent.stats.damage);
+      final roll = rollDamage(parent.stats, _baseDamage);
       enemy.applyDamage(
         DamageEvent(source: parent, baseDamage: roll.damage, isCritical: roll.isCritical),
       );

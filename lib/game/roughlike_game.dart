@@ -11,6 +11,8 @@ import 'items/item_data.dart';
 import 'items/item_shop_roller.dart';
 import 'player/player.dart';
 import 'spawning/spawn_director.dart';
+import 'systems/audio/sfx_player.dart';
+import 'systems/effects/camera_shaker.dart';
 import 'upgrades/upgrade_data.dart';
 import 'upgrades/upgrade_roller.dart';
 import 'waves/wave_manager.dart';
@@ -30,8 +32,13 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   late final Player player;
   late final MobileInputProvider inputProvider;
   late final WaveManager waveManager;
+  final CameraShaker _cameraShaker = CameraShaker();
 
   int killCount = 0;
+
+  void shakeCamera({double intensity = 6, double duration = 0.2}) {
+    _cameraShaker.shake(intensity: intensity, duration: duration);
+  }
   int _pendingLevelUps = 0;
   List<UpgradeData> currentUpgradeChoices = const [];
   List<ItemData> currentShopOffers = const [];
@@ -44,6 +51,7 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
     overlays.remove('shop');
     pauseEngine();
     overlays.add('gameOver');
+    SfxPlayer.gameOver();
   }
 
   /// Called by Player once PlayerExperience reports one or more levels
@@ -81,11 +89,13 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
       return;
     }
     overlays.add('levelUp');
+    SfxPlayer.levelUp();
   }
 
   void chooseUpgrade(UpgradeData upgrade) {
     player.upgrades.apply(upgrade, player);
     overlays.remove('levelUp');
+    SfxPlayer.upgradePick();
     _pendingLevelUps = _pendingLevelUps > 0 ? _pendingLevelUps - 1 : 0;
     if (_pendingLevelUps > 0) {
       _presentNextLevelUp();
@@ -129,6 +139,7 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
     );
 
     camera.follow(player);
+    camera.viewfinder.add(_cameraShaker);
     camera.viewport.add(inputProvider.joystick);
     camera.viewport.add(
       SkillButtonComponent(

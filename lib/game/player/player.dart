@@ -8,6 +8,7 @@ import '../../core/constants/game_constants.dart';
 import '../../input/input_provider.dart';
 import '../abilities/ability_data.dart';
 import '../roughlike_game.dart';
+import '../systems/audio/sfx_player.dart';
 import '../systems/damage/damage_event.dart';
 import '../systems/damage/damageable.dart';
 import '../systems/effects/damage_number.dart';
@@ -156,6 +157,8 @@ class Player extends PositionComponent
     game.world.add(
       DamageNumber(position: position + Vector2(0, -radius - 4), amount: mitigated),
     );
+    game.shakeCamera(intensity: (mitigated / 4).clamp(3, 12), duration: 0.18);
+    SfxPlayer.playerHit();
     if (isDead) {
       game.onPlayerDeath();
     }

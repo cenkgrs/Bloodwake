@@ -6,6 +6,7 @@ import 'package:flame/components.dart';
 import '../../combat/projectiles/projectile.dart';
 import '../../player/player.dart';
 import '../../roughlike_game.dart';
+import '../../systems/audio/sfx_player.dart';
 import '../../systems/damage/damage_event.dart';
 import '../../systems/effects/attack_telegraph.dart';
 import '../enemy.dart';
@@ -39,6 +40,7 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
   bool _isTelegraphing = false;
   double _telegraphTimer = 0;
   _BossAttack? _pendingAttack;
+  int _observedPhase = 1;
 
   static const double _phase2HpFraction = 0.66;
   static const double _phase3HpFraction = 0.33;
@@ -84,6 +86,11 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
     }
 
     final phase = _phase;
+    if (phase != _observedPhase) {
+      _observedPhase = phase;
+      SfxPlayer.bossPhase();
+      game.shakeCamera(intensity: 10, duration: 0.3);
+    }
     if (phase == 3) {
       _summonTimer -= dt;
       if (_summonTimer <= 0) {
