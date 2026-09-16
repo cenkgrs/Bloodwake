@@ -76,7 +76,8 @@ class PlayerWeapons extends Component
       case WeaponBehavior.melee:
         _fireMelee();
     }
-    SfxPlayer.shoot();
+    SfxPlayer.weaponFire(weapon.id);
+    parent.triggerAttackAnim();
     _cooldownRemaining = weapon.cooldown / parent.stats.attackSpeed;
   }
 
@@ -91,6 +92,7 @@ class PlayerWeapons extends Component
         isCritical: roll.isCritical,
         source: parent,
         maxDistance: _effectiveRange,
+        weaponId: weapon.id,
       ),
     );
   }
@@ -112,6 +114,7 @@ class PlayerWeapons extends Component
           isCritical: roll.isCritical,
           source: parent,
           maxDistance: _effectiveRange,
+          weaponId: weapon.id,
         ),
       );
     }
@@ -133,6 +136,7 @@ class PlayerWeapons extends Component
         onHitStatusType: StatusEffectType.slow,
         onHitStatusMagnitude: 0.35,
         onHitStatusDuration: 2,
+        weaponId: weapon.id,
       ),
     );
   }
@@ -142,16 +146,29 @@ class PlayerWeapons extends Component
     Enemy? current = initialTarget;
     var origin = parent.position.clone();
     var remainingJumps = weapon.chainCount + bonusChainCount + 1;
+    // The first target is the "cast" landing — already covered by the
+    // weaponFire(weapon.id) call in update() (lightning_cast.mp3). Every
+    // jump after that is a chain proc and gets its own sound.
+    var isFirstHit = true;
 
     while (current != null && remainingJumps > 0) {
       final roll = rollDamage(parent.stats, _baseDamage);
       current.applyDamage(
-        DamageEvent(source: parent, baseDamage: roll.damage, isCritical: roll.isCritical),
+        DamageEvent(
+          source: parent,
+          baseDamage: roll.damage,
+          isCritical: roll.isCritical,
+          weaponId: weapon.id,
+        ),
       );
       current.applyStatusEffect(
         StatusEffectInstance(type: StatusEffectType.burn, duration: 2, magnitude: 4),
       );
       game.world.add(LightningBolt(start: origin, end: current.position.clone()));
+      if (!isFirstHit) {
+        SfxPlayer.chainLightningProc();
+      }
+      isFirstHit = false;
 
       hit.add(current);
       origin = current.position.clone();
@@ -177,7 +194,12 @@ class PlayerWeapons extends Component
       }
       final roll = rollDamage(parent.stats, _baseDamage);
       enemy.applyDamage(
-        DamageEvent(source: parent, baseDamage: roll.damage, isCritical: roll.isCritical),
+        DamageEvent(
+          source: parent,
+          baseDamage: roll.damage,
+          isCritical: roll.isCritical,
+          weaponId: weapon.id,
+        ),
       );
     }
     game.world.add(

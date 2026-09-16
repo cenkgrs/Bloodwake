@@ -29,6 +29,7 @@ class Projectile extends PositionComponent with CollisionCallbacks {
     this.onHitStatusType,
     this.onHitStatusMagnitude = 0,
     this.onHitStatusDuration = 0,
+    this.weaponId,
   }) : _direction = direction.normalized(),
        super(position: position, size: Vector2.all(8), anchor: Anchor.center);
 
@@ -43,6 +44,13 @@ class Projectile extends PositionComponent with CollisionCallbacks {
   final StatusEffectType? onHitStatusType;
   final double onHitStatusMagnitude;
   final double onHitStatusDuration;
+
+  /// [WeaponData.id] of whatever fired this projectile, when known — passed
+  /// through to the [DamageEvent] on hit so the target's hit sound can pick
+  /// a weapon-specific sting (e.g. Magic Orb). Null for ability projectiles
+  /// (Spear Throw) and enemy projectiles (Archer), which stay on the
+  /// generic hit sound.
+  final String? weaponId;
 
   double _traveled = 0;
   int _hitsSoFar = 0;
@@ -84,7 +92,12 @@ class Projectile extends PositionComponent with CollisionCallbacks {
         return;
       }
       other.applyDamage(
-        DamageEvent(source: source, baseDamage: damage, isCritical: isCritical),
+        DamageEvent(
+          source: source,
+          baseDamage: damage,
+          isCritical: isCritical,
+          weaponId: weaponId,
+        ),
       );
       _applyStatusEffect(other);
       _applyLifesteal();

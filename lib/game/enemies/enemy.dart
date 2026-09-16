@@ -144,7 +144,7 @@ class Enemy extends PositionComponent
       );
       _flashTimer = _flashDuration;
       _visual.paint.color = _flashColor;
-      SfxPlayer.hit();
+      SfxPlayer.weaponImpact(event.weaponId);
     }
     if (isDead) {
       _die();

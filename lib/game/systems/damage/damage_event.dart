@@ -15,10 +15,18 @@ class DamageEvent {
     required this.baseDamage,
     this.damageType = DamageType.physical,
     this.isCritical = false,
+    this.weaponId,
   });
 
   final Object source;
   final double baseDamage;
   final DamageType damageType;
   final bool isCritical;
+
+  /// [WeaponData.id] of whatever fired this, when known — lets the target's
+  /// hit reaction (see SfxPlayer.weaponImpact) pick a weapon-specific sound
+  /// instead of the generic one. Null for anything not weapon-attributed
+  /// (enemy attacks on the player, status-effect ticks, etc.), which is a
+  /// deliberate "don't know" rather than a bug.
+  final String? weaponId;
 }
