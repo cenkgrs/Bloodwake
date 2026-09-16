@@ -1,6 +1,10 @@
 import '../player/player.dart';
 import '../upgrades/upgrade_data.dart' show UpgradeRarity;
 
+/// Shop tab grouping — purely presentational (which category chip an item
+/// shows under), unrelated to how it's rolled or applied.
+enum ItemCategory { weapon, gear, relic }
+
 /// Data-driven shop item. Same `apply(Player)` shape as UpgradeData (see
 /// that class for why) — the difference is entirely in how it's offered:
 /// upgrades are free random level-up picks, items are gold purchases in
@@ -17,6 +21,7 @@ class ItemData {
     required this.description,
     required this.rarity,
     required this.cost,
+    required this.category,
     required this.apply,
     this.isAvailable,
   });
@@ -26,6 +31,12 @@ class ItemData {
   final String description;
   final UpgradeRarity rarity;
   final int cost;
+  final ItemCategory category;
   final void Function(Player player) apply;
   final bool Function(Player player)? isAvailable;
+
+  /// Looked up as `assets/images/icons/items/<id>.png` by convention — see
+  /// that folder's README. Missing file is expected until art lands;
+  /// CatalogIcon falls back to a rarity-tinted Material icon.
+  String get iconAsset => 'assets/images/icons/items/$id.png';
 }

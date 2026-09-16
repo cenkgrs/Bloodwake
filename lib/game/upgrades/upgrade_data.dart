@@ -11,7 +11,7 @@ enum UpgradeCategory {
   special,
 }
 
-enum UpgradeRarity { common, rare, epic }
+enum UpgradeRarity { common, rare, epic, legendary }
 
 /// Data-driven upgrade offered on level-up. [apply] takes the whole
 /// [Player] rather than just PlayerStats — most upgrades only touch
@@ -44,4 +44,10 @@ class UpgradeData {
   final int maxLevel;
   final void Function(Player player) apply;
   final bool Function(Player player)? isAvailable;
+
+  /// Looked up as `assets/images/icons/upgrades/<id>.png` by convention —
+  /// see that folder's README. No file there yet is expected, not an
+  /// error: CatalogIcon falls back to a category-tinted Material icon
+  /// until real art is dropped in, same as SfxPlayer treats missing audio.
+  String get iconAsset => 'assets/images/icons/upgrades/$id.png';
 }

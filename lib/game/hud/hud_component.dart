@@ -12,7 +12,8 @@ import '../waves/wave_manager.dart';
 /// widget toolkit, since it's screen-fixed Flame content like the rest of
 /// the HUD.
 class HudComponent extends PositionComponent with HasGameReference<RoughlikeGame> {
-  HudComponent() : super(position: Vector2(16, 16), anchor: Anchor.topLeft);
+  HudComponent({double topInset = 0})
+    : super(position: Vector2(16, 16 + topInset), anchor: Anchor.topLeft);
 
   static const double _barWidth = 200;
   static const double _hpBarHeight = 14;

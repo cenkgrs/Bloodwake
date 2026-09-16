@@ -69,6 +69,7 @@ class ItemCatalog {
     description: '+10% Armor, +20 Max HP',
     rarity: UpgradeRarity.common,
     cost: 20,
+    category: ItemCategory.gear,
     apply: _platinumArmor,
   );
 
@@ -78,6 +79,7 @@ class ItemCatalog {
     description: '+15% Move Speed, +10% Dodge Chance',
     rarity: UpgradeRarity.common,
     cost: 20,
+    category: ItemCategory.gear,
     apply: _swiftBoots,
   );
 
@@ -87,6 +89,7 @@ class ItemCatalog {
     description: '+20% Attack Range, +5% Critical Chance',
     rarity: UpgradeRarity.common,
     cost: 20,
+    category: ItemCategory.gear,
     apply: _huntersScope,
   );
 
@@ -96,6 +99,7 @@ class ItemCatalog {
     description: '+3% Lifesteal, +2 HP regen per second',
     rarity: UpgradeRarity.rare,
     cost: 35,
+    category: ItemCategory.relic,
     apply: _vampiricAmulet,
   );
 
@@ -105,6 +109,7 @@ class ItemCatalog {
     description: '+3 Gold per kill, +20% XP gained',
     rarity: UpgradeRarity.rare,
     cost: 35,
+    category: ItemCategory.relic,
     apply: _luckyCharm,
   );
 
@@ -112,8 +117,9 @@ class ItemCatalog {
     id: 'guardian_angel',
     name: 'Guardian Angel',
     description: 'Survive one lethal hit at 1 HP (once per run)',
-    rarity: UpgradeRarity.epic,
+    rarity: UpgradeRarity.legendary,
     cost: 65,
+    category: ItemCategory.relic,
     apply: _guardianAngel,
   );
 
@@ -123,6 +129,7 @@ class ItemCatalog {
     description: '+30% Sword damage',
     rarity: UpgradeRarity.rare,
     cost: 35,
+    category: ItemCategory.weapon,
     apply: _goldSword,
     isAvailable: _ownsSword,
   );
@@ -133,6 +140,7 @@ class ItemCatalog {
     description: '+25% Lightning damage',
     rarity: UpgradeRarity.rare,
     cost: 35,
+    category: ItemCategory.weapon,
     apply: _thunderCore,
     isAvailable: _ownsLightning,
   );

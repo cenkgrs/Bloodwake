@@ -12,7 +12,9 @@ import '../roughlike_game.dart';
 /// is recomputed from the viewport width each frame rather than set once —
 /// simplest way to stay centered if the window/screen resizes.
 class BossHealthBar extends PositionComponent with HasGameReference<RoughlikeGame> {
-  BossHealthBar() : super(size: Vector2(320, 22), anchor: Anchor.topCenter);
+  BossHealthBar({this.topInset = 0}) : super(size: Vector2(320, 22), anchor: Anchor.topCenter);
+
+  final double topInset;
 
   late final TextComponent _label;
   Enemy? _boss;
@@ -44,7 +46,7 @@ class BossHealthBar extends PositionComponent with HasGameReference<RoughlikeGam
     super.update(dt);
     position
       ..x = game.camera.viewport.size.x / 2
-      ..y = 20;
+      ..y = 20 + topInset;
     _boss = _findBoss();
     _label.text = _boss == null ? '' : 'BOSS';
   }
