@@ -1,4 +1,5 @@
 import 'package:flame/game.dart';
+import 'package:flutter/widgets.dart' show EdgeInsets;
 
 import '../core/constants/game_constants.dart';
 import '../input/mobile/mobile_input_provider.dart';
@@ -9,6 +10,7 @@ import 'hud/boss_health_bar.dart';
 import 'hud/hud_component.dart';
 import 'items/item_data.dart';
 import 'items/item_shop_roller.dart';
+import 'player/character_class.dart';
 import 'player/player.dart';
 import 'spawning/spawn_director.dart';
 import 'systems/audio/sfx_player.dart';
@@ -16,7 +18,6 @@ import 'systems/effects/camera_shaker.dart';
 import 'upgrades/upgrade_data.dart';
 import 'upgrades/upgrade_roller.dart';
 import 'waves/wave_manager.dart';
-import 'weapons/weapon_data.dart';
 
 /// Root game instance: arena, joystick-controlled player, camera-follow,
 /// collision detection, wave-driven enemy spawning, and the HUD/game-over/
@@ -29,6 +30,23 @@ import 'weapons/weapon_data.dart';
 /// a wave itself uninterrupted while still giving the player a real,
 /// unhurried decision point between waves.
 class RoughlikeGame extends FlameGame with HasCollisionDetection {
+  RoughlikeGame({
+    required this.characterClass,
+    this.topInset = 0,
+    this.bottomInset = 0,
+  });
+
+  final CharacterClassData characterClass;
+
+  /// Device safe-area insets (status bar / gesture-nav strip), in logical
+  /// pixels — passed in from GameScreen since the game canvas renders
+  /// full-bleed (no ambient SafeArea) so wave-end overlay backgrounds can
+  /// cover true edge-to-edge instead of stopping short and showing the
+  /// arena in the gap. Screen-fixed HUD elements (joystick, skill button,
+  /// HUD text, boss bar) add these back in themselves.
+  final double topInset;
+  final double bottomInset;
+
   late final Player player;
   late final MobileInputProvider inputProvider;
   late final WaveManager waveManager;
@@ -42,6 +60,16 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   int _pendingLevelUps = 0;
   List<UpgradeData> currentUpgradeChoices = const [];
   List<ItemData> currentShopOffers = const [];
+
+  /// One free reroll per level-up screen (resets each time a new choice
+  /// set is presented, including the next pick in a stacked multi-level-up).
+  static const int maxLevelUpRerolls = 1;
+  int levelUpRerollsUsed = 0;
+
+  /// Limited, gold-costed shop reroll — resets each time the shop opens.
+  static const int maxShopRefreshes = 3;
+  static const int shopRefreshCost = 20;
+  int shopRefreshesUsed = 0;
 
   void registerKill() => killCount++;
 
@@ -76,6 +104,7 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   }
 
   void _presentNextLevelUp() {
+    levelUpRerollsUsed = 0;
     currentUpgradeChoices = rollUpgradeChoices(player);
     if (currentUpgradeChoices.isEmpty) {
       // Nothing left to offer (catalog exhausted) — consume silently
@@ -92,6 +121,15 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
     SfxPlayer.levelUp();
   }
 
+  /// Consumes the level-up screen's one free reroll, if any is left.
+  void rerollLevelUpChoices() {
+    if (levelUpRerollsUsed >= maxLevelUpRerolls) {
+      return;
+    }
+    levelUpRerollsUsed++;
+    currentUpgradeChoices = rollUpgradeChoices(player);
+  }
+
   void chooseUpgrade(UpgradeData upgrade) {
     player.upgrades.apply(upgrade, player);
     overlays.remove('levelUp');
@@ -105,8 +143,20 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   }
 
   void _presentShop() {
+    shopRefreshesUsed = 0;
     currentShopOffers = rollShopOffers(player);
     overlays.add('shop');
+  }
+
+  /// Spends [shopRefreshCost] gold to reroll the current offers, up to
+  /// [maxShopRefreshes] times per visit. No-ops (silently) once gold or
+  /// refreshes run out — the button just goes disabled, see ShopOverlay.
+  void refreshShop() {
+    if (shopRefreshesUsed >= maxShopRefreshes || !player.currency.spend(shopRefreshCost)) {
+      return;
+    }
+    shopRefreshesUsed++;
+    currentShopOffers = rollShopOffers(player);
   }
 
   void closeShop() {
@@ -127,7 +177,7 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
       position: GameConstants.arenaSize / 2,
       inputProvider: inputProvider,
       arenaSize: GameConstants.arenaSize,
-      weapon: WeaponCatalog.basicPistol,
+      characterClass: characterClass,
       ability: AbilityCatalog.spearThrow,
     );
     world.add(player);
@@ -140,14 +190,16 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
 
     camera.follow(player);
     camera.viewfinder.add(_cameraShaker);
+    inputProvider.joystick.margin = EdgeInsets.only(left: 36, bottom: 36 + bottomInset);
     camera.viewport.add(inputProvider.joystick);
     camera.viewport.add(
       SkillButtonComponent(
         onActivate: player.abilities.activate,
         fallbackDirection: () => player.facingDirection,
+        margin: EdgeInsets.only(right: 36, bottom: 36 + bottomInset),
       ),
     );
-    camera.viewport.add(HudComponent());
-    camera.viewport.add(BossHealthBar());
+    camera.viewport.add(HudComponent(topInset: topInset));
+    camera.viewport.add(BossHealthBar(topInset: topInset));
   }
 }

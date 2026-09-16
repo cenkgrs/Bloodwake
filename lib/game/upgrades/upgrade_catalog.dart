@@ -14,15 +14,30 @@ void _predator(Player p) => p.stats.criticalChance += 0.05;
 void _vampirism(Player p) => p.stats.lifesteal += 0.02;
 void _swift(Player p) => p.stats.moveSpeed *= 1.08;
 
+void _unlockBasicPistol(Player p) => p.addWeapon(WeaponCatalog.basicPistol);
 void _unlockRapidRifle(Player p) => p.addWeapon(WeaponCatalog.rapidRifle);
 void _unlockShotgun(Player p) => p.addWeapon(WeaponCatalog.shotgun);
 void _unlockMagicOrb(Player p) => p.addWeapon(WeaponCatalog.magicOrb);
 void _unlockLightning(Player p) => p.addWeapon(WeaponCatalog.lightning);
 void _unlockSword(Player p) => p.addWeapon(WeaponCatalog.sword);
+void _unlockDaggers(Player p) => p.addWeapon(WeaponCatalog.daggers);
 
-/// Gates every "new weapon" upgrade — once all slots are full, unlocks stop
-/// being offered instead of a pick silently doing nothing.
+/// Gates every "new weapon" upgrade on two things: room in the loadout,
+/// and not already owning that exact weapon. The ownership half matters
+/// now that a class can start a run already holding one of these (see
+/// CharacterClassCatalog) — without it, that weapon's own unlock upgrade
+/// would still show up in the pool and picking it would silently do
+/// nothing (Player.addWeapon no-ops on an owned weapon), wasting a pick.
 bool _hasWeaponSlotRoom(Player p) => p.weaponSlotCount < GameConstants.maxWeaponSlots;
+bool _canUnlock(Player p, WeaponData weapon) =>
+    !p.ownsWeapon(weapon.id) && _hasWeaponSlotRoom(p);
+bool _canUnlockBasicPistol(Player p) => _canUnlock(p, WeaponCatalog.basicPistol);
+bool _canUnlockRapidRifle(Player p) => _canUnlock(p, WeaponCatalog.rapidRifle);
+bool _canUnlockShotgun(Player p) => _canUnlock(p, WeaponCatalog.shotgun);
+bool _canUnlockMagicOrb(Player p) => _canUnlock(p, WeaponCatalog.magicOrb);
+bool _canUnlockLightning(Player p) => _canUnlock(p, WeaponCatalog.lightning);
+bool _canUnlockSword(Player p) => _canUnlock(p, WeaponCatalog.sword);
+bool _canUnlockDaggers(Player p) => _canUnlock(p, WeaponCatalog.daggers);
 
 bool _ownsLightning(Player p) => p.ownsWeapon(WeaponCatalog.lightning.id);
 void _chainLightning(Player p) {
@@ -99,6 +114,17 @@ class UpgradeCatalog {
     apply: _swift,
   );
 
+  static const unlockBasicPistol = UpgradeData(
+    id: 'unlock_basic_pistol',
+    name: 'Basic Pistol',
+    description: 'New weapon: reliable single-shot sidearm',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 1,
+    apply: _unlockBasicPistol,
+    isAvailable: _canUnlockBasicPistol,
+  );
+
   static const unlockRapidRifle = UpgradeData(
     id: 'unlock_rapid_rifle',
     name: 'Rapid Rifle',
@@ -107,7 +133,7 @@ class UpgradeCatalog {
     rarity: UpgradeRarity.rare,
     maxLevel: 1,
     apply: _unlockRapidRifle,
-    isAvailable: _hasWeaponSlotRoom,
+    isAvailable: _canUnlockRapidRifle,
   );
 
   static const unlockShotgun = UpgradeData(
@@ -118,7 +144,7 @@ class UpgradeCatalog {
     rarity: UpgradeRarity.rare,
     maxLevel: 1,
     apply: _unlockShotgun,
-    isAvailable: _hasWeaponSlotRoom,
+    isAvailable: _canUnlockShotgun,
   );
 
   static const unlockMagicOrb = UpgradeData(
@@ -129,7 +155,7 @@ class UpgradeCatalog {
     rarity: UpgradeRarity.rare,
     maxLevel: 1,
     apply: _unlockMagicOrb,
-    isAvailable: _hasWeaponSlotRoom,
+    isAvailable: _canUnlockMagicOrb,
   );
 
   static const unlockLightning = UpgradeData(
@@ -140,7 +166,7 @@ class UpgradeCatalog {
     rarity: UpgradeRarity.rare,
     maxLevel: 1,
     apply: _unlockLightning,
-    isAvailable: _hasWeaponSlotRoom,
+    isAvailable: _canUnlockLightning,
   );
 
   static const unlockSword = UpgradeData(
@@ -151,7 +177,18 @@ class UpgradeCatalog {
     rarity: UpgradeRarity.rare,
     maxLevel: 1,
     apply: _unlockSword,
-    isAvailable: _hasWeaponSlotRoom,
+    isAvailable: _canUnlockSword,
+  );
+
+  static const unlockDaggers = UpgradeData(
+    id: 'unlock_daggers',
+    name: 'Twin Daggers',
+    description: 'New weapon: fast, light melee strikes',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 1,
+    apply: _unlockDaggers,
+    isAvailable: _canUnlockDaggers,
   );
 
   static const chainLightning = UpgradeData(
@@ -159,7 +196,7 @@ class UpgradeCatalog {
     name: 'Chain Lightning',
     description: '+1 Lightning chain target',
     category: UpgradeCategory.elemental,
-    rarity: UpgradeRarity.epic,
+    rarity: UpgradeRarity.legendary,
     maxLevel: 3,
     apply: _chainLightning,
     isAvailable: _ownsLightning,
@@ -172,11 +209,13 @@ class UpgradeCatalog {
     predator,
     vampirism,
     swift,
+    unlockBasicPistol,
     unlockRapidRifle,
     unlockShotgun,
     unlockMagicOrb,
     unlockLightning,
     unlockSword,
+    unlockDaggers,
     chainLightning,
   ];
 }

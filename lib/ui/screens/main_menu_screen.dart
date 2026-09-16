@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'game_screen.dart';
+import 'class_select_screen.dart';
 
-/// Minimal placeholder main menu. Only "start run" exists in M00; character
-/// selection, settings, and meta-progression screens are out of scope until
-/// later milestones.
+/// Minimal placeholder main menu. "Start run" leads into class selection
+/// (see ClassSelectScreen); settings and meta-progression screens are out
+/// of scope for now.
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
@@ -29,7 +29,7 @@ class MainMenuScreen extends StatelessWidget {
             FilledButton(
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const GameScreen()),
+                  MaterialPageRoute(builder: (_) => const ClassSelectScreen()),
                 );
               },
               child: const Padding(

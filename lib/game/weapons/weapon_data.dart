@@ -103,6 +103,20 @@ class WeaponCatalog {
     behavior: WeaponBehavior.melee,
   );
 
+  /// Assassin's starting weapon — light and fast rather than heavy like
+  /// Sword: lower damage per hit, shorter reach, but attacks noticeably
+  /// more often, matching a "fast/high crit" class instead of duplicating
+  /// Warrior's numbers with a different sprite.
+  static const daggers = WeaponData(
+    id: 'daggers',
+    name: 'Twin Daggers',
+    damage: 9,
+    attacksPerSecond: 2.4,
+    range: 45,
+    projectileSpeed: 0,
+    behavior: WeaponBehavior.melee,
+  );
+
   static const List<WeaponData> all = [
     basicPistol,
     rapidRifle,
@@ -110,5 +124,6 @@ class WeaponCatalog {
     magicOrb,
     lightning,
     sword,
+    daggers,
   ];
 }

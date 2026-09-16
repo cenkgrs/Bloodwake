@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -13,6 +12,8 @@ import '../systems/damage/damage_event.dart';
 import '../systems/damage/damageable.dart';
 import '../systems/effects/damage_number.dart';
 import '../weapons/weapon_data.dart';
+import 'character_class.dart';
+import 'character_sprite_animator.dart';
 import 'player_abilities.dart';
 import 'player_currency.dart';
 import 'player_experience.dart';
@@ -27,7 +28,10 @@ import 'player_weapons.dart';
 /// Owns a [PlayerStats] data block and delegates behaviour to focused child
 /// components ([PlayerMovement], [PlayerWeapons], [PlayerAbilities]; status
 /// effects join in later milestones) instead of accumulating gameplay logic
-/// directly on this class.
+/// directly on this class. Visual identity, starting weapon, and stat
+/// flavor all come from [characterClass] (see CharacterClassCatalog) — the
+/// collision hitbox stays a fixed size regardless of class, only the
+/// animated sprite drawn on top of it changes.
 class Player extends PositionComponent
     with CollisionCallbacks, HasGameReference<RoughlikeGame>
     implements Damageable {
@@ -35,9 +39,9 @@ class Player extends PositionComponent
     required Vector2 position,
     required InputProvider inputProvider,
     required Vector2 arenaSize,
-    required WeaponData weapon,
+    required this.characterClass,
     required AbilityData ability,
-  }) : stats = PlayerStats(moveSpeed: GameConstants.playerBaseMoveSpeed),
+  }) : stats = characterClass.createStats(),
        experience = PlayerExperience(),
        upgrades = PlayerUpgrades(),
        currency = PlayerCurrency(),
@@ -45,13 +49,13 @@ class Player extends PositionComponent
        abilities = PlayerAbilities(ability: ability),
        _inputProvider = inputProvider,
        _arenaSize = arenaSize,
-       _weapon = weapon,
        super(
          position: position,
          size: Vector2.all(GameConstants.playerRadius * 2),
          anchor: Anchor.center,
        );
 
+  final CharacterClassData characterClass;
   final PlayerStats stats;
   final PlayerExperience experience;
   final PlayerUpgrades upgrades;
@@ -60,9 +64,15 @@ class Player extends PositionComponent
   final PlayerAbilities abilities;
   final InputProvider _inputProvider;
   final Vector2 _arenaSize;
-  final WeaponData _weapon;
   final Map<String, PlayerWeapons> _weaponSlots = {};
   final Random _dodgeRandom = Random();
+
+  /// On-screen size of the animated sprite — independent of the collision
+  /// hitbox (GameConstants.playerRadius), which stays fixed so swapping
+  /// class art never touches movement/collision/balance.
+  static const double _spriteDisplaySize = 96;
+
+  late final CharacterSpriteAnimator _spriteAnimator;
 
   /// Last non-zero movement direction, normalized. Used as the aim fallback
   /// when a skill button is tapped rather than dragged. Defaults to "up"
@@ -83,14 +93,11 @@ class Player extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    add(
-      CircleComponent(
-        radius: radius,
-        anchor: Anchor.center,
-        position: size / 2,
-        paint: Paint()..color = const Color(0xFF2F80ED),
-      ),
-    );
+    _spriteAnimator = CharacterSpriteAnimator(
+      characterClass: characterClass,
+      displaySize: _spriteDisplaySize,
+    )..position = size / 2;
+    add(_spriteAnimator);
     add(CircleHitbox(collisionType: CollisionType.active));
     add(
       PlayerMovement(
@@ -99,7 +106,7 @@ class Player extends PositionComponent
         arenaSize: _arenaSize,
       ),
     );
-    addWeapon(_weapon);
+    addWeapon(characterClass.startingWeapon);
     add(abilities);
   }
 
@@ -123,6 +130,11 @@ class Player extends PositionComponent
     _weaponSlots[weapon.id] = slot;
     add(slot);
   }
+
+  /// Called by PlayerWeapons/PlayerAbilities whenever an attack fires, so
+  /// the character sprite plays its attack pose regardless of which
+  /// weapon/ability triggered it.
+  void triggerAttackAnim() => _spriteAnimator.triggerAttack();
 
   void gainXp(int amount) {
     final levelsGained = experience.addXp((amount * stats.xpMultiplier).round());
@@ -159,6 +171,7 @@ class Player extends PositionComponent
     );
     game.shakeCamera(intensity: (mitigated / 4).clamp(3, 12), duration: 0.18);
     SfxPlayer.playerHit();
+    _spriteAnimator.triggerHit();
     if (isDead) {
       game.onPlayerDeath();
     }

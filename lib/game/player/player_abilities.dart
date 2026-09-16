@@ -45,6 +45,7 @@ class PlayerAbilities extends Component
       ),
     );
     SfxPlayer.shoot();
+    parent.triggerAttackAnim();
     _cooldownRemaining = ability.cooldown;
   }
 }
