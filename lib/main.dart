@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'ui/screens/main_menu_screen.dart';
+import 'ui/theme/bloodwake_theme.dart';
 
 void main() {
   runApp(const RoughlikeApp());
@@ -12,15 +13,9 @@ class RoughlikeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Nexus',
+      title: 'Bloodwake',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueAccent,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: BloodwakeTheme.material(),
       home: const MainMenuScreen(),
     );
   }

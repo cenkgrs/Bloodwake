@@ -1,57 +1,127 @@
 import 'package:flutter/material.dart';
 
 import '../../game/player/character_class.dart';
+import '../theme/bloodwake_theme.dart';
 import '../theme/fantasy_text.dart';
 import 'game_screen.dart';
 
-/// Shown after "Start Run", before the game itself: pick one of the four
-/// classes in [CharacterClassCatalog]. The choice only sets three things —
-/// starting weapon, stat flavor, and which sprite folder the player's
-/// CharacterSpriteAnimator loads (see character_class.dart) — everything
-/// else (weapon slots, upgrades, shop) is unchanged and still shared.
 class ClassSelectScreen extends StatelessWidget {
   const ClassSelectScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0B10),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            Text(
-              'CHOOSE YOUR CLASS',
-              style: fantasyText(fontSize: 26, color: Colors.white, letterSpacing: 3),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Same world. Different paths.',
-              style: TextStyle(color: Colors.white54, fontSize: 13),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                children: [
-                  for (final classData in CharacterClassCatalog.all)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: _ClassCard(
-                        classData: classData,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => GameScreen(characterClass: classData),
-                            ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/backgrounds/map1.png', fit: BoxFit.cover),
+          const ColoredBox(color: Color(0xDA0B1017)),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 790;
+                return CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        wide ? 48 : 20,
+                        16,
+                        wide ? 48 : 20,
+                        12,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1100),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.arrow_back, size: 17),
+                                label: const Text('BACK'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: BloodwakeTheme.muted,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'THE FIRST CHOICE',
+                                style: TextStyle(
+                                  color: BloodwakeTheme.gold,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2.4,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Choose your survivor',
+                                style: fantasyText(
+                                  fontSize: wide ? 34 : 26,
+                                  color: BloodwakeTheme.parchment,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              const Text(
+                                'Each path begins with a different weapon and fighting style.',
+                                style: TextStyle(
+                                  color: BloodwakeTheme.muted,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              Container(
+                                height: 1,
+                                color: BloodwakeTheme.line.withValues(
+                                  alpha: 0.65,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        wide ? 48 : 20,
+                        8,
+                        wide ? 48 : 20,
+                        32,
+                      ),
+                      sliver: SliverLayoutBuilder(
+                        builder: (context, sliverConstraints) {
+                          final columns = wide ? 2 : 1;
+                          return SliverGrid.builder(
+                            itemCount: CharacterClassCatalog.all.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: columns,
+                                  mainAxisSpacing: 14,
+                                  crossAxisSpacing: 14,
+                                  mainAxisExtent: wide ? 210 : 190,
+                                ),
+                            itemBuilder: (context, index) {
+                              final data = CharacterClassCatalog.all[index];
+                              return _ClassCard(
+                                classData: data,
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        GameScreen(characterClass: data),
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
                     ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -69,60 +139,106 @@ class _ClassCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
+        borderRadius: BorderRadius.circular(6),
+        child: Ink(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [color.withValues(alpha: 0.20), const Color(0xF00E101A)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color, width: 1.5),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 16)],
+            color: BloodwakeTheme.panel,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: BloodwakeTheme.line),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x6C000000),
+                blurRadius: 20,
+                offset: Offset(0, 10),
+              ),
+            ],
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 84,
-                height: 84,
-                alignment: Alignment.center,
-                clipBehavior: Clip.antiAlias,
+                width: 4,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: color.withValues(alpha: 0.15),
-                  border: Border.all(color: color.withValues(alpha: 0.7)),
+                  color: color,
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(5),
+                  ),
                 ),
-                child: _ClassPreview(spriteFolder: classData.spriteFolder, size: 84),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(
+                width: 135,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Text(
-                      classData.name,
-                      style: fantasyText(fontSize: 19, color: Colors.white),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      classData.tagline,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            color.withValues(alpha: 0.27),
+                            Colors.transparent,
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      classData.description,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.3),
-                    ),
+                    _ClassPreview(classData: classData),
                   ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 18, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        classData.name.toUpperCase(),
+                        style: fantasyText(
+                          fontSize: 19,
+                          color: BloodwakeTheme.parchment,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        classData.tagline,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      Expanded(
+                        child: Text(
+                          classData.description,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: BloodwakeTheme.muted,
+                            fontSize: 12,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            'SELECT CLASS',
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Icon(Icons.arrow_forward, size: 14, color: color),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -133,28 +249,22 @@ class _ClassCard extends StatelessWidget {
   }
 }
 
-/// Crops the idle animation strip down to just its first frame (leftmost
-/// 128x128 of the 640x128 sheet) for a static thumbnail — the animated
-/// version only ever appears once the run actually starts.
 class _ClassPreview extends StatelessWidget {
-  const _ClassPreview({required this.spriteFolder, required this.size});
+  const _ClassPreview({required this.classData});
 
-  final String spriteFolder;
-  final double size;
+  final CharacterClassData classData;
 
   @override
   Widget build(BuildContext context) {
     return ClipRect(
       child: OverflowBox(
-        maxWidth: size * 5,
-        minWidth: size * 5,
-        maxHeight: size,
-        minHeight: size,
+        maxWidth: 135 * 5,
+        minWidth: 135 * 5,
+        maxHeight: 135,
+        minHeight: 135,
         alignment: Alignment.centerLeft,
         child: Image.asset(
-          '$spriteFolder/idle.png',
-          width: size * 5,
-          height: size,
+          '${classData.spriteFolder}/idle.png',
           fit: BoxFit.fill,
           errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
         ),

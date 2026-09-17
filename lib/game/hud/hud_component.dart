@@ -6,94 +6,126 @@ import 'package:flame/text.dart';
 import '../roughlike_game.dart';
 import '../waves/wave_manager.dart';
 
-/// Always-on readout: wave/timer, an HP bar, an XP bar, gold and kills.
-/// Bars replace the M00-M07 plain-number HP/XP line — first real "Better
-/// UI" pass (M08); everything still drawn directly rather than through a
-/// widget toolkit, since it's screen-fixed Flame content like the rest of
-/// the HUD.
-class HudComponent extends PositionComponent with HasGameReference<RoughlikeGame> {
+/// Screen-fixed combat readout with an opaque plate over the arena.
+class HudComponent extends PositionComponent
+    with HasGameReference<RoughlikeGame> {
   HudComponent({double topInset = 0})
     : super(position: Vector2(16, 16 + topInset), anchor: Anchor.topLeft);
 
-  static const double _barWidth = 200;
-  static const double _hpBarHeight = 14;
-  static const double _xpBarHeight = 7;
-
-  static final _labelStyle = TextPaint(
-    style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 15),
+  static final _title = TextPaint(
+    style: const TextStyle(
+      color: Color(0xFFF1E7D5),
+      fontSize: 15,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 1.3,
+    ),
   );
-  static final _smallStyle = TextPaint(
-    style: const TextStyle(color: Color(0xFFB8BCC8), fontSize: 13),
+  static final _label = TextPaint(
+    style: const TextStyle(
+      color: Color(0xFFB9C1C2),
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+    ),
+  );
+  static final _value = TextPaint(
+    style: const TextStyle(
+      color: Color(0xFFE8D8C4),
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+    ),
+  );
+  static final _gold = TextPaint(
+    style: const TextStyle(
+      color: Color(0xFFD8B579),
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+    ),
   );
 
-  static final Paint _hpBgPaint = Paint()..color = const Color(0xFF1A1D26);
-  static final Paint _hpFillPaint = Paint()..color = const Color(0xFF3FB950);
-  static final Paint _hpFillLowPaint = Paint()..color = const Color(0xFFDB4437);
-  static final Paint _xpBgPaint = Paint()..color = const Color(0xFF1A1D26);
-  static final Paint _xpFillPaint = Paint()..color = const Color(0xFF4A90E2);
-  static final Paint _barBorderPaint = Paint()
+  static final _panelPaint = Paint()..color = const Color(0xE90B131B);
+  static final _borderPaint = Paint()
+    ..color = const Color(0xFF687077)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.5
-    ..color = const Color(0xFF3A3F4B);
+    ..strokeWidth = 1;
+  static final _trackPaint = Paint()..color = const Color(0xFF263039);
+  static final _healthPaint = Paint()..color = const Color(0xFFBD463F);
+  static final _lowHealthPaint = Paint()..color = const Color(0xFFE46A53);
+  static final _experiencePaint = Paint()..color = const Color(0xFFD4B378);
+  static final _linePaint = Paint()..color = const Color(0xFF46515A);
 
-  String _waveLine = '';
-  String _bottomLine = '';
-  String _hpLabel = '';
-  String _xpLabel = '';
-  double _hpFraction = 1;
-  double _xpFraction = 0;
+  String _wave = '';
+  String _phase = '';
+  String _health = '';
+  String _level = '';
+  String _resources = '';
+  double _healthFraction = 1;
+  double _experienceFraction = 0;
 
   @override
   void update(double dt) {
     super.update(dt);
     final player = game.player;
     final wave = game.waveManager;
-    // Not showing the exact enemies-left count on purpose — not knowing
-    // how many are left to clear keeps the tension up. Re-enable by
-    // uncommenting _enemiesLeft below and using it in the spawning branch.
-    _waveLine = wave.state == WaveState.resting
-        ? 'Wave ${wave.currentWave} clear!   Next wave in ${wave.restTimeRemaining.ceil()}s'
-        : 'Wave ${wave.currentWave}';
-
-    _hpFraction = (player.currentHp / player.maxHp).clamp(0, 1);
-    _hpLabel = 'HP ${player.currentHp.ceil()}/${player.maxHp.ceil()}';
-
+    _wave = 'WAVE ${wave.currentWave.toString().padLeft(2, '0')}';
+    _phase = wave.state == WaveState.resting
+        ? 'NEXT IN ${wave.restTimeRemaining.ceil()}s'
+        : 'SURVIVE';
+    _healthFraction = (player.currentHp / player.maxHp).clamp(0, 1);
+    _health = '${player.currentHp.ceil()} / ${player.maxHp.ceil()}';
     final xp = player.experience;
-    _xpFraction = (xp.xpIntoLevel / xp.xpRequiredForNextLevel).clamp(0, 1);
-    _xpLabel = 'Lv ${xp.level}';
-
-    _bottomLine = 'Gold ${player.currency.gold}   Kills  ${game.killCount}';
+    _experienceFraction = (xp.xpIntoLevel / xp.xpRequiredForNextLevel).clamp(
+      0,
+      1,
+    );
+    _level = 'LEVEL ${xp.level}';
+    _resources = 'GOLD ${player.currency.gold}    •    KILLS ${game.killCount}';
   }
 
   @override
   void render(Canvas canvas) {
-    _labelStyle.render(canvas, _waveLine, Vector2.zero());
-
-    const hpBarY = 26.0;
-    final hpRect = Rect.fromLTWH(0, hpBarY, _barWidth, _hpBarHeight);
-    canvas.drawRect(hpRect, _hpBgPaint);
-    canvas.drawRect(
-      Rect.fromLTWH(0, hpBarY, _barWidth * _hpFraction, _hpBarHeight),
-      _hpFraction > 0.3 ? _hpFillPaint : _hpFillLowPaint,
+    const width = 304.0;
+    const barWidth = 280.0;
+    final panel = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(0, 0, width, 132),
+      const Radius.circular(6),
     );
-    canvas.drawRect(hpRect, _barBorderPaint);
-    _smallStyle.render(canvas, _hpLabel, Vector2(_barWidth + 8, hpBarY - 1));
-
-    final xpBarY = hpBarY + _hpBarHeight + 6;
-    final xpRect = Rect.fromLTWH(0, xpBarY, _barWidth, _xpBarHeight);
-    canvas.drawRect(xpRect, _xpBgPaint);
-    canvas.drawRect(
-      Rect.fromLTWH(0, xpBarY, _barWidth * _xpFraction, _xpBarHeight),
-      _xpFillPaint,
+    canvas.drawRRect(panel, _panelPaint);
+    canvas.drawRRect(panel, _borderPaint);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, 4, 132), _healthPaint);
+    _title.render(canvas, _wave, Vector2(13, 9));
+    _gold.render(canvas, _phase, Vector2(209, 13));
+    canvas.drawRect(const Rect.fromLTWH(13, 35, 278, 1), _linePaint);
+    _label.render(canvas, 'HEALTH', Vector2(13, 42));
+    _value.render(canvas, _health, Vector2(215, 42));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(13, 60, barWidth, 10),
+        const Radius.circular(2),
+      ),
+      _trackPaint,
     );
-    canvas.drawRect(xpRect, _barBorderPaint);
-    _smallStyle.render(canvas, _xpLabel, Vector2(_barWidth + 8, xpBarY - 3));
-
-    _smallStyle.render(canvas, _bottomLine, Vector2(0, xpBarY + _xpBarHeight + 8));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(13, 60, barWidth * _healthFraction, 10),
+        const Radius.circular(2),
+      ),
+      _healthFraction < 0.3 ? _lowHealthPaint : _healthPaint,
+    );
+    _label.render(canvas, _level, Vector2(13, 76));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(13, 94, barWidth, 6),
+        const Radius.circular(2),
+      ),
+      _trackPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(13, 94, barWidth * _experienceFraction, 6),
+        const Radius.circular(2),
+      ),
+      _experiencePaint,
+    );
+    _gold.render(canvas, _resources, Vector2(13, 108));
   }
-
-  // int _enemiesLeft(WaveManager wave) {
-  //   final aliveCount = game.world.children.query<Enemy>().length;
-  //   return (wave.waveEnemyQuota - wave.enemiesSpawnedThisWave) + aliveCount;
-  // }
 }
