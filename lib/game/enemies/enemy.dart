@@ -1,7 +1,9 @@
 import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../roughlike_game.dart';
 import '../systems/audio/sfx_player.dart';
@@ -33,7 +35,7 @@ class Enemy extends PositionComponent
 
   final EnemyData data;
   double _hp;
-  late final CircleComponent _visual;
+  late final SpriteComponent _visual;
   final List<StatusEffectInstance> _statusEffects = [];
   bool _isHidden = false;
   double _flashTimer = 0;
@@ -77,12 +79,22 @@ class Enemy extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    _visual = CircleComponent(
-      radius: data.radius,
-      anchor: Anchor.center,
-      position: size / 2,
-      paint: Paint()..color = data.color,
+    final bytes = await rootBundle.load('assets/images/enemies/${data.type.name}.png');
+    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    _visual = SpriteComponent(
+      sprite: Sprite(frame.image),
+      size: Vector2.all(data.radius * (data.type == EnemyType.boss ? 3.2 : 5.0)),
+      anchor: Anchor.bottomCenter,
+      position: Vector2(size.x / 2, size.y / 2 + data.radius * 0.7),
     );
+    add(CircleComponent(
+      radius: data.radius * 0.9,
+      anchor: Anchor.center,
+      position: Vector2(size.x / 2, size.y / 2 + data.radius * 0.7),
+      scale: Vector2(1, 0.32),
+      paint: Paint()..color = const Color(0x66000000),
+    ));
     add(_visual);
     add(CircleHitbox(collisionType: CollisionType.active));
     switch (data.aiType) {
@@ -105,7 +117,7 @@ class Enemy extends PositionComponent
     if (_flashTimer > 0) {
       _flashTimer -= dt;
       if (_flashTimer <= 0) {
-        _visual.paint.color = _baseColor;
+        _visual.paint.colorFilter = _isHidden ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate) : null;
       }
     }
     if (isDead || _statusEffects.isEmpty) {
@@ -143,7 +155,7 @@ class Enemy extends PositionComponent
         ),
       );
       _flashTimer = _flashDuration;
-      _visual.paint.color = _flashColor;
+      _visual.paint.colorFilter = const ui.ColorFilter.mode(_flashColor, ui.BlendMode.srcATop);
       SfxPlayer.weaponImpact(event.weaponId);
     }
     if (isDead) {
@@ -167,7 +179,7 @@ class Enemy extends PositionComponent
   void setHidden(bool hidden) {
     _isHidden = hidden;
     if (_flashTimer <= 0) {
-      _visual.paint.color = _baseColor;
+      _visual.paint.colorFilter = _isHidden ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate) : null;
     }
   }
 

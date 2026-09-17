@@ -62,9 +62,15 @@ flutter:
   assets:
     - assets/audio/
     - assets/images/backgrounds/
+    - assets/images/enemies/
     - assets/images/icons/upgrades/
     - assets/images/icons/items/
     - assets/images/characters/warrior/
+    - assets/images/characters/warrior_rig_test/idle/
+    - assets/images/characters/warrior_rig_test/run/
+    - assets/images/characters/warrior_rig_test/sword_attack/
+    - assets/images/characters/warrior_rig_test/recievehit/
+    - assets/images/characters/warrior_rig_test/death/
     - assets/images/characters/gunslinger/
     - assets/images/characters/mage/
     - assets/images/characters/assassin/

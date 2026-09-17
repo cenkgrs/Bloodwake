@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8">
+<title>Bloodwake Warrior hareket testi</title>
+<style>
+  body { margin: 0; background: #101821; color: #e8edf3; font: 15px system-ui; }
+  main { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  figure { margin: 12px 0; }
+  canvas { width: 384px; height: 384px; image-rendering: auto; border: 1px solid #46515d; background: radial-gradient(#34414d, #17232d); }
+  button { margin: 8px 8px 16px 0; padding: 8px 14px; background: #293747; border: 1px solid #687789; color: white; cursor: pointer; }
+  button.active { border-color: #d1665e; }
+</style>
+<main>
+  <h1>Warrior hareket testi</h1>
+  <p>Aynı iskelet, kamera ve ışıkla render edilmiş ücretsiz CC0 model. Bu bir kalite değerlendirmesidir; oyun varlığı değildir.</p>
+  <nav><button data-state="idle">Boşta</button><button data-state="run">Koşu</button><button data-state="sword_attack">Saldırı</button></nav>
+  <div class="row">
+    <figure><canvas id="old" width="384" height="384"></canvas><figcaption>Oyundaki mevcut görünüm</figcaption></figure>
+    <figure><canvas id="new" width="384" height="384"></canvas><figcaption>Rigli 3D hareket testi</figcaption></figure>
+  </div>
+</main>
+<script>
+const counts = {idle: 6, run: 8, sword_attack: 8};
+let state = 'idle', tick = 0;
+const oldImage = new Image(); oldImage.src = '../../../assets/images/characters/warrior/idle.png';
+const cache = {};
+for (const [name, count] of Object.entries(counts)) {
+  cache[name] = Array.from({length: count}, (_, i) => {
+    const img = new Image(); img.src = `motion/${name}/${String(i).padStart(2, '0')}.png`; return img;
+  });
+}
+document.querySelectorAll('button').forEach(button => button.onclick = () => {
+  state = button.dataset.state; tick = 0;
+  document.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === button));
+});
+document.querySelector('button').click();
+function draw() {
+  for (const id of ['old', 'new']) {
+    const ctx = document.getElementById(id).getContext('2d');
+    ctx.clearRect(0, 0, 384, 384);
+    ctx.strokeStyle = '#596575'; ctx.beginPath(); ctx.ellipse(192, 293, 45, 13, 0, 0, Math.PI * 2); ctx.stroke();
+    if (id === 'old' && oldImage.complete && oldImage.naturalWidth)
+      ctx.drawImage(oldImage, 2 * 128 + 5, 5, 118, 94, 80, 92, 224, 178);
+    if (id === 'new') {
+      const frames = cache[state], img = frames[Math.floor(tick / 6) % frames.length];
+      if (img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, 256, 256, 0, 0, 384, 384);
+    }
+  }
+  tick++; requestAnimationFrame(draw);
+}
+draw();
+</script>
+</html>

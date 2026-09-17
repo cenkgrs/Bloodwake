@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
@@ -97,6 +98,13 @@ class Player extends PositionComponent
       characterClass: characterClass,
       displaySize: _spriteDisplaySize,
     )..position = size / 2;
+    add(CircleComponent(
+      radius: 28,
+      anchor: Anchor.center,
+      position: size / 2 + Vector2(0, 30),
+      scale: Vector2(1, 0.28),
+      paint: Paint()..color = const Color(0x66000000),
+    ));
     add(_spriteAnimator);
     add(CircleHitbox(collisionType: CollisionType.active));
     add(

@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
-import 'package:flame/sprite.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import 'character_class.dart';
@@ -21,10 +20,13 @@ enum _CharAnimState { idle, run, attack, hit, death }
 /// State priority when several could apply at once: death > hit > attack >
 /// run > idle. A player who gets hit mid-swing should visibly flinch, not
 /// keep swinging through it; death always wins outright.
-class CharacterSpriteAnimator extends SpriteAnimationGroupComponent<_CharAnimState>
+class CharacterSpriteAnimator
+    extends SpriteAnimationGroupComponent<_CharAnimState>
     with ParentIsA<Player> {
-  CharacterSpriteAnimator({required this.characterClass, required double displaySize})
-    : super(size: Vector2.all(displaySize), anchor: Anchor.center);
+  CharacterSpriteAnimator({
+    required this.characterClass,
+    required double displaySize,
+  }) : super(size: Vector2.all(displaySize), anchor: Anchor.center);
 
   final CharacterClassData characterClass;
 
@@ -38,7 +40,6 @@ class CharacterSpriteAnimator extends SpriteAnimationGroupComponent<_CharAnimSta
   /// How long the attack/hit poses hold before falling back to idle/run —
   /// roughly one play-through of that animation's 5 frames at its step
   /// time, so a fast weapon doesn't visibly cut its own swing short.
-  static const double _attackHoldDuration = _attackStepTime * _frameCount;
   static const double _hitHoldDuration = _hitStepTime * _frameCount;
 
   /// Ignore movement jitter under this squared distance per frame when
@@ -46,23 +47,93 @@ class CharacterSpriteAnimator extends SpriteAnimationGroupComponent<_CharAnimSta
   /// sub-pixel position noise while standing still.
   static const double _movementEpsilonSquared = 0.25;
 
-  double _attackTimer = 0;
   double _hitTimer = 0;
+  double _attackTimer = 0;
   Vector2? _lastPosition;
   bool _deathTriggered = false;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    if (characterClass.id == CharacterClass.warrior) {
+      const testFolder = 'assets/images/characters/warrior_rig_test';
+      animations = {
+        _CharAnimState.idle: await _loadRigAnimation(
+          '$testFolder/idle',
+          6,
+          0.11,
+        ),
+        _CharAnimState.run: await _loadRigAnimation(
+          '$testFolder/run',
+          8,
+          0.075,
+        ),
+        _CharAnimState.attack: await _loadRigAnimation(
+          '$testFolder/sword_attack',
+          8,
+          0.075,
+          loop: false,
+        ),
+        _CharAnimState.hit: await _loadRigAnimation(
+          '$testFolder/recievehit',
+          6,
+          0.06,
+          loop: false,
+        ),
+        _CharAnimState.death: await _loadRigAnimation(
+          '$testFolder/death',
+          8,
+          0.12,
+          loop: false,
+        ),
+      };
+      current = _CharAnimState.idle;
+      return;
+    }
     final folder = characterClass.spriteFolder;
     animations = {
-      _CharAnimState.idle: await _loadAnimation('$folder/idle.png', _idleStepTime),
+      _CharAnimState.idle: await _loadAnimation(
+        '$folder/idle.png',
+        _idleStepTime,
+      ),
       _CharAnimState.run: await _loadAnimation('$folder/run.png', _runStepTime),
-      _CharAnimState.attack: await _loadAnimation('$folder/attack.png', _attackStepTime),
-      _CharAnimState.hit: await _loadAnimation('$folder/hit.png', _hitStepTime, loop: false),
-      _CharAnimState.death: await _loadAnimation('$folder/death.png', _deathStepTime, loop: false),
+      _CharAnimState.attack: await _loadAnimation(
+        '$folder/attack.png',
+        _attackStepTime,
+      ),
+      _CharAnimState.hit: await _loadAnimation(
+        '$folder/hit.png',
+        _hitStepTime,
+        loop: false,
+      ),
+      _CharAnimState.death: await _loadAnimation(
+        '$folder/death.png',
+        _deathStepTime,
+        loop: false,
+      ),
     };
     current = _CharAnimState.idle;
+  }
+
+  Future<SpriteAnimation> _loadRigAnimation(
+    String folder,
+    int frameCount,
+    double stepTime, {
+    bool loop = true,
+  }) async {
+    final sprites = await Future.wait(
+      List.generate(frameCount, (index) async {
+        final bytes = await rootBundle.load(
+          '$folder/${index.toString().padLeft(2, '0')}.png',
+        );
+        final codec = await ui.instantiateImageCodec(
+          bytes.buffer.asUint8List(),
+        );
+        final frame = await codec.getNextFrame();
+        return Sprite(frame.image);
+      }),
+    );
+    return SpriteAnimation.spriteList(sprites, stepTime: stepTime, loop: loop);
   }
 
   Future<SpriteAnimation> _loadAnimation(
@@ -73,12 +144,33 @@ class CharacterSpriteAnimator extends SpriteAnimationGroupComponent<_CharAnimSta
     final bytes = await rootBundle.load(assetPath);
     final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
     final frame = await codec.getNextFrame();
-    final sheet = SpriteSheet(image: frame.image, srcSize: Vector2.all(128));
-    return sheet.createAnimation(row: 0, stepTime: stepTime, loop: loop, to: _frameCount);
+    // Generated strips include a grey border along their outside edge.
+    const inset = 5.0;
+    final count =
+        assetPath.endsWith('/idle.png') || assetPath.endsWith('/run.png')
+        ? 1
+        : _frameCount;
+    final sprites = List.generate(count, (index) {
+      final frameIndex = count == 1 ? 2 : index;
+      return Sprite(
+        frame.image,
+        srcPosition: Vector2(frameIndex * 128.0 + inset, inset),
+        srcSize: Vector2(128 - inset * 2, 94),
+      );
+    });
+    return SpriteAnimation.spriteList(sprites, stepTime: stepTime, loop: loop);
   }
 
   /// Called by PlayerWeapons/PlayerAbilities whenever an attack fires.
-  void triggerAttack() => _attackTimer = _attackHoldDuration;
+  // The generated attack frames change anatomy and camera angle between
+  // frames. Automatic weapons can fire every few ticks, making the player
+  // appear to thrash constantly. Keep the stable idle/run pose until a
+  // properly aligned attack strip is available.
+  void triggerAttack() {
+    if (characterClass.id == CharacterClass.warrior && _attackTimer <= 0) {
+      _attackTimer = 8 * 0.075;
+    }
+  }
 
   /// Called by Player.applyDamage on a real (non-dodged) hit.
   void triggerHit() => _hitTimer = _hitHoldDuration;
@@ -113,7 +205,8 @@ class CharacterSpriteAnimator extends SpriteAnimationGroupComponent<_CharAnimSta
     }
 
     final position = parent.position;
-    final moving = _lastPosition != null &&
+    final moving =
+        _lastPosition != null &&
         position.distanceToSquared(_lastPosition!) > _movementEpsilonSquared;
     _lastPosition = position.clone();
     current = moving ? _CharAnimState.run : _CharAnimState.idle;
