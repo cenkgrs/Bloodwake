@@ -15,15 +15,12 @@ enum UpgradeRarity { common, rare, epic, legendary }
 
 /// Data-driven upgrade offered on level-up. [apply] takes the whole
 /// [Player] rather than just PlayerStats — most upgrades only touch
-/// `player.stats`, but weapon-unlock upgrades need `player.addWeapon(...)`
-/// and synergy upgrades need a specific weapon slot, so the hook has to be
-/// wide enough for all three without three different upgrade classes.
+/// `player.stats`, while class weapon upgrades modify the starting weapon's
+/// runtime slot.
 ///
 /// [apply] is a top-level function reference, not a closure capturing
-/// state, so instances stay const. [isAvailable] gates synergy upgrades
-/// that only make sense once a prerequisite is met (e.g. "Chain Lightning"
-/// requires already owning the Lightning weapon) — null means always
-/// available.
+/// state, so instances stay const. [isAvailable] gates upgrades by class;
+/// null means the upgrade is shared by every class.
 class UpgradeData {
   const UpgradeData({
     required this.id,

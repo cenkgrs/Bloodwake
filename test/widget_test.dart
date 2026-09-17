@@ -8,6 +8,6 @@ void main() {
   ) async {
     await tester.pumpWidget(const RoughlikeApp());
 
-    expect(find.text('START RUN'), findsOneWidget);
+    expect(find.text('BEGIN RUN'), findsOneWidget);
   });
 }

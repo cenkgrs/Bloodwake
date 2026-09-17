@@ -4,6 +4,7 @@ import '../../game/player/character_class.dart';
 import '../theme/bloodwake_theme.dart';
 import '../theme/fantasy_text.dart';
 import 'game_screen.dart';
+import '../widgets/soft_route.dart';
 
 class ClassSelectScreen extends StatelessWidget {
   const ClassSelectScreen({super.key});
@@ -105,10 +106,7 @@ class ClassSelectScreen extends StatelessWidget {
                               return _ClassCard(
                                 classData: data,
                                 onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        GameScreen(characterClass: data),
-                                  ),
+                                  softRoute(GameScreen(characterClass: data)),
                                 ),
                               );
                             },

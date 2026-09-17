@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import '../../game/player/character_class.dart';
 import '../../game/roughlike_game.dart';
 import '../overlays/game_over_overlay.dart';
-import '../overlays/level_up_overlay.dart';
-import '../overlays/shop_overlay.dart';
+import '../overlays/intermission_overlay.dart';
 
 /// Hosts the Flame game world. Flutter widgets are reserved for menus, HUD,
 /// and overlays layered on top via [GameWidget.overlayBuilderMap]; the
@@ -41,11 +40,32 @@ class _GameScreenState extends State<GameScreen> {
       body: GameWidget<RoughlikeGame>(
         game: _game!,
         overlayBuilderMap: {
-          'gameOver': (context, _) => const GameOverOverlay(),
-          'levelUp': (context, game) => LevelUpOverlay(game: game),
-          'shop': (context, game) => ShopOverlay(game: game),
+          'gameOver': (context, game) =>
+              _Entrance(child: GameOverOverlay(game: game)),
+          'intermission': (context, game) =>
+              _Entrance(child: IntermissionOverlay(game: game)),
         },
       ),
     );
   }
+}
+
+class _Entrance extends StatelessWidget {
+  const _Entrance({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0, end: 1),
+    duration: const Duration(milliseconds: 360),
+    curve: Curves.easeOutCubic,
+    builder: (context, value, child) => Opacity(
+      opacity: value,
+      child: Transform.translate(
+        offset: Offset(0, (1 - value) * 18),
+        child: child,
+      ),
+    ),
+    child: child,
+  );
 }

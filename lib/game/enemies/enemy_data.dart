@@ -34,6 +34,7 @@ class EnemyData {
     this.projectileSpeed = 0,
     this.supportRadius = 0,
     this.healAmount = 0,
+    this.isElite = false,
   });
 
   final EnemyType type;
@@ -66,6 +67,18 @@ class EnemyData {
 
   /// Healer's heal amount per activation.
   final double healAmount;
+  final bool isElite;
+
+  double get healthDropChance => type == EnemyType.boss
+      ? 1
+      : isElite
+      ? 0.22
+      : 0.08;
+  double get healthDropAmount => type == EnemyType.boss
+      ? 70
+      : isElite
+      ? 35
+      : 18;
 
   static const Color eliteColor = Color(0xFFFF8A00);
 
@@ -96,6 +109,7 @@ class EnemyData {
       projectileSpeed: projectileSpeed,
       supportRadius: supportRadius,
       healAmount: elite ? healAmount * eliteStatMultiplier : healAmount,
+      isElite: elite,
     );
   }
 }

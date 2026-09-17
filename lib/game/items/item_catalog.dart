@@ -47,6 +47,17 @@ void _thunderCore(Player p) {
   }
 }
 
+bool _ownsRifle(Player p) => p.ownsWeapon(WeaponCatalog.rapidRifle.id);
+bool _ownsOrb(Player p) => p.ownsWeapon(WeaponCatalog.magicOrb.id);
+bool _ownsDaggers(Player p) => p.ownsWeapon(WeaponCatalog.daggers.id);
+void _rifleMechanism(Player p) =>
+    p.weaponSlot(WeaponCatalog.rapidRifle.id)?.bonusAttackSpeedMultiplier +=
+        0.25;
+void _orbFocus(Player p) =>
+    p.weaponSlot(WeaponCatalog.magicOrb.id)?.bonusDamageMultiplier += 0.30;
+void _daggerSteel(Player p) =>
+    p.weaponSlot(WeaponCatalog.daggers.id)?.bonusDamageMultiplier += 0.30;
+
 /// The shop pool. Deliberately styled as equipment (a named piece with 1-2
 /// combined properties) rather than a second copy of the free skill-upgrade
 /// pool — "Platinum Armor" (+armor, +HP), not an abstract "+10% Armor"
@@ -145,6 +156,37 @@ class ItemCatalog {
     isAvailable: _ownsLightning,
   );
 
+  static const rifleMechanism = ItemData(
+    id: 'rifle_mechanism',
+    name: 'Rifle Mechanism',
+    description: '+25% Rifle fire rate',
+    rarity: UpgradeRarity.rare,
+    cost: 35,
+    category: ItemCategory.weapon,
+    apply: _rifleMechanism,
+    isAvailable: _ownsRifle,
+  );
+  static const orbFocus = ItemData(
+    id: 'orb_focus',
+    name: 'Orb Focus',
+    description: '+30% Magic Orb damage',
+    rarity: UpgradeRarity.rare,
+    cost: 35,
+    category: ItemCategory.weapon,
+    apply: _orbFocus,
+    isAvailable: _ownsOrb,
+  );
+  static const daggerSteel = ItemData(
+    id: 'dagger_steel',
+    name: 'Dagger Steel',
+    description: '+30% Dagger damage',
+    rarity: UpgradeRarity.rare,
+    cost: 35,
+    category: ItemCategory.weapon,
+    apply: _daggerSteel,
+    isAvailable: _ownsDaggers,
+  );
+
   static const List<ItemData> all = [
     platinumArmor,
     swiftBoots,
@@ -154,5 +196,8 @@ class ItemCatalog {
     guardianAngel,
     goldSword,
     thunderCore,
+    rifleMechanism,
+    orbFocus,
+    daggerSteel,
   ];
 }

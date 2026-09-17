@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/bloodwake_theme.dart';
 import '../theme/fantasy_text.dart';
 import 'class_select_screen.dart';
+import 'armory_shop_screen.dart';
+import 'build_screen.dart';
+import '../widgets/soft_route.dart';
+import 'skill_tree_screen.dart';
+import '../../game/progression/meta_progression.dart';
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
@@ -80,11 +85,8 @@ class MainMenuScreen extends StatelessWidget {
                             SizedBox(
                               width: 290,
                               child: FilledButton.icon(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const ClassSelectScreen(),
-                                  ),
-                                ),
+                                onPressed: () => Navigator.of(context)
+                                    .push(softRoute(const ClassSelectScreen())),
                                 icon: const Icon(Icons.arrow_forward, size: 19),
                                 label: Text(
                                   'BEGIN RUN',
@@ -96,6 +98,48 @@ class MainMenuScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 20),
+                            SizedBox(
+                              width: 290,
+                              child: OutlinedButton.icon(
+                                onPressed: () => Navigator.of(context)
+                                    .push(softRoute(const ArmoryShopScreen())),
+                                icon: const Icon(Icons.storefront_outlined),
+                                label: const Text('SHOP'),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: 290,
+                              child: OutlinedButton.icon(
+                                onPressed: () =>
+                                    Navigator.of(context)
+                                        .push(softRoute(const BuildScreen())),
+                                icon: const Icon(Icons.inventory_2_outlined),
+                                label: const Text('BUILDS'),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: 290,
+                              child: OutlinedButton.icon(
+                                onPressed: () => Navigator.of(context)
+                                    .push(softRoute(const SkillTreeScreen())),
+                                icon: const Icon(Icons.auto_awesome),
+                                label: const Text('LEGACY TREE'),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            AnimatedBuilder(
+                              animation: MetaProgression.instance,
+                              builder: (context, _) => Text(
+                                '${MetaProgression.instance.essence} ESSENCE  •  BUILD ${MetaProgression.instance.activeLoadout + 1}',
+                                style: const TextStyle(
+                                  color: BloodwakeTheme.gold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                             const Text(
                               'ONE LIFE  •  ENDLESS WAVES',
                               style: TextStyle(

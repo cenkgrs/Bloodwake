@@ -11,8 +11,10 @@ import '../roughlike_game.dart';
 /// (added to camera.viewport like the rest of the HUD), so its x position
 /// is recomputed from the viewport width each frame rather than set once —
 /// simplest way to stay centered if the window/screen resizes.
-class BossHealthBar extends PositionComponent with HasGameReference<RoughlikeGame> {
-  BossHealthBar({this.topInset = 0}) : super(size: Vector2(320, 22), anchor: Anchor.topCenter);
+class BossHealthBar extends PositionComponent
+    with HasGameReference<RoughlikeGame> {
+  BossHealthBar({this.topInset = 0})
+    : super(size: Vector2(320, 22), anchor: Anchor.topCenter);
 
   final double topInset;
 
@@ -26,7 +28,11 @@ class BossHealthBar extends PositionComponent with HasGameReference<RoughlikeGam
     ..strokeWidth = 2
     ..color = const Color(0xFF3A3F4B);
   static final _labelStyle = TextPaint(
-    style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 13, fontWeight: FontWeight.bold),
+    style: const TextStyle(
+      color: Color(0xFFFFFFFF),
+      fontSize: 13,
+      fontWeight: FontWeight.bold,
+    ),
   );
 
   @override

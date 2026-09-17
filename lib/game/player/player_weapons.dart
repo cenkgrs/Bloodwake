@@ -34,6 +34,12 @@ class PlayerWeapons extends Component
   /// Lightning" upgrade. Lives here (per-slot) rather than mutating the
   /// shared const [WeaponData], since only this player's copy should grow.
   int bonusChainCount = 0;
+  double bonusRangeMultiplier = 1;
+  double shockwaveRadius = 0;
+  int bonusProjectileCount = 0;
+  int bonusPierceCount = 0;
+  double bonusAttackSpeedMultiplier = 1;
+  int _meleeAttackCount = 0;
 
   /// Runtime multiplier on top of this weapon's damage, e.g. from a
   /// weapon-specific shop item ("Gold Sword" boosting only the Sword).
@@ -44,9 +50,11 @@ class PlayerWeapons extends Component
   static const double _spreadAngle = 0.5;
   static const Color _slowColor = Color(0xFF7EC8E3);
 
-  double get _effectiveRange => weapon.range * parent.stats.attackRange;
+  double get _effectiveRange =>
+      weapon.range * parent.stats.attackRange * bonusRangeMultiplier;
 
-  double get _baseDamage => weapon.damage * parent.stats.damage * bonusDamageMultiplier;
+  double get _baseDamage =>
+      weapon.damage * parent.stats.damage * bonusDamageMultiplier;
 
   @override
   void update(double dt) {
@@ -78,7 +86,9 @@ class PlayerWeapons extends Component
     }
     SfxPlayer.weaponFire(weapon.id);
     parent.triggerAttackAnim();
-    _cooldownRemaining = weapon.cooldown / parent.stats.attackSpeed;
+    _cooldownRemaining =
+        weapon.cooldown /
+        (parent.stats.attackSpeed * bonusAttackSpeedMultiplier);
   }
 
   void _fireSingle(Enemy target) {
@@ -99,7 +109,7 @@ class PlayerWeapons extends Component
 
   void _fireSpread(Enemy target) {
     final baseDirection = target.position - parent.position;
-    final count = weapon.projectileCount;
+    final count = weapon.projectileCount + bonusProjectileCount;
     for (var i = 0; i < count; i++) {
       final t = count == 1 ? 0.5 : i / (count - 1);
       final angleOffset = (t - 0.5) * _spreadAngle;
@@ -131,7 +141,7 @@ class PlayerWeapons extends Component
         isCritical: roll.isCritical,
         source: parent,
         maxDistance: _effectiveRange,
-        pierceCount: weapon.pierceCount,
+        pierceCount: weapon.pierceCount + bonusPierceCount,
         color: _slowColor,
         onHitStatusType: StatusEffectType.slow,
         onHitStatusMagnitude: 0.35,
@@ -162,9 +172,15 @@ class PlayerWeapons extends Component
         ),
       );
       current.applyStatusEffect(
-        StatusEffectInstance(type: StatusEffectType.burn, duration: 2, magnitude: 4),
+        StatusEffectInstance(
+          type: StatusEffectType.burn,
+          duration: 2,
+          magnitude: 4,
+        ),
       );
-      game.world.add(LightningBolt(start: origin, end: current.position.clone()));
+      game.world.add(
+        LightningBolt(start: origin, end: current.position.clone()),
+      );
       if (!isFirstHit) {
         SfxPlayer.chainLightningProc();
       }
@@ -183,8 +199,11 @@ class PlayerWeapons extends Component
 
   void _fireMelee() {
     final enemies = game.world.children.query<Enemy>();
-    final range = _effectiveRange;
+    _meleeAttackCount++;
+    final shockwave = shockwaveRadius > 0 && _meleeAttackCount % 3 == 0;
+    final range = _effectiveRange + (shockwave ? shockwaveRadius : 0);
     final rangeSquared = range * range;
+    final hit = <Enemy>[];
     for (final enemy in enemies) {
       if (enemy.isDead) {
         continue;
@@ -201,6 +220,34 @@ class PlayerWeapons extends Component
           weaponId: weapon.id,
         ),
       );
+      hit.add(enemy);
+    }
+    if (bonusChainCount > 0 && hit.isNotEmpty) {
+      var origin = hit.first.position.clone();
+      final chained = hit.toSet();
+      for (var i = 0; i < bonusChainCount; i++) {
+        final next = findNearestEnemy(
+          enemies.where((enemy) => !enemy.isDead && !chained.contains(enemy)),
+          origin,
+          120,
+        );
+        if (next == null) break;
+        final roll = rollDamage(parent.stats, _baseDamage * 0.5);
+        next.applyDamage(
+          DamageEvent(
+            source: parent,
+            baseDamage: roll.damage,
+            isCritical: roll.isCritical,
+            weaponId: weapon.id,
+          ),
+        );
+        game.world.add(
+          LightningBolt(start: origin, end: next.position.clone()),
+        );
+        SfxPlayer.chainLightningProc();
+        chained.add(next);
+        origin = next.position.clone();
+      }
     }
     game.world.add(
       MeleeSlashEffect(position: parent.position.clone(), radius: range),

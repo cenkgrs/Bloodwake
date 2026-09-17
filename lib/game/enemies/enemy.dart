@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:ui' as ui;
+import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -13,6 +14,7 @@ import '../systems/effects/damage_number.dart';
 import '../systems/effects/death_burst.dart';
 import '../systems/effects/status_effect.dart';
 import '../systems/experience/xp_gem.dart';
+import '../systems/experience/health_pickup.dart';
 import 'ai/archer_ai.dart';
 import 'ai/assassin_ai.dart';
 import 'ai/boss_ai.dart';
@@ -42,6 +44,7 @@ class Enemy extends PositionComponent
 
   static const double _flashDuration = 0.08;
   static const Color _flashColor = Color(0xFFFFFFFF);
+  static final Random _dropRandom = Random();
 
   Color get _baseColor => _isHidden ? data.color.withAlpha(50) : data.color;
 
@@ -60,7 +63,8 @@ class Enemy extends PositionComponent
   double get moveSpeedMultiplier {
     var strongestSlow = 0.0;
     for (final effect in _statusEffects) {
-      if (effect.type == StatusEffectType.slow && effect.magnitude > strongestSlow) {
+      if (effect.type == StatusEffectType.slow &&
+          effect.magnitude > strongestSlow) {
         strongestSlow = effect.magnitude;
       }
     }
@@ -68,7 +72,9 @@ class Enemy extends PositionComponent
   }
 
   void applyStatusEffect(StatusEffectInstance effect) {
-    final existingIndex = _statusEffects.indexWhere((e) => e.type == effect.type);
+    final existingIndex = _statusEffects.indexWhere(
+      (e) => e.type == effect.type,
+    );
     if (existingIndex >= 0) {
       _statusEffects[existingIndex] = effect;
     } else {
@@ -79,22 +85,28 @@ class Enemy extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    final bytes = await rootBundle.load('assets/images/enemies/${data.type.name}.png');
+    final bytes = await rootBundle.load(
+      'assets/images/enemies/${data.type.name}.png',
+    );
     final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
     final frame = await codec.getNextFrame();
     _visual = SpriteComponent(
       sprite: Sprite(frame.image),
-      size: Vector2.all(data.radius * (data.type == EnemyType.boss ? 3.2 : 5.0)),
+      size: Vector2.all(
+        data.radius * (data.type == EnemyType.boss ? 3.2 : 5.0),
+      ),
       anchor: Anchor.bottomCenter,
       position: Vector2(size.x / 2, size.y / 2 + data.radius * 0.7),
     );
-    add(CircleComponent(
-      radius: data.radius * 0.9,
-      anchor: Anchor.center,
-      position: Vector2(size.x / 2, size.y / 2 + data.radius * 0.7),
-      scale: Vector2(1, 0.32),
-      paint: Paint()..color = const Color(0x66000000),
-    ));
+    add(
+      CircleComponent(
+        radius: data.radius * 0.9,
+        anchor: Anchor.center,
+        position: Vector2(size.x / 2, size.y / 2 + data.radius * 0.7),
+        scale: Vector2(1, 0.32),
+        paint: Paint()..color = const Color(0x66000000),
+      ),
+    );
     add(_visual);
     add(CircleHitbox(collisionType: CollisionType.active));
     switch (data.aiType) {
@@ -117,7 +129,9 @@ class Enemy extends PositionComponent
     if (_flashTimer > 0) {
       _flashTimer -= dt;
       if (_flashTimer <= 0) {
-        _visual.paint.colorFilter = _isHidden ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate) : null;
+        _visual.paint.colorFilter = _isHidden
+            ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate)
+            : null;
       }
     }
     if (isDead || _statusEffects.isEmpty) {
@@ -125,7 +139,9 @@ class Enemy extends PositionComponent
     }
     for (final effect in List.of(_statusEffects)) {
       if (effect.type == StatusEffectType.burn) {
-        applyDamage(DamageEvent(source: this, baseDamage: effect.magnitude * dt));
+        applyDamage(
+          DamageEvent(source: this, baseDamage: effect.magnitude * dt),
+        );
         if (isDead) {
           return;
         }
@@ -155,7 +171,10 @@ class Enemy extends PositionComponent
         ),
       );
       _flashTimer = _flashDuration;
-      _visual.paint.colorFilter = const ui.ColorFilter.mode(_flashColor, ui.BlendMode.srcATop);
+      _visual.paint.colorFilter = const ui.ColorFilter.mode(
+        _flashColor,
+        ui.BlendMode.srcATop,
+      );
       SfxPlayer.weaponImpact(event.weaponId);
     }
     if (isDead) {
@@ -169,7 +188,11 @@ class Enemy extends PositionComponent
     }
     _hp = (_hp + amount).clamp(0, data.maxHp);
     game.world.add(
-      DamageNumber(position: position + Vector2(0, -data.radius - 4), amount: amount, isHeal: true),
+      DamageNumber(
+        position: position + Vector2(0, -data.radius - 4),
+        amount: amount,
+        isHeal: true,
+      ),
     );
   }
 
@@ -179,16 +202,32 @@ class Enemy extends PositionComponent
   void setHidden(bool hidden) {
     _isHidden = hidden;
     if (_flashTimer <= 0) {
-      _visual.paint.colorFilter = _isHidden ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate) : null;
+      _visual.paint.colorFilter = _isHidden
+          ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate)
+          : null;
     }
   }
 
   void _die() {
     game.world.add(XpGem(position: position.clone(), value: data.xpReward));
-    game.player.currency.add(data.goldReward + game.player.stats.bonusGoldPerKill);
+    if (_dropRandom.nextDouble() < data.healthDropChance) {
+      game.world.add(
+        HealthPickup(
+          position: position.clone() + Vector2(14, 0),
+          amount: data.healthDropAmount,
+        ),
+      );
+    }
+    game.player.currency.add(
+      data.goldReward + game.player.stats.bonusGoldPerKill,
+    );
     game.registerKill();
     game.world.add(
-      DeathBurst(position: position.clone(), color: data.color, startRadius: data.radius),
+      DeathBurst(
+        position: position.clone(),
+        color: data.color,
+        startRadius: data.radius,
+      ),
     );
     if (data.type == EnemyType.boss) {
       SfxPlayer.bossDeath();

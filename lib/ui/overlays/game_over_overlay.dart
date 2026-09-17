@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../theme/bloodwake_theme.dart';
 import '../theme/fantasy_text.dart';
+import '../../game/roughlike_game.dart';
 
 class GameOverOverlay extends StatelessWidget {
-  const GameOverOverlay({super.key});
+  const GameOverOverlay({required this.game, super.key});
+
+  final RoughlikeGame game;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +49,22 @@ class GameOverOverlay extends StatelessWidget {
                     'Your run has ended. The next one begins stronger.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: BloodwakeTheme.muted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'WAVE ${game.waveManager.currentWave}  •  ${game.killCount} KILLS',
+                    style: const TextStyle(
+                      color: BloodwakeTheme.muted,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '+${game.essenceEarned} ESSENCE',
+                    style: fantasyText(
+                      fontSize: 20,
+                      color: BloodwakeTheme.gold,
+                    ),
                   ),
                   const SizedBox(height: 38),
                   FilledButton(

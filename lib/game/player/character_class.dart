@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import '../weapons/weapon_data.dart';
+import '../abilities/ability_data.dart';
 import 'player_stats.dart';
 
 enum CharacterClass { warrior, gunslinger, mage, assassin }
@@ -19,6 +20,7 @@ class CharacterClassData {
     required this.description,
     required this.accentColor,
     required this.startingWeapon,
+    required this.startingAbility,
     required this.createStats,
   });
 
@@ -28,6 +30,7 @@ class CharacterClassData {
   final String description;
   final Color accentColor;
   final WeaponData startingWeapon;
+  final AbilityData startingAbility;
 
   /// Fresh [PlayerStats] for a run with this class — a factory rather than
   /// a shared const instance since PlayerStats is mutable (upgrades/items
@@ -46,10 +49,12 @@ class CharacterClassCatalog {
     id: CharacterClass.warrior,
     name: 'Warrior',
     tagline: 'MELEE · DURABLE · CLOSE COMBAT',
-    description: 'Heavily armored frontline fighter. High HP and armor, '
+    description:
+        'Heavily armored frontline fighter. High HP and armor, '
         'trades mobility for the ability to stand and take a hit.',
     accentColor: const Color(0xFFE05C5C),
     startingWeapon: WeaponCatalog.sword,
+    startingAbility: AbilityCatalog.warCry,
     createStats: () => PlayerStats(maxHp: 130, moveSpeed: 200, armor: 0.10),
   );
 
@@ -57,21 +62,26 @@ class CharacterClassCatalog {
     id: CharacterClass.gunslinger,
     name: 'Gunslinger',
     tagline: 'RANGED · HIGH DPS · MOBILITY',
-    description: 'Fast-firing ranged hunter. Outruns and outguns anything '
+    description:
+        'Fast-firing ranged hunter. Outruns and outguns anything '
         'that gets close, but can\'t take much punishment.',
     accentColor: const Color(0xFFE0A73F),
     startingWeapon: WeaponCatalog.rapidRifle,
-    createStats: () => PlayerStats(maxHp: 90, moveSpeed: 235, attackSpeed: 1.15),
+    startingAbility: AbilityCatalog.fanShot,
+    createStats: () =>
+        PlayerStats(maxHp: 90, moveSpeed: 235, attackSpeed: 1.15),
   );
 
   static final mage = CharacterClassData(
     id: CharacterClass.mage,
     name: 'Mage',
     tagline: 'AREA DAMAGE · ELEMENTAL · CONTROL',
-    description: 'Channels a piercing, chilling orb that punishes groups. '
+    description:
+        'Channels a piercing, chilling orb that punishes groups. '
         'Hits hard from range, but has the least HP of any class.',
     accentColor: const Color(0xFF7C4DFF),
     startingWeapon: WeaponCatalog.magicOrb,
+    startingAbility: AbilityCatalog.frostNova,
     createStats: () => PlayerStats(maxHp: 85, moveSpeed: 215, damage: 1.20),
   );
 
@@ -79,10 +89,12 @@ class CharacterClassCatalog {
     id: CharacterClass.assassin,
     name: 'Assassin',
     tagline: 'FAST · HIGH CRIT · EVASION',
-    description: 'Twin daggers, blistering attack speed, and a real chance '
+    description:
+        'Twin daggers, blistering attack speed, and a real chance '
         'to simply not be there when the hit lands.',
     accentColor: const Color(0xFF4CD98A),
     startingWeapon: WeaponCatalog.daggers,
+    startingAbility: AbilityCatalog.shadowStrike,
     createStats: () => PlayerStats(
       maxHp: 80,
       moveSpeed: 245,
@@ -92,5 +104,10 @@ class CharacterClassCatalog {
     ),
   );
 
-  static final List<CharacterClassData> all = [warrior, gunslinger, mage, assassin];
+  static final List<CharacterClassData> all = [
+    warrior,
+    gunslinger,
+    mage,
+    assassin,
+  ];
 }

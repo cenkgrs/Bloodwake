@@ -1,5 +1,5 @@
-import '../../core/constants/game_constants.dart';
 import '../player/player.dart';
+import '../player/character_class.dart';
 import '../weapons/weapon_data.dart';
 import 'upgrade_data.dart';
 
@@ -14,43 +14,40 @@ void _predator(Player p) => p.stats.criticalChance += 0.05;
 void _vampirism(Player p) => p.stats.lifesteal += 0.02;
 void _swift(Player p) => p.stats.moveSpeed *= 1.08;
 
-void _unlockBasicPistol(Player p) => p.addWeapon(WeaponCatalog.basicPistol);
-void _unlockRapidRifle(Player p) => p.addWeapon(WeaponCatalog.rapidRifle);
-void _unlockShotgun(Player p) => p.addWeapon(WeaponCatalog.shotgun);
-void _unlockMagicOrb(Player p) => p.addWeapon(WeaponCatalog.magicOrb);
-void _unlockLightning(Player p) => p.addWeapon(WeaponCatalog.lightning);
-void _unlockSword(Player p) => p.addWeapon(WeaponCatalog.sword);
-void _unlockDaggers(Player p) => p.addWeapon(WeaponCatalog.daggers);
+bool _warrior(Player p) => p.characterClass.id == CharacterClass.warrior;
+bool _gunslinger(Player p) => p.characterClass.id == CharacterClass.gunslinger;
+bool _mage(Player p) => p.characterClass.id == CharacterClass.mage;
+bool _assassin(Player p) => p.characterClass.id == CharacterClass.assassin;
 
-/// Gates every "new weapon" upgrade on two things: room in the loadout,
-/// and not already owning that exact weapon. The ownership half matters
-/// now that a class can start a run already holding one of these (see
-/// CharacterClassCatalog) — without it, that weapon's own unlock upgrade
-/// would still show up in the pool and picking it would silently do
-/// nothing (Player.addWeapon no-ops on an owned weapon), wasting a pick.
-bool _hasWeaponSlotRoom(Player p) => p.weaponSlotCount < GameConstants.maxWeaponSlots;
-bool _canUnlock(Player p, WeaponData weapon) =>
-    !p.ownsWeapon(weapon.id) && _hasWeaponSlotRoom(p);
-bool _canUnlockBasicPistol(Player p) => _canUnlock(p, WeaponCatalog.basicPistol);
-bool _canUnlockRapidRifle(Player p) => _canUnlock(p, WeaponCatalog.rapidRifle);
-bool _canUnlockShotgun(Player p) => _canUnlock(p, WeaponCatalog.shotgun);
-bool _canUnlockMagicOrb(Player p) => _canUnlock(p, WeaponCatalog.magicOrb);
-bool _canUnlockLightning(Player p) => _canUnlock(p, WeaponCatalog.lightning);
-bool _canUnlockSword(Player p) => _canUnlock(p, WeaponCatalog.sword);
-bool _canUnlockDaggers(Player p) => _canUnlock(p, WeaponCatalog.daggers);
+void _greatsword(Player p) =>
+    p.weaponSlot(WeaponCatalog.sword.id)?.bonusRangeMultiplier += 0.25;
+void _stormBlade(Player p) =>
+    p.weaponSlot(WeaponCatalog.sword.id)?.bonusChainCount += 1;
+void _shockwave(Player p) =>
+    p.weaponSlot(WeaponCatalog.sword.id)?.shockwaveRadius += 35;
+void _rifleTempo(Player p) =>
+    p.weaponSlot(WeaponCatalog.rapidRifle.id)?.bonusAttackSpeedMultiplier +=
+        0.18;
+void _rifleCaliber(Player p) =>
+    p.weaponSlot(WeaponCatalog.rapidRifle.id)?.bonusDamageMultiplier += 0.20;
+void _rifleRange(Player p) =>
+    p.weaponSlot(WeaponCatalog.rapidRifle.id)?.bonusRangeMultiplier += 0.15;
+void _orbPierce(Player p) =>
+    p.weaponSlot(WeaponCatalog.magicOrb.id)?.bonusPierceCount += 1;
+void _orbPower(Player p) =>
+    p.weaponSlot(WeaponCatalog.magicOrb.id)?.bonusDamageMultiplier += 0.25;
+void _orbRange(Player p) =>
+    p.weaponSlot(WeaponCatalog.magicOrb.id)?.bonusRangeMultiplier += 0.20;
+void _daggerTempo(Player p) =>
+    p.weaponSlot(WeaponCatalog.daggers.id)?.bonusAttackSpeedMultiplier += 0.18;
+void _daggerReach(Player p) =>
+    p.weaponSlot(WeaponCatalog.daggers.id)?.bonusRangeMultiplier += 0.20;
+void _daggerEdge(Player p) =>
+    p.weaponSlot(WeaponCatalog.daggers.id)?.bonusDamageMultiplier += 0.20;
 
-bool _ownsLightning(Player p) => p.ownsWeapon(WeaponCatalog.lightning.id);
-void _chainLightning(Player p) {
-  p.weaponSlot(WeaponCatalog.lightning.id)?.bonusChainCount += 1;
-}
-
-/// The upgrade pool: global stat boosts, one-time weapon unlocks (picking
-/// one adds that weapon as an extra always-firing slot, up to
-/// GameConstants.maxWeaponSlots — see Player.addWeapon), and a
-/// build-synergy upgrade that only appears once its prerequisite weapon is
-/// owned. More synergy upgrades (Bleed, Tank builds from the design doc)
-/// are more entries here with their own [UpgradeData.isAvailable] check,
-/// not a new system.
+/// Shared stat boosts and weapon upgrades gated by the selected class.
+/// Every class improves its starting weapon instead of unlocking unrelated
+/// weapons during a run.
 class UpgradeCatalog {
   UpgradeCatalog._();
 
@@ -114,92 +111,125 @@ class UpgradeCatalog {
     apply: _swift,
   );
 
-  static const unlockBasicPistol = UpgradeData(
-    id: 'unlock_basic_pistol',
-    name: 'Basic Pistol',
-    description: 'New weapon: reliable single-shot sidearm',
+  static const greatsword = UpgradeData(
+    id: 'greatsword',
+    name: 'Greatsword',
+    description: '+25% sword reach and larger slash',
     category: UpgradeCategory.weapon,
     rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockBasicPistol,
-    isAvailable: _canUnlockBasicPistol,
-  );
-
-  static const unlockRapidRifle = UpgradeData(
-    id: 'unlock_rapid_rifle',
-    name: 'Rapid Rifle',
-    description: 'New weapon: fast, low-damage auto-fire',
-    category: UpgradeCategory.weapon,
-    rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockRapidRifle,
-    isAvailable: _canUnlockRapidRifle,
-  );
-
-  static const unlockShotgun = UpgradeData(
-    id: 'unlock_shotgun',
-    name: 'Shotgun',
-    description: 'New weapon: 5-pellet close-range spread',
-    category: UpgradeCategory.weapon,
-    rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockShotgun,
-    isAvailable: _canUnlockShotgun,
-  );
-
-  static const unlockMagicOrb = UpgradeData(
-    id: 'unlock_magic_orb',
-    name: 'Magic Orb',
-    description: 'New weapon: slow orb, pierces and chills',
-    category: UpgradeCategory.weapon,
-    rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockMagicOrb,
-    isAvailable: _canUnlockMagicOrb,
-  );
-
-  static const unlockLightning = UpgradeData(
-    id: 'unlock_lightning',
-    name: 'Lightning',
-    description: 'New weapon: instant strike, arcs to nearby foes',
-    category: UpgradeCategory.weapon,
-    rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockLightning,
-    isAvailable: _canUnlockLightning,
-  );
-
-  static const unlockSword = UpgradeData(
-    id: 'unlock_sword',
-    name: 'Sword',
-    description: 'New weapon: melee burst around you',
-    category: UpgradeCategory.weapon,
-    rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockSword,
-    isAvailable: _canUnlockSword,
-  );
-
-  static const unlockDaggers = UpgradeData(
-    id: 'unlock_daggers',
-    name: 'Twin Daggers',
-    description: 'New weapon: fast, light melee strikes',
-    category: UpgradeCategory.weapon,
-    rarity: UpgradeRarity.rare,
-    maxLevel: 1,
-    apply: _unlockDaggers,
-    isAvailable: _canUnlockDaggers,
-  );
-
-  static const chainLightning = UpgradeData(
-    id: 'chain_lightning',
-    name: 'Chain Lightning',
-    description: '+1 Lightning chain target',
-    category: UpgradeCategory.elemental,
-    rarity: UpgradeRarity.legendary,
     maxLevel: 3,
-    apply: _chainLightning,
-    isAvailable: _ownsLightning,
+    apply: _greatsword,
+    isAvailable: _warrior,
+  );
+  static const stormBlade = UpgradeData(
+    id: 'storm_blade',
+    name: 'Storm Blade',
+    description: 'Sword hits arc lightning to +1 nearby enemy',
+    category: UpgradeCategory.elemental,
+    rarity: UpgradeRarity.epic,
+    maxLevel: 3,
+    apply: _stormBlade,
+    isAvailable: _warrior,
+  );
+  static const shockwave = UpgradeData(
+    id: 'shockwave',
+    name: 'Shockwave',
+    description: 'Every 3rd sword swing hits a wider area',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.epic,
+    maxLevel: 3,
+    apply: _shockwave,
+    isAvailable: _warrior,
+  );
+  static const rifleTempo = UpgradeData(
+    id: 'rifle_tempo',
+    name: 'Trigger Tempo',
+    description: '+18% rifle fire rate',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _rifleTempo,
+    isAvailable: _gunslinger,
+  );
+  static const rifleCaliber = UpgradeData(
+    id: 'rifle_caliber',
+    name: 'Heavy Caliber',
+    description: '+20% rifle damage',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _rifleCaliber,
+    isAvailable: _gunslinger,
+  );
+  static const rifleRange = UpgradeData(
+    id: 'rifle_range',
+    name: 'Long Barrel',
+    description: '+15% rifle range',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _rifleRange,
+    isAvailable: _gunslinger,
+  );
+  static const orbPierce = UpgradeData(
+    id: 'orb_pierce',
+    name: 'Piercing Orb',
+    description: 'Magic orb pierces +1 enemy',
+    category: UpgradeCategory.elemental,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _orbPierce,
+    isAvailable: _mage,
+  );
+  static const orbPower = UpgradeData(
+    id: 'orb_power',
+    name: 'Arcane Focus',
+    description: '+25% magic orb damage',
+    category: UpgradeCategory.elemental,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _orbPower,
+    isAvailable: _mage,
+  );
+  static const orbRange = UpgradeData(
+    id: 'orb_range',
+    name: 'Far Sight',
+    description: '+20% magic orb range',
+    category: UpgradeCategory.elemental,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _orbRange,
+    isAvailable: _mage,
+  );
+  static const daggerTempo = UpgradeData(
+    id: 'dagger_tempo',
+    name: 'Flurry',
+    description: '+18% dagger attack speed',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _daggerTempo,
+    isAvailable: _assassin,
+  );
+  static const daggerReach = UpgradeData(
+    id: 'dagger_reach',
+    name: 'Long Blades',
+    description: '+20% dagger reach and larger slash',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _daggerReach,
+    isAvailable: _assassin,
+  );
+  static const daggerEdge = UpgradeData(
+    id: 'dagger_edge',
+    name: 'Razor Edge',
+    description: '+20% dagger damage',
+    category: UpgradeCategory.weapon,
+    rarity: UpgradeRarity.rare,
+    maxLevel: 3,
+    apply: _daggerEdge,
+    isAvailable: _assassin,
   );
 
   static const List<UpgradeData> all = [
@@ -209,13 +239,17 @@ class UpgradeCatalog {
     predator,
     vampirism,
     swift,
-    unlockBasicPistol,
-    unlockRapidRifle,
-    unlockShotgun,
-    unlockMagicOrb,
-    unlockLightning,
-    unlockSword,
-    unlockDaggers,
-    chainLightning,
+    greatsword,
+    stormBlade,
+    shockwave,
+    rifleTempo,
+    rifleCaliber,
+    rifleRange,
+    orbPierce,
+    orbPower,
+    orbRange,
+    daggerTempo,
+    daggerReach,
+    daggerEdge,
   ];
 }

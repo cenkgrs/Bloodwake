@@ -1,10 +1,12 @@
+import 'dart:async' show unawaited;
+
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart' show EdgeInsets;
+import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../core/constants/game_constants.dart';
 import '../input/mobile/mobile_input_provider.dart';
 import '../input/mobile/skill_button_component.dart';
-import 'abilities/ability_data.dart';
 import 'arena/arena_component.dart';
 import 'hud/boss_health_bar.dart';
 import 'hud/hud_component.dart';
@@ -12,6 +14,7 @@ import 'items/item_data.dart';
 import 'items/item_shop_roller.dart';
 import 'player/character_class.dart';
 import 'player/player.dart';
+import 'progression/meta_progression.dart';
 import 'spawning/spawn_director.dart';
 import 'systems/audio/sfx_player.dart';
 import 'systems/effects/camera_shaker.dart';
@@ -53,10 +56,23 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   final CameraShaker _cameraShaker = CameraShaker();
 
   int killCount = 0;
+  int essenceEarned = 0;
+  bool _rewardIssued = false;
+  final ValueNotifier<int> intermissionRevision = ValueNotifier(0);
+  String intermissionScreen = '';
+
+  void _showIntermission(String screen) {
+    intermissionScreen = screen;
+    intermissionRevision.value++;
+    if (screen.isNotEmpty && !overlays.isActive('intermission')) {
+      overlays.add('intermission');
+    }
+  }
 
   void shakeCamera({double intensity = 6, double duration = 0.2}) {
     _cameraShaker.shake(intensity: intensity, duration: duration);
   }
+
   int _pendingLevelUps = 0;
   List<UpgradeData> currentUpgradeChoices = const [];
   List<ItemData> currentShopOffers = const [];
@@ -74,9 +90,20 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   void registerKill() => killCount++;
 
   void onPlayerDeath() {
+    if (_rewardIssued) return;
+    _rewardIssued = true;
+    essenceEarned = MetaProgression.instance.rewardForRun(
+      wave: waveManager.currentWave,
+      kills: killCount,
+    );
+    unawaited(
+      MetaProgression.instance.awardRun(
+        wave: waveManager.currentWave,
+        kills: killCount,
+      ),
+    );
     _pendingLevelUps = 0;
-    overlays.remove('levelUp');
-    overlays.remove('shop');
+    overlays.remove('intermission');
     pauseEngine();
     overlays.add('gameOver');
     SfxPlayer.gameOver();
@@ -117,7 +144,7 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
       }
       return;
     }
-    overlays.add('levelUp');
+    _showIntermission('levelUp');
     SfxPlayer.levelUp();
   }
 
@@ -131,8 +158,8 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   }
 
   void chooseUpgrade(UpgradeData upgrade) {
+    if (intermissionScreen != 'levelUp') return;
     player.upgrades.apply(upgrade, player);
-    overlays.remove('levelUp');
     SfxPlayer.upgradePick();
     _pendingLevelUps = _pendingLevelUps > 0 ? _pendingLevelUps - 1 : 0;
     if (_pendingLevelUps > 0) {
@@ -145,22 +172,26 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   void _presentShop() {
     shopRefreshesUsed = 0;
     currentShopOffers = rollShopOffers(player);
-    overlays.add('shop');
+    _showIntermission('shop');
   }
 
   /// Spends [shopRefreshCost] gold to reroll the current offers, up to
   /// [maxShopRefreshes] times per visit. No-ops (silently) once gold or
   /// refreshes run out — the button just goes disabled, see ShopOverlay.
   void refreshShop() {
-    if (shopRefreshesUsed >= maxShopRefreshes || !player.currency.spend(shopRefreshCost)) {
+    if (shopRefreshesUsed >= maxShopRefreshes ||
+        !player.currency.spend(shopRefreshCost)) {
       return;
     }
     shopRefreshesUsed++;
     currentShopOffers = rollShopOffers(player);
   }
 
-  void closeShop() {
-    overlays.remove('shop');
+  Future<void> closeShop() async {
+    if (intermissionScreen != 'shop') return;
+    _showIntermission('');
+    await Future<void>.delayed(const Duration(milliseconds: 340));
+    overlays.remove('intermission');
     resumeEngine();
   }
 
@@ -178,24 +209,32 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
       inputProvider: inputProvider,
       arenaSize: GameConstants.arenaSize,
       characterClass: characterClass,
-      ability: AbilityCatalog.spearThrow,
+      ability: characterClass.startingAbility,
     );
     world.add(player);
 
     waveManager = WaveManager(onWaveCleared: _onWaveCleared);
     world.add(waveManager);
     world.add(
-      SpawnDirector(waveManager: waveManager, arenaSize: GameConstants.arenaSize),
+      SpawnDirector(
+        waveManager: waveManager,
+        arenaSize: GameConstants.arenaSize,
+      ),
     );
 
     camera.follow(player);
     camera.viewfinder.add(_cameraShaker);
-    inputProvider.joystick.margin = EdgeInsets.only(left: 36, bottom: 36 + bottomInset);
+    inputProvider.joystick.margin = EdgeInsets.only(
+      left: 36,
+      bottom: 36 + bottomInset,
+    );
     camera.viewport.add(inputProvider.joystick);
     camera.viewport.add(
       SkillButtonComponent(
         onActivate: player.abilities.activate,
         fallbackDirection: () => player.facingDirection,
+        ability: characterClass.startingAbility,
+        cooldownRemaining: () => player.abilities.cooldownRemaining,
         margin: EdgeInsets.only(right: 36, bottom: 36 + bottomInset),
       ),
     );
