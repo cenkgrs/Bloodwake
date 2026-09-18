@@ -75,6 +75,7 @@ flutter:
     - assets/images/characters/gunslinger/
     - assets/images/characters/mage/
     - assets/images/characters/assassin/
+    - assets/models/characters/assassin/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
