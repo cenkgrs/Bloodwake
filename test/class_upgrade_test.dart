@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:roughlike/game/player/character_class.dart';
 import 'package:roughlike/game/player/player.dart';
 import 'package:roughlike/game/upgrades/upgrade_catalog.dart';
+import 'package:roughlike/game/upgrades/upgrade_data.dart';
 import 'package:roughlike/game/upgrades/upgrade_roller.dart';
 import 'package:roughlike/game/weapons/weapon_data.dart';
 import 'package:roughlike/input/input_provider.dart';
@@ -209,5 +210,31 @@ void main() {
       assassin.weaponSlot(WeaponCatalog.daggers.id)!.bleedDamagePerSecond,
       9,
     );
+  });
+
+  test('boss rewards contain only usable rare or stronger upgrades', () {
+    for (final characterClass in CharacterClassCatalog.all) {
+      final player = Player(
+        position: Vector2.zero(),
+        inputProvider: _IdleInput(),
+        arenaSize: Vector2.all(1000),
+        characterClass: characterClass,
+        ability: characterClass.startingAbility,
+      );
+      player.addWeapon(characterClass.startingWeapon);
+
+      for (var i = 0; i < 20; i++) {
+        final rewards = rollBossRewardChoices(player);
+        expect(rewards, isNotEmpty);
+        expect(
+          rewards.every(
+            (upgrade) =>
+                upgrade.rarity != UpgradeRarity.common &&
+                (upgrade.isAvailable == null || upgrade.isAvailable!(player)),
+          ),
+          true,
+        );
+      }
+    }
   });
 }

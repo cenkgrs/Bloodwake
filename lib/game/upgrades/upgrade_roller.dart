@@ -23,3 +23,19 @@ List<UpgradeData> rollUpgradeChoices(Player player, {int count = 3}) {
         ..shuffle(_random);
   return available.take(count).toList();
 }
+
+/// Boss waves award a separate high-quality pick. Common upgrades are
+/// excluded, while class gates and prerequisite-based capstones still apply.
+List<UpgradeData> rollBossRewardChoices(Player player, {int count = 3}) {
+  final available =
+      UpgradeCatalog.all
+          .where(
+            (upgrade) =>
+                upgrade.rarity != UpgradeRarity.common &&
+                !player.upgrades.isMaxed(upgrade) &&
+                (upgrade.isAvailable == null || upgrade.isAvailable!(player)),
+          )
+          .toList()
+        ..shuffle(_random);
+  return available.take(count).toList();
+}

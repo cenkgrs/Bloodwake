@@ -74,6 +74,8 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   }
 
   int _pendingLevelUps = 0;
+  bool _pendingBossReward = false;
+  bool isChoosingBossReward = false;
   List<UpgradeData> currentUpgradeChoices = const [];
   List<ItemData> currentShopOffers = const [];
 
@@ -123,8 +125,11 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   /// first (one at a time if several stacked up), then the shop.
   void _onWaveCleared() {
     pauseEngine();
+    _pendingBossReward = waveManager.isBossWave;
     if (_pendingLevelUps > 0) {
       _presentNextLevelUp();
+    } else if (_pendingBossReward) {
+      _presentBossReward();
     } else {
       _presentShop();
     }
@@ -139,6 +144,8 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
       _pendingLevelUps = _pendingLevelUps > 0 ? _pendingLevelUps - 1 : 0;
       if (_pendingLevelUps > 0) {
         _presentNextLevelUp();
+      } else if (_pendingBossReward) {
+        _presentBossReward();
       } else {
         _presentShop();
       }
@@ -150,7 +157,7 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
 
   /// Consumes the level-up screen's one free reroll, if any is left.
   void rerollLevelUpChoices() {
-    if (levelUpRerollsUsed >= maxLevelUpRerolls) {
+    if (isChoosingBossReward || levelUpRerollsUsed >= maxLevelUpRerolls) {
       return;
     }
     levelUpRerollsUsed++;
@@ -161,12 +168,34 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
     if (intermissionScreen != 'levelUp') return;
     player.upgrades.apply(upgrade, player);
     SfxPlayer.upgradePick();
+    if (isChoosingBossReward) {
+      isChoosingBossReward = false;
+      _pendingBossReward = false;
+      _presentShop();
+      return;
+    }
     _pendingLevelUps = _pendingLevelUps > 0 ? _pendingLevelUps - 1 : 0;
     if (_pendingLevelUps > 0) {
       _presentNextLevelUp();
+    } else if (_pendingBossReward) {
+      _presentBossReward();
     } else {
       _presentShop();
     }
+  }
+
+  void _presentBossReward() {
+    isChoosingBossReward = true;
+    levelUpRerollsUsed = maxLevelUpRerolls;
+    currentUpgradeChoices = rollBossRewardChoices(player);
+    if (currentUpgradeChoices.isEmpty) {
+      isChoosingBossReward = false;
+      _pendingBossReward = false;
+      _presentShop();
+      return;
+    }
+    _showIntermission('levelUp');
+    SfxPlayer.levelUp();
   }
 
   void _presentShop() {

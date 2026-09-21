@@ -31,8 +31,10 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
   @override
   Widget build(BuildContext context) {
     final game = widget.game;
-    final rerollsLeft = RoughlikeGame.maxLevelUpRerolls - game.levelUpRerollsUsed;
+    final rerollsLeft =
+        RoughlikeGame.maxLevelUpRerolls - game.levelUpRerollsUsed;
     final xp = game.player.experience;
+    final isBossReward = game.isChoosingBossReward;
 
     return OverlayBackground(
       assetPath: 'assets/images/backgrounds/level_up_bg.png',
@@ -69,16 +71,28 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
             const SizedBox(height: 24),
             const _Divider(),
             const SizedBox(height: 10),
-            Text('LEVEL UP!', style: fantasyText(fontSize: 32, color: Colors.white, letterSpacing: 4)),
+            Text(
+              isBossReward ? 'BOSS REWARD' : 'LEVEL UP!',
+              style: fantasyText(
+                fontSize: 32,
+                color: Colors.white,
+                letterSpacing: 4,
+              ),
+            ),
             const SizedBox(height: 6),
-            const Text(
-              'Choose an upgrade',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+            Text(
+              isBossReward
+                  ? 'Choose a rare or stronger upgrade'
+                  : 'Choose an upgrade',
+              style: const TextStyle(color: Colors.white60, fontSize: 14),
             ),
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 20,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -86,7 +100,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                         (entry) => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: PopIn(
-                            key: ValueKey('${entry.value.id}_${game.levelUpRerollsUsed}'),
+                            key: ValueKey(
+                              '${entry.value.id}_${game.levelUpRerollsUsed}',
+                            ),
                             delay: Duration(milliseconds: entry.key * 70),
                             child: _UpgradeCard(
                               upgrade: entry.value,
@@ -101,10 +117,13 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: _RerollButton(rerollsLeft: rerollsLeft, onTap: _reroll),
-            ),
+            if (!isBossReward)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: _RerollButton(rerollsLeft: rerollsLeft, onTap: _reroll),
+              )
+            else
+              const SizedBox(height: 20),
           ],
         ),
       ),
@@ -136,7 +155,9 @@ class _XpBar extends StatelessWidget {
                     widthFactor: progress.clamp(0, 1),
                     child: DecoratedBox(
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(colors: [Color(0xFF4FC3F7), Color(0xFF7C4DFF)]),
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF4FC3F7), Color(0xFF7C4DFF)],
+                        ),
                       ),
                     ),
                   ),
@@ -152,11 +173,17 @@ class _XpBar extends StatelessWidget {
               shape: BoxShape.circle,
               color: const Color(0xFF12141E),
               border: Border.all(color: const Color(0xFF7C4DFF), width: 2),
-              boxShadow: const [BoxShadow(color: Color(0x887C4DFF), blurRadius: 8)],
+              boxShadow: const [
+                BoxShadow(color: Color(0x887C4DFF), blurRadius: 8),
+              ],
             ),
             child: Text(
               '$level',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -185,14 +212,19 @@ class _RerollButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0x1AFFFFFF),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: enabled ? Colors.white38 : Colors.white12),
+            border: Border.all(
+              color: enabled ? Colors.white38 : Colors.white12,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.refresh, size: 16, color: color),
               const SizedBox(width: 8),
-              Text('Reroll ($rerollsLeft)', style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+              Text(
+                'Reroll ($rerollsLeft)',
+                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),
@@ -253,8 +285,16 @@ class _UpgradeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   color: style.color.withValues(alpha: 0.15),
-                  border: Border.all(color: style.color.withValues(alpha: 0.7), width: 1.5),
-                  boxShadow: [BoxShadow(color: style.color.withValues(alpha: 0.35), blurRadius: 10)],
+                  border: Border.all(
+                    color: style.color.withValues(alpha: 0.7),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: style.color.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
                 child: CatalogIcon(
                   assetPath: upgrade.iconAsset,
@@ -270,13 +310,22 @@ class _UpgradeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      level > 0 ? '${upgrade.name} (Lv ${level + 1})' : upgrade.name,
-                      style: fantasyText(fontSize: 17, color: Colors.white, letterSpacing: 0.5),
+                      level > 0
+                          ? '${upgrade.name} (Lv ${level + 1})'
+                          : upgrade.name,
+                      style: fantasyText(
+                        fontSize: 17,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       upgrade.description,
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
