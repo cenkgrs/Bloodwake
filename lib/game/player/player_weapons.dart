@@ -39,6 +39,8 @@ class PlayerWeapons extends Component
   int bonusProjectileCount = 0;
   int bonusPierceCount = 0;
   double bonusAttackSpeedMultiplier = 1;
+  double burnDamagePerSecond = 0;
+  double bleedDamagePerSecond = 0;
   int _meleeAttackCount = 0;
 
   /// Runtime multiplier on top of this weapon's damage, e.g. from a
@@ -102,6 +104,7 @@ class PlayerWeapons extends Component
         isCritical: roll.isCritical,
         source: parent,
         maxDistance: _effectiveRange,
+        pierceCount: bonusPierceCount,
         weaponId: weapon.id,
       ),
     );
@@ -143,9 +146,13 @@ class PlayerWeapons extends Component
         maxDistance: _effectiveRange,
         pierceCount: weapon.pierceCount + bonusPierceCount,
         color: _slowColor,
-        onHitStatusType: StatusEffectType.slow,
-        onHitStatusMagnitude: 0.35,
-        onHitStatusDuration: 2,
+        onHitStatusType: burnDamagePerSecond > 0
+            ? StatusEffectType.burn
+            : StatusEffectType.slow,
+        onHitStatusMagnitude: burnDamagePerSecond > 0
+            ? burnDamagePerSecond
+            : 0.35,
+        onHitStatusDuration: burnDamagePerSecond > 0 ? 3 : 2,
         weaponId: weapon.id,
       ),
     );
@@ -220,6 +227,15 @@ class PlayerWeapons extends Component
           weaponId: weapon.id,
         ),
       );
+      if (bleedDamagePerSecond > 0) {
+        enemy.applyStatusEffect(
+          StatusEffectInstance(
+            type: StatusEffectType.bleed,
+            duration: 3,
+            magnitude: bleedDamagePerSecond,
+          ),
+        );
+      }
       hit.add(enemy);
     }
     if (bonusChainCount > 0 && hit.isNotEmpty) {

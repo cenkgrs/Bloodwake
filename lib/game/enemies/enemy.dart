@@ -138,7 +138,8 @@ class Enemy extends PositionComponent
       return;
     }
     for (final effect in List.of(_statusEffects)) {
-      if (effect.type == StatusEffectType.burn) {
+      if (effect.type == StatusEffectType.burn ||
+          effect.type == StatusEffectType.bleed) {
         applyDamage(
           DamageEvent(source: this, baseDamage: effect.magnitude * dt),
         );
@@ -159,7 +160,7 @@ class Enemy extends PositionComponent
       return;
     }
     _hp = (_hp - event.baseDamage).clamp(0, data.maxHp);
-    // Self-inflicted ticks (burn) fire every frame — a floating number,
+    // Self-inflicted damage-over-time ticks fire every frame — a floating number,
     // hit-flash, and sound per tick would just be spam, so only real hits
     // get the full reaction.
     if (!identical(event.source, this)) {

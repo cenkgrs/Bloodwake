@@ -14,7 +14,9 @@ class _IdleInput implements InputProvider {
 
 void main() {
   test('each class starts with a distinct active skill', () {
-    final skills = CharacterClassCatalog.all.map((c) => c.startingAbility.id).toSet();
+    final skills = CharacterClassCatalog.all
+        .map((c) => c.startingAbility.id)
+        .toSet();
     expect(skills.length, CharacterClassCatalog.all.length);
   });
 
@@ -106,5 +108,106 @@ void main() {
       expect(player.weaponSlotCount, 1);
       expect(player.ownsWeapon(WeaponCatalog.shotgun.id), false);
     }
+  });
+
+  test('legendary class synergies unlock only after both prerequisites', () {
+    final cases = [
+      (
+        CharacterClassCatalog.warrior,
+        UpgradeCatalog.greatsword,
+        UpgradeCatalog.stormBlade,
+        UpgradeCatalog.thunderquake,
+      ),
+      (
+        CharacterClassCatalog.gunslinger,
+        UpgradeCatalog.rifleCaliber,
+        UpgradeCatalog.rifleRange,
+        UpgradeCatalog.armorPiercer,
+      ),
+      (
+        CharacterClassCatalog.mage,
+        UpgradeCatalog.orbPierce,
+        UpgradeCatalog.orbPower,
+        UpgradeCatalog.spellfire,
+      ),
+      (
+        CharacterClassCatalog.assassin,
+        UpgradeCatalog.daggerTempo,
+        UpgradeCatalog.daggerEdge,
+        UpgradeCatalog.hemorrhage,
+      ),
+    ];
+
+    for (final entry in cases) {
+      final player = Player(
+        position: Vector2.zero(),
+        inputProvider: _IdleInput(),
+        arenaSize: Vector2.all(1000),
+        characterClass: entry.$1,
+        ability: entry.$1.startingAbility,
+      );
+      player.addWeapon(entry.$1.startingWeapon);
+      expect(entry.$4.isAvailable!(player), false);
+      player.upgrades.apply(entry.$2, player);
+      expect(entry.$4.isAvailable!(player), false);
+      player.upgrades.apply(entry.$3, player);
+      expect(entry.$4.isAvailable!(player), true);
+      player.upgrades.apply(entry.$4, player);
+      expect(player.upgrades.levelOf(entry.$4), 1);
+      expect(player.upgrades.isMaxed(entry.$4), true);
+    }
+  });
+
+  test('legendary synergies modify their class weapon mechanic', () {
+    final warrior = Player(
+      position: Vector2.zero(),
+      inputProvider: _IdleInput(),
+      arenaSize: Vector2.all(1000),
+      characterClass: CharacterClassCatalog.warrior,
+      ability: CharacterClassCatalog.warrior.startingAbility,
+    );
+    warrior.addWeapon(WeaponCatalog.sword);
+    warrior.upgrades.apply(UpgradeCatalog.thunderquake, warrior);
+    expect(warrior.weaponSlot(WeaponCatalog.sword.id)!.shockwaveRadius, 60);
+    expect(warrior.weaponSlot(WeaponCatalog.sword.id)!.bonusChainCount, 1);
+
+    final gunslinger = Player(
+      position: Vector2.zero(),
+      inputProvider: _IdleInput(),
+      arenaSize: Vector2.all(1000),
+      characterClass: CharacterClassCatalog.gunslinger,
+      ability: CharacterClassCatalog.gunslinger.startingAbility,
+    );
+    gunslinger.addWeapon(WeaponCatalog.rapidRifle);
+    gunslinger.upgrades.apply(UpgradeCatalog.armorPiercer, gunslinger);
+    expect(
+      gunslinger.weaponSlot(WeaponCatalog.rapidRifle.id)!.bonusPierceCount,
+      2,
+    );
+
+    final mage = Player(
+      position: Vector2.zero(),
+      inputProvider: _IdleInput(),
+      arenaSize: Vector2.all(1000),
+      characterClass: CharacterClassCatalog.mage,
+      ability: CharacterClassCatalog.mage.startingAbility,
+    );
+    mage.addWeapon(WeaponCatalog.magicOrb);
+    mage.upgrades.apply(UpgradeCatalog.spellfire, mage);
+    expect(mage.weaponSlot(WeaponCatalog.magicOrb.id)!.burnDamagePerSecond, 7);
+
+    final assassin = Player(
+      position: Vector2.zero(),
+      inputProvider: _IdleInput(),
+      arenaSize: Vector2.all(1000),
+      characterClass: CharacterClassCatalog.assassin,
+      ability: CharacterClassCatalog.assassin.startingAbility,
+    );
+    assassin.addWeapon(WeaponCatalog.daggers);
+    assassin.upgrades.apply(UpgradeCatalog.hemorrhage, assassin);
+    expect(
+      assassin.weaponSlot(WeaponCatalog.daggers.id)!.bleedDamagePerSecond,
+      9,
+    );
   });
 }

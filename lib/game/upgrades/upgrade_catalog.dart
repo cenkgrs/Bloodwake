@@ -19,6 +19,25 @@ bool _gunslinger(Player p) => p.characterClass.id == CharacterClass.gunslinger;
 bool _mage(Player p) => p.characterClass.id == CharacterClass.mage;
 bool _assassin(Player p) => p.characterClass.id == CharacterClass.assassin;
 
+bool _has(Player p, UpgradeData upgrade) => p.upgrades.levelOf(upgrade) > 0;
+
+bool _thunderquakeAvailable(Player p) =>
+    _warrior(p) &&
+    _has(p, UpgradeCatalog.greatsword) &&
+    _has(p, UpgradeCatalog.stormBlade);
+bool _armorPiercerAvailable(Player p) =>
+    _gunslinger(p) &&
+    _has(p, UpgradeCatalog.rifleCaliber) &&
+    _has(p, UpgradeCatalog.rifleRange);
+bool _spellfireAvailable(Player p) =>
+    _mage(p) &&
+    _has(p, UpgradeCatalog.orbPierce) &&
+    _has(p, UpgradeCatalog.orbPower);
+bool _hemorrhageAvailable(Player p) =>
+    _assassin(p) &&
+    _has(p, UpgradeCatalog.daggerTempo) &&
+    _has(p, UpgradeCatalog.daggerEdge);
+
 void _greatsword(Player p) =>
     p.weaponSlot(WeaponCatalog.sword.id)?.bonusRangeMultiplier += 0.25;
 void _stormBlade(Player p) =>
@@ -44,6 +63,19 @@ void _daggerReach(Player p) =>
     p.weaponSlot(WeaponCatalog.daggers.id)?.bonusRangeMultiplier += 0.20;
 void _daggerEdge(Player p) =>
     p.weaponSlot(WeaponCatalog.daggers.id)?.bonusDamageMultiplier += 0.20;
+void _thunderquake(Player p) {
+  final slot = p.weaponSlot(WeaponCatalog.sword.id);
+  if (slot == null) return;
+  slot.bonusChainCount += 1;
+  slot.shockwaveRadius += 60;
+}
+
+void _armorPiercer(Player p) =>
+    p.weaponSlot(WeaponCatalog.rapidRifle.id)?.bonusPierceCount += 2;
+void _spellfire(Player p) =>
+    p.weaponSlot(WeaponCatalog.magicOrb.id)?.burnDamagePerSecond += 7;
+void _hemorrhage(Player p) =>
+    p.weaponSlot(WeaponCatalog.daggers.id)?.bleedDamagePerSecond += 9;
 
 /// Shared stat boosts and weapon upgrades gated by the selected class.
 /// Every class improves its starting weapon instead of unlocking unrelated
@@ -232,6 +264,48 @@ class UpgradeCatalog {
     isAvailable: _assassin,
   );
 
+  static const thunderquake = UpgradeData(
+    id: 'thunderquake',
+    name: 'Thunderquake',
+    description:
+        'Greatsword + Storm Blade: every 3rd swing erupts and chains farther',
+    category: UpgradeCategory.special,
+    rarity: UpgradeRarity.legendary,
+    maxLevel: 1,
+    apply: _thunderquake,
+    isAvailable: _thunderquakeAvailable,
+  );
+  static const armorPiercer = UpgradeData(
+    id: 'armor_piercer',
+    name: 'Armor Piercer',
+    description: 'Heavy Caliber + Long Barrel: rifle rounds pierce 2 enemies',
+    category: UpgradeCategory.special,
+    rarity: UpgradeRarity.legendary,
+    maxLevel: 1,
+    apply: _armorPiercer,
+    isAvailable: _armorPiercerAvailable,
+  );
+  static const spellfire = UpgradeData(
+    id: 'spellfire',
+    name: 'Spellfire',
+    description: 'Piercing Orb + Arcane Focus: orb hits burn enemies',
+    category: UpgradeCategory.special,
+    rarity: UpgradeRarity.legendary,
+    maxLevel: 1,
+    apply: _spellfire,
+    isAvailable: _spellfireAvailable,
+  );
+  static const hemorrhage = UpgradeData(
+    id: 'hemorrhage',
+    name: 'Hemorrhage',
+    description: 'Flurry + Razor Edge: dagger hits inflict bleeding',
+    category: UpgradeCategory.special,
+    rarity: UpgradeRarity.legendary,
+    maxLevel: 1,
+    apply: _hemorrhage,
+    isAvailable: _hemorrhageAvailable,
+  );
+
   static const List<UpgradeData> all = [
     sharpened,
     rapidFireStat,
@@ -251,5 +325,9 @@ class UpgradeCatalog {
     daggerTempo,
     daggerReach,
     daggerEdge,
+    thunderquake,
+    armorPiercer,
+    spellfire,
+    hemorrhage,
   ];
 }
