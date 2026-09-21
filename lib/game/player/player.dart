@@ -16,7 +16,6 @@ import '../systems/effects/damage_number.dart';
 import '../weapons/weapon_data.dart';
 import 'character_class.dart';
 import 'character_sprite_animator.dart';
-import 'assassin_3d_component.dart';
 import 'player_abilities.dart';
 import 'player_currency.dart';
 import 'player_experience.dart';
@@ -109,11 +108,7 @@ class Player extends PositionComponent
         paint: Paint()..color = const Color(0x66000000),
       ),
     );
-    if (characterClass.id == CharacterClass.assassin) {
-      add(Assassin3DComponent()..position = size / 2);
-    } else {
-      add(_spriteAnimator);
-    }
+    add(_spriteAnimator);
     add(CircleHitbox(collisionType: CollisionType.active));
     add(
       PlayerMovement(
