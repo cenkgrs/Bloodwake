@@ -42,10 +42,16 @@ class ArcherAi extends Component
     switch (state) {
       case _ArcherState.chase:
         parent.position +=
-            (toPlayer / distance) * data.moveSpeed * parent.moveSpeedMultiplier * dt;
+            (toPlayer / distance) *
+            data.moveSpeed *
+            parent.moveSpeedMultiplier *
+            dt;
       case _ArcherState.retreat:
         parent.position -=
-            (toPlayer / distance) * data.moveSpeed * parent.moveSpeedMultiplier * dt;
+            (toPlayer / distance) *
+            data.moveSpeed *
+            parent.moveSpeedMultiplier *
+            dt;
       case _ArcherState.attack:
         _attackTimer -= dt;
         if (_attackTimer <= 0 && distance > 0) {
@@ -54,7 +60,7 @@ class ArcherAi extends Component
               position: parent.position.clone(),
               direction: toPlayer,
               speed: data.projectileSpeed,
-              damage: data.damage,
+              damage: data.damage * parent.damageMultiplier,
               source: parent,
               maxDistance: data.preferredRange * 1.5,
               color: _boltColor,

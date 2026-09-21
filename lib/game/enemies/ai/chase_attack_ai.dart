@@ -62,12 +62,16 @@ class ChaseAttackAi extends Component
         } else {
           moveDir.setFrom(seek);
         }
-        parent.position += moveDir * data.moveSpeed * parent.moveSpeedMultiplier * dt;
+        parent.position +=
+            moveDir * data.moveSpeed * parent.moveSpeedMultiplier * dt;
       case _ChaseState.attack:
         _attackTimer -= dt;
         if (_attackTimer <= 0) {
           player.applyDamage(
-            DamageEvent(source: parent, baseDamage: data.damage),
+            DamageEvent(
+              source: parent,
+              baseDamage: data.damage * parent.damageMultiplier,
+            ),
           );
           _attackTimer = data.attackCooldown;
         }

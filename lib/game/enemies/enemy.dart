@@ -19,6 +19,7 @@ import 'ai/archer_ai.dart';
 import 'ai/assassin_ai.dart';
 import 'ai/boss_ai.dart';
 import 'ai/chase_attack_ai.dart';
+import 'ai/commander_ai.dart';
 import 'ai/healer_ai.dart';
 import 'enemy_data.dart';
 
@@ -41,6 +42,9 @@ class Enemy extends PositionComponent
   final List<StatusEffectInstance> _statusEffects = [];
   bool _isHidden = false;
   double _flashTimer = 0;
+  double _commandAuraRemaining = 0;
+  double _commandMoveSpeedBonus = 0;
+  double _commandDamageBonus = 0;
 
   static const double _flashDuration = 0.08;
   static const Color _flashColor = Color(0xFFFFFFFF);
@@ -68,7 +72,19 @@ class Enemy extends PositionComponent
         strongestSlow = effect.magnitude;
       }
     }
-    return 1 - strongestSlow;
+    return (1 - strongestSlow) * (1 + _commandMoveSpeedBonus);
+  }
+
+  double get damageMultiplier => 1 + _commandDamageBonus;
+
+  void applyCommandAura({
+    required double duration,
+    required double moveSpeedBonus,
+    required double damageBonus,
+  }) {
+    _commandAuraRemaining = duration;
+    _commandMoveSpeedBonus = moveSpeedBonus;
+    _commandDamageBonus = damageBonus;
   }
 
   void applyStatusEffect(StatusEffectInstance effect) {
@@ -85,8 +101,13 @@ class Enemy extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    // Commander uses the support silhouette during the gameplay prototype;
+    // dedicated enemy art belongs to the later visual pass.
+    final spriteName = data.type == EnemyType.commander
+        ? EnemyType.healer.name
+        : data.type.name;
     final bytes = await rootBundle.load(
-      'assets/images/enemies/${data.type.name}.png',
+      'assets/images/enemies/$spriteName.png',
     );
     final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
     final frame = await codec.getNextFrame();
@@ -118,6 +139,8 @@ class Enemy extends PositionComponent
         add(AssassinAi(data: data));
       case AiType.healerSupport:
         add(HealerAi(data: data));
+      case AiType.commanderSupport:
+        add(CommanderAi(data: data));
       case AiType.bossPhased:
         add(BossAi(data: data));
     }
@@ -126,6 +149,13 @@ class Enemy extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    if (_commandAuraRemaining > 0) {
+      _commandAuraRemaining -= dt;
+      if (_commandAuraRemaining <= 0) {
+        _commandMoveSpeedBonus = 0;
+        _commandDamageBonus = 0;
+      }
+    }
     if (_flashTimer > 0) {
       _flashTimer -= dt;
       if (_flashTimer <= 0) {

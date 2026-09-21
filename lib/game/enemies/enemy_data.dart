@@ -7,6 +7,7 @@ enum AiType {
   archerKite,
   assassinDashStrike,
   healerSupport,
+  commanderSupport,
   bossPhased,
 }
 
@@ -34,6 +35,9 @@ class EnemyData {
     this.projectileSpeed = 0,
     this.supportRadius = 0,
     this.healAmount = 0,
+    this.auraMoveSpeedBonus = 0,
+    this.auraDamageBonus = 0,
+    this.auraDuration = 0,
     this.isElite = false,
   });
 
@@ -67,6 +71,9 @@ class EnemyData {
 
   /// Healer's heal amount per activation.
   final double healAmount;
+  final double auraMoveSpeedBonus;
+  final double auraDamageBonus;
+  final double auraDuration;
   final bool isElite;
 
   double get healthDropChance => type == EnemyType.boss
@@ -109,6 +116,9 @@ class EnemyData {
       projectileSpeed: projectileSpeed,
       supportRadius: supportRadius,
       healAmount: elite ? healAmount * eliteStatMultiplier : healAmount,
+      auraMoveSpeedBonus: auraMoveSpeedBonus,
+      auraDamageBonus: auraDamageBonus,
+      auraDuration: auraDuration,
       isElite: elite,
     );
   }
@@ -122,7 +132,7 @@ class EnemyCatalog {
     aiType: AiType.chaseAndMelee,
     maxHp: 30,
     moveSpeed: 90,
-    damage: 8,
+    damage: 0,
     attackRange: 28,
     attackCooldown: 1.0,
     xpReward: 5,
@@ -202,6 +212,27 @@ class EnemyCatalog {
     healAmount: 10,
   );
 
+  static const commander = EnemyData(
+    type: EnemyType.commander,
+    aiType: AiType.commanderSupport,
+    maxHp: 55,
+    moveSpeed: 72,
+    damage: 8,
+    attackRange: 190,
+    attackCooldown: 4.5,
+    xpReward: 18,
+    goldReward: 6,
+    radius: 18,
+    color: Color(0xFFD4AF37),
+    unlockWave: 6,
+    spawnWeight: 1,
+    preferredRange: 210,
+    supportRadius: 250,
+    auraMoveSpeedBonus: 0.22,
+    auraDamageBonus: 0.25,
+    auraDuration: 5.5,
+  );
+
   /// Not in [all] — bosses never come out of the regular weighted roll.
   /// SpawnDirector spawns this directly on boss waves (see
   /// WaveManager.isBossWave), bypassing composition and wave-scaling
@@ -221,5 +252,12 @@ class EnemyCatalog {
     color: Color(0xFF6B0F1A),
   );
 
-  static const List<EnemyData> all = [grunt, archer, tank, assassin, healer];
+  static const List<EnemyData> all = [
+    grunt,
+    archer,
+    tank,
+    assassin,
+    healer,
+    commander,
+  ];
 }

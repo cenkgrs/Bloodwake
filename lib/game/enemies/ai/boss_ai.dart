@@ -29,7 +29,8 @@ enum _BossAttack { melee, projectile, area }
 /// than more EnemyData fields — a second boss would either reuse this
 /// wholesale via new data, or earn its own AI component the same way
 /// Archer/Assassin/Healer did.
-class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<RoughlikeGame> {
+class BossAi extends Component
+    with ParentIsA<Enemy>, HasGameReference<RoughlikeGame> {
   BossAi({required this.data});
 
   final EnemyData data;
@@ -148,7 +149,11 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
     _isTelegraphing = true;
     _telegraphTimer = _telegraphDuration;
     game.world.add(
-      AttackTelegraph(position: parent.position.clone(), radius: radius, duration: _telegraphDuration),
+      AttackTelegraph(
+        position: parent.position.clone(),
+        radius: radius,
+        duration: _telegraphDuration,
+      ),
     );
   }
 
@@ -156,8 +161,14 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
     _isTelegraphing = false;
     switch (_pendingAttack) {
       case _BossAttack.melee:
-        if (parent.position.distanceTo(player.position) <= _meleeRange + player.radius) {
-          player.applyDamage(DamageEvent(source: parent, baseDamage: data.damage));
+        if (parent.position.distanceTo(player.position) <=
+            _meleeRange + player.radius) {
+          player.applyDamage(
+            DamageEvent(
+              source: parent,
+              baseDamage: data.damage * parent.damageMultiplier,
+            ),
+          );
         }
         _attackTimer = _meleeCooldown;
       case _BossAttack.projectile:
@@ -165,7 +176,12 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
         _attackTimer = _projectileCooldown;
       case _BossAttack.area:
         if (parent.position.distanceTo(player.position) <= _areaRadius) {
-          player.applyDamage(DamageEvent(source: parent, baseDamage: data.damage * 0.75));
+          player.applyDamage(
+            DamageEvent(
+              source: parent,
+              baseDamage: data.damage * 0.75 * parent.damageMultiplier,
+            ),
+          );
         }
         _attackTimer = _areaCooldown;
       case null:
@@ -188,7 +204,7 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
           position: parent.position.clone(),
           direction: direction,
           speed: _projectileSpeed,
-          damage: data.damage * 0.6,
+          damage: data.damage * 0.6 * parent.damageMultiplier,
           source: parent,
           maxDistance: _projectileRange,
           color: const Color(0xFFFF3B3B),
@@ -201,7 +217,9 @@ class BossAi extends Component with ParentIsA<Enemy>, HasGameReference<Roughlike
     for (var i = 0; i < _summonCount; i++) {
       final angle = _random.nextDouble() * 2 * pi;
       final offset = Vector2(cos(angle), sin(angle)) * 90;
-      game.world.add(Enemy(position: parent.position + offset, data: EnemyCatalog.grunt));
+      game.world.add(
+        Enemy(position: parent.position + offset, data: EnemyCatalog.grunt),
+      );
     }
   }
 }

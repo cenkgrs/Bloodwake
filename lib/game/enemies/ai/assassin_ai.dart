@@ -49,7 +49,10 @@ class AssassinAi extends Component
           _beginReposition(player.position);
         } else if (distance > 0) {
           parent.position +=
-              (toPlayer / distance) * data.moveSpeed * parent.moveSpeedMultiplier * dt;
+              (toPlayer / distance) *
+              data.moveSpeed *
+              parent.moveSpeedMultiplier *
+              dt;
         }
 
       case _AssassinState.reposition:
@@ -78,7 +81,10 @@ class AssassinAi extends Component
         _attackTimer -= dt;
         if (_attackTimer <= 0) {
           player.applyDamage(
-            DamageEvent(source: parent, baseDamage: data.damage),
+            DamageEvent(
+              source: parent,
+              baseDamage: data.damage * parent.damageMultiplier,
+            ),
           );
           _attackTimer = data.attackCooldown;
           _phaseTimer = _retreatDuration;
@@ -89,7 +95,10 @@ class AssassinAi extends Component
         _phaseTimer -= dt;
         if (distance > 0) {
           parent.position -=
-              (toPlayer / distance) * data.moveSpeed * _retreatSpeedMultiplier * dt;
+              (toPlayer / distance) *
+              data.moveSpeed *
+              _retreatSpeedMultiplier *
+              dt;
         }
         if (_phaseTimer <= 0) {
           _state = _AssassinState.chase;
