@@ -12,9 +12,17 @@ class XpGem extends PositionComponent with HasGameReference<RoughlikeGame> {
     : super(position: position, size: Vector2.all(10), anchor: Anchor.center);
 
   final int value;
+  bool _collected = false;
 
   static const double _collectDistance = 14;
   static const double _magnetSpeed = 320;
+
+  void collect() {
+    if (_collected || isRemoving) return;
+    _collected = true;
+    game.player.gainXp(value);
+    removeFromParent();
+  }
 
   @override
   Future<void> onLoad() async {
@@ -37,8 +45,7 @@ class XpGem extends PositionComponent with HasGameReference<RoughlikeGame> {
     final distance = toPlayer.length;
 
     if (distance <= _collectDistance) {
-      player.gainXp(value);
-      removeFromParent();
+      collect();
       return;
     }
 

@@ -35,13 +35,20 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
         RoughlikeGame.maxLevelUpRerolls - game.levelUpRerollsUsed;
     final xp = game.player.experience;
     final isBossReward = game.isChoosingBossReward;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    final landscapeCardWidth =
+        ((MediaQuery.sizeOf(context).width - 72) /
+                game.currentUpgradeChoices.length.clamp(1, 3))
+            .clamp(220.0, 320.0)
+            .toDouble();
 
     return OverlayBackground(
       assetPath: 'assets/images/backgrounds/level_up_bg.png',
       child: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 16),
+            SizedBox(height: landscape ? 6 : 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -60,7 +67,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: landscape ? 4 : 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: _XpBar(
@@ -68,13 +75,13 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                 progress: xp.xpIntoLevel / xp.xpRequiredForNextLevel,
               ),
             ),
-            const SizedBox(height: 24),
-            const _Divider(),
-            const SizedBox(height: 10),
+            SizedBox(height: landscape ? 2 : 24),
+            if (!landscape) const _Divider(),
+            SizedBox(height: landscape ? 2 : 10),
             Text(
               isBossReward ? 'BOSS REWARD' : 'LEVEL UP!',
               style: fantasyText(
-                fontSize: 32,
+                fontSize: landscape ? 24 : 32,
                 color: Colors.white,
                 letterSpacing: 4,
               ),
@@ -93,37 +100,72 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                     vertical: 20,
                     horizontal: 20,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ...game.currentUpgradeChoices.asMap().entries.map(
-                        (entry) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: PopIn(
-                            key: ValueKey(
-                              '${entry.value.id}_${game.levelUpRerollsUsed}',
+                  scrollDirection: landscape ? Axis.horizontal : Axis.vertical,
+                  child: landscape
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...game.currentUpgradeChoices.asMap().entries.map(
+                              (entry) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: PopIn(
+                                  key: ValueKey(
+                                    '${entry.value.id}_${game.levelUpRerollsUsed}',
+                                  ),
+                                  delay: Duration(milliseconds: entry.key * 70),
+                                  child: _UpgradeCard(
+                                    upgrade: entry.value,
+                                    level: game.player.upgrades.levelOf(
+                                      entry.value,
+                                    ),
+                                    width: landscapeCardWidth,
+                                    dense: true,
+                                    onTap: () =>
+                                        game.chooseUpgrade(entry.value),
+                                  ),
+                                ),
+                              ),
                             ),
-                            delay: Duration(milliseconds: entry.key * 70),
-                            child: _UpgradeCard(
-                              upgrade: entry.value,
-                              level: game.player.upgrades.levelOf(entry.value),
-                              onTap: () => game.chooseUpgrade(entry.value),
+                          ],
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...game.currentUpgradeChoices.asMap().entries.map(
+                              (entry) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
+                                child: PopIn(
+                                  key: ValueKey(
+                                    '${entry.value.id}_${game.levelUpRerollsUsed}',
+                                  ),
+                                  delay: Duration(milliseconds: entry.key * 70),
+                                  child: _UpgradeCard(
+                                    upgrade: entry.value,
+                                    level: game.player.upgrades.levelOf(
+                                      entry.value,
+                                    ),
+                                    onTap: () =>
+                                        game.chooseUpgrade(entry.value),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),
             if (!isBossReward)
               Padding(
-                padding: const EdgeInsets.only(bottom: 20),
+                padding: EdgeInsets.only(bottom: landscape ? 6 : 20),
                 child: _RerollButton(rerollsLeft: rerollsLeft, onTap: _reroll),
               )
             else
-              const SizedBox(height: 20),
+              SizedBox(height: landscape ? 6 : 20),
           ],
         ),
       ),
@@ -257,29 +299,34 @@ class _UpgradeCard extends StatelessWidget {
     required this.upgrade,
     required this.level,
     required this.onTap,
+    this.width = 320,
+    this.dense = false,
   });
 
   final UpgradeData upgrade;
   final int level;
   final VoidCallback onTap;
+  final double width;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
     final style = RarityStyle.of(upgrade.rarity);
     return SizedBox(
-      width: 320,
+      width: width,
       child: RarityCardShell(
         rarity: upgrade.rarity,
         dimmed: false,
+        dense: dense,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, dense ? 5 : 10, 16, dense ? 8 : 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 72,
-                height: 72,
+                width: dense ? 58 : 72,
+                height: dense ? 58 : 72,
                 alignment: Alignment.center,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
@@ -300,7 +347,7 @@ class _UpgradeCard extends StatelessWidget {
                   assetPath: upgrade.iconAsset,
                   fallbackIcon: iconForUpgradeCategory(upgrade.category),
                   color: style.color,
-                  size: 72,
+                  size: dense ? 58 : 72,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -314,7 +361,7 @@ class _UpgradeCard extends StatelessWidget {
                           ? '${upgrade.name} (Lv ${level + 1})'
                           : upgrade.name,
                       style: fantasyText(
-                        fontSize: 17,
+                        fontSize: dense ? 14 : 17,
                         color: Colors.white,
                         letterSpacing: 0.5,
                       ),
@@ -322,9 +369,11 @@ class _UpgradeCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       upgrade.description,
+                      maxLines: dense ? 2 : null,
+                      overflow: dense ? TextOverflow.ellipsis : null,
                       style: const TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],

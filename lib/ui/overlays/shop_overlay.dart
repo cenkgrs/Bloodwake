@@ -49,71 +49,108 @@ class _ShopOverlayState extends State<ShopOverlay> {
     final game = widget.game;
     final gold = game.player.currency.gold;
     final offers = game.currentShopOffers
-        .where((i) => _selectedCategory == null || i.category == _selectedCategory)
+        .where(
+          (i) => _selectedCategory == null || i.category == _selectedCategory,
+        )
         .toList();
-    final refreshesLeft = RoughlikeGame.maxShopRefreshes - game.shopRefreshesUsed;
-    final canRefresh = refreshesLeft > 0 && gold >= RoughlikeGame.shopRefreshCost;
+    final refreshesLeft =
+        RoughlikeGame.maxShopRefreshes - game.shopRefreshesUsed;
+    final canRefresh =
+        refreshesLeft > 0 && gold >= RoughlikeGame.shopRefreshCost;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
 
     return OverlayBackground(
       assetPath: 'assets/images/backgrounds/shop_bg.png',
-      child: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  StatPill(
-                    icon: Icons.monetization_on,
-                    value: '$gold',
-                    color: const Color(0xFFFFD23F),
-                  ),
-                  StatPill(
-                    icon: Icons.flag,
-                    value: '${game.waveManager.currentWave}',
-                    color: const Color(0xFF64B5F6),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 182),
-            _CategoryTabs(
-              selected: _selectedCategory,
-              onSelect: (category) => setState(() => _selectedCategory = category),
-            ),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                  child: offers.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40),
-                          child: Text(
-                            'Nothing to buy here',
-                            style: TextStyle(color: Colors.white54, fontSize: 14),
-                          ),
-                        )
-                      : _ItemGrid(offers: offers, refreshKey: game.shopRefreshesUsed, gold: gold, onBuy: _buy),
+      child: ColoredBox(
+        color: landscape ? const Color(0xA60A0B10) : Colors.transparent,
+        child: SafeArea(
+          child: Column(
+            children: [
+              SizedBox(height: landscape ? 6 : 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    StatPill(
+                      icon: Icons.monetization_on,
+                      value: '$gold',
+                      color: const Color(0xFFFFD23F),
+                    ),
+                    StatPill(
+                      icon: Icons.flag,
+                      value: '${game.waveManager.currentWave}',
+                      color: const Color(0xFF64B5F6),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _RefreshButton(
-                enabled: canRefresh,
-                cost: RoughlikeGame.shopRefreshCost,
-                refreshesLeft: refreshesLeft,
-                onTap: _refresh,
+              SizedBox(height: landscape ? 4 : 182),
+              _CategoryTabs(
+                selected: _selectedCategory,
+                onSelect: (category) =>
+                    setState(() => _selectedCategory = category),
               ),
-            ),
-            const SizedBox(height: 18),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: _ContinueButton(onTap: game.closeShop),
-            ),
-          ],
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      vertical: landscape ? 6 : 16,
+                      horizontal: 16,
+                    ),
+                    child: offers.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Text(
+                              'Nothing to buy here',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        : _ItemGrid(
+                            offers: offers,
+                            refreshKey: game.shopRefreshesUsed,
+                            gold: gold,
+                            onBuy: _buy,
+                          ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(24, 0, 24, landscape ? 6 : 20),
+                child: landscape
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: _RefreshButton(
+                              enabled: canRefresh,
+                              cost: RoughlikeGame.shopRefreshCost,
+                              refreshesLeft: refreshesLeft,
+                              onTap: _refresh,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          _ContinueButton(onTap: game.closeShop),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          _RefreshButton(
+                            enabled: canRefresh,
+                            cost: RoughlikeGame.shopRefreshCost,
+                            refreshesLeft: refreshesLeft,
+                            onTap: _refresh,
+                          ),
+                          const SizedBox(height: 18),
+                          _ContinueButton(onTap: game.closeShop),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -125,7 +162,12 @@ class _ShopOverlayState extends State<ShopOverlay> {
 /// [IntrinsicHeight] so all three cards in it share the tallest one's
 /// height even though descriptions vary in length.
 class _ItemGrid extends StatelessWidget {
-  const _ItemGrid({required this.offers, required this.refreshKey, required this.gold, required this.onBuy});
+  const _ItemGrid({
+    required this.offers,
+    required this.refreshKey,
+    required this.gold,
+    required this.onBuy,
+  });
 
   final List<ItemData> offers;
   final int refreshKey;
@@ -137,7 +179,12 @@ class _ItemGrid extends StatelessWidget {
     const perRow = 3;
     final rows = <List<ItemData>>[];
     for (var i = 0; i < offers.length; i += perRow) {
-      rows.add(offers.sublist(i, i + perRow > offers.length ? offers.length : i + perRow));
+      rows.add(
+        offers.sublist(
+          i,
+          i + perRow > offers.length ? offers.length : i + perRow,
+        ),
+      );
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -155,7 +202,9 @@ class _ItemGrid extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: PopIn(
                           key: ValueKey('${item.id}_$refreshKey'),
-                          delay: Duration(milliseconds: offers.indexOf(item) * 70),
+                          delay: Duration(
+                            milliseconds: offers.indexOf(item) * 70,
+                          ),
                           child: _ItemCard(
                             item: item,
                             affordable: gold >= item.cost,
@@ -235,7 +284,9 @@ class _CategoryChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected ? const Color(0x33FFD23F) : const Color(0x14FFFFFF),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: selected ? const Color(0xFFFFD23F) : Colors.white24),
+            border: Border.all(
+              color: selected ? const Color(0xFFFFD23F) : Colors.white24,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -244,7 +295,12 @@ class _CategoryChip extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
               ),
             ],
           ),
@@ -283,7 +339,9 @@ class _RefreshButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0x26FFFFFF),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: enabled ? Colors.white38 : Colors.white12),
+                border: Border.all(
+                  color: enabled ? Colors.white38 : Colors.white12,
+                ),
               ),
               child: Row(
                 children: [
@@ -293,17 +351,38 @@ class _RefreshButton extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('REFRESH', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          'REFRESH',
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         Text(
                           'New items will appear',
-                          style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11),
+                          style: TextStyle(
+                            color: color.withValues(alpha: 0.7),
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(Icons.monetization_on, size: 16, color: enabled ? const Color(0xFFFFD23F) : Colors.white24),
+                  Icon(
+                    Icons.monetization_on,
+                    size: 16,
+                    color: enabled ? const Color(0xFFFFD23F) : Colors.white24,
+                  ),
                   const SizedBox(width: 4),
-                  Text('$cost', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(
+                    '$cost',
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -343,7 +422,11 @@ class _ContinueButton extends StatelessWidget {
               child: Center(
                 child: Text(
                   'CONTINUE',
-                  style: fantasyText(fontSize: 16, color: Colors.white, letterSpacing: 3),
+                  style: fantasyText(
+                    fontSize: 16,
+                    color: Colors.white,
+                    letterSpacing: 3,
+                  ),
                 ),
               ),
             ),
@@ -372,8 +455,9 @@ class _HexButtonPainter extends CustomPainter {
     canvas.drawShadow(path, const Color(0xFF4FC3F7), 14, false);
 
     final fill = Paint()
-      ..shader = const LinearGradient(colors: [Color(0xFF4FC3F7), Color(0xFF3F51B5)])
-          .createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF4FC3F7), Color(0xFF3F51B5)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawPath(path, fill);
 
     final border = Paint()
@@ -388,7 +472,11 @@ class _HexButtonPainter extends CustomPainter {
 }
 
 class _ItemCard extends StatelessWidget {
-  const _ItemCard({required this.item, required this.affordable, required this.onBuy});
+  const _ItemCard({
+    required this.item,
+    required this.affordable,
+    required this.onBuy,
+  });
 
   final ItemData item;
   final bool affordable;
@@ -398,59 +486,69 @@ class _ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = RarityStyle.of(item.rarity);
     final iconColor = affordable ? style.color : Colors.white38;
+    final dense = MediaQuery.orientationOf(context) == Orientation.landscape;
     return RarityCardShell(
       rarity: item.rarity,
       dimmed: !affordable,
+      dense: dense,
       onTap: affordable ? onBuy : null,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+        padding: EdgeInsets.fromLTRB(8, dense ? 4 : 8, 8, dense ? 6 : 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 68,
-              height: 68,
+              width: dense ? 48 : 68,
+              height: dense ? 48 : 68,
               alignment: Alignment.center,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 color: iconColor.withValues(alpha: 0.15),
-                border: Border.all(color: iconColor.withValues(alpha: 0.7), width: 1.5),
-                boxShadow: [BoxShadow(color: iconColor.withValues(alpha: 0.35), blurRadius: 10)],
+                border: Border.all(
+                  color: iconColor.withValues(alpha: 0.7),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: iconColor.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: CatalogIcon(
                 assetPath: item.iconAsset,
                 fallbackIcon: iconForItemCategory(item.category),
                 color: iconColor,
-                size: 68,
+                size: dense ? 48 : 68,
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: dense ? 4 : 8),
             Text(
               item.name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: fantasyText(
-                fontSize: 13,
+                fontSize: dense ? 11 : 13,
                 color: affordable ? Colors.white : Colors.white38,
                 letterSpacing: 0.2,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: dense ? 2 : 4),
             Text(
               item.description,
               textAlign: TextAlign.center,
-              maxLines: 4,
+              maxLines: dense ? 2 : 4,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: affordable ? Colors.white70 : Colors.white30,
-                fontSize: 10.5,
+                fontSize: dense ? 9 : 10.5,
                 height: 1.3,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: dense ? 4 : 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
@@ -466,13 +564,17 @@ class _ItemCard extends StatelessWidget {
                   Icon(
                     Icons.monetization_on,
                     size: 12,
-                    color: affordable ? const Color(0xFFFFD23F) : Colors.white30,
+                    color: affordable
+                        ? const Color(0xFFFFD23F)
+                        : Colors.white30,
                   ),
                   const SizedBox(width: 3),
                   Text(
                     '${item.cost}',
                     style: TextStyle(
-                      color: affordable ? const Color(0xFFFFD23F) : Colors.white30,
+                      color: affordable
+                          ? const Color(0xFFFFD23F)
+                          : Colors.white30,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),

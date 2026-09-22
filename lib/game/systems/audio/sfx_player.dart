@@ -12,6 +12,32 @@ import 'weapon_sfx.dart';
 class SfxPlayer {
   SfxPlayer._();
 
+  static const _assets = <String>[
+    'boss_death.mp3',
+    'boss_phase.mp3',
+    'chain_lightning.mp3',
+    'enemy_death.mp3',
+    'game_over.mp3',
+    'hit.mp3',
+    'level_up.mp3',
+    'lightning_cast.mp3',
+    'magic_orb_cast.mp3',
+    'magic_orb_impact.mp3',
+    'player_hit.mp3',
+    'purchase.mp3',
+    'shoot.mp3',
+    'shoot_pistol.mp3',
+    'shoot_rifle.mp3',
+    'shoot_shotgun.mp3',
+    'sword_impact.mp3',
+    'sword_swing.mp3',
+    'upgrade_pick.mp3',
+  ];
+  static Future<void>? _preload;
+
+  static Future<void> initialize() =>
+      _preload ??= FlameAudio.audioCache.loadAll(_assets).then((_) {});
+
   /// Minimum gap between two plays of the *same* file, in milliseconds.
   /// Only sounds that can plausibly fire many times in one frame/second in
   /// this survivor-style game need an entry — a high fire-rate weapon, a
@@ -22,6 +48,11 @@ class SfxPlayer {
   static const Map<String, int> _throttleMs = {
     'hit.mp3': 60,
     'shoot_rifle.mp3': 70,
+    'shoot_pistol.mp3': 70,
+    'shoot_shotgun.mp3': 90,
+    'sword_swing.mp3': 90,
+    'magic_orb_cast.mp3': 90,
+    'lightning_cast.mp3': 90,
     'chain_lightning.mp3': 50,
     'enemy_death.mp3': 80,
     'sword_impact.mp3': 60,

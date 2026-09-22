@@ -35,126 +35,150 @@ class MainMenuScreen extends StatelessWidget {
           ),
           SafeArea(
             child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 32,
+              builder: (context, constraints) {
+                final landscape = constraints.maxWidth > constraints.maxHeight;
+                final title = Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      color: BloodwakeTheme.gold,
+                      size: landscape ? 40 : 48,
+                    ),
+                    SizedBox(height: landscape ? 10 : 20),
+                    Text(
+                      'BLOODWAKE',
+                      textAlign: TextAlign.center,
+                      style: fantasyText(
+                        fontSize: landscape ? 48 : 38,
+                        color: BloodwakeTheme.parchment,
+                        letterSpacing: 4,
                       ),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 650),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.shield_outlined,
-                              color: BloodwakeTheme.gold,
-                              size: 48,
+                    ),
+                    SizedBox(height: landscape ? 10 : 16),
+                    Container(
+                      width: 100,
+                      height: 2,
+                      color: BloodwakeTheme.ember,
+                    ),
+                    SizedBox(height: landscape ? 12 : 20),
+                    const Text(
+                      'SURVIVE THE NIGHT. CLAIM THE DAWN.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: BloodwakeTheme.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2.3,
+                      ),
+                    ),
+                  ],
+                );
+                final actions = SizedBox(
+                  width: 300,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () =>
+                              Navigator.of(context)
+                                  .push(softRoute(const ClassSelectScreen())),
+                          icon: const Icon(Icons.arrow_forward, size: 19),
+                          label: Text(
+                            'BEGIN RUN',
+                            style: fantasyText(
+                              fontSize: 16,
+                              color: BloodwakeTheme.parchment,
                             ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'BLOODWAKE',
-                              textAlign: TextAlign.center,
-                              style: fantasyText(
-                                fontSize: constraints.maxWidth < 600 ? 38 : 64,
-                                color: BloodwakeTheme.parchment,
-                                letterSpacing: 4,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              width: 100,
-                              height: 2,
-                              color: BloodwakeTheme.ember,
-                            ),
-                            const SizedBox(height: 20),
-                            const Text(
-                              'SURVIVE THE NIGHT. CLAIM THE DAWN.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: BloodwakeTheme.muted,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 2.3,
-                              ),
-                            ),
-                            const SizedBox(height: 58),
-                            SizedBox(
-                              width: 290,
-                              child: FilledButton.icon(
-                                onPressed: () => Navigator.of(context)
-                                    .push(softRoute(const ClassSelectScreen())),
-                                icon: const Icon(Icons.arrow_forward, size: 19),
-                                label: Text(
-                                  'BEGIN RUN',
-                                  style: fantasyText(
-                                    fontSize: 16,
-                                    color: BloodwakeTheme.parchment,
-                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              Navigator.of(context)
+                                  .push(softRoute(const ArmoryShopScreen())),
+                          icon: const Icon(Icons.storefront_outlined),
+                          label: const Text('SHOP'),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              Navigator.of(context)
+                                  .push(softRoute(const BuildScreen())),
+                          icon: const Icon(Icons.inventory_2_outlined),
+                          label: const Text('BUILDS'),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              Navigator.of(context)
+                                  .push(softRoute(const SkillTreeScreen())),
+                          icon: const Icon(Icons.auto_awesome),
+                          label: const Text('LEGACY TREE'),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      AnimatedBuilder(
+                        animation: MetaProgression.instance,
+                        builder: (context, _) => Text(
+                          '${MetaProgression.instance.essence} ESSENCE  •  BUILD ${MetaProgression.instance.activeLoadout + 1}',
+                          style: const TextStyle(
+                            color: BloodwakeTheme.gold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: landscape ? 48 : 24,
+                          vertical: landscape ? 18 : 32,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1050),
+                          child: landscape
+                              ? Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Flexible(child: title),
+                                    const SizedBox(width: 48),
+                                    actions,
+                                  ],
+                                )
+                              : Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    title,
+                                    const SizedBox(height: 48),
+                                    actions,
+                                  ],
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              width: 290,
-                              child: OutlinedButton.icon(
-                                onPressed: () => Navigator.of(context)
-                                    .push(softRoute(const ArmoryShopScreen())),
-                                icon: const Icon(Icons.storefront_outlined),
-                                label: const Text('SHOP'),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: 290,
-                              child: OutlinedButton.icon(
-                                onPressed: () =>
-                                    Navigator.of(context)
-                                        .push(softRoute(const BuildScreen())),
-                                icon: const Icon(Icons.inventory_2_outlined),
-                                label: const Text('BUILDS'),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: 290,
-                              child: OutlinedButton.icon(
-                                onPressed: () => Navigator.of(context)
-                                    .push(softRoute(const SkillTreeScreen())),
-                                icon: const Icon(Icons.auto_awesome),
-                                label: const Text('LEGACY TREE'),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            AnimatedBuilder(
-                              animation: MetaProgression.instance,
-                              builder: (context, _) => Text(
-                                '${MetaProgression.instance.essence} ESSENCE  •  BUILD ${MetaProgression.instance.activeLoadout + 1}',
-                                style: const TextStyle(
-                                  color: BloodwakeTheme.gold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'ONE LIFE  •  ENDLESS WAVES',
-                              style: TextStyle(
-                                color: BloodwakeTheme.gold,
-                                fontSize: 10,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],

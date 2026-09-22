@@ -61,6 +61,14 @@ class WaveManager extends Component {
 
   void registerSpawn() => enemiesSpawnedThisWave++;
 
+  /// Resets the wave state for the debug playtest panel.
+  void startWaveForDebug(int wave) {
+    currentWave = wave.clamp(1, 999);
+    enemiesSpawnedThisWave = 0;
+    state = WaveState.spawning;
+    _restTimer = 0;
+  }
+
   void startResting() {
     if (state == WaveState.resting) {
       return;

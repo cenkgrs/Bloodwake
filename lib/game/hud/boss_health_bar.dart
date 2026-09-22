@@ -53,7 +53,10 @@ class BossHealthBar extends PositionComponent
     position
       ..x = game.camera.viewport.size.x / 2
       ..y = 20 + topInset;
-    _boss = _findBoss();
+    // A removed boss can remain in Flame's component tree until the current
+    // lifecycle tick finishes. Gate the bar by wave state as well so a newly
+    // started regular wave never inherits a stale boss HUD for a frame.
+    _boss = game.waveManager.isBossWave ? _findBoss() : null;
     _label.text = _boss == null ? '' : 'BOSS';
   }
 

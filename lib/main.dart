@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'ui/screens/main_menu_screen.dart';
 import 'ui/theme/bloodwake_theme.dart';
@@ -7,6 +8,11 @@ import 'game/progression/meta_progression.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
   await MetaProgression.instance.load();
   runApp(const RoughlikeApp());
 }

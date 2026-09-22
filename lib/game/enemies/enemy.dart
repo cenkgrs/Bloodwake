@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
 import '../roughlike_game.dart';
 import '../systems/audio/sfx_player.dart';
@@ -41,13 +40,12 @@ class Enemy extends PositionComponent
   late final SpriteComponent _visual;
   final List<StatusEffectInstance> _statusEffects = [];
   bool _isHidden = false;
-  double _flashTimer = 0;
+  double _hitPulseTimer = 0;
   double _commandAuraRemaining = 0;
   double _commandMoveSpeedBonus = 0;
   double _commandDamageBonus = 0;
 
-  static const double _flashDuration = 0.08;
-  static const Color _flashColor = Color(0xFFFFFFFF);
+  static const double _hitPulseDuration = 0.1;
   static final Random _dropRandom = Random();
 
   Color get _baseColor => _isHidden ? data.color.withAlpha(50) : data.color;
@@ -106,13 +104,12 @@ class Enemy extends PositionComponent
     final spriteName = data.type == EnemyType.commander
         ? EnemyType.healer.name
         : data.type.name;
-    final bytes = await rootBundle.load(
-      'assets/images/enemies/$spriteName.png',
-    );
-    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
+    // Use Flame's per-game image cache. Decoding this asset for every spawn
+    // created hundreds of native images during longer sessions and eventually
+    // exhausted memory after starting another run.
+    final image = await game.images.load('enemies/$spriteName.png');
     _visual = SpriteComponent(
-      sprite: Sprite(frame.image),
+      sprite: Sprite(image),
       size: Vector2.all(
         data.radius * (data.type == EnemyType.boss ? 3.2 : 5.0),
       ),
@@ -156,12 +153,13 @@ class Enemy extends PositionComponent
         _commandDamageBonus = 0;
       }
     }
-    if (_flashTimer > 0) {
-      _flashTimer -= dt;
-      if (_flashTimer <= 0) {
-        _visual.paint.colorFilter = _isHidden
-            ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate)
-            : null;
+    if (isLoaded) {
+      if (_hitPulseTimer > 0) {
+        _hitPulseTimer -= dt;
+        final strength = (_hitPulseTimer / _hitPulseDuration).clamp(0.0, 1.0);
+        _visual.scale = Vector2.all(1 + 0.07 * strength);
+      } else if (_visual.scale.x != 1) {
+        _visual.scale = Vector2.all(1);
       }
     }
     if (isDead || _statusEffects.isEmpty) {
@@ -190,9 +188,8 @@ class Enemy extends PositionComponent
       return;
     }
     _hp = (_hp - event.baseDamage).clamp(0, data.maxHp);
-    // Self-inflicted damage-over-time ticks fire every frame — a floating number,
-    // hit-flash, and sound per tick would just be spam, so only real hits
-    // get the full reaction.
+    // Self-inflicted damage-over-time ticks fire every frame, so only direct
+    // hits get the readable damage number, sound, and short scale punch.
     if (!identical(event.source, this)) {
       game.world.add(
         DamageNumber(
@@ -201,11 +198,7 @@ class Enemy extends PositionComponent
           isCritical: event.isCritical,
         ),
       );
-      _flashTimer = _flashDuration;
-      _visual.paint.colorFilter = const ui.ColorFilter.mode(
-        _flashColor,
-        ui.BlendMode.srcATop,
-      );
+      _hitPulseTimer = _hitPulseDuration;
       SfxPlayer.weaponImpact(event.weaponId);
     }
     if (isDead) {
@@ -232,11 +225,9 @@ class Enemy extends PositionComponent
   /// per the prototype's art rules.
   void setHidden(bool hidden) {
     _isHidden = hidden;
-    if (_flashTimer <= 0) {
-      _visual.paint.colorFilter = _isHidden
-          ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate)
-          : null;
-    }
+    _visual.paint.colorFilter = _isHidden
+        ? ui.ColorFilter.mode(_baseColor, ui.BlendMode.modulate)
+        : null;
   }
 
   void _die() {

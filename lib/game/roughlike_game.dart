@@ -2,12 +2,14 @@ import 'dart:async' show unawaited;
 
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart' show EdgeInsets;
-import 'package:flutter/foundation.dart' show ValueNotifier;
+import 'package:flutter/foundation.dart' show ValueNotifier, kDebugMode;
 
 import '../core/constants/game_constants.dart';
 import '../input/mobile/mobile_input_provider.dart';
 import '../input/mobile/skill_button_component.dart';
 import 'arena/arena_component.dart';
+import 'combat/projectiles/projectile.dart';
+import 'enemies/enemy.dart';
 import 'hud/boss_health_bar.dart';
 import 'hud/hud_component.dart';
 import 'items/item_data.dart';
@@ -18,6 +20,8 @@ import 'progression/meta_progression.dart';
 import 'spawning/spawn_director.dart';
 import 'systems/audio/sfx_player.dart';
 import 'systems/effects/camera_shaker.dart';
+import 'systems/experience/health_pickup.dart';
+import 'systems/experience/xp_gem.dart';
 import 'upgrades/upgrade_data.dart';
 import 'upgrades/upgrade_roller.dart';
 import 'waves/wave_manager.dart';
@@ -61,6 +65,12 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   final ValueNotifier<int> intermissionRevision = ValueNotifier(0);
   String intermissionScreen = '';
 
+  @override
+  void dispose() {
+    intermissionRevision.dispose();
+    super.dispose();
+  }
+
   void _showIntermission(String screen) {
     intermissionScreen = screen;
     intermissionRevision.value++;
@@ -90,6 +100,50 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   int shopRefreshesUsed = 0;
 
   void registerKill() => killCount++;
+
+  void debugStartWave(int wave) {
+    if (!kDebugMode) return;
+    for (final enemy in world.children.query<Enemy>().toList()) {
+      enemy.removeFromParent();
+    }
+    for (final projectile in world.children.query<Projectile>().toList()) {
+      projectile.removeFromParent();
+    }
+    for (final gem in world.children.query<XpGem>().toList()) {
+      gem.collect();
+    }
+    for (final pickup in world.children.query<HealthPickup>().toList()) {
+      pickup.removeFromParent();
+    }
+    _pendingLevelUps = 0;
+    _pendingBossReward = false;
+    isChoosingBossReward = false;
+    intermissionScreen = '';
+    overlays.remove('intermission');
+    overlays.remove('gameOver');
+    _rewardIssued = false;
+    waveManager.startWaveForDebug(wave);
+    player.stats.hp = player.maxHp;
+  }
+
+  void debugOpenUpgradePicker({int choices = 5}) {
+    if (!kDebugMode) return;
+    _pendingBossReward = false;
+    isChoosingBossReward = false;
+    _pendingLevelUps += choices.clamp(1, 20);
+    pauseEngine();
+    _presentNextLevelUp();
+  }
+
+  void debugGrantGold([int amount = 500]) {
+    if (!kDebugMode) return;
+    player.currency.add(amount);
+  }
+
+  void debugHealPlayer() {
+    if (!kDebugMode) return;
+    player.stats.hp = player.maxHp;
+  }
 
   void onPlayerDeath() {
     if (_rewardIssued) return;
@@ -124,6 +178,15 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   /// entered its breather. Pause and present whatever's pending — level-ups
   /// first (one at a time if several stacked up), then the shop.
   void _onWaveCleared() {
+    // Drops that stay behind keep updating every frame and used to pile up
+    // across waves. Preserve their reward, then clear the transient world
+    // before opening the intermission UI.
+    for (final gem in world.children.query<XpGem>().toList()) {
+      gem.collect();
+    }
+    for (final pickup in world.children.query<HealthPickup>().toList()) {
+      pickup.removeFromParent();
+    }
     pauseEngine();
     _pendingBossReward = waveManager.isBossWave;
     if (_pendingLevelUps > 0) {
@@ -227,6 +290,17 @@ class RoughlikeGame extends FlameGame with HasCollisionDetection {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    await Future.wait([
+      SfxPlayer.initialize(),
+      images.loadAll(const [
+        'enemies/grunt.png',
+        'enemies/archer.png',
+        'enemies/tank.png',
+        'enemies/assassin.png',
+        'enemies/healer.png',
+        'enemies/boss.png',
+      ]),
+    ]);
 
     final arena = ArenaComponent();
     world.add(arena);

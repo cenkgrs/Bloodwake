@@ -1,7 +1,4 @@
-import 'dart:ui' as ui;
-
 import 'package:flame/components.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
 import 'character_class.dart';
 import 'player.dart';
@@ -123,14 +120,10 @@ class CharacterSpriteAnimator
   }) async {
     final sprites = await Future.wait(
       List.generate(frameCount, (index) async {
-        final bytes = await rootBundle.load(
-          '$folder/${index.toString().padLeft(2, '0')}.png',
+        final image = await parent.game.images.load(
+          _imageKey('$folder/${index.toString().padLeft(2, '0')}.png'),
         );
-        final codec = await ui.instantiateImageCodec(
-          bytes.buffer.asUint8List(),
-        );
-        final frame = await codec.getNextFrame();
-        return Sprite(frame.image);
+        return Sprite(image);
       }),
     );
     return SpriteAnimation.spriteList(sprites, stepTime: stepTime, loop: loop);
@@ -141,9 +134,7 @@ class CharacterSpriteAnimator
     double stepTime, {
     bool loop = true,
   }) async {
-    final bytes = await rootBundle.load(assetPath);
-    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
+    final image = await parent.game.images.load(_imageKey(assetPath));
     // Generated strips include a grey border along their outside edge.
     const inset = 5.0;
     final count =
@@ -153,13 +144,16 @@ class CharacterSpriteAnimator
     final sprites = List.generate(count, (index) {
       final frameIndex = count == 1 ? 2 : index;
       return Sprite(
-        frame.image,
+        image,
         srcPosition: Vector2(frameIndex * 128.0 + inset, inset),
         srcSize: Vector2(128 - inset * 2, 94),
       );
     });
     return SpriteAnimation.spriteList(sprites, stepTime: stepTime, loop: loop);
   }
+
+  String _imageKey(String assetPath) =>
+      assetPath.replaceFirst('assets/images/', '');
 
   /// Called by PlayerWeapons/PlayerAbilities whenever an attack fires.
   // The generated attack frames change anatomy and camera angle between

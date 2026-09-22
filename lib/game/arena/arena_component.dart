@@ -3,9 +3,9 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
 import '../../core/constants/game_constants.dart';
+import '../roughlike_game.dart';
 
 /// Bounded playfield. Renders real floor art if it's available (see
 /// assets/images/backgrounds/README.md) as a seamless repeating tile —
@@ -14,12 +14,13 @@ import '../../core/constants/game_constants.dart';
 /// grid floor if the asset is missing, the same "missing art never breaks
 /// the screen" pattern used by the wave-end overlays. Carries no gameplay
 /// logic of its own.
-class ArenaComponent extends PositionComponent {
+class ArenaComponent extends PositionComponent
+    with HasGameReference<RoughlikeGame> {
   ArenaComponent()
     : super(size: GameConstants.arenaSize, anchor: Anchor.topLeft);
 
   static const double _gridSpacing = 120;
-  static const String _floorAsset = 'assets/images/backgrounds/map1.png';
+  static const String _floorAsset = 'backgrounds/map1.png';
 
   /// World-unit size of one repeat of the floor texture — tuned so a
   /// single paving stone reads at roughly human scale next to the
@@ -43,19 +44,33 @@ class ArenaComponent extends PositionComponent {
   Future<void> onLoad() async {
     await super.onLoad();
     try {
-      final bytes = await rootBundle.load(_floorAsset);
-      final codec = await instantiateImageCodec(bytes.buffer.asUint8List());
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
+      final image = await game.images.load(_floorAsset);
       final scale = _tileWorldSize / image.width;
       final matrix = Float64List.fromList([
-        scale, 0, 0, 0,
-        0, scale, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
+        scale,
+        0,
+        0,
+        0,
+        0,
+        scale,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
       ]);
       _tiledFloorPaint = Paint()
-        ..shader = ImageShader(image, TileMode.repeated, TileMode.repeated, matrix);
+        ..shader = ImageShader(
+          image,
+          TileMode.repeated,
+          TileMode.repeated,
+          matrix,
+        );
     } catch (_) {
       _tiledFloorPaint = null;
     }

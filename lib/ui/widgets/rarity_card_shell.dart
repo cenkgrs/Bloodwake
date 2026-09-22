@@ -14,6 +14,7 @@ class RarityCardShell extends StatelessWidget {
     required this.dimmed,
     required this.child,
     this.onTap,
+    this.dense = false,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class RarityCardShell extends StatelessWidget {
   final bool dimmed;
   final Widget child;
   final VoidCallback? onTap;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -45,30 +47,36 @@ class RarityCardShell extends StatelessWidget {
             border: Border.all(color: color, width: 2),
             boxShadow: dimmed
                 ? null
-                : [BoxShadow(color: style.glow, blurRadius: 20, spreadRadius: 1)],
+                : [
+                    BoxShadow(
+                      color: style.glow,
+                      blurRadius: 20,
+                      spreadRadius: 1,
+                    ),
+                  ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 2),
+                padding: EdgeInsets.only(top: dense ? 5 : 12, bottom: 2),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.diamond, size: 8, color: color),
+                    Icon(Icons.diamond, size: dense ? 6 : 8, color: color),
                     const SizedBox(width: 6),
                     Text(
                       style.label,
                       style: TextStyle(
                         color: color,
-                        fontSize: 10,
+                        fontSize: dense ? 8 : 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Icon(Icons.diamond, size: 8, color: color),
+                    Icon(Icons.diamond, size: dense ? 6 : 8, color: color),
                   ],
                 ),
               ),
