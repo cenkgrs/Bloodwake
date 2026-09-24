@@ -20,7 +20,7 @@ var magic_time = 0.0
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
  var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
  actor_kind=kind
- fitted_timing=not enemy and kind in ["warrior","mage"]
+ fitted_timing=not enemy and kind in ["warrior","mage","assassin"]
  if fitted_timing:file=kind+"_player"
  if kind=="mage" and enemy:
   _mage(tint);procedural=true;return
@@ -90,7 +90,9 @@ func _tint(node: Node,color: Color):
 func clip_speed(next: String,duration: float=-1.0) -> float:
  if not animation or not clips.has(next):return 1.0
  if not fitted_timing:return 1.0
- var targets={"run":0.62 if actor_kind=="warrior" else 0.72,"attack":0.45,"hit":0.22,"ultimate":0.9,"death":2.2}
+ var run_targets={"warrior":0.62,"mage":0.72,"assassin":0.5}
+ var attack_targets={"assassin":0.3}
+ var targets={"run":run_targets.get(actor_kind,0.65),"attack":attack_targets.get(actor_kind,0.45),"hit":0.22,"ultimate":0.9,"death":2.2}
  var target=duration if duration>0 else targets.get(next,-1.0)
  return animation.get_animation(clips[next]).length/target if target>0 else 1.0
 
