@@ -12,7 +12,7 @@ iskelet animasyonu (idle/run/attack/hit/death) bağlı. Dört sınıf, yedi sila
 sınıf yetenekleri, yedi düşman tipi, elitler, üç aşamalı boss, dalgalar, XP,
 yükseltmeler, mağaza, kalıcı yetenek ağacı, ekipman ve üç loadout taşındı.
 Klavye/fare, gamepad ve dokunmatik kontrol altyapısı; PC/Mobile kalite ayarları var.
-113 otomatik denetim geçti; dört yönde hareket ve ana ekranlar görüntüyle
+Ana test paketindeki 132 ve savaş/geçiş paketindeki 32 kontrol geçti; dört yönde hareket ve ana ekranlar görüntüyle
 kontrol edildi. Linux ve Windows export presetleri hazır. Linux build çalıştırıldı;
 Windows cihaz testi henüz yapılmadı. Bu port oynanabilir bir temel; uzun süreli
 oynanış ve denge testi hâlâ gerekli.
@@ -20,8 +20,10 @@ oynanış ve denge testi hâlâ gerekli.
 ## Sonraki işler
 
 1. Kullanıcıyla PC oynanış testi; özellikle silah hissi, kamera, boss dengesi.
-2. Warrior ve düşman Warrior için onaylı nihai modelleri bağla. Mevcut Quaternius
-   modeli teknik/geçici. Assassin modelinde animasyon yok; Mage görseli geçici.
+2. Oyuncu Warrior: kullanıcının şövalye ve büyük kılıç modeli, beş Mixamo
+   animasyonuyla bağlandı (`warrior_player.glb`). Düşman Warrior hâlâ geçici
+   Quaternius modelini kullanıyor. Mage modeli ve altı Mixamo animasyonu bağlandı; elde sürekli büyü VFX’i var.
+   Assassin animasyonları bekleniyor.
 3. Windows üzerinde build doğrulaması.
 4. Mobil export/gerçek cihaz profilleme, LOD/texture bütçesi ve dokunmatik UX.
 
@@ -33,3 +35,14 @@ zorunlu değil. `DEVELOPMENT_PLAN.md` eski Flutter planıdır; güncel durum bu 
 Komutlar, kod haritası, kayıt aktarma ve build adımları `godot/README.md` içinde.
 Motor/export templates ve `godot/builds/` Git'te yok; diğer PC'de yeniden kur/üret.
 Yerel commit başka PC'ye otomatik ulaşmaz; remote'a push veya repo aktarımı gerekir.
+
+## Son oynanış düzeltmeleri
+
+- Warrior/Mage klipleri saldırı ve hareket hızına göre oynatılıyor; FBX FPS farkları
+  dönüştürmede korunuyor. Bloodbound temposu değişmedi.
+- Temel düşman hasarı 0 yerine 8. Kılıç ve Mage normal saldırıları temas anında,
+  Mage ultisi ayrı animasyonun büyü çıkarma anında uygulanıyor.
+- Dalga sonunda 2 saniye WAVE CLEARED; ölümde ses hemen başlıyor, ilk 2 saniye ölüm
+  animasyonu açıkça görünüyor, ardından 2,7 saniye YOU DIED ve sonuç menüsü geliyor.
+- `godot/tests/combat_flow_test.gd` hasarı, animasyon temposunu, el VFX’ini ve
+  geçiş sürelerini kontrol ediyor.
