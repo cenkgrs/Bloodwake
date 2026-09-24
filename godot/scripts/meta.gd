@@ -13,7 +13,9 @@ func load_save():
  if FileAccess.file_exists(path): import_json(FileAccess.get_file_as_string(path))
 
 func import_json(text: String) -> bool:
- var parsed = JSON.parse_string(text)
+ var parser = JSON.new()
+ if parser.parse(text) != OK: return false
+ var parsed = parser.data
  if not parsed is Dictionary: return false
  essence = clampi(int(parsed.get("essence",0)),0,1000000000)
  levels.clear(); owned.clear(); loadouts = [{},{},{}]
