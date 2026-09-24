@@ -39,16 +39,17 @@ godot --path godot
 The Dart catalogs were extracted with `tools/migrate_catalogs.py`: 7 weapons,
 4 abilities, 7 enemy types, 22 upgrades, 11 shop items, 9 permanent equipment
 items and 15 skill nodes. Distances use 50 legacy pixels per world meter.
-Original grunt contact damage is zero in the catalog; balance changes should be
-intentional. The port is playable, but this is not a claim of pixel-perfect or
+Basic grunt melee damage is 8 (also updated in the source Dart catalog). The port is playable, but this is not a claim of pixel-perfect or
 exhaustively verified behavioral equivalence with Flutter.
 
 Bloodbound uses the user's rigged GLB with idle/run/attack/hit/death clips, normalized
 from `art/bloodbound/source/bloodbound_game.glb`. Its internal class ID is still
-`gunslinger`. All facings are 3D rotations. Warrior/enemy Warrior currently use the
-existing Quaternius technical model with PBR armor and skeletal clips; final art
-is pending. Assassin's current model has no authored animation clips. Mage uses
-procedural placeholder geometry. These two classes need finished rigged assets.
+`gunslinger`. All facings are 3D rotations. The playable Warrior uses the supplied Tripo knight and greatsword with five
+Mixamo two-handed clips (Idle, Run, Attack, Hit, Death), built as
+`assets/models/warrior_player.glb`. The sword is rigidly skinned to the right hand;
+planar root motion is removed. Enemy Warriors retain the Quaternius placeholder. Assassin's current model still needs authored animation clips. The playable Mage
+uses the supplied unarmed model with six Mixamo clips, including Ultimate, and
+animated right-hand spell VFX. Enemy healers keep their procedural placeholder.
 
 Progression is stored at `user://bloodwake_progression.json`. Settings can import
 a legacy progression JSON with confirmation. Phone app storage is not automatically
@@ -93,3 +94,31 @@ https://quaternius.com/packs/knightcharacter.html. See
 The Bloodbound model was supplied by the project owner. Other assets are carried
 from the existing project. `tools/export_warrior.py` rebuilds the technical Warrior
 from the stored Blender sources; Blender is optional for normal development.
+
+Rebuild the supplied Warrior with Blender:
+
+```sh
+blender -b -t 4 --python godot/tools/build_mixamo_warrior.py
+```
+
+Sources live in `art/warrior/source/{knight,greatsword,mixamo}`. The original sword
+has 980,133 vertices; the runtime mesh has 7,843 before glTF vertex splitting.
+The supplied Mixamo skin is reused and matching bone names are checked on export.
+Both Mixamo builders normalize per-file FPS to 60 FPS before export, preserving
+real clip durations even when inputs mix 30 and 60 FPS. Warrior and Mage runtime
+attacks fit 0.45 seconds or 85% of the upgraded weapon interval, whichever is
+shorter; hit reactions take 0.22 seconds. Locomotion cycles fit 0.62/0.72 seconds
+and follow movement-speed upgrades. Bloodbound retains its original playback.
+Sword damage and Mage projectiles resolve at the attack contact frame (32%).
+Mage Ultimate casts at 0.45 seconds into its separate 0.9-second clip.
+
+Wave completion shows WAVE CLEARED over the live arena for 2 seconds before the
+upgrade/shop flow. Death starts game_over audio immediately and shows the body unobstructed for
+2 seconds, followed by YOU DIED for 2.7 seconds before the results menu. Transition callbacks cannot replace a newer run or menu.
+
+Rebuild Mage and run combat regressions:
+
+```sh
+blender -b -t 4 --python godot/tools/build_mixamo_mage.py
+godot --headless --path godot --script tests/combat_flow_test.gd
+```

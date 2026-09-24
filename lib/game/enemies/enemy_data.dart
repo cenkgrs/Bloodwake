@@ -132,7 +132,7 @@ class EnemyCatalog {
     aiType: AiType.chaseAndMelee,
     maxHp: 30,
     moveSpeed: 90,
-    damage: 0,
+    damage: 8,
     attackRange: 28,
     attackCooldown: 1.0,
     xpReward: 5,

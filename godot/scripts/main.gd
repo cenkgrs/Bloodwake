@@ -27,6 +27,10 @@ var backdrop: Node3D
 var menu_art: BWVisual
 var cfg=ConfigFile.new()
 var smoke_mode=false
+var transition_serial=0
+const WAVE_TRANSITION_SECONDS=2.0
+const DEATH_ANIMATION_SECONDS=2.0
+const DEATH_TRANSITION_SECONDS=2.7
 const GOLD=Color("d7ae64")
 const MUTED=Color("a2aab5")
 
@@ -135,6 +139,7 @@ func panel_page(heading: String,subtext: String="") -> VBoxContainer:
  return column
 
 func show_menu():
+ transition_serial+=1
  page="menu"
  if is_instance_valid(world):world.queue_free();world=null
  if is_instance_valid(hud):hud.queue_free()
@@ -168,10 +173,11 @@ func show_classes():
  button(column,"BACK",show_menu)
 
 func start_run(id: String):
+ transition_serial+=1
  if is_instance_valid(backdrop):backdrop.queue_free();backdrop=null;menu_art=null
  if is_instance_valid(world):world.queue_free()
  run=BWRun.new(id,meta);world=BWWorld.new();add_child(world);world.start(run,quality)
- world.wave_cleared.connect(_intermission);world.run_ended.connect(show_game_over)
+ world.wave_cleared.connect(_wave_complete);world.run_ended.connect(_death_transition)
  page="playing";clear_page();_hud()
 
 func _hud():
@@ -201,6 +207,43 @@ func show_pause():
  button(column,"RESUME",resume)
  button(column,"RETURN TO MENU (END RUN)",func():_award();show_menu())
  label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / Right click / A — Class ability\nTab / Y — Toggle automatic fire\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
+
+func _transition_screen(heading: String,subtitle: String,color: Color):
+ clear_page()
+ if is_instance_valid(hud):hud.visible=false
+ var dim=ColorRect.new();dim.color=Color(0.015,0.02,0.035,0.48);dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);content.add_child(dim)
+ var center=CenterContainer.new();center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);content.add_child(center)
+ var band=PanelContainer.new();band.custom_minimum_size=Vector2(660,180)
+ var style=StyleBoxFlat.new();style.bg_color=Color(0.025,0.02,0.03,0.82);style.border_color=color.darkened(0.45);style.border_width_top=1;style.border_width_bottom=1;style.set_content_margin_all(28);band.add_theme_stylebox_override("panel",style);center.add_child(band)
+ var column=VBoxContainer.new();column.add_theme_constant_override("separation",14);band.add_child(column)
+ var heading_label=title(column,heading,58);heading_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;heading_label.add_theme_color_override("font_color",color)
+ var detail=label(column,subtitle,17,MUTED);detail.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+ content.modulate.a=0.0;create_tween().tween_property(content,"modulate:a",1.0,0.18)
+
+func _wave_complete():
+ if page!="playing":return
+ var serial=transition_serial;var completed_world=world
+ page="wave_complete";world.running=false
+ _transition_screen("WAVE CLEARED","WAVE %02d  ·  %d KILLS" % [run.wave,run.kills],GOLD)
+ world.sound("level_up",0.0)
+ await get_tree().create_timer(WAVE_TRANSITION_SECONDS).timeout
+ if serial!=transition_serial or world!=completed_world or page!="wave_complete":return
+ _intermission()
+
+func _death_transition():
+ if page!="playing":return
+ var serial=transition_serial;var completed_world=world
+ page="death_animation";world.running=false
+ clear_page()
+ if is_instance_valid(hud):hud.visible=false
+ # The death sound already started in BWWorld; keep the body fully visible first.
+ await get_tree().create_timer(DEATH_ANIMATION_SECONDS).timeout
+ if serial!=transition_serial or world!=completed_world or page!="death_animation":return
+ page="death_transition"
+ _transition_screen("YOU DIED","THE NIGHT CLAIMED YOU",Color("c64349"))
+ await get_tree().create_timer(DEATH_TRANSITION_SECONDS).timeout
+ if serial!=transition_serial or world!=completed_world or page!="death_transition":return
+ show_game_over()
 
 func _intermission():
  freeze();boss_reward=run.wave%10==0;refreshes=0;_next_pick()

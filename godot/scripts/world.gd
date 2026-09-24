@@ -26,6 +26,7 @@ var rest_time = 0.0
 var hit_flash = 0.0
 var shake = 0.0
 var audio_times = {}
+var pending_attacks: Array = []
 var bullet_mesh: SphereMesh
 var bullet_material: StandardMaterial3D
 var rng = RandomNumberGenerator.new()
@@ -68,7 +69,10 @@ func _environment():
    var lamp=OmniLight3D.new();lamp.position=fire.position;lamp.light_color=Color("ff9854");lamp.light_energy=1.3;lamp.omni_range=4;add_child(lamp)
 
 func _physics_process(dt: float):
- if run==null or not running:return
+ if run==null:return
+ if not running:
+  visual.tick(dt,false)
+  return
  elapsed+=dt
  if rest_time>0:
   rest_time=maxf(0,rest_time-dt)
@@ -91,20 +95,19 @@ func _physics_process(dt: float):
  elif movement.length_squared()>0.001:aim=last_move
  var facing=aim if Input.is_action_pressed("fire") or aim_stick.length_squared()>0.04 else last_move
  if facing.length_squared()>0.01:visual.rotation.y=lerp_angle(visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*16))
- visual.tick(dt,movement.length_squared()>0.001)
+ visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
  var desired=player.position+Vector3(0,16,12);camera.position=camera.position.lerp(desired,1-exp(-dt*10))
  if shake>0:camera.position+=Vector3(rng.randf_range(-shake,shake),rng.randf_range(-shake,shake),0);shake=move_toward(shake,0,dt*2)
+ _pending_attacks(dt)
  _weapons(dt)
  for enemy in enemies.duplicate():
   if is_instance_valid(enemy.node):_enemy_tick(enemy,dt)
- _projectiles(dt);_pickups(dt)
- if rest_time<=0:_spawn_tick(dt)
+ _projectiles(dt)
+ if run.stats.hp>0:_pickups(dt)
  if run.stats.hp<=0:
-  running=false;visual.action("death");sound("game_over",0.0)
-  get_tree().create_timer(1.5).timeout.connect(_emit_run_ended)
-
-func _emit_run_ended():
- run_ended.emit()
+  running=false;pending_attacks.clear();visual.action("death");sound("game_over",0.0)
+  run_ended.emit()
+ elif rest_time<=0:_spawn_tick(dt)
 
 func _spawn_tick(dt: float):
  var rules=BWData.wave_rules(run.wave)
@@ -113,7 +116,7 @@ func _spawn_tick(dt: float):
    for pickup in pickups:
     if pickup.kind=="xp":run.add_xp(pickup.amount)
     pickup.node.queue_free()
-   pickups.clear();running=false;wave_cleared.emit()
+   pickups.clear();pending_attacks.clear();running=false;wave_cleared.emit()
   return
  spawn_timer-=dt
  if spawn_timer>0 or enemies.size()>=rules.cap:return
@@ -253,33 +256,63 @@ func _weapons(dt: float):
   var target=nearest(player.position,range_value)
   var manual=Input.is_action_pressed("fire")
   if not manual and (not auto_fire or target==null):continue
+  var primary=id==BWData.CLASSES[run.class_id].weapon
+  if primary and visual.fitted_timing and visual.lock_time>0:continue
   var direction=aim if manual else (target.node.position-player.position).normalized()
-  var base=data.damage*run.stats.damage*slot.damage
-  var behavior=data.get("behavior","singleProjectile")
-  match behavior:
-   "melee":
-    slot.swings+=1
-    var radius=range_value+(slot.shockwave*BWData.UNIT if slot.swings%3==0 else 0)
-    var hit=[]
-    for e in enemies.duplicate():
-     if e.node.position.distance_to(player.position)<=radius:
-      var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical);hit.append(e)
-      if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
-    ring(player.position,radius,Color("e1ae69"),0.18)
-    if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
-   "chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
-   _:
-    var count=int(data.get("projectileCount",1))
-    for i in count:
-     var angle=(float(i)/maxi(1,count-1)-0.5)*0.5 if count>1 else 0.0
-     var roll=run.damage_roll(base)
-     _bullet(player.position,direction.rotated(Vector3.UP,angle),data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
-  visual.action("attack")
-  # Moving actors keep facing movement; stationary attacks turn toward targets.
+  var cooldown=1.0/(data.attacksPerSecond*run.stats.attackSpeed*slot.speed)
+  if primary and visual.fitted_timing:
+   var duration=minf(0.45,cooldown*0.85)
+   visual.action("attack",duration)
+   pending_attacks.append({"time":duration*0.32,"id":id,"direction":direction})
+  else:
+   _resolve_weapon(id,direction)
+   if not visual.fitted_timing:visual.action("attack")
   if move_input.length_squared()<0.01 and Input.get_vector("move_left","move_right","move_up","move_down").length_squared()<0.01:
    visual.rotation.y=atan2(direction.x,direction.z)
-  sound({"sword":"sword_swing","daggers":"sword_swing","rapid_rifle":"shoot_rifle","basic_pistol":"shoot_pistol","shotgun":"shoot_shotgun","magic_orb":"magic_orb_cast","lightning":"lightning_cast"}.get(id,"shoot"))
-  slot.cooldown=1.0/(data.attacksPerSecond*run.stats.attackSpeed*slot.speed)
+  slot.cooldown=cooldown
+
+func _pending_attacks(dt: float):
+ for attack in pending_attacks.duplicate():
+  attack.time-=dt
+  if attack.time<=0:
+   pending_attacks.erase(attack)
+   if run.stats.hp<=0:continue
+   if attack.id=="ultimate":_resolve_ability(attack.data)
+   else:_resolve_weapon(attack.id,attack.direction)
+
+func _resolve_weapon(id: String,direction: Vector3):
+ var slot=run.weapons[id];var data=slot.data
+ var range_value=data.range*run.stats.attackRange*slot.range*BWData.UNIT
+ var base=data.damage*run.stats.damage*slot.damage
+ var behavior=data.get("behavior","singleProjectile")
+ match behavior:
+  "melee":
+   slot.swings+=1
+   var radius=range_value+(slot.shockwave*BWData.UNIT if slot.swings%3==0 else 0)
+   var hit=[]
+   for e in enemies.duplicate():
+    if e.node.position.distance_to(player.position)<=radius:
+     var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical);hit.append(e)
+     if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
+   ring(player.position,radius,Color("e1ae69"),0.18)
+   if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
+  "chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
+  _:
+   var count=int(data.get("projectileCount",1))
+   for i in count:
+    var angle=(float(i)/maxi(1,count-1)-0.5)*0.5 if count>1 else 0.0
+    var roll=run.damage_roll(base)
+    var origin=player.position
+    var shot_direction=direction.rotated(Vector3.UP,angle)
+    if id=="magic_orb" and is_instance_valid(visual.hand_magic):
+     var hand=visual.hand_magic.global_position
+     origin=hand-Vector3.UP*0.8
+     var target=nearest(player.position,range_value)
+     var destination=player.position+shot_direction*range_value+Vector3.UP*0.8
+     if target!=null and (target.node.position-player.position).normalized().dot(shot_direction)>0.95:destination=target.node.position+Vector3.UP*0.8
+     shot_direction=(destination-hand).normalized()
+    _bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
+ sound({"sword":"sword_swing","daggers":"sword_swing","rapid_rifle":"shoot_rifle","basic_pistol":"shoot_pistol","shotgun":"shoot_shotgun","magic_orb":"magic_orb_cast","lightning":"lightning_cast"}.get(id,"shoot"))
 
 func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
  for i in count:
@@ -293,6 +326,16 @@ func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 func ability():
  if not running or run.ability_cd>0 or run.stats.hp<=0:return
  var data=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
+ run.ability_cd=data.cooldown
+ if visual.fitted_timing and visual.clips.has("ultimate"):
+  pending_attacks.clear()
+  visual.action("ultimate",0.9)
+  pending_attacks.append({"time":0.45,"id":"ultimate","data":data})
+ else:
+  _resolve_ability(data);visual.action("attack")
+ changed.emit()
+
+func _resolve_ability(data: Dictionary):
  var range_value=data.range*run.stats.attackRange*BWData.UNIT
  if data.id=="fan_shot":
   for i in range(-2,3):
@@ -308,7 +351,7 @@ func ability():
     var roll=run.damage_roll(data.damage*run.stats.damage);_damage_enemy(e,roll.damage,roll.critical)
     if e.hp>0 and data.id=="frost_nova":e.slow=3;e.slow_amount=0.45
   ring(player.position,range_value,Color(BWData.CLASSES[run.class_id].color),0.4)
- run.ability_cd=data.cooldown;visual.action("attack");sound("shoot");changed.emit()
+ sound("magic_orb_cast" if data.id=="frost_nova" else "shoot")
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):
  if bullets.size()>=384:return
@@ -343,7 +386,7 @@ func _projectiles(dt: float):
 func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: bool=true):
  if e.hp<=0:return
  var actual=minf(e.hp,damage);e.hp-=damage
- run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
+ if run.stats.hp>0:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
  if effects:
   damage_text(e.node.position,damage,Color("ffe4a8") if critical else Color("d9dce2"));sound("hit",0.08)
  if e.hp>0:return
@@ -360,6 +403,7 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 func _hurt_player(damage: float):
  var actual=run.hurt(damage,rng.randf())
  if actual<=0:return
+ if visual.fitted_timing and visual.state=="attack":pending_attacks.clear()
  damage_text(player.position,actual,Color("ff8678"));visual.action("hit");shake=clampf(actual/100,0.04,0.18);sound("player_hit",0.12);changed.emit()
 
 func _drop(pos: Vector3,kind: String,amount: int):
@@ -382,12 +426,12 @@ func next_wave():
 
 func ring(pos: Vector3,radius: float,color: Color,duration: float):
  var mesh=TorusMesh.new();mesh.inner_radius=maxf(0.01,radius-0.04);mesh.outer_radius=radius+0.04;mesh.rings=32;mesh.ring_segments=6
- var node=MeshInstance3D.new();node.mesh=mesh;node.position=pos+Vector3.UP*0.045;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;node.material_override=mat;add_child(node)
+ var node=MeshInstance3D.new();node.mesh=mesh;node.position=pos+Vector3.UP*0.045;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.material=mat;node.material_override=mat;add_child(node)
  var tween=create_tween();tween.tween_property(node,"scale",Vector3(1.06,1,1.06),duration);tween.tween_callback(node.queue_free)
 
 func beam(a: Vector3,b: Vector3,color: Color):
  var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_LINES);mesh.surface_add_vertex(a);mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex(b);mesh.surface_end()
- var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;node.material_override=mat;add_child(node)
+ var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.surface_set_material(0,mat);node.material_override=mat;add_child(node)
  get_tree().create_timer(0.15).timeout.connect(node.queue_free)
 
 func damage_text(pos: Vector3,amount: float,color: Color):
@@ -401,4 +445,4 @@ func sound(id: String,interval: float=0.08):
  audio_times[id]=now
  var stream=load("res://assets/audio/%s.mp3" % id)
  if stream==null:return
- var audio=AudioStreamPlayer.new();audio.stream=stream;audio.volume_db=-14;audio.bus="Master";add_child(audio);audio.finished.connect(audio.queue_free);audio.play()
+ var audio=AudioStreamPlayer.new();audio.stream=stream;audio.volume_db=-5 if id=="game_over" else -14;audio.bus="Master";add_child(audio);audio.finished.connect(audio.queue_free);audio.play()

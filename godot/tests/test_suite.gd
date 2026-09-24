@@ -52,6 +52,18 @@ func suite():
   scene.start_run(id);await process_frame
   check(scene.world.visual!=null,"class visual "+id)
   if id=="gunslinger":check(scene.world.visual.clips.size()==5,"five real skeletal clips")
+  if id=="warrior":
+   var visual=scene.world.visual
+   check(visual.clips.size()==6,"Warrior has six Mixamo clips including Ultimate")
+   check(visual.model.position.is_equal_approx(Vector3.ZERO),"Warrior rig stays centered on actor")
+   check(visual.model.scale.is_equal_approx(Vector3.ONE),"Warrior uses authored 1.8 m scale")
+   check(visual.model.find_child("Greatsword",true,false)!=null,"Warrior carries supplied greatsword")
+   for clip in ["idle","run","attack","hit","death","ultimate"]:
+    check(visual.clips.has(clip),"Warrior clip "+clip)
+    if visual.clips.has(clip):
+     var anim=visual.animation.get_animation(visual.clips[clip])
+     check(anim.length>0 and anim.get_track_count()>0,"Warrior skeletal animation "+clip)
+     check((anim.loop_mode==Animation.LOOP_LINEAR)==(clip in ["idle","run"]),"Warrior loop mode "+clip)
   scene.world.running=false
   for row in BWData.rows("enemies"):
    var enemy=scene.world.spawn_enemy(row.id,Vector3(4,0,0))
