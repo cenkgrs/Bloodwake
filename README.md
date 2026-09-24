@@ -1,17 +1,12 @@
-# roughlike
+# Bloodwake
 
-A new Flutter project.
+PC-first dark fantasy survivor, now built in **Godot 4.6.3 (standard/GDScript)**.
+Open `godot/project.godot` in Godot and press F6/F5 to play. The playable Godot
+port uses real 3D characters and skeletal animation instead of rendered sprites.
 
-## Getting Started
+See [Godot setup, controls and builds](godot/README.md) and
+[latest handoff](MIGRATION_STATUS.md).
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The original Flutter/Flame project remains at the repository root as a reference.
+New gameplay development belongs in `godot/`. Source art and Blender pipelines
+remain in `art/`; local engine caches and exported binaries are not committed.
