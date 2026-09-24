@@ -56,7 +56,7 @@ func suite():
    var visual=scene.world.visual
    check(visual.clips.size()==6,"Warrior has six Mixamo clips including Ultimate")
    check(visual.model.position.is_equal_approx(Vector3.ZERO),"Warrior rig stays centered on actor")
-   check(visual.model.scale.is_equal_approx(Vector3.ONE),"Warrior uses authored 1.8 m scale")
+   check(visual.model.scale.is_equal_approx(Vector3.ONE*(2.05/1.8)),"Warrior rig (authored at 1.8 m) is scaled to the player's 2.05 m presence height")
    check(visual.model.find_child("Greatsword",true,false)!=null,"Warrior carries supplied greatsword")
    for clip in ["idle","run","attack","hit","death","ultimate"]:
     check(visual.clips.has(clip),"Warrior clip "+clip)

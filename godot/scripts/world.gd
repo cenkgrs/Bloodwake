@@ -37,7 +37,9 @@ func start(state: BWRun,profile: String="PC"):
  run=state;quality=profile;rng.randomize()
  _environment()
  player=Node3D.new();player.name="Player";add_child(player)
- visual=BWVisual.new();player.add_child(visual);visual.configure(run.class_id)
+ # Enemies read as 1.7-3.5 m (tanks/bosses run bigger on purpose); the player
+ # was left at the 1.8 m rig default and looked undersized next to them.
+ visual=BWVisual.new();player.add_child(visual);visual.configure(run.class_id,false,Color.WHITE,2.05)
  get_viewport().msaa_3d=Viewport.MSAA_4X if quality=="PC" else Viewport.MSAA_DISABLED
  var fill=OmniLight3D.new();fill.position=Vector3(0,2.5,1);fill.omni_range=4;fill.light_energy=1.0;fill.light_color=Color("d1def0");player.add_child(fill)
  camera=Camera3D.new();camera.projection=Camera3D.PROJECTION_ORTHOGONAL;camera.size=17
@@ -79,6 +81,10 @@ func _physics_process(dt: float):
   if rest_time==0:changed.emit()
  run.ability_cd=maxf(0,run.ability_cd-dt)
  run.stats.hp=minf(run.stats.maxHp,run.stats.hp+run.stats.regenPerSecond*dt)
+ # Enemies get visibly bigger/tankier as the run goes on (elite odds and the
+ # tank/boss mix both climb with wave); grow the player to match instead of
+ # shrinking into an ant by wave 10, capped so a long run doesn't get silly.
+ visual.set_level_scale(1.0+minf(run.level-1,20)*0.015)
  var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
  input=input.limit_length()
  var movement=Vector3(input.x,0,input.y)

@@ -16,6 +16,7 @@ var hand_magic: Node3D
 var hand_skeleton: Skeleton3D
 var hand_bone = -1
 var magic_time = 0.0
+var base_scale = Vector3.ONE
 
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
  var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
@@ -52,9 +53,13 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
   model.scale=Vector3.ONE*ratio
   model.position=Vector3(-bounds.get_center().x*ratio,-bounds.position.y*ratio,-bounds.get_center().z*ratio)
  base_y=model.position.y
+ base_scale=model.scale
  if enemy:_tint(model,tint)
  play("idle")
  if kind=="mage" and not enemy:_attach_hand_magic()
+
+func set_level_scale(multiplier: float):
+ if is_instance_valid(model):model.scale=base_scale*multiplier
 
 func _find_animation(node: Node) -> AnimationPlayer:
  if node is AnimationPlayer:return node
