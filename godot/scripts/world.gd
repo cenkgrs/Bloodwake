@@ -267,8 +267,10 @@ func _weapons(dt: float):
   else:
    _resolve_weapon(id,direction)
    if not visual.fitted_timing:visual.action("attack")
-  if move_input.length_squared()<0.01 and Input.get_vector("move_left","move_right","move_up","move_down").length_squared()<0.01:
-   visual.rotation.y=atan2(direction.x,direction.z)
+  # Snap to face the attack immediately, even mid-movement - the per-frame
+  # facing lerp in _physics_process picks the movement direction back up
+  # on its own once the attack's done and the player keeps moving.
+  visual.rotation.y=atan2(direction.x,direction.z)
   slot.cooldown=cooldown
 
 func _pending_attacks(dt: float):
@@ -306,11 +308,13 @@ func _resolve_weapon(id: String,direction: Vector3):
     var shot_direction=direction.rotated(Vector3.UP,angle)
     if id=="magic_orb" and is_instance_valid(visual.hand_magic):
      var hand=visual.hand_magic.global_position
-     origin=hand-Vector3.UP*0.8
      var target=nearest(player.position,range_value)
      var destination=player.position+shot_direction*range_value+Vector3.UP*0.8
      if target!=null and (target.node.position-player.position).normalized().dot(shot_direction)>0.95:destination=target.node.position+Vector3.UP*0.8
      shot_direction=(destination-hand).normalized()
+     # Clear the hand/body mesh - the orb used to spawn right at the palm and
+     # visibly poke out of the model instead of appearing in front of it.
+     origin=hand+shot_direction*0.45-Vector3.UP*0.8
     _bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
  sound({"sword":"sword_swing","daggers":"sword_swing","rapid_rifle":"shoot_rifle","basic_pistol":"shoot_pistol","shotgun":"shoot_shotgun","magic_orb":"magic_orb_cast","lightning":"lightning_cast"}.get(id,"shoot"))
 
@@ -342,15 +346,19 @@ func _resolve_ability(data: Dictionary):
    var roll=run.damage_roll(data.damage*run.stats.damage)
    _bullet(player.position,aim.rotated(Vector3.UP,i*0.16),data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,0,"rapid_rifle",0,0,roll.critical)
  else:
+  var strike_position=player.position
   if data.id=="shadow_strike":
-   player.position+=aim*data.range*BWData.UNIT
-   player.position.x=clampf(player.position.x,-23.5,23.5);player.position.z=clampf(player.position.z,-23.5,23.5)
+   # A fast dash reads better than a blink and disorients less - cover the
+   # distance in a short tween instead of snapping player.position directly.
+   strike_position=player.position+aim*data.range*BWData.UNIT*0.5
+   strike_position.x=clampf(strike_position.x,-23.5,23.5);strike_position.z=clampf(strike_position.z,-23.5,23.5)
+   create_tween().tween_property(player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
    range_value=65*run.stats.attackRange*BWData.UNIT
   for e in enemies.duplicate():
-   if e.node.position.distance_to(player.position)<=range_value:
+   if e.node.position.distance_to(strike_position)<=range_value:
     var roll=run.damage_roll(data.damage*run.stats.damage);_damage_enemy(e,roll.damage,roll.critical)
     if e.hp>0 and data.id=="frost_nova":e.slow=3;e.slow_amount=0.45
-  ring(player.position,range_value,Color(BWData.CLASSES[run.class_id].color),0.4)
+  ring(strike_position,range_value,Color(BWData.CLASSES[run.class_id].color),0.4)
  sound("magic_orb_cast" if data.id=="frost_nova" else "shoot")
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):

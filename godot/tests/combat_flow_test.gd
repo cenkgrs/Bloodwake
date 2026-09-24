@@ -40,6 +40,12 @@ func suite():
  world._pending_attacks(0.5);check(target.hp==80,"pending attack resolves only once")
  visual.lock_time=0;run.weapons.sword.cooldown=0;run.stats.attackSpeed=3;world._weapons(0.016)
  check(visual.lock_time<0.2,"attack animation accelerates with attack speed")
+ world.enemies.erase(target);target.node.queue_free()
+ var far_target=world.spawn_enemy("tank",Vector3(0,0,-0.7));far_target.cooldown=100;far_target.hp=100
+ visual.rotation.y=1.0;visual.lock_time=0;run.weapons.sword.cooldown=0;world.auto_fire=true;world._weapons(0.016)
+ var attack_dir=(far_target.node.position-world.player.position).normalized()
+ check(is_equal_approx(visual.rotation.y,atan2(attack_dir.x,attack_dir.z)),"attack snaps to face its target regardless of whichever way the character was already facing")
+ world.enemies.erase(far_target);far_target.node.queue_free()
  await create_timer(0.7).timeout
  scene.show_menu();await process_frame
  scene.start_run("mage");await process_frame;world=scene.world;run=scene.run;visual=world.visual;world.running=false
@@ -49,6 +55,10 @@ func suite():
  var before=visual.hand_magic.global_position
  visual.animation.play(visual.clips.attack);visual.animation.seek(0.5,true);await process_frame
  check(before.distance_to(visual.hand_magic.global_position)>0.01,"hand VFX follows animated hand")
+ var hand_pos=visual.hand_magic.global_position
+ world._resolve_weapon("magic_orb",Vector3.FORWARD)
+ var spawned=world.bullets[-1].node.position
+ check(Vector2(spawned.x-hand_pos.x,spawned.z-hand_pos.z).length()>0.3,"magic orb spawns clear of the hand instead of poking out of the body")
  world.running=true;world.auto_fire=false;world.rest_time=999
  target=world.spawn_enemy("tank",Vector3(1,0,0));target.cooldown=100;target.hp=1000
  world.ability()
@@ -78,6 +88,18 @@ func suite():
  await create_timer(2.15).timeout;check(scene.page=="menu","stale transition cannot reopen reward menu")
  scene.start_run("gunslinger");await process_frame
  check(not scene.world.visual.fitted_timing and scene.world.visual.clip_speed("attack")==1.0,"Bloodbound keeps its original playback speed")
+ scene.start_run("assassin");await process_frame;world=scene.world;run=scene.run;visual=world.visual;world.running=true;world.auto_fire=false
+ check(visual.clips.size()==5 and visual.clips.has("ultimate") and not visual.clips.has("hit"),"Assassin has five authored clips and no hit reaction (none was supplied)")
+ world.aim=Vector3.FORWARD
+ var before_pos=world.player.position
+ world.ability()
+ check(world.pending_attacks.size()==1 and world.pending_attacks[0].id=="ultimate","Shadow Strike waits for the cast frame like other ultimates")
+ world._pending_attacks(0.46)
+ var immediate_distance=world.player.position.distance_to(before_pos)
+ check(immediate_distance<0.01,"Shadow Strike defers the move to a tween instead of snapping position synchronously")
+ await create_timer(0.2).timeout
+ var final_distance=world.player.position.distance_to(before_pos)
+ check(final_distance>1.2 and final_distance<1.5,"Shadow Strike covers about half its old teleport distance (~1.35 units)")
  DirAccess.remove_absolute(scene.meta.path)
  scene.queue_free();await process_frame
  print("COMBAT_FLOW_TESTS ",checks," checks / ",failures," failures")
