@@ -39,7 +39,9 @@ class CharacterClassData {
 
   /// `assets/images/characters/<id>` — see that folder's README for the
   /// expected `idle/run/attack/hit/death.png` files.
-  String get spriteFolder => 'assets/images/characters/${id.name}';
+  String get spriteFolder => id == CharacterClass.gunslinger
+      ? 'assets/images/characters/bloodbound'
+      : 'assets/images/characters/${id.name}';
 }
 
 class CharacterClassCatalog {
@@ -60,11 +62,13 @@ class CharacterClassCatalog {
 
   static final gunslinger = CharacterClassData(
     id: CharacterClass.gunslinger,
-    name: 'Gunslinger',
+    // Preserve the internal ID and sprite path while the art is rebranded.
+    name: 'Bloodbound',
     tagline: 'RANGED · HIGH DPS · MOBILITY',
     description:
-        'Fast-firing ranged hunter. Outruns and outguns anything '
-        'that gets close, but can\'t take much punishment.',
+        'A blood-sworn hunter armed with a relentless rifle. '
+        'Outruns cursed foes and cuts them down from afar, '
+        'but can\'t take much punishment.',
     accentColor: const Color(0xFFE0A73F),
     startingWeapon: WeaponCatalog.rapidRifle,
     startingAbility: AbilityCatalog.fanShot,

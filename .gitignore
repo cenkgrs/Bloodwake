@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Godot imported caches and local export credentials
+godot/.godot/
+godot/export_credentials.cfg
+godot/builds/
+**/*.blend1
+**/__pycache__/

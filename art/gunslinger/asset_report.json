@@ -1,0 +1,13 @@
+{
+  "triangles": 84404,
+  "joints": 18,
+  "clips": [
+    "attack",
+    "death",
+    "hit",
+    "idle",
+    "reload",
+    "run"
+  ],
+  "glb_bytes": 3339836
+}

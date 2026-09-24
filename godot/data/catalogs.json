@@ -1,0 +1,759 @@
+{
+  "weapons": [
+    {
+      "id": "basic_pistol",
+      "name": "Basic Pistol",
+      "damage": 12,
+      "attacksPerSecond": 2,
+      "range": 260,
+      "projectileSpeed": 480
+    },
+    {
+      "id": "rapid_rifle",
+      "name": "Rapid Rifle",
+      "damage": 5,
+      "attacksPerSecond": 6,
+      "range": 340,
+      "projectileSpeed": 620
+    },
+    {
+      "id": "shotgun",
+      "name": "Shotgun",
+      "damage": 7,
+      "attacksPerSecond": 1.2,
+      "range": 160,
+      "projectileSpeed": 420,
+      "behavior": "spread",
+      "projectileCount": 5
+    },
+    {
+      "id": "magic_orb",
+      "name": "Magic Orb",
+      "damage": 16,
+      "attacksPerSecond": 0.9,
+      "range": 300,
+      "projectileSpeed": 180,
+      "behavior": "piercing",
+      "pierceCount": 3
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning",
+      "damage": 10,
+      "attacksPerSecond": 1.4,
+      "range": 240,
+      "projectileSpeed": 0,
+      "behavior": "chain",
+      "chainCount": 2
+    },
+    {
+      "id": "sword",
+      "name": "Sword",
+      "damage": 20,
+      "attacksPerSecond": 1.6,
+      "range": 55,
+      "projectileSpeed": 0,
+      "behavior": "melee"
+    },
+    {
+      "id": "daggers",
+      "name": "Twin Daggers",
+      "damage": 9,
+      "attacksPerSecond": 2.4,
+      "range": 45,
+      "projectileSpeed": 0,
+      "behavior": "melee"
+    }
+  ],
+  "abilities": [
+    {
+      "id": "war_cry",
+      "name": "War Cry",
+      "behavior": "warCry",
+      "icon": "sword",
+      "damage": 34,
+      "cooldown": 6,
+      "range": 110
+    },
+    {
+      "id": "fan_shot",
+      "name": "Fan Shot",
+      "behavior": "fanShot",
+      "icon": "bullets",
+      "damage": 12,
+      "cooldown": 5,
+      "range": 320,
+      "projectileSpeed": 560
+    },
+    {
+      "id": "frost_nova",
+      "name": "Frost Nova",
+      "behavior": "frostNova",
+      "icon": "snowflake",
+      "damage": 28,
+      "cooldown": 7,
+      "range": 125
+    },
+    {
+      "id": "shadow_strike",
+      "name": "Shadow Strike",
+      "behavior": "shadowStrike",
+      "icon": "daggers",
+      "damage": 38,
+      "cooldown": 6,
+      "range": 135
+    }
+  ],
+  "enemies": [
+    {
+      "type": "grunt",
+      "aiType": "chaseAndMelee",
+      "maxHp": 30,
+      "moveSpeed": 90,
+      "damage": 0,
+      "attackRange": 28,
+      "attackCooldown": 1.0,
+      "xpReward": 5,
+      "goldReward": 1,
+      "radius": 16,
+      "color": "#FFE046",
+      "unlockWave": 1,
+      "spawnWeight": 5,
+      "id": "grunt"
+    },
+    {
+      "type": "archer",
+      "aiType": "archerKite",
+      "maxHp": 20,
+      "moveSpeed": 80,
+      "damage": 7,
+      "attackRange": 220,
+      "attackCooldown": 1.3,
+      "xpReward": 8,
+      "goldReward": 2,
+      "radius": 14,
+      "color": "#FF9B59",
+      "unlockWave": 2,
+      "spawnWeight": 3,
+      "preferredRange": 220,
+      "projectileSpeed": 300,
+      "id": "archer"
+    },
+    {
+      "type": "tank",
+      "aiType": "chaseAndMelee",
+      "maxHp": 90,
+      "moveSpeed": 55,
+      "damage": 16,
+      "attackRange": 34,
+      "attackCooldown": 1.6,
+      "xpReward": 12,
+      "goldReward": 3,
+      "radius": 22,
+      "color": "#FF8B3A",
+      "unlockWave": 3,
+      "spawnWeight": 2,
+      "id": "tank"
+    },
+    {
+      "type": "assassin",
+      "aiType": "assassinDashStrike",
+      "maxHp": 22,
+      "moveSpeed": 130,
+      "damage": 14,
+      "attackRange": 30,
+      "attackCooldown": 1.0,
+      "xpReward": 10,
+      "goldReward": 2,
+      "radius": 14,
+      "color": "#FF4A4E",
+      "unlockWave": 4,
+      "spawnWeight": 2,
+      "id": "assassin"
+    },
+    {
+      "type": "healer",
+      "aiType": "healerSupport",
+      "maxHp": 25,
+      "moveSpeed": 85,
+      "damage": 0,
+      "attackRange": 0,
+      "attackCooldown": 2.0,
+      "xpReward": 10,
+      "goldReward": 3,
+      "radius": 15,
+      "color": "#FF2ECC",
+      "unlockWave": 5,
+      "spawnWeight": 1,
+      "preferredRange": 180,
+      "supportRadius": 260,
+      "healAmount": 10,
+      "id": "healer"
+    },
+    {
+      "type": "commander",
+      "aiType": "commanderSupport",
+      "maxHp": 55,
+      "moveSpeed": 72,
+      "damage": 8,
+      "attackRange": 190,
+      "attackCooldown": 4.5,
+      "xpReward": 18,
+      "goldReward": 6,
+      "radius": 18,
+      "color": "#FFD4AF",
+      "unlockWave": 6,
+      "spawnWeight": 1,
+      "preferredRange": 210,
+      "supportRadius": 250,
+      "auraMoveSpeedBonus": 0.22,
+      "auraDamageBonus": 0.25,
+      "auraDuration": 5.5,
+      "id": "commander"
+    },
+    {
+      "type": "boss",
+      "aiType": "bossPhased",
+      "maxHp": 900,
+      "moveSpeed": 70,
+      "damage": 22,
+      "attackRange": 70,
+      "attackCooldown": 2.0,
+      "xpReward": 150,
+      "goldReward": 80,
+      "radius": 52,
+      "color": "#FF6B0F",
+      "id": "boss"
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "sharpened",
+      "name": "Sharpened",
+      "description": "+10% Damage",
+      "category": "offense",
+      "rarity": "common",
+      "maxLevel": 5,
+      "apply": "_sharpened"
+    },
+    {
+      "id": "rapid_fire_stat",
+      "name": "Rapid Fire",
+      "description": "+12% Attack Speed",
+      "category": "offense",
+      "rarity": "common",
+      "maxLevel": 5,
+      "apply": "_rapidFireStat"
+    },
+    {
+      "id": "vitality",
+      "name": "Vitality",
+      "description": "+20 Max HP",
+      "category": "defense",
+      "rarity": "common",
+      "maxLevel": 5,
+      "apply": "_vitality"
+    },
+    {
+      "id": "predator",
+      "name": "Predator",
+      "description": "+5% Critical Chance",
+      "category": "critical",
+      "rarity": "rare",
+      "maxLevel": 5,
+      "apply": "_predator"
+    },
+    {
+      "id": "vampirism",
+      "name": "Vampirism",
+      "description": "+2% Lifesteal",
+      "category": "utility",
+      "rarity": "rare",
+      "maxLevel": 5,
+      "apply": "_vampirism"
+    },
+    {
+      "id": "swift",
+      "name": "Swift",
+      "description": "+8% Movement Speed",
+      "category": "mobility",
+      "rarity": "common",
+      "maxLevel": 5,
+      "apply": "_swift"
+    },
+    {
+      "id": "greatsword",
+      "name": "Greatsword",
+      "description": "+25% sword reach and larger slash",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_greatsword",
+      "isAvailable": "_warrior"
+    },
+    {
+      "id": "storm_blade",
+      "name": "Storm Blade",
+      "description": "Sword hits arc lightning to +1 nearby enemy",
+      "category": "elemental",
+      "rarity": "epic",
+      "maxLevel": 3,
+      "apply": "_stormBlade",
+      "isAvailable": "_warrior"
+    },
+    {
+      "id": "shockwave",
+      "name": "Shockwave",
+      "description": "Every 3rd sword swing hits a wider area",
+      "category": "weapon",
+      "rarity": "epic",
+      "maxLevel": 3,
+      "apply": "_shockwave",
+      "isAvailable": "_warrior"
+    },
+    {
+      "id": "rifle_tempo",
+      "name": "Trigger Tempo",
+      "description": "+18% rifle fire rate",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_rifleTempo",
+      "isAvailable": "_gunslinger"
+    },
+    {
+      "id": "rifle_caliber",
+      "name": "Heavy Caliber",
+      "description": "+20% rifle damage",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_rifleCaliber",
+      "isAvailable": "_gunslinger"
+    },
+    {
+      "id": "rifle_range",
+      "name": "Long Barrel",
+      "description": "+15% rifle range",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_rifleRange",
+      "isAvailable": "_gunslinger"
+    },
+    {
+      "id": "orb_pierce",
+      "name": "Piercing Orb",
+      "description": "Magic orb pierces +1 enemy",
+      "category": "elemental",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_orbPierce",
+      "isAvailable": "_mage"
+    },
+    {
+      "id": "orb_power",
+      "name": "Arcane Focus",
+      "description": "+25% magic orb damage",
+      "category": "elemental",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_orbPower",
+      "isAvailable": "_mage"
+    },
+    {
+      "id": "orb_range",
+      "name": "Far Sight",
+      "description": "+20% magic orb range",
+      "category": "elemental",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_orbRange",
+      "isAvailable": "_mage"
+    },
+    {
+      "id": "dagger_tempo",
+      "name": "Flurry",
+      "description": "+18% dagger attack speed",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_daggerTempo",
+      "isAvailable": "_assassin"
+    },
+    {
+      "id": "dagger_reach",
+      "name": "Long Blades",
+      "description": "+20% dagger reach and larger slash",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_daggerReach",
+      "isAvailable": "_assassin"
+    },
+    {
+      "id": "dagger_edge",
+      "name": "Razor Edge",
+      "description": "+20% dagger damage",
+      "category": "weapon",
+      "rarity": "rare",
+      "maxLevel": 3,
+      "apply": "_daggerEdge",
+      "isAvailable": "_assassin"
+    },
+    {
+      "id": "thunderquake",
+      "name": "Thunderquake",
+      "description": "Greatsword + Storm Blade: every 3rd swing erupts and chains farther",
+      "category": "special",
+      "rarity": "legendary",
+      "maxLevel": 1,
+      "apply": "_thunderquake",
+      "isAvailable": "_thunderquakeAvailable"
+    },
+    {
+      "id": "armor_piercer",
+      "name": "Armor Piercer",
+      "description": "Heavy Caliber + Long Barrel: rifle rounds pierce 2 enemies",
+      "category": "special",
+      "rarity": "legendary",
+      "maxLevel": 1,
+      "apply": "_armorPiercer",
+      "isAvailable": "_armorPiercerAvailable"
+    },
+    {
+      "id": "spellfire",
+      "name": "Spellfire",
+      "description": "Piercing Orb + Arcane Focus: orb hits burn enemies",
+      "category": "special",
+      "rarity": "legendary",
+      "maxLevel": 1,
+      "apply": "_spellfire",
+      "isAvailable": "_spellfireAvailable"
+    },
+    {
+      "id": "hemorrhage",
+      "name": "Hemorrhage",
+      "description": "Flurry + Razor Edge: dagger hits inflict bleeding",
+      "category": "special",
+      "rarity": "legendary",
+      "maxLevel": 1,
+      "apply": "_hemorrhage",
+      "isAvailable": "_hemorrhageAvailable"
+    }
+  ],
+  "items": [
+    {
+      "id": "platinum_armor",
+      "name": "Platinum Armor",
+      "description": "+10% Armor, +20 Max HP",
+      "rarity": "common",
+      "cost": 20,
+      "category": "gear",
+      "apply": "_platinumArmor"
+    },
+    {
+      "id": "swift_boots",
+      "name": "Swift Boots",
+      "description": "+15% Move Speed, +10% Dodge Chance",
+      "rarity": "common",
+      "cost": 20,
+      "category": "gear",
+      "apply": "_swiftBoots"
+    },
+    {
+      "id": "hunters_scope",
+      "name": "Hunter's Scope",
+      "description": "+20% Attack Range, +5% Critical Chance",
+      "rarity": "common",
+      "cost": 20,
+      "category": "gear",
+      "apply": "_huntersScope"
+    },
+    {
+      "id": "vampiric_amulet",
+      "name": "Vampiric Amulet",
+      "description": "+3% Lifesteal, +2 HP regen per second",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "relic",
+      "apply": "_vampiricAmulet"
+    },
+    {
+      "id": "lucky_charm",
+      "name": "Lucky Charm",
+      "description": "+3 Gold per kill, +20% XP gained",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "relic",
+      "apply": "_luckyCharm"
+    },
+    {
+      "id": "guardian_angel",
+      "name": "Guardian Angel",
+      "description": "Survive one lethal hit at 1 HP (once per run)",
+      "rarity": "legendary",
+      "cost": 65,
+      "category": "relic",
+      "apply": "_guardianAngel"
+    },
+    {
+      "id": "gold_sword",
+      "name": "Gold Sword",
+      "description": "+30% Sword damage",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "weapon",
+      "apply": "_goldSword",
+      "isAvailable": "_ownsSword"
+    },
+    {
+      "id": "thunder_core",
+      "name": "Thunder Core",
+      "description": "+25% Lightning damage",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "weapon",
+      "apply": "_thunderCore",
+      "isAvailable": "_ownsLightning"
+    },
+    {
+      "id": "rifle_mechanism",
+      "name": "Rifle Mechanism",
+      "description": "+25% Rifle fire rate",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "weapon",
+      "apply": "_rifleMechanism",
+      "isAvailable": "_ownsRifle"
+    },
+    {
+      "id": "orb_focus",
+      "name": "Orb Focus",
+      "description": "+30% Magic Orb damage",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "weapon",
+      "apply": "_orbFocus",
+      "isAvailable": "_ownsOrb"
+    },
+    {
+      "id": "dagger_steel",
+      "name": "Dagger Steel",
+      "description": "+30% Dagger damage",
+      "rarity": "rare",
+      "cost": 35,
+      "category": "weapon",
+      "apply": "_daggerSteel",
+      "isAvailable": "_ownsDaggers"
+    }
+  ],
+  "equipment": [
+    {
+      "id": "bloodplate",
+      "name": "Bloodplate",
+      "description": "+22 HP, +4% armor",
+      "slot": "armor",
+      "cost": 12,
+      "apply": "_bloodplate"
+    },
+    {
+      "id": "shadow_cloak",
+      "name": "Shadow Cloak",
+      "description": "+18 speed, +4% dodge",
+      "slot": "armor",
+      "cost": 12,
+      "apply": "_shadowCloak"
+    },
+    {
+      "id": "storm_robe",
+      "name": "Storm Robe",
+      "description": "+7% damage and range",
+      "slot": "armor",
+      "cost": 14,
+      "apply": "_stormRobe"
+    },
+    {
+      "id": "iron_greaves",
+      "name": "Iron Greaves",
+      "description": "+10 HP, +3% armor",
+      "slot": "boots",
+      "cost": 8,
+      "apply": "_ironGreaves"
+    },
+    {
+      "id": "hunter_boots",
+      "name": "Hunter Boots",
+      "description": "+22 speed, +25 pickup radius",
+      "slot": "boots",
+      "cost": 8,
+      "apply": "_hunterBoots"
+    },
+    {
+      "id": "arcane_steps",
+      "name": "Arcane Steps",
+      "description": "+12 speed, +6% attack speed",
+      "slot": "boots",
+      "cost": 10,
+      "apply": "_arcaneSteps"
+    },
+    {
+      "id": "ember_sigil",
+      "name": "Ember Sigil",
+      "description": "+10% damage",
+      "slot": "charm",
+      "cost": 8,
+      "apply": "_emberSigil"
+    },
+    {
+      "id": "leech_pendant",
+      "name": "Leech Pendant",
+      "description": "+2.5% lifesteal",
+      "slot": "charm",
+      "cost": 10,
+      "apply": "_leechPendant"
+    },
+    {
+      "id": "scholar_rune",
+      "name": "Scholar Rune",
+      "description": "+12% XP gain",
+      "slot": "charm",
+      "cost": 8,
+      "apply": "_scholarRune"
+    }
+  ],
+  "skills": [
+    {
+      "id": "might",
+      "name": "Might",
+      "description": "+2% damage / level",
+      "branch": "offense",
+      "baseCost": 5,
+      "apply": "_damage"
+    },
+    {
+      "id": "precision",
+      "name": "Precision",
+      "description": "+1% crit chance / level",
+      "branch": "offense",
+      "baseCost": 7,
+      "requires": "might",
+      "apply": "_crit"
+    },
+    {
+      "id": "fury",
+      "name": "Fury",
+      "description": "+2% attack speed / level",
+      "branch": "offense",
+      "baseCost": 8,
+      "requires": "might",
+      "apply": "_attackSpeed"
+    },
+    {
+      "id": "execution",
+      "name": "Execution",
+      "description": "+3% crit damage / level",
+      "branch": "offense",
+      "baseCost": 10,
+      "requires": "precision",
+      "apply": "_critDamage"
+    },
+    {
+      "id": "reach",
+      "name": "Reach",
+      "description": "+2% attack range / level",
+      "branch": "offense",
+      "baseCost": 10,
+      "requires": "fury",
+      "apply": "_range"
+    },
+    {
+      "id": "vigor",
+      "name": "Vigor",
+      "description": "+4 max HP / level",
+      "branch": "defense",
+      "baseCost": 5,
+      "apply": "_health"
+    },
+    {
+      "id": "plate",
+      "name": "Plate",
+      "description": "+0.5% armor / level",
+      "branch": "defense",
+      "baseCost": 7,
+      "requires": "vigor",
+      "apply": "_armor"
+    },
+    {
+      "id": "renewal",
+      "name": "Renewal",
+      "description": "+0.15 HP/s / level",
+      "branch": "defense",
+      "baseCost": 8,
+      "requires": "vigor",
+      "apply": "_regen"
+    },
+    {
+      "id": "drain",
+      "name": "Drain",
+      "description": "+0.3% lifesteal / level",
+      "branch": "defense",
+      "baseCost": 10,
+      "requires": "renewal",
+      "apply": "_lifesteal"
+    },
+    {
+      "id": "last_stand",
+      "name": "Last Stand",
+      "description": "Second Wind at level 3",
+      "branch": "defense",
+      "baseCost": 12,
+      "requires": "plate",
+      "apply": "_secondWind"
+    },
+    {
+      "id": "stride",
+      "name": "Stride",
+      "description": "+3 movement speed / level",
+      "branch": "mobility",
+      "baseCost": 5,
+      "apply": "_speed"
+    },
+    {
+      "id": "reflex",
+      "name": "Reflex",
+      "description": "+0.5% dodge / level",
+      "branch": "mobility",
+      "baseCost": 7,
+      "requires": "stride",
+      "apply": "_dodge"
+    },
+    {
+      "id": "magnet",
+      "name": "Magnet",
+      "description": "+5 pickup radius / level",
+      "branch": "mobility",
+      "baseCost": 8,
+      "requires": "stride",
+      "apply": "_pickup"
+    },
+    {
+      "id": "insight",
+      "name": "Insight",
+      "description": "+2% XP / level",
+      "branch": "mobility",
+      "baseCost": 10,
+      "requires": "magnet",
+      "apply": "_xp"
+    },
+    {
+      "id": "scavenger",
+      "name": "Scavenger",
+      "description": "+1 gold per kill / level",
+      "branch": "mobility",
+      "baseCost": 10,
+      "requires": "reflex",
+      "apply": "_gold"
+    }
+  ]
+}

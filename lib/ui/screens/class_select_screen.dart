@@ -332,6 +332,12 @@ class _ClassPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (classData.id == CharacterClass.gunslinger) {
+      return Image.asset(
+        '${classData.spriteFolder}/portrait.png',
+        fit: BoxFit.contain,
+      );
+    }
     return ClipRect(
       child: LayoutBuilder(
         builder: (context, constraints) => OverflowBox(

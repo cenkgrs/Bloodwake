@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flame/components.dart';
+import 'package:flutter/services.dart';
 
 import 'character_class.dart';
 import 'player.dart';
@@ -48,10 +51,41 @@ class CharacterSpriteAnimator
   double _attackTimer = 0;
   Vector2? _lastPosition;
   bool _deathTriggered = false;
+  double _bloodboundHitDuration = _hitHoldDuration;
+  double _bloodboundAttackDuration = 6 * _attackStepTime;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    if (characterClass.id == CharacterClass.gunslinger) {
+      final folder = characterClass.spriteFolder;
+      final metadata = jsonDecode(
+        await rootBundle.loadString('$folder/animations.json'),
+      ) as Map<String, dynamic>;
+      final loaded = <_CharAnimState, SpriteAnimation>{};
+      for (final state in _CharAnimState.values) {
+        final clip = metadata[state.name] as Map<String, dynamic>;
+        final image = await parent.game.images.load(
+          _imageKey('$folder/${state.name}.png'),
+        );
+        loaded[state] = SpriteAnimation.fromFrameData(
+          image,
+          SpriteAnimationData.sequenced(
+            amount: clip['frames'] as int,
+            amountPerRow: clip['columns'] as int,
+            stepTime: (clip['stepTime'] as num).toDouble(),
+            textureSize: Vector2.all((clip['frameSize'] as num).toDouble()),
+            loop: clip['loop'] as bool,
+          ),
+        );
+      }
+      _bloodboundHitDuration = (metadata['hit']['duration'] as num).toDouble();
+      _bloodboundAttackDuration = (metadata['attack']['duration'] as num)
+          .toDouble();
+      animations = loaded;
+      current = _CharAnimState.idle;
+      return;
+    }
     if (characterClass.id == CharacterClass.warrior) {
       const testFolder = 'assets/images/characters/warrior_rig_test';
       animations = {
@@ -156,18 +190,27 @@ class CharacterSpriteAnimator
       assetPath.replaceFirst('assets/images/', '');
 
   /// Called by PlayerWeapons/PlayerAbilities whenever an attack fires.
-  // The generated attack frames change anatomy and camera angle between
-  // frames. Automatic weapons can fire every few ticks, making the player
-  // appear to thrash constantly. Keep the stable idle/run pose until a
-  // properly aligned attack strip is available.
+  // Only rig-rendered classes have aligned attack frames. Let their clip
+  // finish before another automatic shot restarts the attack timer.
   void triggerAttack() {
     if (characterClass.id == CharacterClass.warrior && _attackTimer <= 0) {
       _attackTimer = 8 * 0.075;
+    } else if (characterClass.id == CharacterClass.gunslinger &&
+        _attackTimer <= 0) {
+      _attackTimer = _bloodboundAttackDuration;
+      animationTickers?[_CharAnimState.attack]?.reset();
     }
   }
 
   /// Called by Player.applyDamage on a real (non-dodged) hit.
-  void triggerHit() => _hitTimer = _hitHoldDuration;
+  void triggerHit() {
+    _hitTimer = characterClass.id == CharacterClass.gunslinger
+        ? _bloodboundHitDuration
+        : _hitHoldDuration;
+    if (characterClass.id == CharacterClass.gunslinger) {
+      animationTickers?[_CharAnimState.hit]?.reset();
+    }
+  }
 
   @override
   void update(double dt) {
@@ -175,6 +218,12 @@ class CharacterSpriteAnimator
     if (animations == null) {
       return;
     }
+
+    final position = parent.position;
+    final moving =
+        _lastPosition != null &&
+        position.distanceToSquared(_lastPosition!) > _movementEpsilonSquared;
+    _lastPosition = position.clone();
 
     if (parent.isDead) {
       if (!_deathTriggered) {
@@ -198,11 +247,6 @@ class CharacterSpriteAnimator
       return;
     }
 
-    final position = parent.position;
-    final moving =
-        _lastPosition != null &&
-        position.distanceToSquared(_lastPosition!) > _movementEpsilonSquared;
-    _lastPosition = position.clone();
     current = moving ? _CharAnimState.run : _CharAnimState.idle;
     _applyFacing();
   }

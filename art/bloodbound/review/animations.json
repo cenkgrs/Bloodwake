@@ -1,0 +1,52 @@
+{
+  "attack": {
+    "frames": 8,
+    "duration": 0.9583333333333334,
+    "stepTime": 0.11979166666666667,
+    "loop": false,
+    "sourceFrames": [
+      0.0,
+      23.0
+    ]
+  },
+  "death": {
+    "frames": 8,
+    "duration": 3.0,
+    "stepTime": 0.375,
+    "loop": false,
+    "sourceFrames": [
+      0.0,
+      72.0
+    ]
+  },
+  "hit": {
+    "frames": 8,
+    "duration": 0.9583333333333334,
+    "stepTime": 0.11979166666666667,
+    "loop": false,
+    "sourceFrames": [
+      0.0,
+      23.0
+    ]
+  },
+  "idle": {
+    "frames": 8,
+    "duration": 15.333333333333334,
+    "stepTime": 1.9166666666666667,
+    "loop": true,
+    "sourceFrames": [
+      0.0,
+      368.0
+    ]
+  },
+  "run": {
+    "frames": 8,
+    "duration": 1.25,
+    "stepTime": 0.15625,
+    "loop": true,
+    "sourceFrames": [
+      0.0,
+      30.0
+    ]
+  }
+}
