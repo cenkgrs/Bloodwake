@@ -1,0 +1,62 @@
+{
+  "attack": {
+    "frames": 23,
+    "duration": 0.9583333333333334,
+    "stepTime": 0.04166666666666667,
+    "loop": false,
+    "sourceFrames": [
+      0.0,
+      23.0
+    ],
+    "columns": 16,
+    "frameSize": 128
+  },
+  "death": {
+    "frames": 48,
+    "duration": 3.0,
+    "stepTime": 0.0625,
+    "loop": false,
+    "sourceFrames": [
+      0.0,
+      72.0
+    ],
+    "columns": 16,
+    "frameSize": 128
+  },
+  "hit": {
+    "frames": 23,
+    "duration": 0.9583333333333334,
+    "stepTime": 0.04166666666666667,
+    "loop": false,
+    "sourceFrames": [
+      0.0,
+      23.0
+    ],
+    "columns": 16,
+    "frameSize": 128
+  },
+  "idle": {
+    "frames": 184,
+    "duration": 15.333333333333334,
+    "stepTime": 0.08333333333333334,
+    "loop": true,
+    "sourceFrames": [
+      0.0,
+      368.0
+    ],
+    "columns": 16,
+    "frameSize": 128
+  },
+  "run": {
+    "frames": 20,
+    "duration": 1.25,
+    "stepTime": 0.0625,
+    "loop": true,
+    "sourceFrames": [
+      0.0,
+      30.0
+    ],
+    "columns": 16,
+    "frameSize": 128
+  }
+}

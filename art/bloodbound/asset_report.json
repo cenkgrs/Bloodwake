@@ -1,0 +1,16 @@
+{
+  "source": "source/bloodbound_animated.glb",
+  "sha256": "a951ed50889b3e34f14955952fd3cb16c18083b0c01cbbcc46d83f6c4e852821",
+  "processed": "source/bloodbound_game.glb",
+  "clips": [
+    "attack",
+    "death",
+    "hit",
+    "idle",
+    "run"
+  ],
+  "joints": 65,
+  "meshes": 1,
+  "triangles": 19169,
+  "render_frames": 298
+}

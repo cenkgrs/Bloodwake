@@ -73,6 +73,7 @@ flutter:
     - assets/images/characters/warrior_rig_test/recievehit/
     - assets/images/characters/warrior_rig_test/death/
     - assets/images/characters/gunslinger/
+    - assets/images/characters/bloodbound/
     - assets/images/characters/mage/
     - assets/images/characters/assassin/
 
