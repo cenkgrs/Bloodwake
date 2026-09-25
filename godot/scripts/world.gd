@@ -25,6 +25,8 @@ var elapsed = 0.0
 var rest_time = 0.0
 var hit_flash = 0.0
 var flash_rect: ColorRect
+var combo_step = 0
+var combo_timer = 0.0
 var glow_texture: GradientTexture2D
 var ring_texture: GradientTexture2D
 var shake = 0.0
@@ -133,6 +135,7 @@ func _physics_process(dt: float):
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
 	var desired=player.position+Vector3(0,16,12);camera.position=camera.position.lerp(desired,1-exp(-dt*10))
 	if shake>0:camera.position+=Vector3(rng.randf_range(-shake,shake),rng.randf_range(-shake,shake),0);shake=move_toward(shake,0,dt*2)
+	if combo_timer>0:combo_timer=maxf(0,combo_timer-dt)
 	if hit_flash>0 or flash_rect.color.a>0:hit_flash=maxf(0,hit_flash-dt*1.9);flash_rect.color.a=hit_flash
 	_pending_attacks(dt)
 	_weapons(dt)
@@ -298,7 +301,18 @@ func _weapons(dt: float):
 		var cooldown=1.0/(data.attacksPerSecond*run.stats.attackSpeed*slot.speed)
 		if primary and visual.fitted_timing:
 			var duration=minf(0.45,cooldown*0.85)
-			visual.action("attack",duration)
+			var melee=data.get("behavior","")=="melee"
+			if melee:
+				combo_step=combo_step+1 if combo_timer>0 else 0
+				if combo_step>2:combo_step=0
+				combo_timer=cooldown*2.2
+				if combo_step==2:
+					duration=minf(0.7,cooldown*1.35)
+					visual.action("ultimate",duration)
+					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
+					_ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
+				else:visual.action("attack",duration,combo_step==1)
+			else:visual.action("attack",duration)
 			pending_attacks.append({"time":duration*0.32,"id":id,"direction":direction})
 		else:
 			_resolve_weapon(id,direction)
