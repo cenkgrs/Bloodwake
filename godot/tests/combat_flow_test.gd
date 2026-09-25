@@ -36,8 +36,9 @@ func suite():
 	world.auto_fire=true;visual.lock_time=0;world._weapons(0.016)
 	check(target.hp==100 and world.pending_attacks.size()==1,"sword waits for contact frame")
 	world._pending_attacks(0.10);check(target.hp==100,"sword does not hit during wind-up")
-	world._pending_attacks(0.06);check(target.hp==80,"sword deals one hit on contact")
-	world._pending_attacks(0.5);check(target.hp==80,"pending attack resolves only once")
+	# 20 catalogue damage x the warrior's 3.0 damage stat, on a 100 hp target.
+	world._pending_attacks(0.06);check(target.hp==40,"sword deals one hit on contact")
+	world._pending_attacks(0.5);check(target.hp==40,"pending attack resolves only once")
 	visual.lock_time=0;run.weapons.sword.cooldown=0;run.stats.attackSpeed=3;world._weapons(0.016)
 	check(visual.lock_time<0.2,"attack animation accelerates with attack speed")
 	world.enemies.erase(target);target.node.queue_free()

@@ -38,7 +38,7 @@ func suite():
 	meta.active=2;meta.equip("armor","bloodplate");meta.save()
 	var loaded=BWMeta.new();loaded.path=meta.path;loaded.load_save()
 	check(loaded.active==2 and loaded.essence==meta.essence and loaded.loadouts[2].armor=="bloodplate","save roundtrip")
-	var stats=BWData.stats("warrior");loaded.apply_to(stats);check(stats.maxHp==152 and is_equal_approx(stats.damage,1.02),"permanent stats applied")
+	var stats=BWData.stats("warrior");loaded.apply_to(stats);check(stats.maxHp==152 and is_equal_approx(stats.damage,3.02),"permanent stats applied")
 	check(not loaded.import_json("not json"),"corrupt save rejected")
 	check(loaded.import_json('{"essence":-1,"levels":{"might":999},"ownedEquipment":["fake"],"activeLoadout":9}'),"legacy JSON parsed")
 	check(loaded.essence==0 and loaded.levels.might==3 and loaded.owned.is_empty() and loaded.active==2,"save validation")
