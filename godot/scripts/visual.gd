@@ -73,8 +73,14 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 	play("idle")
 	if kind=="mage" and not enemy:_attach_hand_magic()
 
+var level_scale = 1.0
+
 func set_level_scale(multiplier: float):
-	if is_instance_valid(model):model.scale=base_scale*multiplier
+	level_scale=multiplier;_apply_scale()
+
+func _apply_scale():
+	if not is_instance_valid(model):return
+	model.scale=base_scale*level_scale
 
 func _find_animation(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer:return node
@@ -151,7 +157,7 @@ func play(next: String):
 		animation.speed_scale=1.0
 		animation.play(clips[next],0.08,clip_speed(next))
 
-func action(next: String,duration: float=-1.0) -> bool:
+func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 	if dead:return false
 	if next=="attack" and lock_time>0:return false
 	# A normal hit must not restart a committed spell or every incoming hit stun-locks it.
@@ -165,7 +171,8 @@ func action(next: String,duration: float=-1.0) -> bool:
 	if animation and clips.has(next):
 		var speed=clip_speed(next,duration)
 		animation.speed_scale=1.0
-		animation.play(clips[next],0.05,speed)
+		if reverse:animation.play(clips[next],0.05,-speed,true)
+		else:animation.play(clips[next],0.05,speed)
 		lock_time=animation.get_animation(clips[next]).length/speed
 		state=next
 	else:
