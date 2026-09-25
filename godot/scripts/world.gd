@@ -17,6 +17,7 @@ var spawned = 0
 var running = true
 var auto_fire = false
 var move_input = Vector2.ZERO
+var fire_input = false
 var touch_aim = Vector2.ZERO
 var aim = Vector3.FORWARD
 var last_move = Vector3.FORWARD
@@ -294,7 +295,10 @@ func _weapons(dt: float):
 		var data=slot.data;var range_value=data.range*run.stats.attackRange*slot.range*BWData.UNIT
 		var target=nearest(player.position,range_value)
 		var manual=Input.is_action_pressed("fire")
-		if not manual and (not auto_fire or target==null):continue
+		# Holding the touch trigger aims at the nearest enemy the way auto-fire does;
+		# a thumb on a button cannot also point at a target.
+		var assisted=auto_fire or fire_input
+		if not manual and (not assisted or target==null):continue
 		var primary=id==BWData.CLASSES[run.class_id].weapon
 		if primary and visual.fitted_timing and visual.lock_time>0:continue
 		var direction=aim if manual else (target.node.position-player.position).normalized()
