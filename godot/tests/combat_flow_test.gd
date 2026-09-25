@@ -87,7 +87,12 @@ func suite():
 	scene.start_run("warrior");await process_frame;scene._wave_complete();scene.show_menu()
 	await create_timer(2.15).timeout;check(scene.page=="menu","stale transition cannot reopen reward menu")
 	scene.start_run("gunslinger");await process_frame
-	check(not scene.world.visual.fitted_timing and scene.world.visual.clip_speed("attack")==1.0,"Bloodbound keeps its original playback speed")
+	# Only the shot clip is fitted. The Bloodbound keeps bloodbound.glb - there is no
+	# gunslinger_player rig - so it stays out of fitted_timing, and its locomotion
+	# clips keep their authored speed; normalising those sent the run cycle to 1.9x.
+	var bloodbound=scene.world.visual
+	check(not bloodbound.fitted_timing and bloodbound.fitted_attack,"Bloodbound fits only its shot clip")
+	check(bloodbound.clip_speed("run")==1.0 and bloodbound.clip_speed("attack")>1.0,"Bloodbound run stays native while the shot clip shortens")
 	scene.start_run("assassin");await process_frame;world=scene.world;run=scene.run;visual=world.visual;world.running=true;world.auto_fire=false
 	check(visual.clips.size()==5 and visual.clips.has("ultimate") and not visual.clips.has("hit"),"Assassin has five authored clips and no hit reaction (none was supplied)")
 	world.aim=Vector3.FORWARD
