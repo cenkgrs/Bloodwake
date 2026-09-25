@@ -144,7 +144,7 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=1.0
  var actor=Node3D.new();add_child(actor);actor.position=pos
  var art=BWVisual.new();actor.add_child(art)
  var color=Color(ENEMY_COLORS[id]);if elite:color=Color("c59857")
- art.configure("mage" if id=="healer" else "assassin" if id=="assassin" else "warrior",true,color,3.5 if id=="boss" else 2.3 if id=="tank" else 1.9 if elite else 1.7)
+ art.configure(id,true,color,3.5 if id=="boss" else 2.3 if id=="tank" else 1.9 if elite else 1.7)
  var max_hp=data.maxHp*multiplier*(2.5 if elite else 1)
  var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*multiplier*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"summon":7.0,"phase":1,"pending_phase":1,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
  enemies.append(enemy)

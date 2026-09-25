@@ -17,13 +17,17 @@ var hand_skeleton: Skeleton3D
 var hand_bone = -1
 var magic_time = 0.0
 var base_scale = Vector3.ONE
+var enemy_asset = false
 
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
  var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
+ var enemy_file="enemy_"+{"grunt":"warrior"}.get(kind,kind)
+ enemy_asset=enemy and ResourceLoader.exists("res://assets/models/%s.glb" % enemy_file)
  actor_kind=kind
  fitted_timing=not enemy and kind in ["warrior","mage","assassin"]
  if fitted_timing:file=kind+"_player"
- if kind=="mage" and enemy:
+ if enemy_asset:file=enemy_file
+ if kind in ["mage","healer"] and enemy and not enemy_asset:
   _mage(tint);procedural=true;return
  var packed = load("res://assets/models/%s.glb" % file)
  if not packed is PackedScene:
@@ -35,7 +39,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
    var key=String(anim_name).to_lower()
    for pair in [["idle","idle"],["run","run"],["walk","run"],["attack","attack"],["hit","hit"],["death","death"],["die","death"],["fall","death"],["ultimate","ultimate"]]:
     if key.contains(pair[0]) and not clips.has(pair[1]):clips[pair[1]]=anim_name
-  if kind=="warrior":
+  if file=="warrior":
    for desired in {"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}:
     var source={"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}[desired]
     if animation.has_animation(source):clips[desired]=source
@@ -44,7 +48,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
    anim.loop_mode=Animation.LOOP_LINEAR if clip in ["idle","run"] else Animation.LOOP_NONE
   if clips.has("idle"):animation.play(clips.idle);animation.advance(0)
  var bounds=_bounds(model)
- if fitted_timing:
+ if fitted_timing or enemy_asset:
   # This rig is authored at 1.8 m. Its unskinned mesh AABB is in bind space.
   model.scale=Vector3.ONE*(height/1.8)
   model.position=Vector3.ZERO
@@ -54,7 +58,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
   model.position=Vector3(-bounds.get_center().x*ratio,-bounds.position.y*ratio,-bounds.get_center().z*ratio)
  base_y=model.position.y
  base_scale=model.scale
- if enemy:_tint(model,tint)
+ if enemy and not enemy_asset:_tint(model,tint)
  play("idle")
  if kind=="mage" and not enemy:_attach_hand_magic()
 
@@ -94,7 +98,7 @@ func _tint(node: Node,color: Color):
 
 func clip_speed(next: String,duration: float=-1.0) -> float:
  if not animation or not clips.has(next):return 1.0
- if not fitted_timing:return 1.0
+ if not fitted_timing and not enemy_asset:return 1.0
  var run_targets={"warrior":0.62,"mage":0.72,"assassin":0.5}
  var attack_targets={"assassin":0.3}
  var targets={"run":run_targets.get(actor_kind,0.65),"attack":attack_targets.get(actor_kind,0.45),"hit":0.22,"ultimate":0.9,"death":2.2}

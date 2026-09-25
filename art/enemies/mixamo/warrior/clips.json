@@ -1,0 +1,11 @@
+{
+  "model": "warrior.fbx",
+  "clips": {
+    "Idle": "sword and shield idle.fbx",
+    "Run": "sword and shield run.fbx",
+    "Attack": "sword and shield slash.fbx",
+    "Hit": "sword and shield impact.fbx",
+    "Death": "sword and shield death.fbx"
+  },
+  "weapon": {"grip": [0, 0.81, 0], "axis": [0, -1, 0], "direction": [0, -0.7, 0.7], "scale": 1.0}
+}
