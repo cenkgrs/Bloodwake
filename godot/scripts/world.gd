@@ -26,6 +26,7 @@ var rest_time = 0.0
 var hit_flash = 0.0
 var flash_rect: ColorRect
 var glow_texture: GradientTexture2D
+var ring_texture: GradientTexture2D
 var shake = 0.0
 var audio_times = {}
 var pending_attacks: Array = []
@@ -59,6 +60,14 @@ func start(state: BWRun,profile: String="PC"):
 	ramp.set_offset(1,1.0);ramp.set_color(1,Color(1,1,1,0))
 	ramp.add_point(0.35,Color(1,1,1,0.55));ramp.add_point(0.7,Color(1,1,1,0.12))
 	glow_texture.gradient=ramp
+	ring_texture=GradientTexture2D.new()
+	ring_texture.fill=GradientTexture2D.FILL_RADIAL;ring_texture.fill_from=Vector2(0.5,0.5);ring_texture.fill_to=Vector2(0.5,1.0)
+	ring_texture.width=128;ring_texture.height=128
+	var rim=Gradient.new()
+	rim.set_offset(0,0.0);rim.set_color(0,Color(1,1,1,0))
+	rim.set_offset(1,1.0);rim.set_color(1,Color(1,1,1,0))
+	rim.add_point(0.55,Color(1,1,1,0.08));rim.add_point(0.8,Color(1,1,1,1.0));rim.add_point(0.92,Color(1,1,1,0.18))
+	ring_texture.gradient=rim
 	bullet_mesh=SphereMesh.new();bullet_mesh.radius=0.07;bullet_mesh.height=0.14;bullet_mesh.radial_segments=8;bullet_mesh.rings=4
 	bullet_material=StandardMaterial3D.new();bullet_material.albedo_color=Color("ffd99a");bullet_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 
@@ -374,6 +383,7 @@ func ability():
 func _resolve_ability(data: Dictionary):
 	var range_value=data.range*run.stats.attackRange*BWData.UNIT
 	if data.id=="fan_shot":
+		_ability_effect(data.id,player.position,range_value)
 		for i in range(-2,3):
 			var roll=run.damage_roll(data.damage*run.stats.damage)
 			_bullet(player.position,aim.rotated(Vector3.UP,i*0.16),data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,0,"rapid_rifle",0,0,roll.critical)
@@ -387,11 +397,71 @@ func _resolve_ability(data: Dictionary):
 			create_tween().tween_property(player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			range_value=65*run.stats.attackRange*BWData.UNIT
 		for e in enemies.duplicate():
-			if e.node.position.distance_to(strike_position)<=range_value:
+			if e.node.position.distance_to(strike_position)<=range_value+e.radius:
 				var roll=run.damage_roll(data.damage*run.stats.damage);_damage_enemy(e,roll.damage,roll.critical)
 				if e.hp>0 and data.id=="frost_nova":e.slow=3;e.slow_amount=0.45
-		ring(strike_position,range_value,Color(BWData.CLASSES[run.class_id].color),0.4)
+		_ability_effect(data.id,strike_position,range_value)
 	sound("magic_orb_cast" if data.id=="frost_nova" else "shoot")
+
+func radial_streaks(pos: Vector3,radius: float,color: Color,count: int,duration: float=0.26):
+	for i in count:
+		var angle=TAU*i/count+rng.randf_range(-0.34,0.34)
+		var reach=radius*rng.randf_range(0.5,1.15)
+		var lance=flat_sprite(color,radius*rng.randf_range(0.07,0.15),reach*0.9,2.0)
+		lance.position=pos+Vector3.UP*0.09;add_child(lance)
+		lance.rotation.y=angle
+		lance.get_child(0).position.z=-reach*0.5
+		lance.scale=Vector3(1,1,0.25)
+		var mat=lance.get_child(0).material_override
+		var tween=create_tween();tween.set_parallel(true)
+		tween.tween_property(lance,"scale",Vector3.ONE,duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(mat,"albedo_color",Color(0,0,0),duration)
+		tween.chain().tween_callback(lance.queue_free)
+
+func _ability_effect(id: String,pos: Vector3,radius: float):
+	match id:
+		"frost_nova":
+			shockwave(pos,radius,Color("8fd8ff"),0.34,0.0,1.9)
+			shockwave(pos,radius*0.72,Color("dff2ff"),0.22,0.05,2.2)
+			shards(pos,radius,Color("9ad6ff"),12)
+			burst_ring(pos,radius,Color("cfeeff"),26,3.4,0.6)
+			_flash_light(pos,Color("8fd8ff"),3.2,radius*1.6,0.3)
+			shake=maxf(shake,0.05)
+		"war_cry":
+			shockwave(pos,radius,Color("ffb066"),0.3,0.0,2.2)
+			shockwave(pos,radius*1.15,Color("ff7a4d"),0.38,0.1,1.6)
+			radial_streaks(pos,radius*1.05,Color("ffc27a"),7,0.28)
+			burst_ring(pos,radius,Color("ffc98a"),30,4.6,0.55)
+			_flash_light(pos,Color("ff9a52"),2.6,radius*1.5,0.28)
+			shake=maxf(shake,0.16)
+		"shadow_strike":
+			shockwave(pos,radius*1.15,Color("7a46d8"),0.28,0.0,1.3)
+			radial_streaks(pos,radius*1.3,Color("e2d2ff"),4,0.2)
+			slash(pos,aim.rotated(Vector3.UP,0.7),radius*1.4,Color("f0e6ff"))
+			slash(pos,aim.rotated(Vector3.UP,-0.7),radius*1.4,Color("c9a6ff"))
+			burst_ring(pos,radius,Color("a97dff"),22,3.0,0.5)
+			_flash_light(pos,Color("8a5bff"),2.2,radius*1.5,0.26)
+			shake=maxf(shake,0.07)
+		"fan_shot":
+			var cone=flat_sprite(Color("ffc46a"),1.9,1.5,2.4)
+			cone.position=pos+Vector3.UP*0.85;add_child(cone)
+			_aim_along(cone,aim);cone.get_child(0).position.z=-0.75
+			var mat=cone.get_child(0).material_override
+			var tween=create_tween();tween.set_parallel(true)
+			tween.tween_property(cone,"scale",Vector3(1.6,1,1.5),0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tween.tween_property(mat,"albedo_color",Color(0,0,0),0.16)
+			tween.chain().tween_callback(cone.queue_free)
+			spark(pos+aim*0.7+Vector3.UP*0.85,Color("ffcf8a"),20)
+			_flash_light(pos+aim*0.6+Vector3.UP*0.85,Color("ffb761"),3.4,3.0,0.16)
+			shake=maxf(shake,0.1)
+
+func _flash_light(pos: Vector3,color: Color,energy: float,range_value: float,duration: float):
+	if quality!="PC":return
+	var lamp=OmniLight3D.new();lamp.light_color=color;lamp.light_energy=energy;lamp.omni_range=range_value
+	lamp.position=pos+Vector3.UP*0.8;add_child(lamp)
+	var tween=create_tween()
+	tween.tween_property(lamp,"light_energy",0.0,duration)
+	tween.tween_callback(lamp.queue_free)
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):
 	if bullets.size()>=384:return
@@ -565,17 +635,72 @@ func trail_emitter(color: Color,radius: float,life: float,amount: int,drift: flo
 	p.emitting=true
 	return p
 
-func flat_sprite(color: Color,width: float,length: float,energy: float=1.0) -> Node3D:
+func flat_sprite(color: Color,width: float,length: float,energy: float=1.0,texture: Texture2D=null) -> Node3D:
 	var quad=QuadMesh.new();quad.size=Vector2(width,length)
 	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
-	mat.albedo_texture=glow_texture;mat.albedo_color=Color(color.r*energy,color.g*energy,color.b*energy)
+	mat.albedo_texture=texture if texture!=null else glow_texture
+	mat.albedo_color=Color(color.r*energy,color.g*energy,color.b*energy)
 	mat.cull_mode=BaseMaterial3D.CULL_DISABLED;mat.disable_receive_shadows=true
 	var blade=MeshInstance3D.new();blade.mesh=quad;blade.material_override=mat
 	blade.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	blade.rotation.x=-PI*0.5
 	var pivot=Node3D.new();pivot.add_child(blade)
 	return pivot
+
+# An expanding pressure front. Several of these staggered read as a blast rolling
+# outwards rather than one circle appearing at full size.
+func shockwave(pos: Vector3,radius: float,color: Color,duration: float,delay: float=0.0,energy: float=1.6):
+	var wave=flat_sprite(color,radius*2.3,radius*2.3,energy,ring_texture)
+	wave.position=pos+Vector3.UP*0.07;wave.scale=Vector3.ONE*0.18;add_child(wave)
+	var mat=wave.get_child(0).material_override
+	mat.albedo_color=Color(0,0,0)
+	var tween=create_tween();tween.set_parallel(true)
+	tween.tween_property(wave,"scale",Vector3.ONE,duration).set_delay(delay).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(mat,"albedo_color",color*energy,0.05).set_delay(delay)
+	tween.tween_property(mat,"albedo_color",Color(0,0,0),duration*0.8).set_delay(delay+duration*0.25)
+	tween.chain().tween_callback(wave.queue_free)
+
+# Particles thrown outward along the ground from a ring, for dust and frost fronts.
+func burst_ring(pos: Vector3,radius: float,color: Color,amount: int,speed: float=3.0,life: float=0.5):
+	if quality!="PC" and rng.randf()>0.5:return
+	var p=CPUParticles3D.new()
+	p.amount=amount;p.lifetime=life;p.one_shot=true;p.explosiveness=0.95
+	p.emission_shape=CPUParticles3D.EMISSION_SHAPE_RING
+	p.emission_ring_axis=Vector3.UP;p.emission_ring_radius=radius*0.55;p.emission_ring_inner_radius=radius*0.2
+	p.emission_ring_height=0.1
+	p.direction=Vector3.UP;p.spread=25;p.initial_velocity_min=speed*0.3;p.initial_velocity_max=speed*0.6
+	p.radial_accel_min=speed*1.6;p.radial_accel_max=speed*2.6
+	p.gravity=Vector3(0,-3.0,0);p.damping_min=0.8;p.damping_max=1.6
+	p.scale_amount_min=0.5;p.scale_amount_max=1.1
+	var curve=Curve.new();curve.add_point(Vector2(0,1.0));curve.add_point(Vector2(1,0.0))
+	var shrink=CurveTexture.new();shrink.curve=curve;p.scale_amount_curve=shrink
+	var mesh=SphereMesh.new();mesh.radius=0.045;mesh.height=0.09;mesh.radial_segments=4;mesh.rings=2
+	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD;mat.albedo_color=color
+	mesh.material=mat;p.mesh=mesh;p.material_override=mat
+	p.position=pos;add_child(p);p.emitting=true
+	get_tree().create_timer(life+0.25).timeout.connect(p.queue_free)
+
+# Spikes driven up out of the ground around a radius - the frost nova's silhouette.
+func shards(pos: Vector3,radius: float,color: Color,count: int):
+	var mesh=CylinderMesh.new();mesh.top_radius=0.0;mesh.bottom_radius=0.12;mesh.height=1.0;mesh.radial_segments=5;mesh.rings=1
+	var mat=StandardMaterial3D.new();mat.albedo_color=color
+	mat.emission_enabled=true;mat.emission=color;mat.emission_energy_multiplier=1.1
+	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.roughness=0.25
+	for i in count:
+		var angle=TAU*i/count+rng.randf_range(-0.16,0.16)
+		var spike=MeshInstance3D.new();spike.mesh=mesh;spike.material_override=mat
+		spike.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		spike.position=pos+Vector3(cos(angle),0,sin(angle))*radius*rng.randf_range(0.55,0.95)
+		spike.rotation=Vector3(rng.randf_range(-0.22,0.22),angle,rng.randf_range(-0.22,0.22))
+		var tall=rng.randf_range(0.5,1.0)
+		spike.scale=Vector3(1,0.05,1);add_child(spike)
+		var tween=create_tween()
+		tween.tween_property(spike,"scale",Vector3(1,tall,1),0.11).set_delay(i*0.012).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_interval(0.2)
+		tween.tween_property(spike,"scale",Vector3(0.2,0.02,0.2),0.22)
+		tween.tween_callback(spike.queue_free)
 
 func _impact(pos: Vector3,weapon: String,friendly: bool):
 	var tone=Color("9fc6ff") if weapon=="magic_orb" else (Color("ffcf8a") if friendly else Color("ff8a72"))
