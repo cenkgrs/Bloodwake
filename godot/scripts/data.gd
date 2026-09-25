@@ -4,7 +4,7 @@ extends RefCounted
 # Distances and speeds in legacy catalogs use pixels. 50 px = one metre.
 const UNIT = 0.02
 const CLASSES = {
-	"warrior": {"name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":200.0,"armor":1}},
+	"warrior": {"name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":200.0,"armor":0.2}},
 	"gunslinger": {"name":"Bloodbound", "tag":"RANGED / RELENTLESS", "weapon":"rapid_rifle", "ability":"fan_shot", "color":"d7ae64", "stats":{"maxHp":90.0,"moveSpeed":250.0,"attackSpeed":0.85}},
 	"mage": {"name":"Mage", "tag":"ARCANE / AREA CONTROL", "weapon":"magic_orb", "ability":"frost_nova", "color":"9b83de", "stats":{"maxHp":85.0,"moveSpeed":215.0,"damage":1.5}},
 	"assassin": {"name":"Assassin", "tag":"MOBILE / CRITICAL", "weapon":"daggers", "ability":"shadow_strike", "color":"63bd9f", "stats":{"maxHp":80.0,"moveSpeed":350.0,"criticalChance":0.8,"criticalDamage":2.8,"dodgeChance":0.3}}
