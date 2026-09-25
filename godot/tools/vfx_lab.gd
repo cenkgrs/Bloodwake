@@ -7,8 +7,12 @@ extends SceneTree
 #   godot --path godot --resolution 1280x720 --script res://tools/vfx_lab.gd
 #
 # Shots land in VFX_SHOT_DIR when that is set, otherwise user://vfx_shots (the
-# resolved path is printed on start). Add a scenario by appending to SCENARIOS:
-#   class_id, camera size, enemies to place, frames to settle, shot name.
+# resolved path is printed on start). Add a scenario by appending to SCENARIOS;
+# "cast" fires the class ability once instead of leaving auto-fire on, which is how
+# the ability effects are staged.
+
+# a handful of bodies around the caster, so an area effect has something to land on
+const RING = [Vector3(1.8,0,0.4),Vector3(-1.6,0,1.2),Vector3(0.3,0,-2.0),Vector3(2.6,0,-1.4)]
 
 const SCENARIOS = [
 	{"class_id":"gunslinger","zoom":9.0,"name":"tracer_bearings","frames":30,
@@ -17,6 +21,14 @@ const SCENARIOS = [
 		"enemies":[Vector3(1.4,0,0),Vector3(-1.2,0,0.6)],"enemy":"tank"},
 	{"class_id":"mage","zoom":9.0,"name":"orb_through_crowd","frames":34,
 		"enemies":[Vector3(3.0,0,0),Vector3(5.0,0,0.3),Vector3(6.8,0,-0.2)],"enemy":"grunt"},
+	{"class_id":"mage","zoom":8.0,"name":"ability_frost_nova","frames":7,"cast":true,
+		"enemies":RING,"enemy":"grunt"},
+	{"class_id":"warrior","zoom":8.0,"name":"ability_war_cry","frames":6,"cast":true,
+		"enemies":RING,"enemy":"grunt"},
+	{"class_id":"assassin","zoom":8.0,"name":"ability_shadow_strike","frames":7,"cast":true,
+		"enemies":RING,"enemy":"grunt"},
+	{"class_id":"gunslinger","zoom":8.0,"name":"ability_fan_shot","frames":5,"cast":true,
+		"enemies":RING,"enemy":"grunt"},
 ]
 
 var out_dir = ""
@@ -46,8 +58,13 @@ func run_lab():
 	for row in SCENARIOS:
 		scene.start_run(row.class_id);await process_frame
 		var world=scene.world
-		world.auto_fire=true;world.camera.size=row.zoom
+		var cast=row.get("cast",false)
+		world.auto_fire=not cast;world.camera.size=row.zoom
 		for spot in row.enemies:world.spawn_enemy(row.enemy,spot)
+		if cast:
+			world.aim=Vector3(1,0,0)
+			for i in 4:await process_frame
+			world._resolve_ability(BWData.entry("abilities",BWData.CLASSES[row.class_id].ability))
 		for i in row.frames:await process_frame
 		await shot(row.name)
 	quit()
