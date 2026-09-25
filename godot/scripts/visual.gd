@@ -1,6 +1,8 @@
 class_name BWVisual
 extends Node3D
 
+const FLASH_ENERGY = 0.4
+
 var animation: AnimationPlayer
 var clips = {}
 var state = ""
@@ -19,6 +21,10 @@ var hand_bone = -1
 var magic_time = 0.0
 var base_scale = Vector3.ONE
 var enemy_asset = false
+var flash_time = 0.0
+var flash_span = 0.0
+var flash_ready = false
+var flash_surfaces = []
 
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
 	var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
@@ -101,6 +107,33 @@ func _tint(node: Node,color: Color):
 			if source is StandardMaterial3D:
 				var mat=source.duplicate();mat.albedo_color=source.albedo_color.lerp(color*0.35,0.5);mesh.set_surface_override_material(i,mat)
 
+# A hit brightens the existing materials through surface overrides - the idiom
+# _tint already uses here - instead of stacking a material_overlay on top, which
+# leaves the renderer querying a null material. Duplicates are built once and
+# reused so a hit does not allocate.
+func _build_flash_surfaces():
+	flash_ready=true
+	for mesh in _meshes(self):
+		if mesh.mesh==null:continue
+		for i in mesh.mesh.get_surface_count():
+			var source=mesh.get_active_material(i)
+			if source is StandardMaterial3D:
+				var mat=source.duplicate();mat.emission_enabled=true;mat.emission=Color(1,0.94,0.86)
+				flash_surfaces.append({"mesh":mesh,"surface":i,"material":mat,"restore":mesh.get_surface_override_material(i)})
+
+func flash(duration: float=0.11):
+	if dead:return
+	if not flash_ready:_build_flash_surfaces()
+	for entry in flash_surfaces:
+		entry.material.emission_energy_multiplier=FLASH_ENERGY
+		entry.mesh.set_surface_override_material(entry.surface,entry.material)
+	flash_span=maxf(duration,0.02);flash_time=flash_span
+
+func _clear_flash():
+	flash_time=0.0
+	for entry in flash_surfaces:
+		if is_instance_valid(entry.mesh):entry.mesh.set_surface_override_material(entry.surface,entry.restore)
+
 func clip_speed(next: String,duration: float=-1.0) -> float:
 	if not animation or not clips.has(next):return 1.0
 	if not fitted_timing and not enemy_asset and not (fitted_attack and next=="attack"):return 1.0
@@ -125,6 +158,9 @@ func action(next: String,duration: float=-1.0) -> bool:
 	if next=="hit" and state in ["ultimate","hit"] and lock_time>0:return false
 	if next=="death":
 		dead=true
+		# tick() stops for a corpse (it leaves the enemies array), so a kill landed
+		# mid-flash would leave the additive overlay stuck on for the 2.5s it lingers.
+		_clear_flash()
 		if is_instance_valid(hand_magic):hand_magic.visible=false
 	if animation and clips.has(next):
 		var speed=clip_speed(next,duration)
@@ -140,6 +176,12 @@ func action(next: String,duration: float=-1.0) -> bool:
 
 func tick(delta: float,moving: bool,movement_rate: float=1.0):
 	elapsed+=delta;lock_time=maxf(0,lock_time-delta)
+	if flash_time>0:
+		flash_time=maxf(0,flash_time-delta)
+		if flash_time<=0:_clear_flash()
+		else:
+			var energy=FLASH_ENERGY*(flash_time/flash_span)
+			for entry in flash_surfaces:entry.material.emission_energy_multiplier=energy
 	if (procedural or animation==null) and not dead:
 		model.position.y=sin(elapsed*(10 if moving else 2))*0.035
 	if not dead and lock_time<=0:play("run" if moving else "idle")

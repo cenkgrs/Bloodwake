@@ -24,6 +24,8 @@ var quality = "PC"
 var elapsed = 0.0
 var rest_time = 0.0
 var hit_flash = 0.0
+var flash_rect: ColorRect
+var glow_texture: GradientTexture2D
 var shake = 0.0
 var audio_times = {}
 var pending_attacks: Array = []
@@ -31,6 +33,7 @@ var bullet_mesh: SphereMesh
 var bullet_material: StandardMaterial3D
 var rng = RandomNumberGenerator.new()
 const ARENA_HALF = 24.0
+const HURT_FLASH_COLOR = Color("ff3b30")
 const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assassin":"667482","healer":"72b78e","commander":"c4a75e","boss":"8a3440"}
 
 func start(state: BWRun,profile: String="PC"):
@@ -44,6 +47,18 @@ func start(state: BWRun,profile: String="PC"):
 	var fill=OmniLight3D.new();fill.position=Vector3(0,2.5,1);fill.omni_range=4;fill.light_energy=1.0;fill.light_color=Color("d1def0");player.add_child(fill)
 	camera=Camera3D.new();camera.projection=Camera3D.PROJECTION_ORTHOGONAL;camera.size=17
 	camera.position=Vector3(0,16,12);camera.current=true;add_child(camera);camera.look_at(Vector3.ZERO)
+	var flash_layer=CanvasLayer.new();flash_layer.layer=2;add_child(flash_layer)
+	flash_rect=ColorRect.new();flash_rect.color=Color(HURT_FLASH_COLOR,0.0)
+	flash_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE;flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash_layer.add_child(flash_rect)
+	glow_texture=GradientTexture2D.new()
+	glow_texture.fill=GradientTexture2D.FILL_RADIAL;glow_texture.fill_from=Vector2(0.5,0.5);glow_texture.fill_to=Vector2(0.5,1.0)
+	glow_texture.width=96;glow_texture.height=96
+	var ramp=Gradient.new()
+	ramp.set_offset(0,0.0);ramp.set_color(0,Color(1,1,1,1))
+	ramp.set_offset(1,1.0);ramp.set_color(1,Color(1,1,1,0))
+	ramp.add_point(0.35,Color(1,1,1,0.55));ramp.add_point(0.7,Color(1,1,1,0.12))
+	glow_texture.gradient=ramp
 	bullet_mesh=SphereMesh.new();bullet_mesh.radius=0.07;bullet_mesh.height=0.14;bullet_mesh.radial_segments=8;bullet_mesh.rings=4
 	bullet_material=StandardMaterial3D.new();bullet_material.albedo_color=Color("ffd99a");bullet_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 
@@ -51,7 +66,12 @@ func _environment():
 	var env_node=WorldEnvironment.new();var env=Environment.new()
 	env.background_mode=Environment.BG_COLOR;env.background_color=Color("121923")
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;env.ambient_light_color=Color("a6bad0");env.ambient_light_energy=0.55
-	env.tonemap_mode=Environment.TONE_MAPPER_FILMIC
+	env.tonemap_mode=Environment.TONE_MAPPER_FILMIC;env.tonemap_white=1.8
+	env.glow_enabled=true;env.glow_intensity=0.9;env.glow_strength=1.1;env.glow_bloom=0.25
+	env.glow_hdr_threshold=0.85;env.glow_hdr_scale=2.0;env.glow_blend_mode=Environment.GLOW_BLEND_MODE_ADDITIVE
+	for i in range(1,5):env.set_glow_level(i,1.0)
+	env.set_glow_level(5,0.6);env.set_glow_level(6,0.3)
+	env.adjustment_enabled=true;env.adjustment_contrast=1.06;env.adjustment_saturation=1.12
 	env_node.environment=env;add_child(env_node)
 	var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-55,-25,0);sun.light_color=Color("b4c7e0");sun.light_energy=1.5;sun.shadow_enabled=quality=="PC";sun.directional_shadow_max_distance=45;add_child(sun)
 	var floor=MeshInstance3D.new();var plane=PlaneMesh.new();plane.size=Vector2(48,48);floor.mesh=plane
@@ -104,6 +124,7 @@ func _physics_process(dt: float):
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
 	var desired=player.position+Vector3(0,16,12);camera.position=camera.position.lerp(desired,1-exp(-dt*10))
 	if shake>0:camera.position+=Vector3(rng.randf_range(-shake,shake),rng.randf_range(-shake,shake),0);shake=move_toward(shake,0,dt*2)
+	if hit_flash>0 or flash_rect.color.a>0:hit_flash=maxf(0,hit_flash-dt*1.9);flash_rect.color.a=hit_flash
 	_pending_attacks(dt)
 	_weapons(dt)
 	for enemy in enemies.duplicate():
@@ -302,10 +323,11 @@ func _resolve_weapon(id: String,direction: Vector3):
 			var radius=range_value+(slot.shockwave*BWData.UNIT if slot.swings%3==0 else 0)
 			var hit=[]
 			for e in enemies.duplicate():
-				if e.node.position.distance_to(player.position)<=radius:
+				if e.node.position.distance_to(player.position)<=radius+e.radius:
 					var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical);hit.append(e)
 					if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
-			ring(player.position,radius,Color("e1ae69"),0.18)
+			slash(player.position,direction,radius,Color("ffca7a"))
+			if not hit.is_empty():shake=maxf(shake,0.035)
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
 		"chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
 		_:
@@ -324,6 +346,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 					# Clear the hand/body mesh - the orb used to spawn right at the palm and
 					# visibly poke out of the model instead of appearing in front of it.
 					origin=hand+shot_direction*0.45-Vector3.UP*0.8
+				if i==0:muzzle(origin+Vector3.UP*0.8,shot_direction,Color("8db8f4") if id=="magic_orb" else Color("ffce7a"))
 				_bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
 	sound({"sword":"sword_swing","daggers":"sword_swing","rapid_rifle":"shoot_rifle","basic_pistol":"shoot_pistol","shotgun":"shoot_shotgun","magic_orb":"magic_orb_cast","lightning":"lightning_cast"}.get(id,"shoot"))
 
@@ -372,13 +395,45 @@ func _resolve_ability(data: Dictionary):
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):
 	if bullets.size()>=384:return
-	var node=MeshInstance3D.new();node.mesh=bullet_mesh;node.material_override=bullet_material
-	add_child(node);node.position=origin+Vector3.UP*0.8
-	if not friendly:
-		var mat=bullet_material.duplicate();mat.albedo_color=Color("ed5d60");node.material_override=mat
-	elif weapon=="magic_orb":
-		node.scale=Vector3.ONE*2.4;var mat=bullet_material.duplicate();mat.albedo_color=Color("8db8f4");node.material_override=mat
-	bullets.append({"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical})
+	# A projectile is a rig, not a single mesh: a small blown-out core for the bloom
+	# to catch, one or two soft halos around it, and a world-space trail behind.
+	var node=Node3D.new();add_child(node);node.position=origin+Vector3.UP*0.8
+	var rich=quality=="PC"
+	var orb=weapon=="magic_orb"
+	var tone=Color("8ac8ff") if orb else (Color("ffd9a0") if friendly else Color("ff9d86"))
+	var halo_tone=Color("6fa8ff") if orb else (Color("ffab4d") if friendly else Color("ff5a4a"))
+	var core=MeshInstance3D.new();core.mesh=bullet_mesh
+	var core_mat=bullet_material.duplicate();core_mat.albedo_color=tone*(1.0 if orb else 1.7)
+	core.material_override=core_mat;core.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.add_child(core)
+	if orb:
+		core.scale=Vector3.ONE*1.05
+		node.add_child(_orb_dressing(halo_tone,rich))
+	else:
+		_aim_along(core,direction);core.scale=Vector3(0.5,0.5,2.3)
+		var streak=flat_sprite(halo_tone,0.24,1.25,1.4);node.add_child(streak)
+		_aim_along(streak,direction)
+		node.add_child(glow_sprite(tone,0.26,1.7))
+	if rich and bullets.size()<20:
+		var lamp=OmniLight3D.new();lamp.light_color=halo_tone
+		lamp.light_energy=1.8 if orb else 1.0;lamp.omni_range=2.6 if orb else 1.5
+		node.add_child(lamp)
+		node.add_child(trail_emitter(halo_tone,0.075 if orb else 0.045,0.32 if orb else 0.2,18 if orb else 12))
+	bullets.append({"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical,"radius":0.5 if weapon=="magic_orb" else 0.16})
+
+func _orb_dressing(tone: Color,rich: bool) -> Node3D:
+	var rig=Node3D.new()
+	rig.add_child(glow_sprite(tone,1.3,1.1))
+	rig.add_child(glow_sprite(Color("5ea8ff"),0.8,1.3))
+	if not rich:return rig
+	var motes=Node3D.new();rig.add_child(motes)
+	for i in 3:
+		var mote=glow_sprite(Color("dce9ff"),0.24,1.7)
+		mote.position=Vector3.RIGHT.rotated(Vector3.UP,TAU*i/3.0)*0.32
+		motes.add_child(mote)
+	var spin=create_tween().set_loops()
+	spin.tween_property(motes,"rotation:y",TAU,0.9).from(0.0)
+	return rig
 
 func _projectiles(dt: float):
 	for b in bullets.duplicate():
@@ -388,7 +443,7 @@ func _projectiles(dt: float):
 			if target.hp<=0 or b.hit.has(target.node.get_instance_id()):continue
 			var p=target.node.position+Vector3.UP*0.8
 			var closest=Geometry3D.get_closest_point_to_segment(p,previous,b.node.position)
-			if p.distance_to(closest)<=target.radius+0.1:
+			if p.distance_to(closest)<=target.radius+b.radius:
 				b.hit.append(target.node.get_instance_id())
 				if b.friendly:
 					_damage_enemy(target,b.damage,b.critical)
@@ -397,6 +452,7 @@ func _projectiles(dt: float):
 						if b.slow>0:target.slow=2;target.slow_amount=b.slow
 				else:_hurt_player(b.damage)
 				b.pierce-=1
+				_impact(b.node.position,b.weapon,b.friendly)
 				if b.pierce<0:b.remaining=-1;break
 		if b.remaining<=0:b.node.queue_free();bullets.erase(b)
 
@@ -406,8 +462,11 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 	if run.stats.hp>0:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
 	if effects:
 		damage_text(e.node.position,damage,Color("ffe4a8") if critical else Color("d9dce2"));sound("hit",0.08)
+		e.visual.flash(0.14 if critical else 0.1)
+		spark(e.node.position+Vector3.UP*0.9,Color("ffe0a6") if critical else Color("ffb072"),14 if critical else 7)
 	if e.hp>0:return
 	enemies.erase(e);e.visual.action("death")
+	spark(e.node.position+Vector3.UP*0.9,Color(ENEMY_COLORS[e.id]).lightened(0.4),24 if e.elite or e.id=="boss" else 16)
 	run.kills+=1;run.gold+=int(e.data.goldReward*(4 if e.elite else 1)+run.stats.bonusGoldPerKill)
 	_drop(e.node.position,"xp",int(e.data.xpReward*(4 if e.elite else 1)))
 	var chance=1.0 if e.id=="boss" else 0.22 if e.elite else 0.08
@@ -421,7 +480,9 @@ func _hurt_player(damage: float):
 	var actual=run.hurt(damage,rng.randf())
 	if actual<=0:return
 	if visual.fitted_timing and visual.state=="attack":pending_attacks.clear()
-	damage_text(player.position,actual,Color("ff8678"));visual.action("hit");shake=clampf(actual/100,0.04,0.18);sound("player_hit",0.12);changed.emit()
+	damage_text(player.position,actual,Color("ff8678"));visual.action("hit");shake=clampf(actual/100,0.04,0.18);sound("player_hit",0.12)
+	hit_flash=clampf(actual/90,0.12,0.38);spark(player.position+Vector3.UP*1.0,Color("ff8678"),8)
+	changed.emit()
 
 func _drop(pos: Vector3,kind: String,amount: int):
 	var node=MeshInstance3D.new();var mesh=SphereMesh.new();mesh.radius=0.12;mesh.height=0.24;mesh.radial_segments=8;mesh.rings=4;node.mesh=mesh
@@ -442,14 +503,122 @@ func next_wave():
 	bullets.clear();run.wave+=1;spawned=0;spawn_timer=0;rest_time=4;running=true;changed.emit()
 
 func ring(pos: Vector3,radius: float,color: Color,duration: float):
-	var mesh=TorusMesh.new();mesh.inner_radius=maxf(0.01,radius-0.04);mesh.outer_radius=radius+0.04;mesh.rings=32;mesh.ring_segments=6
-	var node=MeshInstance3D.new();node.mesh=mesh;node.position=pos+Vector3.UP*0.045;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.material=mat;node.material_override=mat;add_child(node)
-	var tween=create_tween();tween.tween_property(node,"scale",Vector3(1.06,1,1.06),duration);tween.tween_callback(node.queue_free)
+	var pulse=flat_sprite(color,radius*2.3,radius*2.3,1.3)
+	pulse.position=pos+Vector3.UP*0.06;pulse.scale=Vector3.ONE*0.3;add_child(pulse)
+	var mat=pulse.get_child(0).material_override
+	var tween=create_tween();tween.set_parallel(true)
+	tween.tween_property(pulse,"scale",Vector3.ONE,maxf(duration*0.35,0.09)).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(mat,"albedo_color",Color(0,0,0),maxf(duration*0.45,0.12)).set_delay(duration*0.55)
+	tween.chain().tween_callback(pulse.queue_free)
+
+# A swing reads as an arc swept in front of the fighter, not a circle drawn around it.
+func slash(origin: Vector3,direction: Vector3,radius: float,color: Color):
+	var pivot=Node3D.new();pivot.position=origin+Vector3.UP*0.55;add_child(pivot)
+	_aim_along(pivot,direction)
+	var arc=flat_sprite(color,radius*2.6,radius*1.35,2.6)
+	arc.position=Vector3(0,0,-radius*0.6);pivot.add_child(arc)
+	var mat=arc.get_child(0).material_override
+	pivot.rotation.y+=0.6
+	var tween=create_tween();tween.set_parallel(true)
+	tween.tween_property(pivot,"rotation:y",pivot.rotation.y-1.2,0.17).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(mat,"albedo_color",Color(0,0,0),0.17)
+	tween.chain().tween_callback(pivot.queue_free)
 
 func beam(a: Vector3,b: Vector3,color: Color):
 	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_LINES);mesh.surface_add_vertex(a);mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex(b);mesh.surface_end()
 	var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.surface_set_material(0,mat);node.material_override=mat;add_child(node)
 	get_tree().create_timer(0.15).timeout.connect(node.queue_free)
+
+# A soft additive billboard. Layering two or three of these at different sizes is
+# what turns a flat coloured dot into something that reads as light.
+func glow_sprite(color: Color,size: float,energy: float=1.0) -> MeshInstance3D:
+	var quad=QuadMesh.new();quad.size=Vector2(size,size)
+	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
+	mat.billboard_mode=BaseMaterial3D.BILLBOARD_ENABLED;mat.billboard_keep_scale=true
+	mat.albedo_texture=glow_texture;mat.albedo_color=Color(color.r*energy,color.g*energy,color.b*energy)
+	mat.disable_receive_shadows=true
+	var node=MeshInstance3D.new();node.mesh=quad;node.material_override=mat
+	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return node
+
+# local_coords=false leaves emitted particles behind in world space, so a moving
+# emitter draws a trail instead of dragging its particles along with it.
+func trail_emitter(color: Color,radius: float,life: float,amount: int,drift: float=0.4) -> CPUParticles3D:
+	var p=CPUParticles3D.new()
+	p.amount=amount;p.lifetime=life;p.local_coords=false;p.explosiveness=0.0
+	p.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;p.emission_sphere_radius=radius
+	p.direction=Vector3.UP;p.spread=180;p.initial_velocity_min=0.0;p.initial_velocity_max=drift
+	p.gravity=Vector3.ZERO;p.damping_min=0.6;p.damping_max=1.2
+	p.scale_amount_min=0.6;p.scale_amount_max=1.0
+	var curve=Curve.new();curve.add_point(Vector2(0,1.0));curve.add_point(Vector2(1,0.0))
+	var shrink=CurveTexture.new();shrink.curve=curve;p.scale_amount_curve=shrink
+	var ramp=Gradient.new()
+	ramp.set_offset(0,0.0);ramp.set_color(0,color)
+	ramp.set_offset(1,1.0);ramp.set_color(1,Color(color.r,color.g,color.b,0.0))
+	p.color_ramp=ramp
+	var mesh=SphereMesh.new();mesh.radius=radius*0.9;mesh.height=radius*1.8;mesh.radial_segments=5;mesh.rings=3
+	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
+	mat.vertex_color_use_as_albedo=true;mat.albedo_color=color
+	mesh.material=mat;p.mesh=mesh;p.material_override=mat
+	p.emitting=true
+	return p
+
+func flat_sprite(color: Color,width: float,length: float,energy: float=1.0) -> Node3D:
+	var quad=QuadMesh.new();quad.size=Vector2(width,length)
+	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_texture=glow_texture;mat.albedo_color=Color(color.r*energy,color.g*energy,color.b*energy)
+	mat.cull_mode=BaseMaterial3D.CULL_DISABLED;mat.disable_receive_shadows=true
+	var blade=MeshInstance3D.new();blade.mesh=quad;blade.material_override=mat
+	blade.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	blade.rotation.x=-PI*0.5
+	var pivot=Node3D.new();pivot.add_child(blade)
+	return pivot
+
+func _impact(pos: Vector3,weapon: String,friendly: bool):
+	var tone=Color("9fc6ff") if weapon=="magic_orb" else (Color("ffcf8a") if friendly else Color("ff8a72"))
+	spark(pos,tone,16 if weapon=="magic_orb" else 9)
+	var burst=glow_sprite(tone,0.95 if weapon=="magic_orb" else 0.6,1.15)
+	burst.position=pos;add_child(burst)
+	var tween=create_tween();tween.set_parallel(true)
+	tween.tween_property(burst,"scale",Vector3.ONE*(1.7 if weapon=="magic_orb" else 1.4),0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(burst.material_override,"albedo_color",Color(0,0,0),0.18)
+	tween.chain().tween_callback(burst.queue_free)
+	if weapon=="magic_orb":ring(pos,0.9,Color("7fb0ff"),0.22)
+
+func spark(pos: Vector3,color: Color,amount: int=8):
+	if quality!="PC" and rng.randf()>0.45:return
+	var node=CPUParticles3D.new();node.amount=amount;node.lifetime=0.3;node.one_shot=true;node.explosiveness=1.0
+	node.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;node.emission_sphere_radius=0.09
+	node.direction=Vector3.UP;node.spread=180;node.initial_velocity_min=1.3;node.initial_velocity_max=3.4
+	node.gravity=Vector3(0,-5.5,0);node.scale_amount_min=0.45;node.scale_amount_max=1.0
+	var mesh=SphereMesh.new();mesh.radius=0.028;mesh.height=0.056;mesh.radial_segments=4;mesh.rings=2
+	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color
+	mesh.material=mat;node.mesh=mesh;node.material_override=mat
+	node.position=pos;add_child(node);node.emitting=true
+	get_tree().create_timer(node.lifetime+0.15).timeout.connect(node.queue_free)
+
+func muzzle(pos: Vector3,direction: Vector3,color: Color):
+	if quality!="PC":return
+	var node=glow_sprite(color,0.7,1.5)
+	node.position=pos;add_child(node)
+	var mat=node.material_override
+	_aim_along(node,direction);node.scale=Vector3(1.5,1,1)
+	var lamp=OmniLight3D.new();lamp.light_color=color;lamp.light_energy=1.7;lamp.omni_range=1.5;node.add_child(lamp)
+	var tween=create_tween();tween.set_parallel(true)
+	tween.tween_property(node,"scale",Vector3(0.2,0.2,0.5),0.07)
+	tween.tween_property(mat,"albedo_color:a",0.0,0.07)
+	tween.chain().tween_callback(node.queue_free)
+
+# look_at needs a target that is not colinear with UP; aim vectors are horizontal
+# here, but guard anyway so a stray vertical direction cannot spam errors.
+func _aim_along(node: Node3D,direction: Vector3):
+	if direction.length_squared()<0.0001:return
+	var d=direction.normalized()
+	if absf(d.y)>0.99:return
+	node.rotation=Vector3(0,atan2(-d.x,-d.z),0)
 
 func damage_text(pos: Vector3,amount: float,color: Color):
 	if quality!="PC" and randf()>0.4:return
