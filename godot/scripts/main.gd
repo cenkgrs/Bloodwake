@@ -2,6 +2,7 @@ extends Node
 
 var world: BWWorld
 var run: BWRun
+var audio: BWAudio
 var meta=BWMeta.new()
 var canvas: CanvasLayer
 var root: Control
@@ -41,6 +42,7 @@ func _ready():
  mobile_controls=OS.has_feature("mobile")
  if mobile_controls:quality="Mobile"
  AudioServer.set_bus_volume_db(0,linear_to_db(maxf(volume,0.001)))
+ audio=BWAudio.new();add_child(audio)
  canvas=CanvasLayer.new();add_child(canvas)
  root=Control.new();root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);canvas.add_child(root)
  root.theme=_theme()
@@ -65,7 +67,9 @@ func _theme() -> Theme:
  return theme
 
 func _inputs():
- var keys={"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_up":[KEY_W,KEY_UP],"move_down":[KEY_S,KEY_DOWN],"ability":[KEY_SPACE,KEY_E],"pause":[KEY_ESCAPE],"auto_fire":[KEY_TAB],"fullscreen":[KEY_F11],"debug":[KEY_F3]}
+ # E used to be a second binding for the ulti; it drives the class's second skill
+ # now, and W stays on movement.
+ var keys={"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_up":[KEY_W,KEY_UP],"move_down":[KEY_S,KEY_DOWN],"ability":[KEY_SPACE],"skill_1":[KEY_Q],"skill_2":[KEY_E],"pause":[KEY_ESCAPE],"auto_fire":[KEY_TAB],"fullscreen":[KEY_F11],"debug":[KEY_F3]}
  for action in keys:
   if not InputMap.has_action(action):InputMap.add_action(action)
   for key in keys[action]:
@@ -76,7 +80,7 @@ func _inputs():
   var event=InputEventMouseButton.new();event.button_index=spec[1];InputMap.action_add_event(spec[0],event)
  for spec in [["move_left",JOY_AXIS_LEFT_X,-1],["move_right",JOY_AXIS_LEFT_X,1],["move_up",JOY_AXIS_LEFT_Y,-1],["move_down",JOY_AXIS_LEFT_Y,1],["aim_left",JOY_AXIS_RIGHT_X,-1],["aim_right",JOY_AXIS_RIGHT_X,1],["aim_up",JOY_AXIS_RIGHT_Y,-1],["aim_down",JOY_AXIS_RIGHT_Y,1],["fire",JOY_AXIS_TRIGGER_RIGHT,1]]:
   var event=InputEventJoypadMotion.new();event.axis=spec[1];event.axis_value=spec[2];InputMap.action_add_event(spec[0],event)
- for spec in [["ability",JOY_BUTTON_A],["pause",JOY_BUTTON_START],["auto_fire",JOY_BUTTON_Y]]:
+ for spec in [["ability",JOY_BUTTON_A],["skill_1",JOY_BUTTON_X],["skill_2",JOY_BUTTON_B],["pause",JOY_BUTTON_START],["auto_fire",JOY_BUTTON_Y]]:
   var event=InputEventJoypadButton.new();event.button_index=spec[1];InputMap.action_add_event(spec[0],event)
 
 func _menu_backdrop():
@@ -93,7 +97,13 @@ func _process(dt):
   hp_bar.max_value=run.stats.maxHp;hp_bar.value=run.stats.hp
   xp_bar.max_value=20+(run.level-1)*15;xp_bar.value=run.xp
   hud_label.text="WAVE %02d     ·     LV %d\n%d / %d HP     ·     %d GOLD     ·     %d KILLS" % [run.wave,run.level,ceili(run.stats.hp),int(run.stats.maxHp),run.gold,run.kills]
-  skill_label.text="%s  ·  %s\nAUTO FIRE %s  [TAB]     ·     PAUSE [ESC]" % [BWData.entry("abilities",BWData.CLASSES[run.class_id].ability).name,"READY [SPACE / RMB]" if run.ability_cd<=0 else "%.1fs" % run.ability_cd,"ON" if world.auto_fire else "OFF"]
+  var lines=["%s  ·  %s" % [BWData.entry("abilities",BWData.CLASSES[run.class_id].ability).name,"READY [SPACE / RMB]" if run.ability_cd<=0 else "%.1fs" % run.ability_cd]]
+  var keys=["Q","E"]
+  for i in BWData.skills(run.class_id).size():
+   var id=BWData.skills(run.class_id)[i];var cd=run.skill_cd.get(id,0.0)
+   lines.append("%s  ·  %s" % [BWData.entry("abilities",id).name,"READY [%s]" % keys[i] if cd<=0 else "%.1fs" % cd])
+  lines.append("AUTO FIRE %s  [TAB]     ·     PAUSE [ESC]" % ("ON" if world.auto_fire else "OFF"))
+  skill_label.text="\n".join(lines)
   boss_label.text=""
   for enemy in world.enemies:
    if enemy.id=="boss":boss_label.text="THE BLOOD WARDEN   ·   PHASE %d   ·   %d / %d" % [enemy.phase,ceili(enemy.hp),int(enemy.maxHp)]
@@ -111,6 +121,8 @@ func _unhandled_input(event):
   if event.button_index==MOUSE_BUTTON_WHEEL_UP:world.camera.size=maxf(10,world.camera.size-1)
   if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:world.camera.size=minf(24,world.camera.size+1)
  if event.is_action_pressed("ability"):world.ability()
+ if event.is_action_pressed("skill_1"):world.skill(0)
+ if event.is_action_pressed("skill_2"):world.skill(1)
  if event.is_action_pressed("auto_fire"):world.auto_fire=not world.auto_fire
  if event.is_action_pressed("debug") and OS.is_debug_build():show_debug()
 
@@ -125,7 +137,11 @@ func title(parent: Node,text: String,size: int=38):
  var node=label(parent,text,size,GOLD);node.add_theme_font_override("font",load("res://assets/art/title.ttf"));return node
 
 func button(parent: Node,text: String,callback: Callable,disabled: bool=false) -> Button:
- var node=Button.new();node.text=text;node.custom_minimum_size=Vector2(0,48);node.disabled=disabled;node.pressed.connect(callback);parent.add_child(node);return node
+ var node=Button.new();node.text=text;node.custom_minimum_size=Vector2(0,48);node.disabled=disabled;node.pressed.connect(callback);parent.add_child(node)
+ # Every button in the game is built here, so the click/hover feedback only needs wiring once.
+ node.pressed.connect(func():audio.ui("ui_click"))
+ if not disabled:node.mouse_entered.connect(func():audio.ui("ui_select"))
+ return node
 
 func panel_page(heading: String,subtext: String="") -> VBoxContainer:
  clear_page()
@@ -141,6 +157,7 @@ func panel_page(heading: String,subtext: String="") -> VBoxContainer:
 func show_menu():
  transition_serial+=1
  page="menu"
+ audio.duck(0.0);audio.music("menu")
  if is_instance_valid(world):world.queue_free();world=null
  if is_instance_valid(hud):hud.queue_free()
  if not is_instance_valid(backdrop):_menu_backdrop()
@@ -155,7 +172,7 @@ func show_menu():
  button(column,"ARMORY",show_armory)
  button(column,"BUILDS / LOADOUTS",show_builds)
  button(column,"SETTINGS",show_settings)
- button(column,"QUIT",func():get_tree().quit())
+ button(column,"QUIT",_quit)
  label(column,"PC: WASD · MOUSE · SPACE     /     CONTROLLER SUPPORTED",12,MUTED)
  if not meta.last_error.is_empty():label(column,meta.last_error,14,Color("e77c70"))
 
@@ -168,7 +185,9 @@ func show_classes():
   title(box,data.name,30);label(box,data.tag,14,Color(data.color))
   var stats=BWData.stats(id);meta.apply_to(stats)
   label(box,"%d HP  ·  %d SPEED  ·  %d%% ARMOR" % [stats.maxHp,stats.moveSpeed,stats.armor*100],16)
-  label(box,BWData.entry("weapons",data.weapon).name+"  /  "+BWData.entry("abilities",data.ability).name,16,MUTED)
+  var kit=[BWData.entry("weapons",data.weapon).name,BWData.entry("abilities",data.ability).name]
+  for skill in BWData.skills(id):kit.append(BWData.entry("abilities",skill).name)
+  label(box,"  /  ".join(kit),16,MUTED)
   button(box,"ENTER AS "+data.name.to_upper(),func():start_run(id))
  button(column,"BACK",show_menu)
 
@@ -176,8 +195,9 @@ func start_run(id: String):
  transition_serial+=1
  if is_instance_valid(backdrop):backdrop.queue_free();backdrop=null;menu_art=null
  if is_instance_valid(world):world.queue_free()
- run=BWRun.new(id,meta);world=BWWorld.new();add_child(world);world.start(run,quality)
+ run=BWRun.new(id,meta);world=BWWorld.new();add_child(world);world.start(run,quality,audio)
  world.wave_cleared.connect(_wave_complete);world.run_ended.connect(_death_transition)
+ audio.duck(0.0);world.wave_music()
  page="playing";clear_page();_hud()
 
 func _hud():
@@ -196,9 +216,11 @@ func _hud():
 func freeze():
  if is_instance_valid(world):world.process_mode=Node.PROCESS_MODE_DISABLED
  if is_instance_valid(hud):hud.visible=false
+ audio.duck(-9.0)
 
 func resume():
  clear_page();page="playing";world.process_mode=Node.PROCESS_MODE_INHERIT;hud.visible=true
+ audio.duck(0.0)
  if is_instance_valid(touch):touch.movement=Vector2.ZERO;touch.finger=-1
 
 func show_pause():
@@ -206,7 +228,7 @@ func show_pause():
  freeze();page="pause";var column=panel_page("THE NIGHT WAITS","Wave %d · %d kills" % [run.wave,run.kills])
  button(column,"RESUME",resume)
  button(column,"RETURN TO MENU (END RUN)",func():_award();show_menu())
- label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / Right click / A — Class ability\nTab / Y — Toggle automatic fire\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
+ label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / Right click / A — Class ultimate\nQ / X — First class skill (aimed at the cursor)\nE / B — Second class skill (aimed at the cursor)\nTab / Y — Toggle automatic fire\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
 
 func _transition_screen(heading: String,subtitle: String,color: Color):
  clear_page()
@@ -225,7 +247,7 @@ func _wave_complete():
  var serial=transition_serial;var completed_world=world
  page="wave_complete";world.running=false
  _transition_screen("WAVE CLEARED","WAVE %02d  ·  %d KILLS" % [run.wave,run.kills],GOLD)
- world.sound("level_up",0.0)
+ audio.play("wave_clear");audio.duck(-9.0)
  await get_tree().create_timer(WAVE_TRANSITION_SECONDS).timeout
  if serial!=transition_serial or world!=completed_world or page!="wave_complete":return
  _intermission()
@@ -267,7 +289,7 @@ func _upgrades():
   title(box,row.name,24);label(box,row.description,18);label(box,"%s · %d / %d" % [row.rarity.to_upper(),run.upgrades.get(row.id,0),row.maxLevel],14,MUTED)
   button(box,"CLAIM",func():
    if run.apply_upgrade(row.id):
-    world.sound("upgrade_pick")
+    audio.play("upgrade_pick")
     if choosing_boss:boss_reward=false
     else:run.pending_levels-=1
     _next_pick())
@@ -280,7 +302,7 @@ func _shop(new_offers: bool=false):
   var panel=PanelContainer.new();column.add_child(panel);var box=VBoxContainer.new();panel.add_child(box)
   title(box,item.name,24);label(box,item.description,18);label(box,item.rarity.to_upper(),14,MUTED)
   button(box,"BUY — %d GOLD" % item.cost,func():
-   if run.buy_item(item.id):world.sound("purchase");_shop(),run.gold<item.cost or run.items.has(item.id) or run.items.size()>=8)
+   if run.buy_item(item.id):audio.play("purchase");_shop(),run.gold<item.cost or run.items.has(item.id) or run.items.size()>=8)
  if shop_offers.is_empty():label(column,"No further equipment is available for this build.",18,MUTED)
  button(column,"REFRESH — 20 GOLD (%d / 3)" % refreshes,func():run.gold-=20;refreshes+=1;_shop(true),refreshes>=3 or run.gold<20)
  button(column,"ENTER WAVE %d" % (run.wave+1),func():world.next_wave();resume())
@@ -344,6 +366,13 @@ func show_settings():
  label(column,"Save location: "+ProjectSettings.globalize_path(meta.path),14,MUTED)
  button(column,"BACK",show_menu)
 
+func _quit():
+ # One frame between dropping the stream and quitting lets the audio server
+ # release the Ogg playback, which otherwise reports as a leak at cleanup.
+ audio.shutdown()
+ await get_tree().process_frame
+ get_tree().quit()
+
 func _save_settings():
  cfg.set_value("graphics","profile",quality);cfg.set_value("audio","volume",volume);cfg.save("user://settings.cfg")
 
@@ -379,7 +408,7 @@ func _smoke():
   var image=get_viewport().get_texture().get_image();image.save_png("user://smoke.png")
  show_menu()
  await get_tree().create_timer(3.0).timeout
- get_tree().quit()
+ _quit()
 
 func _capture(filename: String):
  await RenderingServer.frame_post_draw
@@ -401,4 +430,4 @@ func _visual_qa():
  run.pending_levels=0;boss_reward=false;_next_pick();await get_tree().create_timer(0.3).timeout;await _capture("shop")
  show_menu();show_skills();await get_tree().create_timer(0.3).timeout;await _capture("skills")
  print("BLOODWAKE_VISUAL_QA_COMPLETE")
- get_tree().quit()
+ _quit()
