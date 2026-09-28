@@ -525,7 +525,9 @@ func _apply_mark(e: Dictionary,tone: Color):
 		for old in e.node.get_children():
 			if old.name=="RuinMark":old.queue_free()
 		e.node.add_child(brand)
-		var pulse=create_tween().set_loops()
+		# bound to the brand, not the world: the host is freed when its corpse is
+		# cleaned up, and a world-bound loop would keep stepping on a dead target
+		var pulse=brand.create_tween().set_loops()
 		pulse.tween_property(brand,"scale",Vector3.ONE*1.35,0.45).set_trans(Tween.TRANS_SINE)
 		pulse.tween_property(brand,"scale",Vector3.ONE,0.45).set_trans(Tween.TRANS_SINE)
 	ring(e.node.position,0.9,tone,0.3)
