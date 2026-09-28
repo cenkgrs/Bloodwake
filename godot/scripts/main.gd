@@ -5,6 +5,7 @@ var run: BWRun
 var audio: BWAudio
 var meta=BWMeta.new()
 var canvas: CanvasLayer
+var portraits: Array = []
 var root: Control
 var content: Control
 var hud: Control
@@ -92,6 +93,8 @@ func _menu_backdrop():
 
 func _process(dt):
  if is_instance_valid(menu_art):menu_art.rotation.y+=dt*0.12;menu_art.tick(dt,false)
+ for art in portraits:
+  if is_instance_valid(art):art.rotation.y+=dt*0.5;art.tick(dt,false)
  if is_instance_valid(world) and page=="playing":
   if is_instance_valid(touch):world.move_input=touch.movement;world.fire_input=touch.firing
   hp_bar.max_value=run.stats.maxHp;hp_bar.value=run.stats.hp
@@ -178,18 +181,96 @@ func show_menu():
 
 func show_classes():
  page="classes";var column=panel_page("CHOOSE YOUR OATH","Four paths into the same darkness. Build %d equipped." % (meta.active+1))
- var grid=GridContainer.new();grid.columns=2 if get_viewport().get_visible_rect().size.x>850 else 1;grid.add_theme_constant_override("h_separation",18);grid.add_theme_constant_override("v_separation",18);column.add_child(grid)
- for id in BWData.CLASSES:
-  var data=BWData.CLASSES[id];var panel=PanelContainer.new();panel.custom_minimum_size=Vector2(450,190);panel.size_flags_horizontal=Control.SIZE_EXPAND_FILL;grid.add_child(panel)
-  var box=VBoxContainer.new();box.add_theme_constant_override("separation",12);panel.add_child(box)
-  title(box,data.name,30);label(box,data.tag,14,Color(data.color))
-  var stats=BWData.stats(id);meta.apply_to(stats)
-  label(box,"%d HP  ·  %d SPEED  ·  %d%% ARMOR" % [stats.maxHp,stats.moveSpeed,stats.armor*100],16)
-  var kit=[BWData.entry("weapons",data.weapon).name,BWData.entry("abilities",data.ability).name]
-  for skill in BWData.skills(id):kit.append(BWData.entry("abilities",skill).name)
-  label(box,"  /  ".join(kit),16,MUTED)
-  button(box,"ENTER AS "+data.name.to_upper(),func():start_run(id))
+ portraits.clear()
+ var wide=get_viewport().get_visible_rect().size.x>1100
+ var grid=GridContainer.new();grid.columns=2 if wide else 1
+ grid.add_theme_constant_override("h_separation",14);grid.add_theme_constant_override("v_separation",12)
+ column.add_child(grid)
+ for id in BWData.CLASSES:_class_card(grid,id)
  button(column,"BACK",show_menu)
+
+# One card per class: a live bust, its numbers as bars so they can be compared at a
+# glance, and the full kit spelled out instead of a run-on line of names.
+func _class_card(parent: Node,id: String):
+ var data=BWData.CLASSES[id];var accent=Color(data.color)
+ var panel=PanelContainer.new();panel.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ var skin=StyleBoxFlat.new();skin.bg_color=Color(0.055,0.04,0.038,0.95);skin.border_color=Color(accent,0.45)
+ skin.set_border_width_all(1);skin.set_corner_radius_all(6)
+ for side in ["left","right","top","bottom"]:skin.set("content_margin_"+side,8)
+ panel.add_theme_stylebox_override("panel",skin)
+ panel.custom_minimum_size=Vector2(470,200);parent.add_child(panel)
+ var row=HBoxContainer.new();row.add_theme_constant_override("separation",0);panel.add_child(row)
+ var stripe=ColorRect.new();stripe.color=accent;stripe.custom_minimum_size=Vector2(3,0);row.add_child(stripe)
+ _portrait(row,id,accent)
+ var inner=MarginContainer.new();inner.add_theme_constant_override("margin_left",16)
+ inner.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(inner)
+ var box=VBoxContainer.new();box.add_theme_constant_override("separation",2);inner.add_child(box)
+ title(box,data.name,21)
+ label(box,"%s   ·   %s" % [data.tag,BWData.entry("weapons",data.weapon).name.to_upper()],11,accent)
+ var stats=BWData.stats(id);meta.apply_to(stats)
+ for spec in [["HEALTH",stats.maxHp,170.0],["SPEED",stats.moveSpeed,360.0],["POWER",stats.damage,3.2],["CRIT",stats.criticalChance,1.0],["ARMOR",stats.armor,0.5]]:
+  _stat_bar(box,spec[0],spec[1],spec[2],accent)
+ var rule=ColorRect.new();rule.color=Color(GOLD,0.35);rule.custom_minimum_size=Vector2(0,1);box.add_child(rule)
+ _ability_line(box,BWData.entry("abilities",data.ability),"ULT")
+ var keys=["Q","E"]
+ for i in BWData.skills(id).size():_ability_line(box,BWData.entry("abilities",BWData.skills(id)[i]),keys[i])
+ var enter=button(box,"ENTER AS "+data.name.to_upper(),func():start_run(id))
+ enter.custom_minimum_size.y=28
+
+# A bust rendered in its own little world so the menu backdrop cannot leak into it.
+func _portrait(parent: Node,id: String,accent: Color):
+ var holder=SubViewportContainer.new();holder.stretch=true
+ holder.custom_minimum_size=Vector2(122,214);holder.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ var view=SubViewport.new();view.own_world_3d=true;view.transparent_bg=true
+ view.size=Vector2i(122,214);view.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+ holder.add_child(view);parent.add_child(holder)
+ var env=WorldEnvironment.new();var environment=Environment.new()
+ environment.background_mode=Environment.BG_COLOR;environment.background_color=Color(0.04,0.03,0.03)
+ environment.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
+ environment.ambient_light_color=accent;environment.ambient_light_energy=0.5
+ env.environment=environment;view.add_child(env)
+ var key=DirectionalLight3D.new();key.rotation_degrees=Vector3(-28,-38,0);key.light_energy=1.7;view.add_child(key)
+ var rim=OmniLight3D.new();rim.position=Vector3(-1.1,1.7,-1.4);rim.light_color=accent
+ rim.light_energy=3.0;rim.omni_range=5.0;view.add_child(rim)
+ # look_at needs the node in the tree and this viewport is not parented yet, so the
+ # tilt onto the chest is set directly
+ var camera=Camera3D.new();camera.position=Vector3(0,1.25,2.45)
+ camera.rotation_degrees=Vector3(-4.7,0,0);view.add_child(camera)
+ # configure() measures the rig through global transforms, so the viewport has to
+ # be in the tree before the model is built
+ var art=BWVisual.new();view.add_child(art);art.configure(id,false,Color.WHITE,1.85)
+ art.position=art.frame_offset()
+ portraits.append(art)
+
+func _stat_bar(parent: Node,name: String,value: float,ceiling: float,accent: Color):
+ var line=HBoxContainer.new();line.add_theme_constant_override("separation",8);parent.add_child(line)
+ var tag=Label.new();tag.text=name;tag.custom_minimum_size.x=64
+ tag.add_theme_font_size_override("font_size",11);tag.add_theme_color_override("font_color",MUTED)
+ line.add_child(tag)
+ var meter=ProgressBar.new();meter.show_percentage=false;meter.max_value=ceiling;meter.value=value
+ meter.custom_minimum_size=Vector2(0,7);meter.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ var track=StyleBoxFlat.new();track.bg_color=Color(0.1,0.08,0.07);track.set_corner_radius_all(3)
+ var fill=StyleBoxFlat.new();fill.bg_color=accent;fill.set_corner_radius_all(3)
+ meter.add_theme_stylebox_override("background",track);meter.add_theme_stylebox_override("fill",fill)
+ line.add_child(meter)
+ var read=Label.new()
+ read.text="%.0f%%" % (value*100) if ceiling<=1.0 else ("%.1f" % value if value<10 else "%.0f" % value)
+ read.custom_minimum_size.x=46;read.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+ read.add_theme_font_size_override("font_size",11);line.add_child(read)
+
+func _ability_line(parent: Node,data: Dictionary,key: String):
+ if data.is_empty():return
+ var line=HBoxContainer.new();line.add_theme_constant_override("separation",8);parent.add_child(line)
+ var chip=Label.new();chip.text="[%s]" % key;chip.custom_minimum_size.x=34
+ chip.add_theme_font_size_override("font_size",12);chip.add_theme_color_override("font_color",GOLD)
+ line.add_child(chip)
+ var text=VBoxContainer.new();text.add_theme_constant_override("separation",0)
+ text.size_flags_horizontal=Control.SIZE_EXPAND_FILL;line.add_child(text)
+ var head=Label.new();head.text="%s   ·   %ds" % [data.name,int(data.cooldown)]
+ head.add_theme_font_size_override("font_size",12);text.add_child(head)
+ var blurb=Label.new();blurb.text=data.get("description","")
+ blurb.add_theme_font_size_override("font_size",10);blurb.add_theme_color_override("font_color",MUTED)
+ blurb.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;text.add_child(blurb)
 
 func start_run(id: String):
  transition_serial+=1

@@ -77,6 +77,25 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 
 var level_scale = 1.0
 
+# In the world an actor just stands at its own origin, so the fitted rigs are never
+# horizontally centred. A portrait has to frame the bust, so it asks for the shift.
+func frame_offset() -> Vector3:
+	if not is_instance_valid(model):return Vector3.ZERO
+	# Skinned meshes report their AABB in bind space, which is why configure() refuses
+	# to centre the fitted rigs on it. The posed bones are the honest measure: they put
+	# the mage back on the axis and drop the warrior onto the floor of the frame.
+	var skeleton=_find_skeleton(model)
+	if skeleton!=null and skeleton.get_bone_count()>0:
+		var low=Vector3.INF;var high=-Vector3.INF
+		for bone in skeleton.get_bone_count():
+			var spot=(skeleton.global_transform*skeleton.get_bone_global_pose(bone)).origin
+			low=low.min(spot);high=high.max(spot)
+		return Vector3(-(low.x+high.x)*0.5,-low.y,-(low.z+high.z)*0.5)
+	var bounds=_bounds(model)
+	if bounds.size.y<=0.01:return Vector3.ZERO
+	var centre=bounds.get_center()
+	return Vector3(-centre.x,-bounds.position.y,-centre.z)*model.scale.x
+
 func set_level_scale(multiplier: float):
 	level_scale=multiplier;_apply_scale()
 

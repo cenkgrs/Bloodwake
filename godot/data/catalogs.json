@@ -73,7 +73,8 @@
       "icon": "sword",
       "damage": 34,
       "cooldown": 6,
-      "range": 110
+      "range": 110,
+      "description": "A roar that throws every body around you outward."
     },
     {
       "id": "fan_shot",
@@ -83,7 +84,8 @@
       "damage": 12,
       "cooldown": 5,
       "range": 320,
-      "projectileSpeed": 560
+      "projectileSpeed": 560,
+      "description": "Five rounds in a wide cone, point blank."
     },
     {
       "id": "frost_nova",
@@ -92,7 +94,8 @@
       "icon": "snowflake",
       "damage": 28,
       "cooldown": 7,
-      "range": 125
+      "range": 125,
+      "description": "A cold front that damages and slows everything near you."
     },
     {
       "id": "shadow_strike",
@@ -101,7 +104,8 @@
       "icon": "daggers",
       "damage": 38,
       "cooldown": 6,
-      "range": 135
+      "range": 135,
+      "description": "Dash through the gap and cut whatever lands beside you."
     },
     {
       "id": "arcane_meteor",
@@ -112,7 +116,8 @@
       "cooldown": 4,
       "range": 300,
       "projectileSpeed": 300,
-      "blastRadius": 130
+      "blastRadius": 130,
+      "description": "Call a rock down on a chosen spot; it hurts when it lands."
     },
     {
       "id": "void_leap",
@@ -122,7 +127,8 @@
       "damage": 26,
       "cooldown": 9,
       "range": 260,
-      "blastRadius": 150
+      "blastRadius": 150,
+      "description": "Jump far and crater the ground where you come down."
     },
     {
       "id": "sunder_leap",
@@ -134,7 +140,8 @@
       "range": 150,
       "blastRadius": 210,
       "tone": "ffb45a",
-      "accent": "ff7a3c"
+      "accent": "ff7a3c",
+      "description": "A shorter jump for a far wider crater."
     },
     {
       "id": "shield_thrust",
@@ -146,7 +153,8 @@
       "range": 220,
       "blastRadius": 60,
       "tone": "ffd08a",
-      "accent": "ff9a4d"
+      "accent": "ff9a4d",
+      "description": "A committed lunge that spears a narrow lane."
     },
     {
       "id": "phantom_volley",
@@ -158,7 +166,8 @@
       "range": 300,
       "projectileSpeed": 520,
       "tone": "9d6bff",
-      "accent": "d9c6ff"
+      "accent": "d9c6ff",
+      "description": "Break away backwards, answer with three blades."
     },
     {
       "id": "ricochet_round",
@@ -171,7 +180,8 @@
       "projectileSpeed": 620,
       "bounces": 3,
       "tone": "ffd07a",
-      "accent": "ffe9bd"
+      "accent": "ffe9bd",
+      "description": "One round that redirects to whatever it has not hit yet."
     },
     {
       "id": "powder_charge",
@@ -183,7 +193,8 @@
       "range": 260,
       "blastRadius": 190,
       "tone": "ff9a4d",
-      "accent": "ffd08a"
+      "accent": "ffd08a",
+      "description": "Lob a charge; it telegraphs, then throws bodies off it."
     },
     {
       "id": "mark_of_ruin",
@@ -194,7 +205,8 @@
       "cooldown": 9,
       "range": 300,
       "tone": "63bd9f",
-      "accent": "cdf5e4"
+      "accent": "cdf5e4",
+      "description": "Brand a target. It bites harder, and outlives its host."
     }
   ],
   "enemies": [
