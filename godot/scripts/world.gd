@@ -28,6 +28,7 @@ var rest_time = 0.0
 var hit_flash = 0.0
 var flash_rect: ColorRect
 var combo_step = 0
+var mark_chain = 0
 var combo_timer = 0.0
 var glow_texture: GradientTexture2D
 var ring_texture: GradientTexture2D
@@ -433,10 +434,102 @@ func skill(index: int):
 		"voidLeap":_cast_void_leap(data,target)
 		"thrust":_cast_thrust(data)
 		"backstepVolley":_cast_backstep_volley(data)
+		"ricochet":_cast_ricochet(data)
+		"powderCharge":_cast_powder_charge(data,target)
+		"markOfRuin":_cast_mark(data)
 	changed.emit()
 
 # A committed forward lunge: the warrior covers ground and spears everything in a
 # narrow lane, so it rewards lining enemies up instead of standing in a crowd.
+func _nearest_unhit(origin: Vector3,reach: float,hit_ids: Array):
+	var best=null;var best_distance=reach*reach
+	for e in enemies:
+		if e.hp<=0 or hit_ids.has(e.node.get_instance_id()):continue
+		var distance=origin.distance_squared_to(e.node.position)
+		if distance<=best_distance:best=e;best_distance=distance
+	return best
+
+# One round that refuses to stop: it redirects to the next body it has not touched.
+# Rewards picking a lane through a crowd rather than spraying at the nearest target.
+func _cast_ricochet(data: Dictionary):
+	var reach=data.range*run.stats.attackRange*BWData.UNIT
+	var heading=aim.normalized() if aim.length_squared()>0.01 else last_move
+	if heading.length_squared()<0.01:heading=Vector3.FORWARD
+	var first=nearest(player.position,reach)
+	if first!=null:heading=(first.node.position-player.position).normalized()
+	visual.rotation.y=atan2(heading.x,heading.z)
+	visual.action("attack",0.26);sound("shoot_rifle")
+	var accent=Color(data.get("accent","ffe9bd"))
+	var roll=run.damage_roll(data.damage*run.stats.damage)
+	var round_record=_bullet(player.position,heading,data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,0,"rapid_rifle",0,0,roll.critical)
+	if round_record!=null:
+		round_record["bounces"]=int(data.get("bounces",3))
+		round_record["bounce_range"]=reach
+	muzzle(player.position+Vector3.UP*0.8,heading,accent)
+	shake=maxf(shake,0.06)
+
+# A charge lobbed onto the ground: it telegraphs, then throws everything off it.
+func _cast_powder_charge(data: Dictionary,target: Vector3):
+	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
+	var tone=Color(data.get("tone","ff9a4d"));var accent=Color(data.get("accent","ffd08a"))
+	visual.rotation.y=atan2(target.x-player.position.x,target.z-player.position.z)
+	visual.action("attack",0.26);sound("shoot_shotgun")
+	var keg=glow_sprite(tone,0.5,1.4);keg.position=player.position+Vector3.UP*0.9;add_child(keg)
+	var fuse=0.45
+	telegraph(target,radius,tone,fuse)
+	var lob=create_tween();lob.set_parallel(true)
+	lob.tween_property(keg,"position",target+Vector3.UP*0.25,fuse).set_trans(Tween.TRANS_SINE)
+	lob.tween_property(keg,"scale",Vector3.ONE*1.5,fuse)
+	lob.chain().tween_callback(func():
+		if is_instance_valid(keg):keg.queue_free()
+		_powder_blast(target,radius,data.damage*run.stats.damage,tone,accent))
+
+func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,accent: Color):
+	sound_at("shoot_shotgun",position,3.0)
+	for e in enemies.duplicate():
+		var offset=e.node.position-position
+		if offset.length()>radius+e.radius:continue
+		var roll=run.damage_roll(damage)
+		_damage_enemy(e,roll.damage,roll.critical,true,"ability")
+		if e.hp<=0 or not is_instance_valid(e.node):continue
+		# shoved outward, clamped to the arena so nothing is pushed through a wall
+		var shove=e.node.position+offset.normalized()*1.5
+		shove.x=clampf(shove.x,-23.5,23.5);shove.z=clampf(shove.z,-23.5,23.5)
+		create_tween().tween_property(e.node,"position",shove,0.18).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	shockwave(position,radius,tone,0.4,0.0,2.2)
+	shockwave(position,radius*1.15,accent,0.48,0.1,1.5)
+	radial_streaks(position,radius*1.1,accent,8,0.3)
+	burst_ring(position,radius,accent,34,5.2,0.6)
+	spark(position+Vector3.UP*0.8,tone,22)
+	_flash_light(position,tone,3.4,radius*1.8,0.32)
+	shake=maxf(shake,0.18)
+
+# Paints a target; the mark survives its host and moves to the next body, and every
+# jump makes it bite harder - the assassin's crit identity turned into a chain.
+func _cast_mark(data: Dictionary):
+	var reach=data.range*run.stats.attackRange*BWData.UNIT
+	var victim=nearest(player.position,reach)
+	if victim==null:return
+	mark_chain=0
+	_apply_mark(victim,Color(data.get("tone","63bd9f")))
+	visual.action("attack",0.24)
+	sound("skill_leap_launch")
+
+func _apply_mark(e: Dictionary,tone: Color):
+	for other in enemies:other["marked"]=false
+	e["marked"]=true
+	e["mark_tone"]=tone
+	if is_instance_valid(e.node):
+		var brand=glow_sprite(tone,1.1,1.6)
+		brand.name="RuinMark";brand.position=Vector3.UP*2.1
+		for old in e.node.get_children():
+			if old.name=="RuinMark":old.queue_free()
+		e.node.add_child(brand)
+		var pulse=create_tween().set_loops()
+		pulse.tween_property(brand,"scale",Vector3.ONE*1.35,0.45).set_trans(Tween.TRANS_SINE)
+		pulse.tween_property(brand,"scale",Vector3.ONE,0.45).set_trans(Tween.TRANS_SINE)
+	ring(e.node.position,0.9,tone,0.3)
+
 func _cast_thrust(data: Dictionary):
 	var reach=data.range*run.stats.attackRange*BWData.UNIT
 	var lane=data.blastRadius*run.stats.attackRange*BWData.UNIT
@@ -692,7 +785,9 @@ func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,dista
 		lamp.light_energy=1.8 if orb else 1.0;lamp.omni_range=2.6 if orb else 1.5
 		node.add_child(lamp)
 		node.add_child(trail_emitter(halo_tone,0.075 if orb else 0.045,0.32 if orb else 0.2,18 if orb else 12))
-	bullets.append({"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical,"radius":0.5 if weapon=="magic_orb" else 0.16})
+	var record={"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical,"radius":0.5 if weapon=="magic_orb" else 0.16}
+	bullets.append(record)
+	return record
 
 func _orb_dressing(tone: Color,rich: bool) -> Node3D:
 	var rig=Node3D.new()
@@ -722,13 +817,23 @@ func _projectiles(dt: float):
 						if b.burn>0:target.burn=3;target.burn_dps=b.burn
 						if b.slow>0:target.slow=2;target.slow_amount=b.slow
 				else:_hurt_player(b.damage)
-				b.pierce-=1
 				_impact(b.node.position,b.weapon,b.friendly)
+				if b.friendly and b.get("bounces",0)>0:
+					var next=_nearest_unhit(b.node.position,b.get("bounce_range",6.0),b.hit)
+					if next!=null:
+						b.bounces-=1
+						b.direction=(next.node.position+Vector3.UP*0.8-b.node.position).normalized()
+						b.remaining=b.get("bounce_range",6.0)
+						_aim_along(b.node.get_child(0),b.direction)
+						beam(b.node.position,next.node.position+Vector3.UP*0.8,Color("ffe9bd"))
+						break
+				b.pierce-=1
 				if b.pierce<0:b.remaining=-1;break
 		if b.remaining<=0:b.node.queue_free();bullets.erase(b)
 
 func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: bool=true,impact: String=""):
 	if e.hp<=0:return
+	if e.get("marked",false):damage*=1.35+0.1*mark_chain
 	var actual=minf(e.hp,damage);e.hp-=damage
 	if run.stats.hp>0:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
 	if effects:
@@ -739,6 +844,10 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 		spark(e.node.position+Vector3.UP*0.9,Color("ffe0a6") if critical else Color("ffb072"),14 if critical else 7)
 	if e.hp>0:return
 	enemies.erase(e);e.visual.action("death")
+	if e.get("marked",false):
+		var heir=nearest(e.node.position,9.0)
+		if heir!=null:mark_chain+=1;_apply_mark(heir,e.get("mark_tone",Color("63bd9f")))
+		else:mark_chain=0
 	spark(e.node.position+Vector3.UP*0.9,Color(ENEMY_COLORS[e.id]).lightened(0.4),24 if e.elite or e.id=="boss" else 16)
 	run.kills+=1;run.gold+=int(e.data.goldReward*(4 if e.elite else 1)+run.stats.bonusGoldPerKill)
 	_drop(e.node.position,"xp",int(e.data.xpReward*(4 if e.elite else 1)))

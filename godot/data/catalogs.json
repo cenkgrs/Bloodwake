@@ -159,6 +159,42 @@
       "projectileSpeed": 520,
       "tone": "9d6bff",
       "accent": "d9c6ff"
+    },
+    {
+      "id": "ricochet_round",
+      "name": "Ricochet Round",
+      "behavior": "ricochet",
+      "icon": "bullets",
+      "damage": 30,
+      "cooldown": 6,
+      "range": 320,
+      "projectileSpeed": 620,
+      "bounces": 3,
+      "tone": "ffd07a",
+      "accent": "ffe9bd"
+    },
+    {
+      "id": "powder_charge",
+      "name": "Powder Charge",
+      "behavior": "powderCharge",
+      "icon": "bullets",
+      "damage": 34,
+      "cooldown": 8,
+      "range": 260,
+      "blastRadius": 190,
+      "tone": "ff9a4d",
+      "accent": "ffd08a"
+    },
+    {
+      "id": "mark_of_ruin",
+      "name": "Mark of Ruin",
+      "behavior": "markOfRuin",
+      "icon": "daggers",
+      "damage": 0,
+      "cooldown": 9,
+      "range": 300,
+      "tone": "63bd9f",
+      "accent": "cdf5e4"
     }
   ],
   "enemies": [
