@@ -37,13 +37,14 @@ const ZONES = [
 # MESH: leave empty for the primitive built below, or point at a res:// scene once
 # a real model exists - nothing else has to change.
 const PROPS = {
-	"pillar": {"radius": 0.62, "height": 3.4, "blocks": true, "hp": 0.0, "mesh": ""},
+	"altar": {"radius": 1.5, "height": 1.2, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/altar/altar.glb"},
+	"pillar": {"radius": 0.62, "height": 3.4, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/altar/pillar.glb"},
 	"wall": {"radius": 1.15, "height": 1.9, "blocks": true, "hp": 0.0, "mesh": ""},
 	"boulder": {"radius": 0.95, "height": 1.3, "blocks": true, "hp": 0.0, "mesh": ""},
 	"tree": {"radius": 0.5, "height": 4.2, "blocks": true, "hp": 0.0, "mesh": ""},
-	"brazier": {"radius": 0.45, "height": 1.5, "blocks": true, "hp": 0.0, "mesh": "", "light": true},
-	"urn": {"radius": 0.42, "height": 0.9, "blocks": false, "hp": 12.0, "mesh": ""},
-	"bones": {"radius": 0.7, "height": 0.25, "blocks": false, "hp": 0.0, "mesh": ""},
+	"brazier": {"radius": 0.45, "height": 1.5, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/altar/brazier.glb", "light": true},
+	"urn": {"radius": 0.42, "height": 0.9, "blocks": false, "hp": 12.0, "mesh": "res://assets/models/environment/altar/urn.glb"},
+	"bones": {"radius": 0.7, "height": 0.25, "blocks": false, "hp": 0.0, "mesh": "res://assets/models/environment/altar/bones.glb"},
 	"rubble": {"radius": 0.6, "height": 0.28, "blocks": false, "hp": 0.0, "mesh": ""},
 }
 
@@ -66,6 +67,8 @@ func build(profile: String, seed_value: int):
 	_walls()
 	for zone in ZONES:
 		_populate(zone)
+		if zone.id == "altar":
+			_place("altar", Vector3(zone.at.x, 0, zone.at.y - 3.5), zone)
 
 func _ground():
 	ground = MeshInstance3D.new()
@@ -153,7 +156,18 @@ func _model(kind: String, spec: Dictionary, zone: Dictionary) -> Node3D:
 	if not String(spec.mesh).is_empty():
 		var packed = load(spec.mesh)
 		if packed is PackedScene:
-			return packed.instantiate()
+			var imported = Node3D.new()
+			var model = packed.instantiate()
+			imported.add_child(model)
+			var bounds = _prop_bounds(model)
+			if bounds.size.y > 0.001:
+				var factor = minf(spec.height / bounds.size.y, spec.radius * 2.0 / maxf(bounds.size.x, bounds.size.z))
+				model.scale *= factor
+				model.position = Vector3(-bounds.get_center().x, -bounds.position.y, -bounds.get_center().z) * factor
+				if kind == "brazier":
+					_brazier_fire(imported, bounds.size.y * factor * 0.88, spec.radius)
+			imported.name = kind.capitalize()
+			return imported
 	var holder = Node3D.new()
 	var body = MeshInstance3D.new()
 	var skin = stone.duplicate()
@@ -210,26 +224,7 @@ func _model(kind: String, spec: Dictionary, zone: Dictionary) -> Node3D:
 			bowl.radial_segments = 8
 			body.mesh = bowl
 			body.position.y = spec.height * 0.5
-			var fire = MeshInstance3D.new()
-			var flame = SphereMesh.new()
-			flame.radius = spec.radius * 0.6
-			flame.height = spec.radius * 1.5
-			fire.mesh = flame
-			var lit = StandardMaterial3D.new()
-			lit.albedo_color = Color("ff9b48")
-			lit.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-			fire.material_override = lit
-			fire.position.y = spec.height + 0.2
-			holder.add_child(fire)
-			# Unlike the old rim torches, these stand inside the play space, so their
-			# light is actually seen.
-			if quality == "PC":
-				var lamp = OmniLight3D.new()
-				lamp.light_color = Color("ff9854")
-				lamp.light_energy = 2.2
-				lamp.omni_range = 7.0
-				lamp.position.y = spec.height + 0.4
-				holder.add_child(lamp)
+			_brazier_fire(holder, spec.height, spec.radius)
 		"urn":
 			var pot = CylinderMesh.new()
 			pot.top_radius = spec.radius * 0.6
@@ -366,3 +361,37 @@ func _shatter(prop: Dictionary):
 		toss.tween_property(chunk, "rotation", Vector3(rng.randf() * 6, rng.randf() * 6, rng.randf() * 6), 0.5)
 		toss.chain().tween_interval(1.4)
 		toss.chain().tween_callback(chunk.queue_free)
+
+# Bounds include each imported node transform; source units and origin are arbitrary.
+func _prop_bounds(node: Node3D, transform: Transform3D = Transform3D.IDENTITY) -> AABB:
+	transform = transform * node.transform
+	var result = AABB()
+	if node is MeshInstance3D:
+		result = transform * node.get_aabb()
+	for child in node.get_children():
+		if child is Node3D:
+			var box = _prop_bounds(child, transform)
+			if box.size.length_squared() > 0:
+				result = box if result.size.length_squared() == 0 else result.merge(box)
+	return result
+
+func _brazier_fire(holder: Node3D, height: float, radius: float):
+	var fire = MeshInstance3D.new()
+	fire.name = "Embers"
+	var flame = SphereMesh.new()
+	flame.radius = radius * 0.48
+	flame.height = radius * 0.5
+	fire.mesh = flame
+	var lit = StandardMaterial3D.new()
+	lit.albedo_color = Color("ff9b48")
+	lit.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fire.material_override = lit
+	fire.position.y = height
+	holder.add_child(fire)
+	if quality == "PC":
+		var lamp = OmniLight3D.new()
+		lamp.light_color = Color("ff9854")
+		lamp.light_energy = 2.2
+		lamp.omni_range = 7.0
+		lamp.position.y = height + 0.25
+		holder.add_child(lamp)
