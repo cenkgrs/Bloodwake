@@ -52,6 +52,10 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 			var key=String(anim_name).to_lower()
 			for pair in [["idle","idle"],["run","run"],["walk","run"],["attack","attack"],["hit","hit"],["death","death"],["die","death"],["fall","death"],["ultimate","ultimate"]]:
 				if key.contains(pair[0]) and not clips.has(pair[1]):clips[pair[1]]=anim_name
+		# The substring pass above folds Attack1..4 and SpinAttack into "attack",
+		# so the combo links are registered by their exact clip name instead.
+		for exact in ["Attack1","Attack2","Attack3","Attack4","SpinAttack"]:
+			if animation.has_animation(exact):clips[exact.to_lower()]=exact
 		if file=="warrior":
 			for desired in {"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}:
 				var source={"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}[desired]
@@ -184,6 +188,12 @@ func clip_speed(next: String,duration: float=-1.0) -> float:
 	var target=duration if duration>0 else targets.get(next,-1.0)
 	return animation.get_animation(clips[next]).length/target if target>0 else 1.0
 
+# How long a clip runs at its authored pace. The combat code sizes a swing off this
+# instead of forcing every clip into one target length.
+func clip_length(name: String) -> float:
+	if animation==null or not clips.has(name):return 0.0
+	return animation.get_animation(clips[name]).length
+
 func play(next: String):
 	if dead and next!="death":return
 	if next==state:return
@@ -194,9 +204,16 @@ func play(next: String):
 
 func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 	if dead:return false
-	if next=="attack" and lock_time>0:return false
+	# Every link of the chain is its own clip now, so this guards the prefix rather
+	# than the single old "attack" name; otherwise a swing could restart itself.
+	# A link of the chain may cut into the previous one's recovery - that is what
+	# makes a combo feel responsive - but a clip must not restart itself.
+	if next.begins_with("attack") and next==state and lock_time>0:return false
 	# A normal hit must not restart a committed spell or every incoming hit stun-locks it.
-	if next=="hit" and state in ["ultimate","hit"] and lock_time>0:return false
+	# Nor may it cut a swing short. Being staggered out of every attack is what made
+	# the chain read as broken rather than as heavy; the screen flash still sells the
+	# hit without stealing the animation.
+	if next=="hit" and lock_time>0 and (state.begins_with("attack") or state in ["ultimate","hit","spinattack"]):return false
 	if next=="death":
 		dead=true
 		# tick() stops for a corpse (it leaves the enemies array), so a kill landed
@@ -206,8 +223,11 @@ func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 	if animation and clips.has(next):
 		var speed=clip_speed(next,duration)
 		animation.speed_scale=1.0
-		if reverse:animation.play(clips[next],0.05,-speed,true)
-		else:animation.play(clips[next],0.05,speed)
+		# Cancelling one link into the next needs a longer crossfade than a cold start:
+		# the outgoing clip is stopped mid-recovery, so 0.05 s snapped.
+		var blend=0.14 if next.begins_with("attack") and state.begins_with("attack") else 0.05
+		if reverse:animation.play(clips[next],blend,-speed,true)
+		else:animation.play(clips[next],blend,speed)
 		lock_time=animation.get_animation(clips[next]).length/speed
 		state=next
 	else:

@@ -73,18 +73,21 @@ func _theme() -> Theme:
 func _inputs():
 	# E used to be a second binding for the ulti; it drives the class's second skill
 	# now, and W stays on movement.
-	var keys={"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_up":[KEY_W,KEY_UP],"move_down":[KEY_S,KEY_DOWN],"ability":[KEY_SPACE],"skill_1":[KEY_Q],"skill_2":[KEY_E],"pause":[KEY_ESCAPE],"auto_fire":[KEY_TAB],"fullscreen":[KEY_F11],"debug":[KEY_F3]}
+	var keys={"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_up":[KEY_W,KEY_UP],"move_down":[KEY_S,KEY_DOWN],"ability":[KEY_SPACE],"skill_1":[KEY_Q],"skill_2":[KEY_E],"heavy":[KEY_SHIFT],"pause":[KEY_ESCAPE],"auto_fire":[KEY_TAB],"fullscreen":[KEY_F11],"debug":[KEY_F3]}
 	for action in keys:
 		if not InputMap.has_action(action):InputMap.add_action(action)
 		for key in keys[action]:
 			var event=InputEventKey.new();event.physical_keycode=key;InputMap.action_add_event(action,event)
 	for action in ["fire","aim_left","aim_right","aim_up","aim_down"]:
 		if not InputMap.has_action(action):InputMap.add_action(action,0.2)
-	for spec in [["fire",MOUSE_BUTTON_LEFT],["ability",MOUSE_BUTTON_RIGHT]]:
+	# The right button used to be a second binding for the ulti. It is the heavy
+	# modifier now - held, it turns the next left click into the spin attack - so the
+	# ulti keeps SPACE alone, which is the binding the class screen advertises.
+	for spec in [["fire",MOUSE_BUTTON_LEFT],["heavy",MOUSE_BUTTON_RIGHT]]:
 		var event=InputEventMouseButton.new();event.button_index=spec[1];InputMap.action_add_event(spec[0],event)
 	for spec in [["move_left",JOY_AXIS_LEFT_X,-1],["move_right",JOY_AXIS_LEFT_X,1],["move_up",JOY_AXIS_LEFT_Y,-1],["move_down",JOY_AXIS_LEFT_Y,1],["aim_left",JOY_AXIS_RIGHT_X,-1],["aim_right",JOY_AXIS_RIGHT_X,1],["aim_up",JOY_AXIS_RIGHT_Y,-1],["aim_down",JOY_AXIS_RIGHT_Y,1],["fire",JOY_AXIS_TRIGGER_RIGHT,1]]:
 		var event=InputEventJoypadMotion.new();event.axis=spec[1];event.axis_value=spec[2];InputMap.action_add_event(spec[0],event)
-	for spec in [["ability",JOY_BUTTON_A],["skill_1",JOY_BUTTON_X],["skill_2",JOY_BUTTON_B],["pause",JOY_BUTTON_START],["auto_fire",JOY_BUTTON_Y]]:
+	for spec in [["ability",JOY_BUTTON_A],["skill_1",JOY_BUTTON_X],["skill_2",JOY_BUTTON_B],["heavy",JOY_BUTTON_LEFT_SHOULDER],["pause",JOY_BUTTON_START],["auto_fire",JOY_BUTTON_Y]]:
 		var event=InputEventJoypadButton.new();event.button_index=spec[1];InputMap.action_add_event(spec[0],event)
 
 func _menu_backdrop():
@@ -106,6 +109,7 @@ func _process(dt):
 		for i in BWData.skills(run.class_id).size():
 			var id=BWData.skills(run.class_id)[i];var cd=run.skill_cd.get(id,0.0)
 			lines.append("%s  ·  %s" % [BWData.entry("abilities",id).name,"READY [%s]" % keys[i] if cd<=0 else "%.1fs" % cd])
+		if world.has_heavy():lines.append("SPIN ATTACK  ·  HOLD RMB + LMB")
 		lines.append("AUTO FIRE %s  [TAB]     ·     PAUSE [ESC]" % ("ON" if world.auto_fire else "OFF"))
 		skill_label.text="\n".join(lines)
 		boss_label.text=""
@@ -369,7 +373,7 @@ func show_pause():
 	freeze();page="pause";var column=panel_page("THE NIGHT WAITS","Wave %d · %d kills" % [run.wave,run.kills])
 	button(column,"RESUME",resume)
 	button(column,"RETURN TO MENU (END RUN)",func():_award();show_menu())
-	label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / Right click / A — Class ultimate\nQ / X — First class skill (aimed at the cursor)\nE / B — Second class skill (aimed at the cursor)\nTab / Y — Toggle automatic fire\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
+	label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / A — Class ultimate\nHold right click + left click — Spin attack (warrior)\nQ / X — First class skill (aimed at the cursor)\nE / B — Second class skill (aimed at the cursor)\nTab / Y — Toggle automatic fire\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
 
 func _transition_screen(heading: String,subtitle: String,color: Color):
 	clear_page()
@@ -663,6 +667,19 @@ func show_debug():
 	for wave in [1,5,6,10,20]:button(column,"START WAVE %d" % wave,func():
 		for enemy in world.enemies:enemy.node.queue_free()
 		world.enemies.clear();run.wave=wave;world.spawned=0;world.spawn_timer=0;world.running=true;run.stats.hp=run.stats.maxHp;resume())
+	# Animation pacing is the kind of thing that can only be judged by feel, so it is
+	# dialled here rather than by rebuilding.
+	for spec in [["COMBO PACE",0],["SPIN PACE",1]]:
+		var label=spec[0]
+		var which=int(spec[1])
+		var value=BWWorld.combo_pace if which==0 else BWWorld.spin_pace
+		button(column,"%s: %.2fx  (tap to cycle)" % [label,value],func():
+			var steps=[1.0,1.25,1.5,1.75,2.0,2.5]
+			var current=BWWorld.combo_pace if which==0 else BWWorld.spin_pace
+			var next=steps[(steps.find(snappedf(current,0.01))+1)%steps.size()]
+			if which==0:BWWorld.combo_pace=next
+			else:BWWorld.spin_pace=next
+			show_debug())
 	button(column,"RESUME",resume)
 
 func _smoke():

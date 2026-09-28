@@ -30,6 +30,7 @@ var flash_rect: ColorRect
 var combo_step = 0
 var mark_chain = 0
 var combo_timer = 0.0
+var swing_gate = 0.0
 var glow_texture: GradientTexture2D
 var ring_texture: GradientTexture2D
 var shake = 0.0
@@ -42,6 +43,25 @@ const ARENA_HALF = 24.0
 const ARMORED = ["tank","boss"]
 const WEAPON_SHOT = {"rapid_rifle":"gun_rifle","basic_pistol":"gun_pistol","shotgun":"gun_shotgun","magic_orb":"orb_cast","lightning":"lightning_cast"}
 const HURT_FLASH_COLOR = Color("ff3b30")
+# The melee chain, one clip per link. Attack1-3 are cut from a single Mixamo
+# performance so the seams share a pose; Attack4 is its own swing and ends the run.
+const COMBO = ["attack1","attack2","attack3","attack4"]
+# Where in each clip the blade is actually moving fastest, measured off the source
+# curves. The damage used to land at a flat 32% of every clip, which read early on
+# the wind-up-heavy links and late on the quick ones.
+const IMPACT = {"attack1":0.46,"attack2":0.33,"attack3":0.22,"attack4":0.26,"spinattack":0.55,"attack":0.32}
+# A link may be cancelled into the next one once this much of it has played. Waiting
+# for the whole clip reads as unresponsive; cancelling before the impact would skip
+# the hit. Just past the strike is where a chain wants to accept the next input.
+const CANCEL = 0.62
+# How much faster than authored the chain plays. The Mixamo greatsword performance
+# is heavier than this game wants: 2.5 read as fast-forward, 1.0 read as sluggish.
+# Static so the debug menu can dial it between runs while it is being tuned.
+static var combo_pace = 1.5
+static var spin_pace = 1.5
+const SPIN_COOLDOWN = 2.6
+const SPIN_RADIUS = 1.9
+const SPIN_DAMAGE = 2.2
 const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assassin":"667482","healer":"72b78e","commander":"c4a75e","boss":"8a3440"}
 
 func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
@@ -145,6 +165,7 @@ func _physics_process(dt: float):
 	var desired=player.position+Vector3(0,16,12);camera.position=camera.position.lerp(desired,1-exp(-dt*10))
 	if shake>0:camera.position+=Vector3(rng.randf_range(-shake,shake),rng.randf_range(-shake,shake),0);shake=move_toward(shake,0,dt*2)
 	if combo_timer>0:combo_timer=maxf(0,combo_timer-dt)
+	if swing_gate>0:swing_gate=maxf(0,swing_gate-dt)
 	if hit_flash>0 or flash_rect.color.a>0:hit_flash=maxf(0,hit_flash-dt*1.9);flash_rect.color.a=hit_flash
 	_pending_attacks(dt)
 	if not airborne:_weapons(dt)
@@ -309,27 +330,47 @@ func _weapons(dt: float):
 		var assisted=auto_fire or fire_input
 		if not manual and (not assisted or target==null):continue
 		var primary=id==BWData.CLASSES[run.class_id].weapon
-		if primary and visual.fitted_timing and visual.lock_time>0:continue
+		# The chain is gated by its cancel window; everything else waits out its clip.
+		if primary and visual.fitted_timing and (swing_gate>0 if data.get("behavior","")=="melee" else visual.lock_time>0):continue
 		var direction=aim if manual else (target.node.position-player.position).normalized()
 		var cooldown=1.0/(data.attacksPerSecond*run.stats.attackSpeed*slot.speed)
 		var melee=data.get("behavior","")=="melee"
-		var next_step=0 if combo_timer<=0 or combo_step>=2 else combo_step+1
+		# Holding the heavy modifier spends the swing on the spin instead of the chain.
+		if primary and melee and has_heavy() and Input.is_action_pressed("heavy") and Input.is_action_pressed("fire"):
+			combo_step=0;combo_timer=0.0
+			var spin=visual.clip_length("spinattack")/(spin_pace*clampf(run.stats.attackSpeed,0.8,1.5))
+			_swing(id,2)
+			visual.action("spinattack",spin)
+			swing_gate=spin*0.85
+			pending_attacks.append({"time":spin*IMPACT.spinattack,"id":id,"direction":direction,"spin":true})
+			visual.rotation.y=atan2(direction.x,direction.z)
+			slot.cooldown=cooldown*SPIN_COOLDOWN
+			continue
+		var next_step=0 if combo_timer<=0 or combo_step>=COMBO.size()-1 else combo_step+1
 		# The swing is heard while the blade is still moving; impacts land later from
 		# _damage_enemy, so a connecting hit reads as whoosh-then-bite rather than one blip.
 		if melee:_swing(id,next_step)
 		if primary and visual.fitted_timing:
 			var duration=minf(0.45,cooldown*0.85)
+			var clip="attack"
 			if melee:
 				combo_step=next_step
-				combo_timer=cooldown*2.2
-				if combo_step==2:
-					duration=minf(0.7,cooldown*1.35)
-					visual.action("ultimate",duration)
+				clip=COMBO[combo_step] if visual.clips.has(COMBO[combo_step]) else "attack"
+				# Play the swing at the pace it was authored at, nudged by attack speed
+				# rather than crushed into the weapon cooldown. Forcing a 1.1 s greatsword
+				# swing into 0.45 s is what made the chain read as fast-forward.
+				var authored=visual.clip_length(clip)
+				if authored>0.0:duration=authored/(combo_pace*clampf(run.stats.attackSpeed,0.8,1.5))
+				swing_gate=duration*CANCEL
+				combo_timer=duration+0.5
+				# The last link is the finisher: it runs longer and carries the class's
+				# ability effect, which is what makes finishing the chain worth doing.
+				if combo_step==COMBO.size()-1:
 					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
 					_ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
-				else:visual.action("attack",duration,combo_step==1)
-			else:visual.action("attack",duration)
-			pending_attacks.append({"time":duration*0.32,"id":id,"direction":direction})
+				visual.action(clip,duration)
+			else:visual.action(clip,duration)
+			pending_attacks.append({"time":duration*IMPACT.get(clip,0.32),"id":id,"direction":direction})
 		else:
 			_resolve_weapon(id,direction)
 			# Rapid fire outpaces the 0.96s clip ~5x, so playing it full length left the
@@ -349,6 +390,7 @@ func _pending_attacks(dt: float):
 			pending_attacks.erase(attack)
 			if run.stats.hp<=0:continue
 			if attack.id=="ultimate":_resolve_ability(attack.data)
+			elif attack.get("spin",false):_resolve_spin(attack.id,attack.direction)
 			else:_resolve_weapon(attack.id,attack.direction)
 
 func _resolve_weapon(id: String,direction: Vector3):
@@ -391,6 +433,30 @@ func _resolve_weapon(id: String,direction: Vector3):
 	# Melee already played its swing as the animation started; everything else
 	# reports here, as the projectile leaves.
 	if behavior!="melee":sound(WEAPON_SHOT.get(id,"gun_pistol"))
+
+# Does the equipped rig actually carry the spin clip? Only the warrior has it for
+# now, and the HUD asks the same question before advertising the binding.
+func has_heavy() -> bool:
+	return is_instance_valid(visual) and visual.clips.has("spinattack")
+
+# The spin trades the chain for one wide, slow, expensive hit: everything inside a
+# wider circle, not just what is in front.
+func _resolve_spin(id: String,direction: Vector3):
+	var slot=run.weapons[id];var data=slot.data
+	var radius=data.range*run.stats.attackRange*slot.range*BWData.UNIT*SPIN_RADIUS
+	var base=data.damage*run.stats.damage*slot.damage*SPIN_DAMAGE
+	var hit=[]
+	for e in enemies.duplicate():
+		if e.node.position.distance_to(player.position)<=radius+e.radius:
+			var roll=run.damage_roll(base)
+			_damage_enemy(e,roll.damage,roll.critical,true,"sword");hit.append(e)
+			if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
+	for turn in 3:
+		slash(player.position,direction.rotated(Vector3.UP,TAU*turn/3.0),radius,Color("ffd08a"))
+	shockwave(player.position,radius,Color("ffb066"),0.3,0.0,1.8)
+	radial_streaks(player.position,radius*1.05,Color("ffc27a"),9,0.26)
+	_flash_light(player.position,Color("ff9a52"),2.2,radius*1.5,0.24)
+	shake=maxf(shake,0.11 if hit.is_empty() else 0.16)
 
 func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 	for i in count:
