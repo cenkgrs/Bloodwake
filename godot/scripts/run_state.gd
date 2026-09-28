@@ -13,12 +13,21 @@ var level = 1
 var xp = 0
 var pending_levels = 0
 var ability_cd = 0.0
+# Extra class skills each run their own timer; the ulti keeps ability_cd.
+var skill_cd: Dictionary = {}
 var awarded = false
 
 func _init(id: String = "gunslinger",meta = null):
 	class_id=id;stats=BWData.stats(id)
 	if meta!=null:meta.apply_to(stats)
 	add_weapon(BWData.CLASSES[id].weapon)
+	for skill in BWData.skills(id):skill_cd[skill]=0.0
+
+func skill_ready(id: String) -> bool:
+	return skill_cd.has(id) and skill_cd[id]<=0.0
+
+func tick_skills(delta: float):
+	for id in skill_cd:skill_cd[id]=maxf(0.0,skill_cd[id]-delta)
 
 func add_weapon(id: String) -> bool:
 	if weapons.has(id) or weapons.size()>=4:return false

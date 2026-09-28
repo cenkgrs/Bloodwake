@@ -8,7 +8,21 @@ func _initialize():
 	call_deferred("suite")
 func suite():
 	BWData.load_catalogs()
-	for pair in [["weapons",7],["abilities",4],["enemies",7],["upgrades",22],["items",11],["equipment",9],["skills",15]]:check(BWData.rows(pair[0]).size()==pair[1],"catalog count: "+pair[0])
+	for pair in [["weapons",7],["abilities",6],["enemies",7],["upgrades",22],["items",11],["equipment",9],["skills",15]]:check(BWData.rows(pair[0]).size()==pair[1],"catalog count: "+pair[0])
+	# Only the mage carries extra skills; every ability a class references must exist.
+	for id in BWData.CLASSES:
+		check(BWData.skills(id).size()==(2 if id=="mage" else 0),"class skill count: "+id)
+		for ability in [BWData.CLASSES[id].ability]+BWData.skills(id):
+			check(not BWData.entry("abilities",ability).is_empty(),"ability exists: "+ability)
+	for id in ["arcane_meteor","void_leap"]:
+		var row=BWData.entry("abilities",id)
+		check(row.cooldown>0 and row.damage>0 and row.get("blastRadius",0)>0,"mage skill is fully specified: "+id)
+	var mage=BWRun.new("mage")
+	check(mage.skill_cd.size()==2 and mage.skill_ready("arcane_meteor") and mage.skill_ready("void_leap"),"mage skills start ready")
+	mage.skill_cd.arcane_meteor=4.0
+	check(not mage.skill_ready("arcane_meteor") and mage.skill_ready("void_leap"),"skill cooldowns are independent")
+	mage.tick_skills(4.0);check(mage.skill_ready("arcane_meteor"),"skill cooldown drains")
+	check(BWRun.new("warrior").skill_cd.is_empty(),"classes without skills track no cooldowns")
 	for wave in [1,9,10,20,100,999]:
 		var rules=BWData.wave_rules(wave)
 		check(rules.boss==(wave%10==0),"boss formula")

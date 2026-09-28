@@ -66,6 +66,42 @@ func suite():
 	check(visual.state=="ultimate" and world.pending_attacks.size()==1,"Mage uses distinct ultimate clip")
 	check(target.hp==1000,"ultimate damage waits for casting pose")
 	world.running=false;await process_frame;world._pending_attacks(0.46);check(target.hp<1000,"ultimate resolves at cast frame")
+	# --- Mage Q / E: both are aimed, land area damage, and gate on their own timer.
+	world.running=true;world.aim=Vector3.RIGHT
+	var meteor=BWData.entry("abilities","arcane_meteor")
+	var reach=meteor.range*run.stats.attackRange*BWData.UNIT
+	var aimed=world.ground_target(reach)
+	check(aimed.y==0.0 and world.player.position.distance_to(aimed)<=reach+0.01,"aimed point stays on the floor inside the skill's reach")
+	check(absf(aimed.x)<=23.0 and absf(aimed.z)<=23.0,"aimed point is clamped inside the arena")
+	target.hp=1000;target.node.position=aimed
+	world.skill(0)
+	check(run.skill_cd.arcane_meteor==meteor.cooldown,"Q starts its own cooldown")
+	check(run.skill_ready("void_leap"),"Q does not consume the E cooldown")
+	check(target.hp==1000,"meteor damage waits for the rock to land")
+	await create_timer(0.8).timeout
+	check(target.hp<1000,"meteor detonates on arrival and damages in its blast")
+	var blocked=target.hp
+	world.skill(0);await create_timer(0.8).timeout
+	check(target.hp==blocked,"Q cannot be recast while cooling down")
+	run.skill_cd.arcane_meteor=0.0
+	# E: leaves the ground, travels to the aimed point, lands with its own blast.
+	target.hp=1000;world.aim=Vector3.FORWARD
+	var leap=BWData.entry("abilities","void_leap")
+	var destination=world.ground_target(leap.range*run.stats.attackRange*BWData.UNIT)
+	target.node.position=destination
+	var launch=world.player.position
+	world.skill(1)
+	check(world.airborne,"E leaves the ground")
+	var hp_airborne=run.stats.hp;world._hurt_player(40)
+	check(run.stats.hp==hp_airborne,"nothing can hit the mage mid-leap")
+	check(target.hp==1000,"leap damage waits for the landing")
+	await create_timer(0.9).timeout
+	check(not world.airborne,"leap lands")
+	check(world.player.position.distance_to(destination)<0.05,"leap arrives at the aimed point")
+	check(launch.distance_to(world.player.position)>1.0,"leap actually covers ground")
+	check(target.hp<1000 and target.slow>0,"landing wave damages and slows in its radius")
+	check(is_equal_approx(world.visual.position.y,0.0),"the mage is back on the floor after landing")
+	run.skill_cd.void_leap=0.0;run.skill_cd.arcane_meteor=0.0
 	# The real wave signal must leave the arena visible for two seconds.
 	await create_timer(0.7).timeout
 	world.pending_attacks.clear()
@@ -78,7 +114,7 @@ func suite():
 	scene.start_run("warrior");await process_frame;world=scene.world;run=scene.run;world.auto_fire=false;world.rest_time=999;run.stats.hp=0
 	world._physics_process(0.016)
 	check(scene.page=="death_animation" and world.visual.dead,"death first shows unobstructed animation")
-	check(world.audio_times.has("game_over"),"death sound is triggered")
+	check(world.audio.last_played.has("player_death"),"death sound is triggered")
 	check(world.visual.lock_time<=2.7,"death animation fits overlay")
 	await create_timer(1.0).timeout;check(scene.page=="death_animation","YOU DIED does not cover the first second")
 	await create_timer(1.15).timeout;check(scene.page=="death_transition","YOU DIED appears after two seconds")

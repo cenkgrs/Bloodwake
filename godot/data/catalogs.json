@@ -32,7 +32,7 @@
 	  "damage": 16,
 	  "attacksPerSecond": 0.9,
 	  "range": 300,
-	  "projectileSpeed": 180,
+	  "projectileSpeed": 260,
 	  "behavior": "piercing",
 	  "pierceCount": 3
 	},
@@ -102,6 +102,27 @@
 	  "damage": 38,
 	  "cooldown": 6,
 	  "range": 135
+	},
+	{
+	  "id": "arcane_meteor",
+	  "name": "Arcane Meteor",
+	  "behavior": "meteor",
+	  "icon": "snowflake",
+	  "damage": 30,
+	  "cooldown": 4,
+	  "range": 300,
+	  "projectileSpeed": 300,
+	  "blastRadius": 130
+	},
+	{
+	  "id": "void_leap",
+	  "name": "Void Leap",
+	  "behavior": "voidLeap",
+	  "icon": "snowflake",
+	  "damage": 26,
+	  "cooldown": 9,
+	  "range": 260,
+	  "blastRadius": 150
 	}
   ],
   "enemies": [
