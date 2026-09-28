@@ -10,6 +10,9 @@ var audio: BWAudio
 var player: Node3D
 var visual: BWVisual
 var camera: Camera3D
+var arena: BWArena
+var environment: Environment
+var wave_zone = "courtyard"
 var enemies: Array = []
 var bullets: Array = []
 var pickups: Array = []
@@ -39,7 +42,7 @@ var pending_attacks: Array = []
 var bullet_mesh: SphereMesh
 var bullet_material: StandardMaterial3D
 var rng = RandomNumberGenerator.new()
-const ARENA_HALF = 24.0
+const ARENA_HALF = BWArena.HALF
 const ARMORED = ["tank","boss"]
 const WEAPON_SHOT = {"rapid_rifle":"gun_rifle","basic_pistol":"gun_pistol","shotgun":"gun_shotgun","magic_orb":"orb_cast","lightning":"lightning_cast"}
 const HURT_FLASH_COLOR = Color("ff3b30")
@@ -108,23 +111,47 @@ func _environment():
 	for i in range(1,5):env.set_glow_level(i,1.0)
 	env.set_glow_level(5,0.6);env.set_glow_level(6,0.3)
 	env.adjustment_enabled=true;env.adjustment_contrast=1.06;env.adjustment_saturation=1.12
+	env.fog_enabled=true;env.fog_mode=Environment.FOG_MODE_DEPTH
+	env.fog_density=0.0
+	env.fog_depth_begin=18.0;env.fog_depth_end=52.0;env.fog_depth_curve=1.4
+	environment=env
 	env_node.environment=env;add_child(env_node)
-	var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-55,-25,0);sun.light_color=Color("b4c7e0");sun.light_energy=1.5;sun.shadow_enabled=quality=="PC";sun.directional_shadow_max_distance=45;add_child(sun)
-	var floor=MeshInstance3D.new();var plane=PlaneMesh.new();plane.size=Vector2(48,48);floor.mesh=plane
-	var mat=StandardMaterial3D.new();mat.albedo_texture=load("res://assets/art/arena.png");mat.uv1_scale=Vector3(10,10,10);mat.roughness=0.95;mat.albedo_color=Color("555d67");floor.material_override=mat;add_child(floor)
-	var stone=StandardMaterial3D.new();stone.albedo_color=Color("303844");stone.roughness=0.9
-	for edge in 4:
-		var wall=MeshInstance3D.new();var box=BoxMesh.new();box.size=Vector3(49,1.0,0.45);wall.mesh=box;wall.material_override=stone
-		wall.position=Vector3(0,0.5,-24) if edge==0 else Vector3(0,0.5,24) if edge==1 else Vector3(-24,0.5,0) if edge==2 else Vector3(24,0.5,0)
-		if edge>1:wall.rotation.y=PI/2
-		add_child(wall)
-	for i in 16:
-		var angle=TAU*i/16;var pillar=MeshInstance3D.new();var cylinder=CylinderMesh.new();cylinder.top_radius=0.28;cylinder.bottom_radius=0.36;cylinder.height=2.4;cylinder.radial_segments=8
-		pillar.mesh=cylinder;pillar.material_override=stone;pillar.position=Vector3(cos(angle)*22.3,1.2,sin(angle)*22.3);add_child(pillar)
-		var fire=MeshInstance3D.new();var sphere=SphereMesh.new();sphere.radius=0.15;sphere.height=0.35;fire.mesh=sphere;fire.position=pillar.position+Vector3.UP*1.35
-		var glow=StandardMaterial3D.new();glow.albedo_color=Color("ff9b48");glow.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;fire.material_override=glow;add_child(fire)
-		if quality=="PC":
-			var lamp=OmniLight3D.new();lamp.position=fire.position;lamp.light_color=Color("ff9854");lamp.light_energy=1.3;lamp.omni_range=4;add_child(lamp)
+	var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-55,-25,0);sun.light_color=Color("b4c7e0");sun.light_energy=1.15;sun.shadow_enabled=quality=="PC";sun.directional_shadow_max_distance=45;add_child(sun)
+	arena=BWArena.new();add_child(arena);arena.build(quality,rng.randi())
+	arena.prop_broken.connect(_prop_broken)
+	_apply_zone(arena.zone_at(Vector3.ZERO),1.0)
+
+# The district a wave belongs to is a plain function of the wave number, so it
+# needs no state and a run always walks the same tour. Boss waves are always held
+# at the altar.
+func wave_zone_id() -> String:
+	if run!=null and run.wave%10==0:return "altar"
+	return BWArena.ZONES[((run.wave if run!=null else 1)-1)%BWArena.ZONES.size()].id
+
+func current_zone() -> Dictionary:
+	return arena.zone_by_id(wave_zone_id())
+
+# Empty while the player is where the wave is; otherwise the line the HUD shows.
+func zone_hint() -> String:
+	if arena==null or not running:return ""
+	var zone=current_zone()
+	if Vector2(player.position.x,player.position.z).distance_to(zone.at)<=zone.radius+4.0:return ""
+	return "%s   ·   THE WAVE IS GATHERING THERE" % zone.name
+
+# Ambient and fog are blended toward the district under the player. One end of the
+# map lit like the other is what made every part of it feel the same.
+func _apply_zone(zone: Dictionary,weight: float):
+	if environment==null:return
+	environment.ambient_light_color=environment.ambient_light_color.lerp(zone.ambient,weight)
+	environment.ambient_light_energy=lerpf(environment.ambient_light_energy,zone.energy,weight)
+	environment.fog_light_color=environment.fog_light_color.lerp(zone.fog,weight)
+	environment.background_color=environment.background_color.lerp(zone.fog.darkened(0.25),weight)
+	environment.fog_density=lerpf(environment.fog_density,0.55,weight)
+
+func _prop_broken(position: Vector3,kind: String):
+	sound("sword_hit_armor",0.0,1)
+	spark(position+Vector3.UP*0.5,Color("d8c39a"),12)
+	if rng.randf()<0.35:_drop(position,"gold",3+rng.randi_range(0,4))
 
 func _physics_process(dt: float):
 	if run==null:return
@@ -149,7 +176,7 @@ func _physics_process(dt: float):
 	if airborne:movement=Vector3.ZERO
 	else:
 		player.position+=movement*run.stats.moveSpeed*BWData.UNIT*dt
-		player.position.x=clampf(player.position.x,-23.5,23.5);player.position.z=clampf(player.position.z,-23.5,23.5)
+		player.position=arena.push_out(player.position,0.42)
 	if movement.length_squared()>0.001:last_move=movement.normalized()
 	var aim_stick=Input.get_vector("aim_left","aim_right","aim_up","aim_down")
 	if touch_aim.length_squared()>0.04:aim=Vector3(touch_aim.x,0,touch_aim.y).normalized()
@@ -162,6 +189,7 @@ func _physics_process(dt: float):
 	var facing=aim if Input.is_action_pressed("fire") or aim_stick.length_squared()>0.04 else last_move
 	if facing.length_squared()>0.01:visual.rotation.y=lerp_angle(visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*16))
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
+	_apply_zone(arena.zone_at(player.position),1-exp(-dt*1.2))
 	var desired=player.position+Vector3(0,16,12);camera.position=camera.position.lerp(desired,1-exp(-dt*10))
 	if shake>0:camera.position+=Vector3(rng.randf_range(-shake,shake),rng.randf_range(-shake,shake),0);shake=move_toward(shake,0,dt*2)
 	if combo_timer>0:combo_timer=maxf(0,combo_timer-dt)
@@ -188,6 +216,10 @@ func _spawn_tick(dt: float):
 				pickup.node.queue_free()
 			pickups.clear();pending_attacks.clear();running=false;wave_cleared.emit()
 		return
+	# A wave belongs to a district. Standing somewhere else does not summon it, which
+	# is what gives the map somewhere to go.
+	var zone=current_zone()
+	if Vector2(player.position.x,player.position.z).distance_to(zone.at)>zone.radius+4.0:return
 	spawn_timer-=dt
 	if spawn_timer>0 or enemies.size()>=rules.cap:return
 	spawn_timer=rules.interval
@@ -199,7 +231,7 @@ func _spawn_tick(dt: float):
 				for n in int(row.get("spawnWeight",1)):pool.append(row.id)
 		id=pool[rng.randi_range(0,pool.size()-1)]
 	var angle=rng.randf()*TAU;var pos=player.position+Vector3(cos(angle),0,sin(angle))*10.4
-	pos.x=clampf(pos.x,-23,23);pos.z=clampf(pos.z,-23,23)
+	pos=arena.push_out(pos,0.6)
 	spawn_enemy(id,pos,not rules.boss and rng.randf()<rules.elite,rules.multiplier if not rules.boss else 1.0)
 	spawned+=1
 
@@ -225,6 +257,9 @@ func _enemy_tick(e: Dictionary,dt: float):
 			if e.hp<=0:return
 	var delta=player.position-node.position;delta.y=0
 	var distance=delta.length();var direction=delta.normalized()
+	# Not pathfinding - just enough steering that a pillar does not become a wall an
+	# enemy grinds against for the rest of the wave.
+	if distance>0.6:direction=arena.steer(node.position,direction,e.radius)
 	var speed=e.speed*BWData.UNIT*(1.22 if e.aura>0 else 1)*(1-e.slow_amount if e.slow>0 else 1)
 	var move=Vector3.ZERO;e.cooldown-=dt
 	var range_value=data.attackRange*BWData.UNIT
@@ -306,7 +341,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 			if d>0.01 and d<e.radius*3.5:separation+=offset/d*(1-d/(e.radius*3.5))
 		move+=separation*speed*1.4
 		node.position+=move.limit_length(speed*(4.5 if e.state=="dash" else 1.3))*dt
-	node.position.x=clampf(node.position.x,-23.5,23.5);node.position.z=clampf(node.position.z,-23.5,23.5)
+	node.position=arena.push_out(node.position,e.radius*0.8)
 	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(direction.x,direction.z),minf(1,dt*10))
 	e.visual.tick(dt,move.length_squared()>0.01)
 
@@ -408,6 +443,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 				if e.node.position.distance_to(player.position)<=radius+e.radius:
 					var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
 					if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
+			arena.damage_area(player.position,radius,base)
 			slash(player.position,direction,radius,Color("ffca7a"))
 			if not hit.is_empty():shake=maxf(shake,0.035)
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
@@ -451,6 +487,7 @@ func _resolve_spin(id: String,direction: Vector3):
 			var roll=run.damage_roll(base)
 			_damage_enemy(e,roll.damage,roll.critical,true,"sword");hit.append(e)
 			if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
+	arena.damage_area(player.position,radius,base)
 	for turn in 3:
 		slash(player.position,direction.rotated(Vector3.UP,TAU*turn/3.0),radius,Color("ffd08a"))
 	shockwave(player.position,radius,Color("ffb066"),0.3,0.0,1.8)
@@ -481,7 +518,7 @@ func ground_target(reach: float) -> Vector3:
 		if hit!=null:point=hit
 	var offset=point-player.position;offset.y=0
 	point=player.position+offset.limit_length(reach)
-	point.x=clampf(point.x,-23.0,23.0);point.z=clampf(point.z,-23.0,23.0)
+	point.x=clampf(point.x,-BWArena.EDGE,BWArena.EDGE);point.z=clampf(point.z,-BWArena.EDGE,BWArena.EDGE)
 	point.y=0
 	return point
 
@@ -560,7 +597,7 @@ func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,acc
 		if e.hp<=0 or not is_instance_valid(e.node):continue
 		# shoved outward, clamped to the arena so nothing is pushed through a wall
 		var shove=e.node.position+offset.normalized()*1.5
-		shove.x=clampf(shove.x,-23.5,23.5);shove.z=clampf(shove.z,-23.5,23.5)
+		shove.x=clampf(shove.x,-BWArena.EDGE,BWArena.EDGE);shove.z=clampf(shove.z,-BWArena.EDGE,BWArena.EDGE)
 		create_tween().tween_property(e.node,"position",shove,0.18).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	shockwave(position,radius,tone,0.4,0.0,2.2)
 	shockwave(position,radius*1.15,accent,0.48,0.1,1.5)
@@ -607,7 +644,7 @@ func _cast_thrust(data: Dictionary):
 	visual.action("attack",0.3);sound("sword_swing")
 	var start=player.position
 	var destination=start+heading*reach
-	destination.x=clampf(destination.x,-23.5,23.5);destination.z=clampf(destination.z,-23.5,23.5)
+	destination.x=clampf(destination.x,-BWArena.EDGE,BWArena.EDGE);destination.z=clampf(destination.z,-BWArena.EDGE,BWArena.EDGE)
 	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
 	create_tween().tween_property(player,"position",destination,0.16).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	slash(start+heading*lane,heading,lane*1.6,accent)
@@ -636,7 +673,7 @@ func _cast_backstep_volley(data: Dictionary):
 	var tone=Color(data.get("tone","9d6bff"));var accent=Color(data.get("accent","d9c6ff"))
 	var start=player.position
 	var retreat=start-heading*(2.6*run.stats.attackRange)
-	retreat.x=clampf(retreat.x,-23.5,23.5);retreat.z=clampf(retreat.z,-23.5,23.5)
+	retreat.x=clampf(retreat.x,-BWArena.EDGE,BWArena.EDGE);retreat.z=clampf(retreat.z,-BWArena.EDGE,BWArena.EDGE)
 	create_tween().tween_property(player,"position",retreat,0.17).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	sound("skill_leap_launch")
 	shockwave(start,1.9,tone,0.3,0.0,1.6)
@@ -752,7 +789,7 @@ func _resolve_ability(data: Dictionary):
 			# A fast dash reads better than a blink and disorients less - cover the
 			# distance in a short tween instead of snapping player.position directly.
 			strike_position=player.position+aim*data.range*BWData.UNIT*0.5
-			strike_position.x=clampf(strike_position.x,-23.5,23.5);strike_position.z=clampf(strike_position.z,-23.5,23.5)
+			strike_position.x=clampf(strike_position.x,-BWArena.EDGE,BWArena.EDGE);strike_position.z=clampf(strike_position.z,-BWArena.EDGE,BWArena.EDGE)
 			create_tween().tween_property(player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			range_value=65*run.stats.attackRange*BWData.UNIT
 		for e in enemies.duplicate():

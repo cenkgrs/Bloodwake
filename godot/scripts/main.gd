@@ -55,6 +55,8 @@ func _ready():
 		_visual_qa()
 	elif "--shots" in OS.get_cmdline_user_args():
 		_menu_shots()
+	elif "--arena" in OS.get_cmdline_user_args():
+		_arena_shots()
 
 func _theme() -> Theme:
 	var theme=Theme.new();theme.default_font_size=16;theme.default_font=BWKit.body_font()
@@ -115,6 +117,8 @@ func _process(dt):
 		boss_label.text=""
 		for enemy in world.enemies:
 			if enemy.id=="boss":boss_label.text="THE BLOOD WARDEN   ·   PHASE %d   ·   %d / %d" % [enemy.phase,ceili(enemy.hp),int(enemy.maxHp)]
+		var hint=world.zone_hint()
+		if not hint.is_empty():boss_label.text=hint
 		if world.rest_time>0:boss_label.text="THE NEXT WAVE ARRIVES IN %.0f" % ceil(world.rest_time)
 
 func _unhandled_input(event):
@@ -706,6 +710,20 @@ func _menu_shots():
 	show_armory();await get_tree().create_timer(0.4).timeout;await _capture("shot_armory")
 	show_settings();await get_tree().create_timer(0.4).timeout;await _capture("shot_settings")
 	print("BLOODWAKE_MENU_SHOTS_DONE")
+	_quit()
+
+# Walks the map and photographs each district, which is the only way to judge
+# lighting and prop density.
+func _arena_shots():
+	start_run("warrior")
+	world.auto_fire=false
+	await get_tree().create_timer(0.6).timeout
+	for zone in BWArena.ZONES:
+		world.player.position=Vector3(zone.at.x,0,zone.at.y)
+		world.run.wave=BWArena.ZONES.find(zone)+1
+		await get_tree().create_timer(0.9).timeout
+		await _capture("zone_"+zone.id)
+	print("BLOODWAKE_ARENA_SHOTS_DONE")
 	_quit()
 
 func _capture(filename: String):
