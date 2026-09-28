@@ -9,7 +9,7 @@ extends Node
 
 const SHOTS = 8
 const SIZE = Vector2i(300, 380)
-const CLIPS = ["Idle", "Attack", "Attack1", "Attack2", "Attack3", "Attack4", "SpinAttack"]
+const CLIPS = ["Idle", "Attack", "Attack1", "Attack2", "Attack3", "Attack4", "SpinAttack", "SunderLeap"]
 
 var out := ""
 

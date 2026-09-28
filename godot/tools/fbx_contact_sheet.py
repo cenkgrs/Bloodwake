@@ -24,7 +24,11 @@ for path in argv[1:]:
         bpy.data.actions.remove(block)
     bpy.ops.import_scene.fbx(filepath=path)
     arm = next(o for o in bpy.context.scene.objects if o.type == 'ARMATURE')
-    action = arm.animation_data.action
+    # Some exporters (Meshy) ship the real motion beside a two-frame stub and leave
+    # the stub assigned, so take the longest action rather than the assigned one.
+    action = max(bpy.data.actions, key=lambda a: a.frame_range[1] - a.frame_range[0])
+    arm.animation_data.action = action
+    arm.animation_data.action_slot = action.slots[0]
     lo, hi = (int(v) for v in action.frame_range)
 
     # Mixamo FBXs import at centimetre scale, so the rig is normalised to roughly
@@ -59,7 +63,8 @@ for path in argv[1:]:
     scene.render.film_transparent = False
 
     stem = Path(path).stem.replace(' ', '_')
-    hips = arm.pose.bones['mixamorig:Hips']
+    # Rigs from different tools prefix their bones differently; match on the tail.
+    hips = next((b for b in arm.pose.bones if b.name.lower().endswith('hips')), arm.pose.bones[0])
     for i in range(shots):
         frame = lo + round((hi - lo) * i / max(shots - 1, 1))
         scene.frame_set(frame)

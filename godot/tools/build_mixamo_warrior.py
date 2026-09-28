@@ -22,6 +22,8 @@ clips={
  'Attack3':('Great Sword Slash 1-2-3',(138,205)),
  'Attack4':('Great Sword Slash 4',[(8,56),(120,196)]),
  'SpinAttack':('Great Sword High Spin Attack',(2,112)),
+ # Retargeted off a Meshy generation by tools/retarget_meshy.py.
+ 'SunderLeap':('Warrior Sunder Leap',None),
  'Hit':('Great Sword Impact',None),
  'Death':('Two Handed Sword Death',None),
  'Ultimate':('Warrior Ultimate',None),
