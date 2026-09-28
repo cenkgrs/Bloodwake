@@ -4,10 +4,10 @@ extends RefCounted
 # Distances and speeds in legacy catalogs use pixels. 50 px = one metre.
 const UNIT = 0.02
 const CLASSES = {
-	"warrior": {"name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":200.0,"armor":0.2}, "skills":["sunder_leap","shield_thrust"]},
-	"gunslinger": {"name":"Bloodbound", "tag":"RANGED / RELENTLESS", "weapon":"rapid_rifle", "ability":"fan_shot", "color":"d7ae64", "stats":{"maxHp":90.0,"moveSpeed":250.0,"attackSpeed":0.85}, "skills":["ricochet_round","powder_charge"]},
-	"mage": {"name":"Mage", "tag":"ARCANE / AREA CONTROL", "weapon":"magic_orb", "ability":"frost_nova", "skills":["arcane_meteor","void_leap"], "color":"9b83de", "stats":{"maxHp":85.0,"moveSpeed":215.0,"damage":1.5}},
-	"assassin": {"name":"Assassin", "tag":"MOBILE / CRITICAL", "weapon":"daggers", "ability":"shadow_strike", "color":"63bd9f", "stats":{"maxHp":80.0,"moveSpeed":350.0,"criticalChance":0.8,"criticalDamage":2.8,"dodgeChance":0.3}, "skills":["phantom_volley","mark_of_ruin"]}
+	"warrior": {"blurb":"Heavy plate and a heavier blade. Walks into the press on purpose, and is still standing when it clears.", "name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":200.0,"armor":0.2}, "skills":["sunder_leap","shield_thrust"]},
+	"gunslinger": {"blurb":"Powder, iron and a debt paid in blood. Answers every wave with more rounds than it sent.", "name":"Bloodbound", "tag":"RANGED / RELENTLESS", "weapon":"rapid_rifle", "ability":"fan_shot", "color":"d7ae64", "stats":{"maxHp":90.0,"moveSpeed":250.0,"attackSpeed":0.85}, "skills":["ricochet_round","powder_charge"]},
+	"mage": {"blurb":"Borrowed cold and falling stone. Holds ground it never has to stand on.", "name":"Mage", "tag":"ARCANE / AREA CONTROL", "weapon":"magic_orb", "ability":"frost_nova", "skills":["arcane_meteor","void_leap"], "color":"9b83de", "stats":{"maxHp":85.0,"moveSpeed":215.0,"damage":1.5}},
+	"assassin": {"blurb":"Fast, brittle, and always behind you. Every cut is meant to be the last one.", "name":"Assassin", "tag":"MOBILE / CRITICAL", "weapon":"daggers", "ability":"shadow_strike", "color":"63bd9f", "stats":{"maxHp":80.0,"moveSpeed":350.0,"criticalChance":0.8,"criticalDamage":2.8,"dodgeChance":0.3}, "skills":["phantom_volley","mark_of_ruin"]}
 }
 static var catalogs: Dictionary = {}
 
