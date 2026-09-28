@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pillar",
+    "source": "gothic+pillar+3d+model.zip",
+    "original_triangles": 42303,
+    "triangles": 8000,
+    "height": 1.0,
+    "texture_limit": 1024
+  },
+  {
+    "id": "brazier",
+    "source": "iron+brazier+3d+model.zip",
+    "original_triangles": 51093,
+    "triangles": 7991,
+    "height": 1.0,
+    "texture_limit": 1024
+  },
+  {
+    "id": "bones",
+    "source": "bone pile 3d model.glb",
+    "original_triangles": 9401,
+    "triangles": 8000,
+    "height": 1.0,
+    "texture_limit": 1024
+  },
+  {
+    "id": "urn",
+    "source": "fired clay urn 3d model.glb",
+    "original_triangles": 3979,
+    "triangles": 3979,
+    "height": 1.0,
+    "texture_limit": 1024
+  },
+  {
+    "id": "altar",
+    "source": "stone altar 3d model.glb",
+    "original_triangles": 21855,
+    "triangles": 8000,
+    "height": 1.0,
+    "texture_limit": 1024
+  }
+]
