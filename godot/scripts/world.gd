@@ -431,7 +431,60 @@ func skill(index: int):
 	match data.behavior:
 		"meteor":_cast_meteor(data,target)
 		"voidLeap":_cast_void_leap(data,target)
+		"thrust":_cast_thrust(data)
+		"backstepVolley":_cast_backstep_volley(data)
 	changed.emit()
+
+# A committed forward lunge: the warrior covers ground and spears everything in a
+# narrow lane, so it rewards lining enemies up instead of standing in a crowd.
+func _cast_thrust(data: Dictionary):
+	var reach=data.range*run.stats.attackRange*BWData.UNIT
+	var lane=data.blastRadius*run.stats.attackRange*BWData.UNIT
+	var heading=aim.normalized() if aim.length_squared()>0.01 else last_move
+	if heading.length_squared()<0.01:heading=Vector3.FORWARD
+	visual.rotation.y=atan2(heading.x,heading.z)
+	visual.action("attack",0.3);sound("sword_swing")
+	var start=player.position
+	var destination=start+heading*reach
+	destination.x=clampf(destination.x,-23.5,23.5);destination.z=clampf(destination.z,-23.5,23.5)
+	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
+	create_tween().tween_property(player,"position",destination,0.16).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	slash(start+heading*lane,heading,lane*1.6,accent)
+	for step in 4:
+		shockwave(start.lerp(destination,float(step)/3.0),lane*0.85,tone,0.26,step*0.035,1.7)
+	var hit=[]
+	for e in enemies.duplicate():
+		var offset=e.node.position-start
+		var along=offset.dot(heading)
+		if along<-0.4 or along>reach+lane:continue
+		if (offset-heading*along).length()>lane+e.radius:continue
+		var roll=run.damage_roll(data.damage*run.stats.damage)
+		_damage_enemy(e,roll.damage,roll.critical,true,"ability");hit.append(e)
+	burst_ring(destination,lane,accent,22,4.0,0.5)
+	_flash_light(destination,tone,2.4,lane*2.0,0.26)
+	shake=maxf(shake,0.1 if hit.is_empty() else 0.15)
+
+# Break away from whatever is on top of you, then answer with three blades the way
+# you came - the dash and the daggers deliberately point opposite ways.
+func _cast_backstep_volley(data: Dictionary):
+	var reach=data.range*run.stats.attackRange*BWData.UNIT
+	var heading=aim.normalized() if aim.length_squared()>0.01 else last_move
+	if heading.length_squared()<0.01:heading=Vector3.FORWARD
+	visual.rotation.y=atan2(heading.x,heading.z)
+	visual.action("attack",0.28)
+	var tone=Color(data.get("tone","9d6bff"));var accent=Color(data.get("accent","d9c6ff"))
+	var start=player.position
+	var retreat=start-heading*(2.6*run.stats.attackRange)
+	retreat.x=clampf(retreat.x,-23.5,23.5);retreat.z=clampf(retreat.z,-23.5,23.5)
+	create_tween().tween_property(player,"position",retreat,0.17).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	sound("skill_leap_launch")
+	shockwave(start,1.9,tone,0.3,0.0,1.6)
+	burst_ring(start,1.7,accent,20,3.4,0.5)
+	for i in range(-1,2):
+		var roll=run.damage_roll(data.damage*run.stats.damage)
+		_bullet(retreat,heading.rotated(Vector3.UP,i*0.17),data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,1,"daggers",0,0,roll.critical)
+	muzzle(retreat+Vector3.UP*0.8,heading,accent)
+	shake=maxf(shake,0.08)
 
 func _cast_meteor(data: Dictionary,target: Vector3):
 	visual.action("attack",0.34)
@@ -479,10 +532,10 @@ func _cast_void_leap(data: Dictionary,target: Vector3):
 	sound("skill_leap_launch")
 	var start=player.position
 	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	ring(start,2.0,Color("7f6bff"),0.35)
-	radial_streaks(start,2.4,Color("cfc0ff"),6,0.26)
+	ring(start,2.0,Color(data.get("tone","7f6bff")),0.35)
+	radial_streaks(start,2.4,Color(data.get("accent","cfc0ff")),6,0.26)
 	var flight=clampf(start.distance_to(target)/16.0,0.26,0.6)
-	telegraph(target,radius,Color("7f6bff"),flight)
+	telegraph(target,radius,Color(data.get("tone","7f6bff")),flight)
 	var trail: Node=null
 	if quality=="PC":
 		trail=trail_emitter(Color("8f74ff"),0.1,0.42,26)
@@ -497,18 +550,18 @@ func _cast_void_leap(data: Dictionary,target: Vector3):
 	travel.tween_callback(func():
 		if trail!=null and is_instance_valid(trail):trail.queue_free()
 		airborne=false
-		_leap_land(target,radius,data.damage*run.stats.damage))
+		_leap_land(target,radius,data.damage*run.stats.damage,Color(data.get("tone","8f74ff")),Color(data.get("accent","cfc0ff"))))
 
-func _leap_land(position: Vector3,radius: float,damage: float):
+func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color("8f74ff"),accent: Color=Color("cfc0ff")):
 	sound_at("skill_leap_land",position,2.0)
 	for e in enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=run.damage_roll(damage);_damage_enemy(e,roll.damage,roll.critical,true,"ability")
 			if e.hp>0:e.slow=2;e.slow_amount=0.3
-	shockwave(position,radius,Color("8f74ff"),0.38,0.0,2.0)
-	shockwave(position,radius*1.2,Color("5d49c9"),0.46,0.09,1.5)
-	radial_streaks(position,radius*1.15,Color("cfc0ff"),9,0.32)
-	burst_ring(position,radius,Color("a692ff"),34,4.8,0.62)
+	shockwave(position,radius,tone,0.38,0.0,2.0)
+	shockwave(position,radius*1.2,tone.darkened(0.35),0.46,0.09,1.5)
+	radial_streaks(position,radius*1.15,accent,9,0.32)
+	burst_ring(position,radius,accent.darkened(0.15),34,4.8,0.62)
 	shards(position,radius*0.85,Color("b3a2ff"),10)
 	_flash_light(position,Color("8f74ff"),3.2,radius*1.8,0.34)
 	shake=maxf(shake,0.18)
@@ -682,6 +735,7 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 		damage_text(e.node.position,damage,Color("ffe4a8") if critical else Color("d9dce2"))
 		_impact_sound(e,impact,critical)
 		e.visual.flash(0.14 if critical else 0.1)
+		e.visual.hit_react(e.node.position-player.position,1.35 if critical else 1.0)
 		spark(e.node.position+Vector3.UP*0.9,Color("ffe0a6") if critical else Color("ffb072"),14 if critical else 7)
 	if e.hp>0:return
 	enemies.erase(e);e.visual.action("death")

@@ -25,6 +25,8 @@ var flash_time = 0.0
 var flash_span = 0.0
 var flash_ready = false
 var flash_surfaces = []
+var flinch_time = 0.0
+var hit_clip_time = 0.0
 
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
 	var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
@@ -127,6 +129,20 @@ func _build_flash_surfaces():
 				var mat=source.duplicate();mat.emission_enabled=true;mat.emission=Color(1,0.94,0.86)
 				flash_surfaces.append({"mesh":mesh,"surface":i,"material":mat,"restore":mesh.get_surface_override_material(i)})
 
+func flinch(direction: Vector3,strength: float=1.0):
+	if dead or model==null:return
+	flinch_time=0.16
+	var push=direction.normalized()*0.16*strength
+	var knock=create_tween();knock.set_parallel(true)
+	knock.tween_property(model,"position",Vector3(push.x,0,push.z),0.05).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	knock.chain().tween_property(model,"position",Vector3.ZERO,0.11).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func hit_react(direction: Vector3,strength: float=1.0):
+	flinch(direction,strength)
+	if hit_clip_time>0 or not clips.has("hit"):return
+	hit_clip_time=0.45
+	action("hit")
+
 func flash(duration: float=0.11):
 	if dead:return
 	if not flash_ready:_build_flash_surfaces()
@@ -183,6 +199,7 @@ func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 
 func tick(delta: float,moving: bool,movement_rate: float=1.0):
 	elapsed+=delta;lock_time=maxf(0,lock_time-delta)
+	hit_clip_time=maxf(0,hit_clip_time-delta)
 	if flash_time>0:
 		flash_time=maxf(0,flash_time-delta)
 		if flash_time<=0:_clear_flash()
