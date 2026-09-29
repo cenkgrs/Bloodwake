@@ -53,3 +53,9 @@ godot/export_credentials.cfg
 godot/builds/
 **/*.blend1
 **/__pycache__/
+
+# Textures Godot extracts from enemy_healer.glb / enemy_warrior.glb on import.
+# The .glb carries them, the importer writes them back out beside it, and they
+# are large. Regenerated on any fresh import, so they are not worth tracking.
+godot/assets/models/enemy_healer_*
+godot/assets/models/enemy_warrior_*
