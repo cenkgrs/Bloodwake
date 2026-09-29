@@ -1,0 +1,52 @@
+{
+  "model": "assassin.fbx",
+  "clips": {
+    "Idle": "sword and shield idle.fbx",
+    "Run": "sword and shield run.fbx",
+    "Attack": "Double Dagger Stab.fbx",
+    "Hit": "sword and shield impact.fbx",
+    "Death": "sword and shield death.fbx"
+  },
+  "weapons": [
+    {
+      "hand": "RightHand",
+      "half": -1,
+      "grip": [
+        -0.18,
+        0.8,
+        0
+      ],
+      "axis": [
+        0,
+        -1,
+        0
+      ],
+      "direction": [
+        0,
+        -0.7,
+        0.7
+      ],
+      "scale": 0.65
+    },
+    {
+      "hand": "LeftHand",
+      "half": 1,
+      "grip": [
+        0.18,
+        0.8,
+        0
+      ],
+      "axis": [
+        0,
+        -1,
+        0
+      ],
+      "direction": [
+        0,
+        -0.7,
+        0.7
+      ],
+      "scale": 0.65
+    }
+  ]
+}

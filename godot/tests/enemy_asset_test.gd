@@ -13,6 +13,9 @@ func suite():
 		check(visual._find_skeleton(visual.model).get_bone_count()>=60,"Mixamo skeleton: "+id)
 		for clip in ["idle","run","attack","hit","death"]:
 			check(visual.clips.has(clip),"missing clip %s: %s" % [clip,id])
+		if id=="assassin":
+			for hand in ["RightHand","LeftHand"]:
+				check(visual.model.find_child("Equipment_"+hand,true,false)!=null,"Assassin dagger attached to "+hand)
 		visual.action("attack")
 		check(visual.lock_time<=0.5,"attack recovery exceeds half a second: "+id)
 		visual.tick(0.6,true)
