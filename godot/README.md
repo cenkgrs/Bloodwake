@@ -39,14 +39,14 @@ godot --path godot
 | Menus, HUD, shop, rewards, pause, settings | `scripts/main.gd` |
 | Touch input | `scripts/touch_controls.gd` |
 
-The Dart catalogs were extracted with `tools/migrate_catalogs.py`: 7 weapons,
-4 abilities, 7 enemy types, 22 upgrades, 11 shop items, 9 permanent equipment
-items and 15 skill nodes. Distances use 50 legacy pixels per world meter. Each district carries a `garrison`
+`data/catalogs.json` holds 7 weapons, 12 abilities, 7 enemy types, 22 upgrades,
+11 shop items, 9 permanent equipment items and 15 skill nodes. It was extracted
+once from the original Dart catalogs and is the source of truth now.
+Distances use 50 legacy pixels per world meter. Each district carries a `garrison`
 table that weights what a wave draws there on top of the catalog's own
 `spawnWeight`; it shifts the mix rather than choosing it, so nothing the run has
 unlocked is ever unreachable in a given district.
-Basic grunt melee damage is 8 (also updated in the source Dart catalog). The port is playable, but this is not a claim of pixel-perfect or
-exhaustively verified behavioral equivalence with Flutter.
+Basic grunt melee damage is 8.
 
 Bloodbound uses the user's rigged GLB with idle/run/attack/hit/death clips, normalized
 from `art/bloodbound/source/bloodbound_game.glb`. Its internal class ID is still
@@ -60,6 +60,35 @@ animated right-hand spell VFX. Enemy healers keep their procedural placeholder.
 Progression is stored at `user://bloodwake_progression.json`. Settings can import
 a legacy progression JSON with confirmation. Phone app storage is not automatically
 copied to PC. The user data location can be opened through Godot's project menu.
+
+## Conventions
+
+These four rules carried over from the original project and still hold. They are
+what keep the catalogs usable and the content cheap to add.
+
+**New content is data, not a new class.** A weapon, enemy, upgrade, shop item,
+ability or skill is a new entry in `data/catalogs.json`, plus - only if it is
+genuinely a new *behaviour* rather than new numbers - one more case in an
+existing dispatch. `WeaponBehavior` is dispatched once in `world.gd`, enemy
+`AiType` once in `_enemy_tick`, and a skill's `behavior` once in `skills.gd`.
+Do not add a script per content item.
+
+**Missing art or audio never crashes.** `BWVisual` falls back to a procedural
+body when a model is absent, `BWAudio` no-ops on a missing sample, and an empty
+`mesh` on a `PROPS` row builds the primitive instead. This is why art can be
+dropped into `assets/` mid-session with no code change - wire a new lookup with
+its fallback *before* the asset exists, the way every existing system does.
+
+**Visual size and collision size are separate numbers.** A rig's presence height
+(`BWVisual.configure`) is cosmetic; what holds bodies apart is the radius on the
+enemy row or the `PROPS` row. Never conflate them when tuning scale. `_model`
+deliberately lets a mesh spread to `radius * 6` so a branching tree is not
+squashed into a shrub, which does mean a wide prop can be walked into before it
+blocks - the brazier is the current outlier.
+
+**Formulas, not hardcoded thresholds**, for anything keyed to the wave number.
+`BWData.wave_rules` derives quota, cap, interval, elite odds and the multiplier
+from the wave, and the boss is `wave % 10 == 0`. Do not add an `if wave == 7`.
 
 ## Verification
 
