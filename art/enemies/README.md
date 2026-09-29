@@ -32,7 +32,8 @@ OBJ conversion alone is not a rigged/animated runtime asset.
 
 - Warrior (`grunt`): 65-bone Mixamo rig; Idle, Run, Attack, Hit, Death; original armor PBR and rigid right-hand sword. Runtime `enemy_warrior.glb`. Attack 0.45 s, run 0.65 s, death 2.2 s.
 - Healer: 65-bone Mixamo rig, five magic/locomotion/reaction clips, original PBR and left-hand lantern staff; right hand casts spells.
-- Other five characters: static conversion complete; Mixamo rig and integration pending.
+- Assassin: 65-bone Mixamo rig; dedicated Double Dagger Stab attack, Idle/Run/Hit/Death; supplied paired daggers split at their disconnected centre and bound rigidly to separate hands. Runtime attack 0.3 s, run 0.5 s.
+- Other four characters: static conversion complete; Mixamo rig and integration pending.
 
 Build a character: `blender -b -t 4 --python godot/tools/build_mixamo_enemy.py -- warrior`.
 The per-character `mixamo/<id>/clips.json` selects the downloaded FBXs and records weapon placement.
