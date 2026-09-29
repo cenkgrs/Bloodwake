@@ -33,3 +33,7 @@ Validation:
 - `godot --headless --path godot --script res://tests/enemy_asset_test.gd`
 - `godot --path godot --script res://tools/preview_boss.gd` captures four warnings.
 - `godot --path godot --script res://tools/preview_boss.gd -- --play` starts a boss fight.
+
+The boss now has 2700 base HP. The HUD displays only its name and health.
+Ground tells use an additive procedural ember shader: fixed collision borders,
+flickering inner glow and faint fractures; impacts expand and fade with sparks.
