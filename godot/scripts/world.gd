@@ -11,6 +11,7 @@ var player: Node3D
 var visual: BWVisual
 var camera: Camera3D
 var arena: BWArena
+var fx: BWFx
 var environment: Environment
 var wave_zone = "courtyard"
 var enemies: Array = []
@@ -34,8 +35,6 @@ var combo_step = 0
 var mark_chain = 0
 var combo_timer = 0.0
 var swing_gate = 0.0
-var glow_texture: GradientTexture2D
-var ring_texture: GradientTexture2D
 var shake = 0.0
 var airborne = false
 var pending_attacks: Array = []
@@ -69,6 +68,7 @@ const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assass
 
 func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	run=state;quality=profile;audio=mixer;rng.randomize()
+	fx=BWFx.new();add_child(fx);fx.configure(quality)
 	_environment()
 	player=Node3D.new();player.name="Player";add_child(player)
 	# Enemies read as 1.7-3.5 m (tanks/bosses run bigger on purpose); the player
@@ -82,22 +82,6 @@ func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	flash_rect=ColorRect.new();flash_rect.color=Color(HURT_FLASH_COLOR,0.0)
 	flash_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE;flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	flash_layer.add_child(flash_rect)
-	glow_texture=GradientTexture2D.new()
-	glow_texture.fill=GradientTexture2D.FILL_RADIAL;glow_texture.fill_from=Vector2(0.5,0.5);glow_texture.fill_to=Vector2(0.5,1.0)
-	glow_texture.width=96;glow_texture.height=96
-	var ramp=Gradient.new()
-	ramp.set_offset(0,0.0);ramp.set_color(0,Color(1,1,1,1))
-	ramp.set_offset(1,1.0);ramp.set_color(1,Color(1,1,1,0))
-	ramp.add_point(0.35,Color(1,1,1,0.55));ramp.add_point(0.7,Color(1,1,1,0.12))
-	glow_texture.gradient=ramp
-	ring_texture=GradientTexture2D.new()
-	ring_texture.fill=GradientTexture2D.FILL_RADIAL;ring_texture.fill_from=Vector2(0.5,0.5);ring_texture.fill_to=Vector2(0.5,1.0)
-	ring_texture.width=128;ring_texture.height=128
-	var rim=Gradient.new()
-	rim.set_offset(0,0.0);rim.set_color(0,Color(1,1,1,0))
-	rim.set_offset(1,1.0);rim.set_color(1,Color(1,1,1,0))
-	rim.add_point(0.55,Color(1,1,1,0.08));rim.add_point(0.8,Color(1,1,1,1.0));rim.add_point(0.92,Color(1,1,1,0.18))
-	ring_texture.gradient=rim
 	bullet_mesh=SphereMesh.new();bullet_mesh.radius=0.07;bullet_mesh.height=0.14;bullet_mesh.radial_segments=8;bullet_mesh.rings=4
 	bullet_material=StandardMaterial3D.new();bullet_material.albedo_color=Color("ffd99a");bullet_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 
@@ -150,7 +134,7 @@ func _apply_zone(zone: Dictionary,weight: float):
 
 func _prop_broken(position: Vector3,kind: String):
 	sound("sword_hit_armor",0.0,1)
-	spark(position+Vector3.UP*0.5,Color("d8c39a"),12)
+	fx.spark(position+Vector3.UP*0.5,Color("d8c39a"),12)
 	if rng.randf()<0.35:_drop(position,"gold",3+rng.randi_range(0,4))
 
 func _physics_process(dt: float):
@@ -283,7 +267,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 					if e.id=="commander" and ally.id not in ["commander","boss"]:ally.aura=data.auraDuration
 					elif e.id=="healer" and ally.maxHp-ally.hp>missing:best=ally;missing=ally.maxHp-ally.hp
 				if not best.is_empty():best.hp=minf(best.maxHp,best.hp+data.healAmount*(2.5 if e.elite else 1))
-				ring(node.position,data.supportRadius*BWData.UNIT,Color("619c82") if e.id=="healer" else Color("cfab53"),0.45)
+				fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("619c82") if e.id=="healer" else Color("cfab53"),0.45)
 		"assassin":
 			e.timer-=dt
 			match e.state:
@@ -322,7 +306,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 				if distance>preferred:move=direction*speed*(1 if phase==1 else 0.5 if phase==2 else 0.3)
 				if e.cooldown<=0:
 					e.state="telegraph";e.timer=0.5;e.pending_phase=phase
-					ring(node.position,1.4 if phase==1 else 0.52 if phase==2 else 3.0,Color("e3564d"),0.5)
+					fx.ring(node.position,1.4 if phase==1 else 0.52 if phase==2 else 3.0,Color("e3564d"),0.5)
 			if phase==3:
 				e.summon-=dt
 				if e.summon<=0:
@@ -444,7 +428,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 					var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
 					if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 			arena.damage_area(player.position,radius,base)
-			slash(player.position,direction,radius,Color("ffca7a"))
+			fx.slash(player.position,direction,radius,Color("ffca7a"))
 			if not hit.is_empty():shake=maxf(shake,0.035)
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
 		"chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
@@ -464,7 +448,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 					# Clear the hand/body mesh - the orb used to spawn right at the palm and
 					# visibly poke out of the model instead of appearing in front of it.
 					origin=hand+shot_direction*0.45-Vector3.UP*0.8
-				if i==0:muzzle(origin+Vector3.UP*0.8,shot_direction,Color("8db8f4") if id=="magic_orb" else Color("ffce7a"))
+				if i==0:fx.muzzle(origin+Vector3.UP*0.8,shot_direction,Color("8db8f4") if id=="magic_orb" else Color("ffce7a"))
 				_bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
 	# Melee already played its swing as the animation started; everything else
 	# reports here, as the projectile leaves.
@@ -489,17 +473,17 @@ func _resolve_spin(id: String,direction: Vector3):
 			if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 	arena.damage_area(player.position,radius,base)
 	for turn in 3:
-		slash(player.position,direction.rotated(Vector3.UP,TAU*turn/3.0),radius,Color("ffd08a"))
-	shockwave(player.position,radius,Color("ffb066"),0.3,0.0,1.8)
-	radial_streaks(player.position,radius*1.05,Color("ffc27a"),9,0.26)
-	_flash_light(player.position,Color("ff9a52"),2.2,radius*1.5,0.24)
+		fx.slash(player.position,direction.rotated(Vector3.UP,TAU*turn/3.0),radius,Color("ffd08a"))
+	fx.shockwave(player.position,radius,Color("ffb066"),0.3,0.0,1.8)
+	fx.radial_streaks(player.position,radius*1.05,Color("ffc27a"),9,0.26)
+	fx.flash_light(player.position,Color("ff9a52"),2.2,radius*1.5,0.24)
 	shake=maxf(shake,0.11 if hit.is_empty() else 0.16)
 
 func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 	for i in count:
 		var next=nearest(origin,radius,hit)
 		if next==null:return
-		var end=next.node.position;beam(origin+Vector3.UP,end+Vector3.UP,Color("a5cfff"))
+		var end=next.node.position;fx.beam(origin+Vector3.UP,end+Vector3.UP,Color("a5cfff"))
 		var roll=run.damage_roll(base);_damage_enemy(next,roll.damage,roll.critical,true,"chain")
 		if next.hp>0:next.burn=2;next.burn_dps=4
 		hit.append(next);origin=end
@@ -568,7 +552,7 @@ func _cast_ricochet(data: Dictionary):
 	if round_record!=null:
 		round_record["bounces"]=int(data.get("bounces",3))
 		round_record["bounce_range"]=reach
-	muzzle(player.position+Vector3.UP*0.8,heading,accent)
+	fx.muzzle(player.position+Vector3.UP*0.8,heading,accent)
 	shake=maxf(shake,0.06)
 
 # A charge lobbed onto the ground: it telegraphs, then throws everything off it.
@@ -577,9 +561,9 @@ func _cast_powder_charge(data: Dictionary,target: Vector3):
 	var tone=Color(data.get("tone","ff9a4d"));var accent=Color(data.get("accent","ffd08a"))
 	visual.rotation.y=atan2(target.x-player.position.x,target.z-player.position.z)
 	visual.action("attack",0.26);sound("shoot_shotgun")
-	var keg=glow_sprite(tone,0.5,1.4);keg.position=player.position+Vector3.UP*0.9;add_child(keg)
+	var keg=fx.glow_sprite(tone,0.5,1.4);keg.position=player.position+Vector3.UP*0.9;add_child(keg)
 	var fuse=0.45
-	telegraph(target,radius,tone,fuse)
+	fx.telegraph(target,radius,tone,fuse)
 	var lob=create_tween();lob.set_parallel(true)
 	lob.tween_property(keg,"position",target+Vector3.UP*0.25,fuse).set_trans(Tween.TRANS_SINE)
 	lob.tween_property(keg,"scale",Vector3.ONE*1.5,fuse)
@@ -599,12 +583,12 @@ func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,acc
 		var shove=e.node.position+offset.normalized()*1.5
 		shove.x=clampf(shove.x,-BWArena.EDGE,BWArena.EDGE);shove.z=clampf(shove.z,-BWArena.EDGE,BWArena.EDGE)
 		create_tween().tween_property(e.node,"position",shove,0.18).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	shockwave(position,radius,tone,0.4,0.0,2.2)
-	shockwave(position,radius*1.15,accent,0.48,0.1,1.5)
-	radial_streaks(position,radius*1.1,accent,8,0.3)
-	burst_ring(position,radius,accent,34,5.2,0.6)
-	spark(position+Vector3.UP*0.8,tone,22)
-	_flash_light(position,tone,3.4,radius*1.8,0.32)
+	fx.shockwave(position,radius,tone,0.4,0.0,2.2)
+	fx.shockwave(position,radius*1.15,accent,0.48,0.1,1.5)
+	fx.radial_streaks(position,radius*1.1,accent,8,0.3)
+	fx.burst_ring(position,radius,accent,34,5.2,0.6)
+	fx.spark(position+Vector3.UP*0.8,tone,22)
+	fx.flash_light(position,tone,3.4,radius*1.8,0.32)
 	shake=maxf(shake,0.18)
 
 # Paints a target; the mark survives its host and moves to the next body, and every
@@ -623,7 +607,7 @@ func _apply_mark(e: Dictionary,tone: Color):
 	e["marked"]=true
 	e["mark_tone"]=tone
 	if is_instance_valid(e.node):
-		var brand=glow_sprite(tone,1.1,1.6)
+		var brand=fx.glow_sprite(tone,1.1,1.6)
 		brand.name="RuinMark";brand.position=Vector3.UP*2.1
 		for old in e.node.get_children():
 			if old.name=="RuinMark":old.queue_free()
@@ -633,7 +617,7 @@ func _apply_mark(e: Dictionary,tone: Color):
 		var pulse=brand.create_tween().set_loops()
 		pulse.tween_property(brand,"scale",Vector3.ONE*1.35,0.45).set_trans(Tween.TRANS_SINE)
 		pulse.tween_property(brand,"scale",Vector3.ONE,0.45).set_trans(Tween.TRANS_SINE)
-	ring(e.node.position,0.9,tone,0.3)
+	fx.ring(e.node.position,0.9,tone,0.3)
 
 func _cast_thrust(data: Dictionary):
 	var reach=data.range*run.stats.attackRange*BWData.UNIT
@@ -647,9 +631,9 @@ func _cast_thrust(data: Dictionary):
 	destination.x=clampf(destination.x,-BWArena.EDGE,BWArena.EDGE);destination.z=clampf(destination.z,-BWArena.EDGE,BWArena.EDGE)
 	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
 	create_tween().tween_property(player,"position",destination,0.16).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	slash(start+heading*lane,heading,lane*1.6,accent)
+	fx.slash(start+heading*lane,heading,lane*1.6,accent)
 	for step in 4:
-		shockwave(start.lerp(destination,float(step)/3.0),lane*0.85,tone,0.26,step*0.035,1.7)
+		fx.shockwave(start.lerp(destination,float(step)/3.0),lane*0.85,tone,0.26,step*0.035,1.7)
 	var hit=[]
 	for e in enemies.duplicate():
 		var offset=e.node.position-start
@@ -658,8 +642,8 @@ func _cast_thrust(data: Dictionary):
 		if (offset-heading*along).length()>lane+e.radius:continue
 		var roll=run.damage_roll(data.damage*run.stats.damage)
 		_damage_enemy(e,roll.damage,roll.critical,true,"ability");hit.append(e)
-	burst_ring(destination,lane,accent,22,4.0,0.5)
-	_flash_light(destination,tone,2.4,lane*2.0,0.26)
+	fx.burst_ring(destination,lane,accent,22,4.0,0.5)
+	fx.flash_light(destination,tone,2.4,lane*2.0,0.26)
 	shake=maxf(shake,0.1 if hit.is_empty() else 0.15)
 
 # Break away from whatever is on top of you, then answer with three blades the way
@@ -676,12 +660,12 @@ func _cast_backstep_volley(data: Dictionary):
 	retreat.x=clampf(retreat.x,-BWArena.EDGE,BWArena.EDGE);retreat.z=clampf(retreat.z,-BWArena.EDGE,BWArena.EDGE)
 	create_tween().tween_property(player,"position",retreat,0.17).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	sound("skill_leap_launch")
-	shockwave(start,1.9,tone,0.3,0.0,1.6)
-	burst_ring(start,1.7,accent,20,3.4,0.5)
+	fx.shockwave(start,1.9,tone,0.3,0.0,1.6)
+	fx.burst_ring(start,1.7,accent,20,3.4,0.5)
 	for i in range(-1,2):
 		var roll=run.damage_roll(data.damage*run.stats.damage)
 		_bullet(retreat,heading.rotated(Vector3.UP,i*0.17),data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,1,"daggers",0,0,roll.critical)
-	muzzle(retreat+Vector3.UP*0.8,heading,accent)
+	fx.muzzle(retreat+Vector3.UP*0.8,heading,accent)
 	shake=maxf(shake,0.08)
 
 func _cast_meteor(data: Dictionary,target: Vector3):
@@ -696,13 +680,13 @@ func _cast_meteor(data: Dictionary,target: Vector3):
 	var apex=target+Vector3.UP*6.0
 	var travel=clampf(origin.distance_to(target)/(data.projectileSpeed*BWData.UNIT),0.26,0.55)
 	var rock=Node3D.new();add_child(rock);rock.position=origin
-	rock.add_child(glow_sprite(Color("c9a0ff"),1.5,1.6))
-	rock.add_child(glow_sprite(Color("f0e2ff"),0.7,2.2))
+	rock.add_child(fx.glow_sprite(Color("c9a0ff"),1.5,1.6))
+	rock.add_child(fx.glow_sprite(Color("f0e2ff"),0.7,2.2))
 	if quality=="PC":
 		var lamp=OmniLight3D.new();lamp.light_color=Color("b07dff");lamp.light_energy=2.4;lamp.omni_range=4.0;rock.add_child(lamp)
-		rock.add_child(trail_emitter(Color("b07dff"),0.09,0.36,22))
+		rock.add_child(fx.trail_emitter(Color("b07dff"),0.09,0.36,22))
 	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	telegraph(target,radius,Color("b07dff"),travel)
+	fx.telegraph(target,radius,Color("b07dff"),travel)
 	var tween=create_tween()
 	tween.tween_property(rock,"position",apex,travel*0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(rock,"position",target+Vector3.UP*0.2,travel*0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -715,12 +699,12 @@ func _meteor_blast(position: Vector3,radius: float,damage: float):
 	for e in enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=run.damage_roll(damage);_damage_enemy(e,roll.damage,roll.critical,true,"ability")
-	shockwave(position,radius,Color("b07dff"),0.34,0.0,1.8)
-	shockwave(position,radius*0.68,Color("f2e4ff"),0.22,0.05,2.0)
-	radial_streaks(position,radius*1.1,Color("d9b8ff"),8,0.3)
-	burst_ring(position,radius,Color("c9a0ff"),30,4.2,0.6)
-	spark(position+Vector3.UP*0.4,Color("e9d4ff"),22)
-	_flash_light(position,Color("b07dff"),2.8,radius*1.7,0.32)
+	fx.shockwave(position,radius,Color("b07dff"),0.34,0.0,1.8)
+	fx.shockwave(position,radius*0.68,Color("f2e4ff"),0.22,0.05,2.0)
+	fx.radial_streaks(position,radius*1.1,Color("d9b8ff"),8,0.3)
+	fx.burst_ring(position,radius,Color("c9a0ff"),30,4.2,0.6)
+	fx.spark(position+Vector3.UP*0.4,Color("e9d4ff"),22)
+	fx.flash_light(position,Color("b07dff"),2.8,radius*1.7,0.32)
 	shake=maxf(shake,0.14)
 
 func _cast_void_leap(data: Dictionary,target: Vector3):
@@ -730,13 +714,13 @@ func _cast_void_leap(data: Dictionary,target: Vector3):
 	sound("skill_leap_launch")
 	var start=player.position
 	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	ring(start,2.0,Color(data.get("tone","7f6bff")),0.35)
-	radial_streaks(start,2.4,Color(data.get("accent","cfc0ff")),6,0.26)
+	fx.ring(start,2.0,Color(data.get("tone","7f6bff")),0.35)
+	fx.radial_streaks(start,2.4,Color(data.get("accent","cfc0ff")),6,0.26)
 	var flight=clampf(start.distance_to(target)/16.0,0.26,0.6)
-	telegraph(target,radius,Color(data.get("tone","7f6bff")),flight)
+	fx.telegraph(target,radius,Color(data.get("tone","7f6bff")),flight)
 	var trail: Node=null
 	if quality=="PC":
-		trail=trail_emitter(Color("8f74ff"),0.1,0.42,26)
+		trail=fx.trail_emitter(Color("8f74ff"),0.1,0.42,26)
 		player.add_child(trail)
 	# Arc through the air: the model lifts on its own axis while the body travels,
 	# so the landing has a visible drop instead of sliding along the floor.
@@ -756,12 +740,12 @@ func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color(
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=run.damage_roll(damage);_damage_enemy(e,roll.damage,roll.critical,true,"ability")
 			if e.hp>0:e.slow=2;e.slow_amount=0.3
-	shockwave(position,radius,tone,0.38,0.0,2.0)
-	shockwave(position,radius*1.2,tone.darkened(0.35),0.46,0.09,1.5)
-	radial_streaks(position,radius*1.15,accent,9,0.32)
-	burst_ring(position,radius,accent.darkened(0.15),34,4.8,0.62)
-	shards(position,radius*0.85,Color("b3a2ff"),10)
-	_flash_light(position,Color("8f74ff"),3.2,radius*1.8,0.34)
+	fx.shockwave(position,radius,tone,0.38,0.0,2.0)
+	fx.shockwave(position,radius*1.2,tone.darkened(0.35),0.46,0.09,1.5)
+	fx.radial_streaks(position,radius*1.15,accent,9,0.32)
+	fx.burst_ring(position,radius,accent.darkened(0.15),34,4.8,0.62)
+	fx.shards(position,radius*0.85,Color("b3a2ff"),10)
+	fx.flash_light(position,Color("8f74ff"),3.2,radius*1.8,0.34)
 	shake=maxf(shake,0.18)
 
 func ability():
@@ -799,65 +783,44 @@ func _resolve_ability(data: Dictionary):
 		_ability_effect(data.id,strike_position,range_value)
 	sound("ulti_"+data.id)
 
-func radial_streaks(pos: Vector3,radius: float,color: Color,count: int,duration: float=0.26):
-	for i in count:
-		var angle=TAU*i/count+rng.randf_range(-0.34,0.34)
-		var reach=radius*rng.randf_range(0.5,1.15)
-		var lance=flat_sprite(color,radius*rng.randf_range(0.07,0.15),reach*0.9,2.0)
-		lance.position=pos+Vector3.UP*0.09;add_child(lance)
-		lance.rotation.y=angle
-		lance.get_child(0).position.z=-reach*0.5
-		lance.scale=Vector3(1,1,0.25)
-		var mat=lance.get_child(0).material_override
-		var tween=create_tween();tween.set_parallel(true)
-		tween.tween_property(lance,"scale",Vector3.ONE,duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tween.tween_property(mat,"albedo_color",Color(0,0,0),duration)
-		tween.chain().tween_callback(lance.queue_free)
 
 func _ability_effect(id: String,pos: Vector3,radius: float):
 	match id:
 		"frost_nova":
-			shockwave(pos,radius,Color("8fd8ff"),0.34,0.0,1.9)
-			shockwave(pos,radius*0.72,Color("dff2ff"),0.22,0.05,2.2)
-			shards(pos,radius,Color("9ad6ff"),12)
-			burst_ring(pos,radius,Color("cfeeff"),26,3.4,0.6)
-			_flash_light(pos,Color("8fd8ff"),3.2,radius*1.6,0.3)
+			fx.shockwave(pos,radius,Color("8fd8ff"),0.34,0.0,1.9)
+			fx.shockwave(pos,radius*0.72,Color("dff2ff"),0.22,0.05,2.2)
+			fx.shards(pos,radius,Color("9ad6ff"),12)
+			fx.burst_ring(pos,radius,Color("cfeeff"),26,3.4,0.6)
+			fx.flash_light(pos,Color("8fd8ff"),3.2,radius*1.6,0.3)
 			shake=maxf(shake,0.05)
 		"war_cry":
-			shockwave(pos,radius,Color("ffb066"),0.3,0.0,2.2)
-			shockwave(pos,radius*1.15,Color("ff7a4d"),0.38,0.1,1.6)
-			radial_streaks(pos,radius*1.05,Color("ffc27a"),7,0.28)
-			burst_ring(pos,radius,Color("ffc98a"),30,4.6,0.55)
-			_flash_light(pos,Color("ff9a52"),2.6,radius*1.5,0.28)
+			fx.shockwave(pos,radius,Color("ffb066"),0.3,0.0,2.2)
+			fx.shockwave(pos,radius*1.15,Color("ff7a4d"),0.38,0.1,1.6)
+			fx.radial_streaks(pos,radius*1.05,Color("ffc27a"),7,0.28)
+			fx.burst_ring(pos,radius,Color("ffc98a"),30,4.6,0.55)
+			fx.flash_light(pos,Color("ff9a52"),2.6,radius*1.5,0.28)
 			shake=maxf(shake,0.16)
 		"shadow_strike":
-			shockwave(pos,radius*1.15,Color("7a46d8"),0.28,0.0,1.3)
-			radial_streaks(pos,radius*1.3,Color("e2d2ff"),4,0.2)
-			slash(pos,aim.rotated(Vector3.UP,0.7),radius*1.4,Color("f0e6ff"))
-			slash(pos,aim.rotated(Vector3.UP,-0.7),radius*1.4,Color("c9a6ff"))
-			burst_ring(pos,radius,Color("a97dff"),22,3.0,0.5)
-			_flash_light(pos,Color("8a5bff"),2.2,radius*1.5,0.26)
+			fx.shockwave(pos,radius*1.15,Color("7a46d8"),0.28,0.0,1.3)
+			fx.radial_streaks(pos,radius*1.3,Color("e2d2ff"),4,0.2)
+			fx.slash(pos,aim.rotated(Vector3.UP,0.7),radius*1.4,Color("f0e6ff"))
+			fx.slash(pos,aim.rotated(Vector3.UP,-0.7),radius*1.4,Color("c9a6ff"))
+			fx.burst_ring(pos,radius,Color("a97dff"),22,3.0,0.5)
+			fx.flash_light(pos,Color("8a5bff"),2.2,radius*1.5,0.26)
 			shake=maxf(shake,0.07)
 		"fan_shot":
-			var cone=flat_sprite(Color("ffc46a"),1.9,1.5,2.4)
+			var cone=fx.flat_sprite(Color("ffc46a"),1.9,1.5,2.4)
 			cone.position=pos+Vector3.UP*0.85;add_child(cone)
-			_aim_along(cone,aim);cone.get_child(0).position.z=-0.75
+			fx.aim_along(cone,aim);cone.get_child(0).position.z=-0.75
 			var mat=cone.get_child(0).material_override
 			var tween=create_tween();tween.set_parallel(true)
 			tween.tween_property(cone,"scale",Vector3(1.6,1,1.5),0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			tween.tween_property(mat,"albedo_color",Color(0,0,0),0.16)
 			tween.chain().tween_callback(cone.queue_free)
-			spark(pos+aim*0.7+Vector3.UP*0.85,Color("ffcf8a"),20)
-			_flash_light(pos+aim*0.6+Vector3.UP*0.85,Color("ffb761"),3.4,3.0,0.16)
+			fx.spark(pos+aim*0.7+Vector3.UP*0.85,Color("ffcf8a"),20)
+			fx.flash_light(pos+aim*0.6+Vector3.UP*0.85,Color("ffb761"),3.4,3.0,0.16)
 			shake=maxf(shake,0.1)
 
-func _flash_light(pos: Vector3,color: Color,energy: float,range_value: float,duration: float):
-	if quality!="PC":return
-	var lamp=OmniLight3D.new();lamp.light_color=color;lamp.light_energy=energy;lamp.omni_range=range_value
-	lamp.position=pos+Vector3.UP*0.8;add_child(lamp)
-	var tween=create_tween()
-	tween.tween_property(lamp,"light_energy",0.0,duration)
-	tween.tween_callback(lamp.queue_free)
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):
 	if bullets.size()>=384:return
@@ -874,37 +837,26 @@ func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,dista
 	node.add_child(core)
 	if orb:
 		core.scale=Vector3.ONE*1.05
-		var rig=_orb_dressing(halo_tone,rich)
+		var rig=fx.orb_dressing(halo_tone,rich)
 		node.add_child(rig)
 		# The spin has to be owned by the node it turns: a world-bound looping tween
 		# outlives the projectile and keeps cycling against a freed target.
 		var motes=rig.get_node_or_null("Motes")
 		if motes!=null:motes.create_tween().set_loops().tween_property(motes,"rotation:y",TAU,0.9).from(0.0)
 	else:
-		_aim_along(core,direction);core.scale=Vector3(0.5,0.5,2.3)
-		var streak=flat_sprite(halo_tone,0.24,1.25,1.4);node.add_child(streak)
-		_aim_along(streak,direction)
-		node.add_child(glow_sprite(tone,0.26,1.7))
+		fx.aim_along(core,direction);core.scale=Vector3(0.5,0.5,2.3)
+		var streak=fx.flat_sprite(halo_tone,0.24,1.25,1.4);node.add_child(streak)
+		fx.aim_along(streak,direction)
+		node.add_child(fx.glow_sprite(tone,0.26,1.7))
 	if rich and bullets.size()<20:
 		var lamp=OmniLight3D.new();lamp.light_color=halo_tone
 		lamp.light_energy=1.8 if orb else 1.0;lamp.omni_range=2.6 if orb else 1.5
 		node.add_child(lamp)
-		node.add_child(trail_emitter(halo_tone,0.075 if orb else 0.045,0.32 if orb else 0.2,18 if orb else 12))
+		node.add_child(fx.trail_emitter(halo_tone,0.075 if orb else 0.045,0.32 if orb else 0.2,18 if orb else 12))
 	var record={"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical,"radius":0.5 if weapon=="magic_orb" else 0.16}
 	bullets.append(record)
 	return record
 
-func _orb_dressing(tone: Color,rich: bool) -> Node3D:
-	var rig=Node3D.new()
-	rig.add_child(glow_sprite(tone,1.3,1.1))
-	rig.add_child(glow_sprite(Color("5ea8ff"),0.8,1.3))
-	if not rich:return rig
-	var motes=Node3D.new();motes.name="Motes";rig.add_child(motes)
-	for i in 3:
-		var mote=glow_sprite(Color("dce9ff"),0.24,1.7)
-		mote.position=Vector3.RIGHT.rotated(Vector3.UP,TAU*i/3.0)*0.32
-		motes.add_child(mote)
-	return rig
 
 func _projectiles(dt: float):
 	for b in bullets.duplicate():
@@ -922,15 +874,15 @@ func _projectiles(dt: float):
 						if b.burn>0:target.burn=3;target.burn_dps=b.burn
 						if b.slow>0:target.slow=2;target.slow_amount=b.slow
 				else:_hurt_player(b.damage)
-				_impact(b.node.position,b.weapon,b.friendly)
+				fx.impact(b.node.position,b.weapon,b.friendly)
 				if b.friendly and b.get("bounces",0)>0:
 					var next=_nearest_unhit(b.node.position,b.get("bounce_range",6.0),b.hit)
 					if next!=null:
 						b.bounces-=1
 						b.direction=(next.node.position+Vector3.UP*0.8-b.node.position).normalized()
 						b.remaining=b.get("bounce_range",6.0)
-						_aim_along(b.node.get_child(0),b.direction)
-						beam(b.node.position,next.node.position+Vector3.UP*0.8,Color("ffe9bd"))
+						fx.aim_along(b.node.get_child(0),b.direction)
+						fx.beam(b.node.position,next.node.position+Vector3.UP*0.8,Color("ffe9bd"))
 						break
 				b.pierce-=1
 				if b.pierce<0:b.remaining=-1;break
@@ -942,18 +894,18 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 	var actual=minf(e.hp,damage);e.hp-=damage
 	if run.stats.hp>0:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
 	if effects:
-		damage_text(e.node.position,damage,Color("ffe4a8") if critical else Color("d9dce2"))
+		fx.damage_text(e.node.position,damage,Color("ffe4a8") if critical else Color("d9dce2"))
 		_impact_sound(e,impact,critical)
 		e.visual.flash(0.14 if critical else 0.1)
 		e.visual.hit_react(e.node.position-player.position,1.35 if critical else 1.0)
-		spark(e.node.position+Vector3.UP*0.9,Color("ffe0a6") if critical else Color("ffb072"),14 if critical else 7)
+		fx.spark(e.node.position+Vector3.UP*0.9,Color("ffe0a6") if critical else Color("ffb072"),14 if critical else 7)
 	if e.hp>0:return
 	enemies.erase(e);e.visual.action("death")
 	if e.get("marked",false):
 		var heir=nearest(e.node.position,9.0)
 		if heir!=null:mark_chain+=1;_apply_mark(heir,e.get("mark_tone",Color("63bd9f")))
 		else:mark_chain=0
-	spark(e.node.position+Vector3.UP*0.9,Color(ENEMY_COLORS[e.id]).lightened(0.4),24 if e.elite or e.id=="boss" else 16)
+	fx.spark(e.node.position+Vector3.UP*0.9,Color(ENEMY_COLORS[e.id]).lightened(0.4),24 if e.elite or e.id=="boss" else 16)
 	run.kills+=1;run.gold+=int(e.data.goldReward*(4 if e.elite else 1)+run.stats.bonusGoldPerKill)
 	_drop(e.node.position,"xp",int(e.data.xpReward*(4 if e.elite else 1)))
 	var chance=1.0 if e.id=="boss" else 0.22 if e.elite else 0.08
@@ -972,8 +924,8 @@ func _hurt_player(damage: float):
 	var actual=run.hurt(damage,rng.randf())
 	if actual<=0:return
 	if visual.fitted_timing and visual.state=="attack":pending_attacks.clear()
-	damage_text(player.position,actual,Color("ff8678"));visual.action("hit");shake=clampf(actual/100,0.04,0.18);sound("player_hit")
-	hit_flash=clampf(actual/90,0.12,0.38);spark(player.position+Vector3.UP*1.0,Color("ff8678"),8)
+	fx.damage_text(player.position,actual,Color("ff8678"));visual.action("hit");shake=clampf(actual/100,0.04,0.18);sound("player_hit")
+	hit_flash=clampf(actual/90,0.12,0.38);fx.spark(player.position+Vector3.UP*1.0,Color("ff8678"),8)
 	changed.emit()
 
 func _drop(pos: Vector3,kind: String,amount: int):
@@ -1000,195 +952,13 @@ func next_wave():
 func wave_music():
 	if audio!=null:audio.music("boss" if run.wave%10==0 else "combat")
 
-# A thin ground ring marking where an aimed skill will land, held until it does.
-# ring() draws a filled glow, which at blast radius reads as a solid blob.
-func telegraph(pos: Vector3,radius: float,color: Color,duration: float):
-	var mark=flat_sprite(color,radius*2.3,radius*2.3,0.8,ring_texture)
-	mark.position=pos+Vector3.UP*0.05;mark.scale=Vector3.ONE*0.9;add_child(mark)
-	var mat=mark.get_child(0).material_override
-	var fade=minf(0.14,duration*0.4)
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(mark,"scale",Vector3.ONE,duration*0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),fade).set_delay(maxf(0.0,duration-fade))
-	tween.chain().tween_callback(mark.queue_free)
 
-func ring(pos: Vector3,radius: float,color: Color,duration: float):
-	var pulse=flat_sprite(color,radius*2.3,radius*2.3,1.3)
-	pulse.position=pos+Vector3.UP*0.06;pulse.scale=Vector3.ONE*0.3;add_child(pulse)
-	var mat=pulse.get_child(0).material_override
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(pulse,"scale",Vector3.ONE,maxf(duration*0.35,0.09)).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),maxf(duration*0.45,0.12)).set_delay(duration*0.55)
-	tween.chain().tween_callback(pulse.queue_free)
 
-# A swing reads as an arc swept in front of the fighter, not a circle drawn around it.
-func slash(origin: Vector3,direction: Vector3,radius: float,color: Color):
-	var pivot=Node3D.new();pivot.position=origin+Vector3.UP*0.55;add_child(pivot)
-	_aim_along(pivot,direction)
-	var arc=flat_sprite(color,radius*2.6,radius*1.35,2.6)
-	arc.position=Vector3(0,0,-radius*0.6);pivot.add_child(arc)
-	var mat=arc.get_child(0).material_override
-	pivot.rotation.y+=0.6
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(pivot,"rotation:y",pivot.rotation.y-1.2,0.17).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),0.17)
-	tween.chain().tween_callback(pivot.queue_free)
 
-func beam(a: Vector3,b: Vector3,color: Color):
-	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_LINES);mesh.surface_add_vertex(a);mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex(b);mesh.surface_end()
-	var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.surface_set_material(0,mat);node.material_override=mat;add_child(node)
-	get_tree().create_timer(0.15).timeout.connect(node.queue_free)
 
-# A soft additive billboard. Layering two or three of these at different sizes is
-# what turns a flat coloured dot into something that reads as light.
-func glow_sprite(color: Color,size: float,energy: float=1.0) -> MeshInstance3D:
-	var quad=QuadMesh.new();quad.size=Vector2(size,size)
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
-	mat.billboard_mode=BaseMaterial3D.BILLBOARD_ENABLED;mat.billboard_keep_scale=true
-	mat.albedo_texture=glow_texture;mat.albedo_color=Color(color.r*energy,color.g*energy,color.b*energy)
-	mat.disable_receive_shadows=true
-	var node=MeshInstance3D.new();node.mesh=quad;node.material_override=mat
-	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return node
 
-# local_coords=false leaves emitted particles behind in world space, so a moving
-# emitter draws a trail instead of dragging its particles along with it.
-func trail_emitter(color: Color,radius: float,life: float,amount: int,drift: float=0.4) -> CPUParticles3D:
-	var p=CPUParticles3D.new()
-	p.amount=amount;p.lifetime=life;p.local_coords=false;p.explosiveness=0.0
-	p.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;p.emission_sphere_radius=radius
-	p.direction=Vector3.UP;p.spread=180;p.initial_velocity_min=0.0;p.initial_velocity_max=drift
-	p.gravity=Vector3.ZERO;p.damping_min=0.6;p.damping_max=1.2
-	p.scale_amount_min=0.6;p.scale_amount_max=1.0
-	var curve=Curve.new();curve.add_point(Vector2(0,1.0));curve.add_point(Vector2(1,0.0))
-	var shrink=CurveTexture.new();shrink.curve=curve;p.scale_amount_curve=shrink
-	var ramp=Gradient.new()
-	ramp.set_offset(0,0.0);ramp.set_color(0,color)
-	ramp.set_offset(1,1.0);ramp.set_color(1,Color(color.r,color.g,color.b,0.0))
-	p.color_ramp=ramp
-	var mesh=SphereMesh.new();mesh.radius=radius*0.9;mesh.height=radius*1.8;mesh.radial_segments=5;mesh.rings=3
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
-	mat.vertex_color_use_as_albedo=true;mat.albedo_color=color
-	mesh.material=mat;p.mesh=mesh;p.material_override=mat
-	p.emitting=true
-	return p
 
-func flat_sprite(color: Color,width: float,length: float,energy: float=1.0,texture: Texture2D=null) -> Node3D:
-	var quad=QuadMesh.new();quad.size=Vector2(width,length)
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD
-	mat.albedo_texture=texture if texture!=null else glow_texture
-	mat.albedo_color=Color(color.r*energy,color.g*energy,color.b*energy)
-	mat.cull_mode=BaseMaterial3D.CULL_DISABLED;mat.disable_receive_shadows=true
-	var blade=MeshInstance3D.new();blade.mesh=quad;blade.material_override=mat
-	blade.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	blade.rotation.x=-PI*0.5
-	var pivot=Node3D.new();pivot.add_child(blade)
-	return pivot
 
-# An expanding pressure front. Several of these staggered read as a blast rolling
-# outwards rather than one circle appearing at full size.
-func shockwave(pos: Vector3,radius: float,color: Color,duration: float,delay: float=0.0,energy: float=1.6):
-	var wave=flat_sprite(color,radius*2.3,radius*2.3,energy,ring_texture)
-	wave.position=pos+Vector3.UP*0.07;wave.scale=Vector3.ONE*0.18;add_child(wave)
-	var mat=wave.get_child(0).material_override
-	mat.albedo_color=Color(0,0,0)
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(wave,"scale",Vector3.ONE,duration).set_delay(delay).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat,"albedo_color",color*energy,0.05).set_delay(delay)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),duration*0.8).set_delay(delay+duration*0.25)
-	tween.chain().tween_callback(wave.queue_free)
-
-# Particles thrown outward along the ground from a ring, for dust and frost fronts.
-func burst_ring(pos: Vector3,radius: float,color: Color,amount: int,speed: float=3.0,life: float=0.5):
-	if quality!="PC" and rng.randf()>0.5:return
-	var p=CPUParticles3D.new()
-	p.amount=amount;p.lifetime=life;p.one_shot=true;p.explosiveness=0.95
-	p.emission_shape=CPUParticles3D.EMISSION_SHAPE_RING
-	p.emission_ring_axis=Vector3.UP;p.emission_ring_radius=radius*0.55;p.emission_ring_inner_radius=radius*0.2
-	p.emission_ring_height=0.1
-	p.direction=Vector3.UP;p.spread=25;p.initial_velocity_min=speed*0.3;p.initial_velocity_max=speed*0.6
-	p.radial_accel_min=speed*1.6;p.radial_accel_max=speed*2.6
-	p.gravity=Vector3(0,-3.0,0);p.damping_min=0.8;p.damping_max=1.6
-	p.scale_amount_min=0.5;p.scale_amount_max=1.1
-	var curve=Curve.new();curve.add_point(Vector2(0,1.0));curve.add_point(Vector2(1,0.0))
-	var shrink=CurveTexture.new();shrink.curve=curve;p.scale_amount_curve=shrink
-	var mesh=SphereMesh.new();mesh.radius=0.045;mesh.height=0.09;mesh.radial_segments=4;mesh.rings=2
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD;mat.albedo_color=color
-	mesh.material=mat;p.mesh=mesh;p.material_override=mat
-	p.position=pos;add_child(p);p.emitting=true
-	get_tree().create_timer(life+0.25).timeout.connect(p.queue_free)
-
-# Spikes driven up out of the ground around a radius - the frost nova's silhouette.
-func shards(pos: Vector3,radius: float,color: Color,count: int):
-	var mesh=CylinderMesh.new();mesh.top_radius=0.0;mesh.bottom_radius=0.12;mesh.height=1.0;mesh.radial_segments=5;mesh.rings=1
-	var mat=StandardMaterial3D.new();mat.albedo_color=color
-	mat.emission_enabled=true;mat.emission=color;mat.emission_energy_multiplier=1.1
-	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.roughness=0.25
-	for i in count:
-		var angle=TAU*i/count+rng.randf_range(-0.16,0.16)
-		var spike=MeshInstance3D.new();spike.mesh=mesh;spike.material_override=mat
-		spike.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		spike.position=pos+Vector3(cos(angle),0,sin(angle))*radius*rng.randf_range(0.55,0.95)
-		spike.rotation=Vector3(rng.randf_range(-0.22,0.22),angle,rng.randf_range(-0.22,0.22))
-		var tall=rng.randf_range(0.5,1.0)
-		spike.scale=Vector3(1,0.05,1);add_child(spike)
-		var tween=create_tween()
-		tween.tween_property(spike,"scale",Vector3(1,tall,1),0.11).set_delay(i*0.012).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tween.tween_interval(0.2)
-		tween.tween_property(spike,"scale",Vector3(0.2,0.02,0.2),0.22)
-		tween.tween_callback(spike.queue_free)
-
-func _impact(pos: Vector3,weapon: String,friendly: bool):
-	var tone=Color("9fc6ff") if weapon=="magic_orb" else (Color("ffcf8a") if friendly else Color("ff8a72"))
-	spark(pos,tone,16 if weapon=="magic_orb" else 9)
-	var burst=glow_sprite(tone,0.95 if weapon=="magic_orb" else 0.6,1.15)
-	burst.position=pos;add_child(burst)
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(burst,"scale",Vector3.ONE*(1.7 if weapon=="magic_orb" else 1.4),0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(burst.material_override,"albedo_color",Color(0,0,0),0.18)
-	tween.chain().tween_callback(burst.queue_free)
-	if weapon=="magic_orb":ring(pos,0.9,Color("7fb0ff"),0.22)
-
-func spark(pos: Vector3,color: Color,amount: int=8):
-	if quality!="PC" and rng.randf()>0.45:return
-	var node=CPUParticles3D.new();node.amount=amount;node.lifetime=0.3;node.one_shot=true;node.explosiveness=1.0
-	node.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;node.emission_sphere_radius=0.09
-	node.direction=Vector3.UP;node.spread=180;node.initial_velocity_min=1.3;node.initial_velocity_max=3.4
-	node.gravity=Vector3(0,-5.5,0);node.scale_amount_min=0.45;node.scale_amount_max=1.0
-	var mesh=SphereMesh.new();mesh.radius=0.028;mesh.height=0.056;mesh.radial_segments=4;mesh.rings=2
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color
-	mesh.material=mat;node.mesh=mesh;node.material_override=mat
-	node.position=pos;add_child(node);node.emitting=true
-	get_tree().create_timer(node.lifetime+0.15).timeout.connect(node.queue_free)
-
-func muzzle(pos: Vector3,direction: Vector3,color: Color):
-	if quality!="PC":return
-	var node=glow_sprite(color,0.7,1.5)
-	node.position=pos;add_child(node)
-	var mat=node.material_override
-	_aim_along(node,direction);node.scale=Vector3(1.5,1,1)
-	var lamp=OmniLight3D.new();lamp.light_color=color;lamp.light_energy=1.7;lamp.omni_range=1.5;node.add_child(lamp)
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(node,"scale",Vector3(0.2,0.2,0.5),0.07)
-	tween.tween_property(mat,"albedo_color:a",0.0,0.07)
-	tween.chain().tween_callback(node.queue_free)
-
-# look_at needs a target that is not colinear with UP; aim vectors are horizontal
-# here, but guard anyway so a stray vertical direction cannot spam errors.
-func _aim_along(node: Node3D,direction: Vector3):
-	if direction.length_squared()<0.0001:return
-	var d=direction.normalized()
-	if absf(d.y)>0.99:return
-	node.rotation=Vector3(0,atan2(-d.x,-d.z),0)
-
-func damage_text(pos: Vector3,amount: float,color: Color):
-	if quality!="PC" and randf()>0.4:return
-	var label=Label3D.new();label.text=str(int(round(amount)));label.font_size=38;label.pixel_size=0.008;label.modulate=color;label.billboard=BaseMaterial3D.BILLBOARD_ENABLED;label.no_depth_test=true;label.position=pos+Vector3(rng.randf_range(-0.2,0.2),2.0,0);add_child(label)
-	var tween=create_tween();tween.set_parallel(true);tween.tween_property(label,"position:y",label.position.y+0.6,0.55);tween.tween_property(label,"modulate:a",0.0,0.55);tween.chain().tween_callback(label.queue_free)
 
 func sound(event: String,db_offset: float=0.0,variant: int=-1):
 	if audio!=null:audio.play(event,db_offset,variant)
