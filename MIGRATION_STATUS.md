@@ -1,9 +1,9 @@
 # Bloodwake — devir notu (24 Eylül 2026)
 
-Ana geliştirme artık `godot/` içindeki Godot 4.6.3 standard/GDScript projesinde.
-Hedef önce PC, sonra ölçülerek optimize edilecek mobil sürüm. Flutter kaynakları
-referans olarak korunuyor. Yeni bilgisayarda `godot/project.godot` dosyasını açıp
-ilk import sonrası F5 ile çalıştır; Flutter kurulumu gerekmiyor.
+Proje tamamen `godot/` içindeki Godot 4.6.3 standard/GDScript projesi.
+Hedef önce PC, sonra ölçülerek optimize edilecek mobil sürüm. Flutter/Flame
+prototipi silindi; geçmişi git'te duruyor. Yeni bilgisayarda `godot/project.godot`
+dosyasını açıp ilk import sonrası F5 ile çalıştır.
 
 ## Çalışan durum
 
@@ -50,8 +50,9 @@ Ağırlık sıfırın üstünde kırpılıyor, yani bir bölge kendi havuzunu bo
 
 Orijinal Bloodbound: `art/bloodbound/source/bloodbound_animated.glb`.
 İşlenmiş model: `bloodbound_game.glb`; Godot kopyası `godot/assets/models/bloodbound.glb`.
-Gunslinger iç kimliği korunur, görünen ad Bloodbound. Eski atlas üretimi Godot için
-zorunlu değil. `DEVELOPMENT_PLAN.md` eski Flutter planıdır; güncel durum bu dosyada.
+Gunslinger iç kimliği korunur, görünen ad Bloodbound. `DEVELOPMENT_PLAN.md` silindi;
+hâlâ geçerli olan tasarım kuralları `godot/README.md` içindeki Conventions bölümüne
+taşındı.
 
 Komutlar, kod haritası, kayıt aktarma ve build adımları `godot/README.md` içinde.
 Motor/export templates ve `godot/builds/` Git'te yok; diğer PC'de yeniden kur/üret.
