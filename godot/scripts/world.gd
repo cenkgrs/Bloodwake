@@ -12,6 +12,7 @@ var visual: BWVisual
 var camera: Camera3D
 var arena: BWArena
 var fx: BWFx
+var skills: BWSkills
 var environment: Environment
 var wave_zone = "courtyard"
 var enemies: Array = []
@@ -69,6 +70,7 @@ const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assass
 func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	run=state;quality=profile;audio=mixer;rng.randomize()
 	fx=BWFx.new();add_child(fx);fx.configure(quality)
+	skills=BWSkills.new();add_child(skills);skills.bind(self)
 	_environment()
 	player=Node3D.new();player.name="Player";add_child(player)
 	# Enemies read as 1.7-3.5 m (tanks/bosses run bigger on purpose); the player
@@ -386,7 +388,7 @@ func _weapons(dt: float):
 				# ability effect, which is what makes finishing the chain worth doing.
 				if combo_step==COMBO.size()-1:
 					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
-					_ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
+					skills._ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
 				visual.action(clip,duration)
 			else:visual.action(clip,duration)
 			pending_attacks.append({"time":duration*IMPACT.get(clip,0.32),"id":id,"direction":direction})
@@ -408,7 +410,7 @@ func _pending_attacks(dt: float):
 		if attack.time<=0:
 			pending_attacks.erase(attack)
 			if run.stats.hp<=0:continue
-			if attack.id=="ultimate":_resolve_ability(attack.data)
+			if attack.id=="ultimate":skills._resolve_ability(attack.data)
 			elif attack.get("spin",false):_resolve_spin(attack.id,attack.direction)
 			else:_resolve_weapon(attack.id,attack.direction)
 
@@ -506,28 +508,6 @@ func ground_target(reach: float) -> Vector3:
 	point.y=0
 	return point
 
-func skill(index: int):
-	var ids=BWData.skills(run.class_id)
-	if index<0 or index>=ids.size():return
-	var id=ids[index]
-	if not running or run.stats.hp<=0 or airborne or not run.skill_ready(id):return
-	var data=BWData.entry("abilities",id)
-	if data.is_empty():return
-	run.skill_cd[id]=data.cooldown
-	var reach=data.range*run.stats.attackRange*BWData.UNIT
-	var target=ground_target(reach)
-	match data.behavior:
-		"meteor":_cast_meteor(data,target)
-		"voidLeap":_cast_void_leap(data,target)
-		"thrust":_cast_thrust(data)
-		"backstepVolley":_cast_backstep_volley(data)
-		"ricochet":_cast_ricochet(data)
-		"powderCharge":_cast_powder_charge(data,target)
-		"markOfRuin":_cast_mark(data)
-	changed.emit()
-
-# A committed forward lunge: the warrior covers ground and spears everything in a
-# narrow lane, so it rewards lining enemies up instead of standing in a crowd.
 func _nearest_unhit(origin: Vector3,reach: float,hit_ids: Array):
 	var best=null;var best_distance=reach*reach
 	for e in enemies:
@@ -536,291 +516,25 @@ func _nearest_unhit(origin: Vector3,reach: float,hit_ids: Array):
 		if distance<=best_distance:best=e;best_distance=distance
 	return best
 
-# One round that refuses to stop: it redirects to the next body it has not touched.
-# Rewards picking a lane through a crowd rather than spraying at the nearest target.
-func _cast_ricochet(data: Dictionary):
-	var reach=data.range*run.stats.attackRange*BWData.UNIT
-	var heading=aim.normalized() if aim.length_squared()>0.01 else last_move
-	if heading.length_squared()<0.01:heading=Vector3.FORWARD
-	var first=nearest(player.position,reach)
-	if first!=null:heading=(first.node.position-player.position).normalized()
-	visual.rotation.y=atan2(heading.x,heading.z)
-	visual.action("attack",0.26);sound("shoot_rifle")
-	var accent=Color(data.get("accent","ffe9bd"))
-	var roll=run.damage_roll(data.damage*run.stats.damage)
-	var round_record=_bullet(player.position,heading,data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,0,"rapid_rifle",0,0,roll.critical)
-	if round_record!=null:
-		round_record["bounces"]=int(data.get("bounces",3))
-		round_record["bounce_range"]=reach
-	fx.muzzle(player.position+Vector3.UP*0.8,heading,accent)
-	shake=maxf(shake,0.06)
 
-# A charge lobbed onto the ground: it telegraphs, then throws everything off it.
-func _cast_powder_charge(data: Dictionary,target: Vector3):
-	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	var tone=Color(data.get("tone","ff9a4d"));var accent=Color(data.get("accent","ffd08a"))
-	visual.rotation.y=atan2(target.x-player.position.x,target.z-player.position.z)
-	visual.action("attack",0.26);sound("shoot_shotgun")
-	var keg=fx.glow_sprite(tone,0.5,1.4);keg.position=player.position+Vector3.UP*0.9;add_child(keg)
-	var fuse=0.45
-	fx.telegraph(target,radius,tone,fuse)
-	var lob=create_tween();lob.set_parallel(true)
-	lob.tween_property(keg,"position",target+Vector3.UP*0.25,fuse).set_trans(Tween.TRANS_SINE)
-	lob.tween_property(keg,"scale",Vector3.ONE*1.5,fuse)
-	lob.chain().tween_callback(func():
-		if is_instance_valid(keg):keg.queue_free()
-		_powder_blast(target,radius,data.damage*run.stats.damage,tone,accent))
 
-func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,accent: Color):
-	sound_at("shoot_shotgun",position,3.0)
-	for e in enemies.duplicate():
-		var offset=e.node.position-position
-		if offset.length()>radius+e.radius:continue
-		var roll=run.damage_roll(damage)
-		_damage_enemy(e,roll.damage,roll.critical,true,"ability")
-		if e.hp<=0 or not is_instance_valid(e.node):continue
-		# shoved outward, clamped to the arena so nothing is pushed through a wall
-		var shove=e.node.position+offset.normalized()*1.5
-		shove.x=clampf(shove.x,-BWArena.EDGE,BWArena.EDGE);shove.z=clampf(shove.z,-BWArena.EDGE,BWArena.EDGE)
-		create_tween().tween_property(e.node,"position",shove,0.18).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	fx.shockwave(position,radius,tone,0.4,0.0,2.2)
-	fx.shockwave(position,radius*1.15,accent,0.48,0.1,1.5)
-	fx.radial_streaks(position,radius*1.1,accent,8,0.3)
-	fx.burst_ring(position,radius,accent,34,5.2,0.6)
-	fx.spark(position+Vector3.UP*0.8,tone,22)
-	fx.flash_light(position,tone,3.4,radius*1.8,0.32)
-	shake=maxf(shake,0.18)
 
-# Paints a target; the mark survives its host and moves to the next body, and every
-# jump makes it bite harder - the assassin's crit identity turned into a chain.
-func _cast_mark(data: Dictionary):
-	var reach=data.range*run.stats.attackRange*BWData.UNIT
-	var victim=nearest(player.position,reach)
-	if victim==null:return
-	mark_chain=0
-	_apply_mark(victim,Color(data.get("tone","63bd9f")))
-	visual.action("attack",0.24)
-	sound("skill_leap_launch")
 
-func _apply_mark(e: Dictionary,tone: Color):
-	for other in enemies:other["marked"]=false
-	e["marked"]=true
-	e["mark_tone"]=tone
-	if is_instance_valid(e.node):
-		var brand=fx.glow_sprite(tone,1.1,1.6)
-		brand.name="RuinMark";brand.position=Vector3.UP*2.1
-		for old in e.node.get_children():
-			if old.name=="RuinMark":old.queue_free()
-		e.node.add_child(brand)
-		# bound to the brand, not the world: the host is freed when its corpse is
-		# cleaned up, and a world-bound loop would keep stepping on a dead target
-		var pulse=brand.create_tween().set_loops()
-		pulse.tween_property(brand,"scale",Vector3.ONE*1.35,0.45).set_trans(Tween.TRANS_SINE)
-		pulse.tween_property(brand,"scale",Vector3.ONE,0.45).set_trans(Tween.TRANS_SINE)
-	fx.ring(e.node.position,0.9,tone,0.3)
 
-func _cast_thrust(data: Dictionary):
-	var reach=data.range*run.stats.attackRange*BWData.UNIT
-	var lane=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	var heading=aim.normalized() if aim.length_squared()>0.01 else last_move
-	if heading.length_squared()<0.01:heading=Vector3.FORWARD
-	visual.rotation.y=atan2(heading.x,heading.z)
-	visual.action("attack",0.3);sound("sword_swing")
-	var start=player.position
-	var destination=start+heading*reach
-	destination.x=clampf(destination.x,-BWArena.EDGE,BWArena.EDGE);destination.z=clampf(destination.z,-BWArena.EDGE,BWArena.EDGE)
-	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
-	create_tween().tween_property(player,"position",destination,0.16).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	fx.slash(start+heading*lane,heading,lane*1.6,accent)
-	for step in 4:
-		fx.shockwave(start.lerp(destination,float(step)/3.0),lane*0.85,tone,0.26,step*0.035,1.7)
-	var hit=[]
-	for e in enemies.duplicate():
-		var offset=e.node.position-start
-		var along=offset.dot(heading)
-		if along<-0.4 or along>reach+lane:continue
-		if (offset-heading*along).length()>lane+e.radius:continue
-		var roll=run.damage_roll(data.damage*run.stats.damage)
-		_damage_enemy(e,roll.damage,roll.critical,true,"ability");hit.append(e)
-	fx.burst_ring(destination,lane,accent,22,4.0,0.5)
-	fx.flash_light(destination,tone,2.4,lane*2.0,0.26)
-	shake=maxf(shake,0.1 if hit.is_empty() else 0.15)
 
-# Break away from whatever is on top of you, then answer with three blades the way
-# you came - the dash and the daggers deliberately point opposite ways.
-func _cast_backstep_volley(data: Dictionary):
-	var reach=data.range*run.stats.attackRange*BWData.UNIT
-	var heading=aim.normalized() if aim.length_squared()>0.01 else last_move
-	if heading.length_squared()<0.01:heading=Vector3.FORWARD
-	visual.rotation.y=atan2(heading.x,heading.z)
-	visual.action("attack",0.28)
-	var tone=Color(data.get("tone","9d6bff"));var accent=Color(data.get("accent","d9c6ff"))
-	var start=player.position
-	var retreat=start-heading*(2.6*run.stats.attackRange)
-	retreat.x=clampf(retreat.x,-BWArena.EDGE,BWArena.EDGE);retreat.z=clampf(retreat.z,-BWArena.EDGE,BWArena.EDGE)
-	create_tween().tween_property(player,"position",retreat,0.17).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	sound("skill_leap_launch")
-	fx.shockwave(start,1.9,tone,0.3,0.0,1.6)
-	fx.burst_ring(start,1.7,accent,20,3.4,0.5)
-	for i in range(-1,2):
-		var roll=run.damage_roll(data.damage*run.stats.damage)
-		_bullet(retreat,heading.rotated(Vector3.UP,i*0.17),data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,1,"daggers",0,0,roll.critical)
-	fx.muzzle(retreat+Vector3.UP*0.8,heading,accent)
-	shake=maxf(shake,0.08)
 
-func _cast_meteor(data: Dictionary,target: Vector3):
-	visual.action("attack",0.34)
-	visual.rotation.y=atan2(target.x-player.position.x,target.z-player.position.z)
-	sound("skill_meteor_cast")
-	var origin=player.position+Vector3.UP*1.1
-	if is_instance_valid(visual.hand_magic):origin=visual.hand_magic.global_position
-	# The rock arcs in from above the target rather than travelling flat from the
-	# hand, so the blast reads as something falling onto the ground. Distance sets
-	# the timing, capped so a long throw still lands while the fight is in motion.
-	var apex=target+Vector3.UP*6.0
-	var travel=clampf(origin.distance_to(target)/(data.projectileSpeed*BWData.UNIT),0.26,0.55)
-	var rock=Node3D.new();add_child(rock);rock.position=origin
-	rock.add_child(fx.glow_sprite(Color("c9a0ff"),1.5,1.6))
-	rock.add_child(fx.glow_sprite(Color("f0e2ff"),0.7,2.2))
-	if quality=="PC":
-		var lamp=OmniLight3D.new();lamp.light_color=Color("b07dff");lamp.light_energy=2.4;lamp.omni_range=4.0;rock.add_child(lamp)
-		rock.add_child(fx.trail_emitter(Color("b07dff"),0.09,0.36,22))
-	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	fx.telegraph(target,radius,Color("b07dff"),travel)
-	var tween=create_tween()
-	tween.tween_property(rock,"position",apex,travel*0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(rock,"position",target+Vector3.UP*0.2,travel*0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_callback(func():
-		rock.queue_free()
-		_meteor_blast(target,radius,data.damage*run.stats.damage))
 
-func _meteor_blast(position: Vector3,radius: float,damage: float):
-	sound_at("skill_meteor_blast",position,2.0)
-	for e in enemies.duplicate():
-		if e.node.position.distance_to(position)<=radius+e.radius:
-			var roll=run.damage_roll(damage);_damage_enemy(e,roll.damage,roll.critical,true,"ability")
-	fx.shockwave(position,radius,Color("b07dff"),0.34,0.0,1.8)
-	fx.shockwave(position,radius*0.68,Color("f2e4ff"),0.22,0.05,2.0)
-	fx.radial_streaks(position,radius*1.1,Color("d9b8ff"),8,0.3)
-	fx.burst_ring(position,radius,Color("c9a0ff"),30,4.2,0.6)
-	fx.spark(position+Vector3.UP*0.4,Color("e9d4ff"),22)
-	fx.flash_light(position,Color("b07dff"),2.8,radius*1.7,0.32)
-	shake=maxf(shake,0.14)
 
-func _cast_void_leap(data: Dictionary,target: Vector3):
-	airborne=true
-	visual.action("ultimate",0.7)
-	visual.rotation.y=atan2(target.x-player.position.x,target.z-player.position.z)
-	sound("skill_leap_launch")
-	var start=player.position
-	var radius=data.blastRadius*run.stats.attackRange*BWData.UNIT
-	fx.ring(start,2.0,Color(data.get("tone","7f6bff")),0.35)
-	fx.radial_streaks(start,2.4,Color(data.get("accent","cfc0ff")),6,0.26)
-	var flight=clampf(start.distance_to(target)/16.0,0.26,0.6)
-	fx.telegraph(target,radius,Color(data.get("tone","7f6bff")),flight)
-	var trail: Node=null
-	if quality=="PC":
-		trail=fx.trail_emitter(Color("8f74ff"),0.1,0.42,26)
-		player.add_child(trail)
-	# Arc through the air: the model lifts on its own axis while the body travels,
-	# so the landing has a visible drop instead of sliding along the floor.
-	var lift=create_tween()
-	lift.tween_property(visual,"position:y",2.6,flight*0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	lift.tween_property(visual,"position:y",0.0,flight*0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	var travel=create_tween()
-	travel.tween_property(player,"position",target,flight).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	travel.tween_callback(func():
-		if trail!=null and is_instance_valid(trail):trail.queue_free()
-		airborne=false
-		_leap_land(target,radius,data.damage*run.stats.damage,Color(data.get("tone","8f74ff")),Color(data.get("accent","cfc0ff"))))
 
-func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color("8f74ff"),accent: Color=Color("cfc0ff")):
-	sound_at("skill_leap_land",position,2.0)
-	for e in enemies.duplicate():
-		if e.node.position.distance_to(position)<=radius+e.radius:
-			var roll=run.damage_roll(damage);_damage_enemy(e,roll.damage,roll.critical,true,"ability")
-			if e.hp>0:e.slow=2;e.slow_amount=0.3
-	fx.shockwave(position,radius,tone,0.38,0.0,2.0)
-	fx.shockwave(position,radius*1.2,tone.darkened(0.35),0.46,0.09,1.5)
-	fx.radial_streaks(position,radius*1.15,accent,9,0.32)
-	fx.burst_ring(position,radius,accent.darkened(0.15),34,4.8,0.62)
-	fx.shards(position,radius*0.85,Color("b3a2ff"),10)
-	fx.flash_light(position,Color("8f74ff"),3.2,radius*1.8,0.34)
-	shake=maxf(shake,0.18)
+
+
+
+# The input layer and the suites talk to the world, not to the kit behind it.
+func skill(index: int):
+	skills.skill(index)
 
 func ability():
-	if not running or run.ability_cd>0 or run.stats.hp<=0 or airborne:return
-	var data=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
-	run.ability_cd=data.cooldown
-	if visual.fitted_timing and visual.clips.has("ultimate"):
-		pending_attacks.clear()
-		visual.action("ultimate",0.9)
-		pending_attacks.append({"time":0.45,"id":"ultimate","data":data})
-	else:
-		_resolve_ability(data);visual.action("attack")
-	changed.emit()
-
-func _resolve_ability(data: Dictionary):
-	var range_value=data.range*run.stats.attackRange*BWData.UNIT
-	if data.id=="fan_shot":
-		_ability_effect(data.id,player.position,range_value)
-		for i in range(-2,3):
-			var roll=run.damage_roll(data.damage*run.stats.damage)
-			_bullet(player.position,aim.rotated(Vector3.UP,i*0.16),data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,0,"rapid_rifle",0,0,roll.critical)
-	else:
-		var strike_position=player.position
-		if data.id=="shadow_strike":
-			# A fast dash reads better than a blink and disorients less - cover the
-			# distance in a short tween instead of snapping player.position directly.
-			strike_position=player.position+aim*data.range*BWData.UNIT*0.5
-			strike_position.x=clampf(strike_position.x,-BWArena.EDGE,BWArena.EDGE);strike_position.z=clampf(strike_position.z,-BWArena.EDGE,BWArena.EDGE)
-			create_tween().tween_property(player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-			range_value=65*run.stats.attackRange*BWData.UNIT
-		for e in enemies.duplicate():
-			if e.node.position.distance_to(strike_position)<=range_value+e.radius:
-				var roll=run.damage_roll(data.damage*run.stats.damage);_damage_enemy(e,roll.damage,roll.critical,true,"ability")
-				if e.hp>0 and data.id=="frost_nova":e.slow=3;e.slow_amount=0.45
-		_ability_effect(data.id,strike_position,range_value)
-	sound("ulti_"+data.id)
-
-
-func _ability_effect(id: String,pos: Vector3,radius: float):
-	match id:
-		"frost_nova":
-			fx.shockwave(pos,radius,Color("8fd8ff"),0.34,0.0,1.9)
-			fx.shockwave(pos,radius*0.72,Color("dff2ff"),0.22,0.05,2.2)
-			fx.shards(pos,radius,Color("9ad6ff"),12)
-			fx.burst_ring(pos,radius,Color("cfeeff"),26,3.4,0.6)
-			fx.flash_light(pos,Color("8fd8ff"),3.2,radius*1.6,0.3)
-			shake=maxf(shake,0.05)
-		"war_cry":
-			fx.shockwave(pos,radius,Color("ffb066"),0.3,0.0,2.2)
-			fx.shockwave(pos,radius*1.15,Color("ff7a4d"),0.38,0.1,1.6)
-			fx.radial_streaks(pos,radius*1.05,Color("ffc27a"),7,0.28)
-			fx.burst_ring(pos,radius,Color("ffc98a"),30,4.6,0.55)
-			fx.flash_light(pos,Color("ff9a52"),2.6,radius*1.5,0.28)
-			shake=maxf(shake,0.16)
-		"shadow_strike":
-			fx.shockwave(pos,radius*1.15,Color("7a46d8"),0.28,0.0,1.3)
-			fx.radial_streaks(pos,radius*1.3,Color("e2d2ff"),4,0.2)
-			fx.slash(pos,aim.rotated(Vector3.UP,0.7),radius*1.4,Color("f0e6ff"))
-			fx.slash(pos,aim.rotated(Vector3.UP,-0.7),radius*1.4,Color("c9a6ff"))
-			fx.burst_ring(pos,radius,Color("a97dff"),22,3.0,0.5)
-			fx.flash_light(pos,Color("8a5bff"),2.2,radius*1.5,0.26)
-			shake=maxf(shake,0.07)
-		"fan_shot":
-			var cone=fx.flat_sprite(Color("ffc46a"),1.9,1.5,2.4)
-			cone.position=pos+Vector3.UP*0.85;add_child(cone)
-			fx.aim_along(cone,aim);cone.get_child(0).position.z=-0.75
-			var mat=cone.get_child(0).material_override
-			var tween=create_tween();tween.set_parallel(true)
-			tween.tween_property(cone,"scale",Vector3(1.6,1,1.5),0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			tween.tween_property(mat,"albedo_color",Color(0,0,0),0.16)
-			tween.chain().tween_callback(cone.queue_free)
-			fx.spark(pos+aim*0.7+Vector3.UP*0.85,Color("ffcf8a"),20)
-			fx.flash_light(pos+aim*0.6+Vector3.UP*0.85,Color("ffb761"),3.4,3.0,0.16)
-			shake=maxf(shake,0.1)
-
+	skills.ability()
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):
 	if bullets.size()>=384:return
@@ -903,7 +617,7 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 	enemies.erase(e);e.visual.action("death")
 	if e.get("marked",false):
 		var heir=nearest(e.node.position,9.0)
-		if heir!=null:mark_chain+=1;_apply_mark(heir,e.get("mark_tone",Color("63bd9f")))
+		if heir!=null:mark_chain+=1;skills._apply_mark(heir,e.get("mark_tone",Color("63bd9f")))
 		else:mark_chain=0
 	fx.spark(e.node.position+Vector3.UP*0.9,Color(ENEMY_COLORS[e.id]).lightened(0.4),24 if e.elite or e.id=="boss" else 16)
 	run.kills+=1;run.gold+=int(e.data.goldReward*(4 if e.elite else 1)+run.stats.bonusGoldPerKill)
