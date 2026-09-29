@@ -209,17 +209,32 @@ func _spawn_tick(dt: float):
 	spawn_timer-=dt
 	if spawn_timer>0 or enemies.size()>=rules.cap:return
 	spawn_timer=rules.interval
-	var id="boss"
-	if not rules.boss:
-		var pool=[]
-		for row in BWData.rows("enemies"):
-			if row.id!="boss" and run.wave>=row.get("unlockWave",1):
-				for n in int(row.get("spawnWeight",1)):pool.append(row.id)
-		id=pool[rng.randi_range(0,pool.size()-1)]
+	var id="boss" if rules.boss else _draw_from(spawn_pool(run.wave,zone.id))
 	var angle=rng.randf()*TAU;var pos=player.position+Vector3(cos(angle),0,sin(angle))*10.4
 	pos=arena.push_out(pos,0.6)
 	spawn_enemy(id,pos,not rules.boss and rng.randf()<rules.elite,rules.multiplier if not rules.boss else 1.0)
 	spawned+=1
+
+# What an ordinary wave can field here: every type the run has unlocked, weighted
+# by the catalog and then again by whichever district the wave is being held in.
+# A district shifts the mix rather than choosing it, so nothing unlocked is ever
+# unreachable and the pool cannot come back empty.
+func spawn_pool(wave: int,zone_id: String) -> Dictionary:
+	var garrison=arena.zone_by_id(zone_id).get("garrison",{}) if arena!=null else {}
+	var pool={}
+	for row in BWData.rows("enemies"):
+		if row.id=="boss" or wave<row.get("unlockWave",1):continue
+		pool[row.id]=maxf(0.25,float(row.get("spawnWeight",1))*float(garrison.get(row.id,1.0)))
+	return pool
+
+func _draw_from(pool: Dictionary) -> String:
+	var total=0.0
+	for id in pool:total+=pool[id]
+	var roll=rng.randf()*total
+	for id in pool:
+		roll-=pool[id]
+		if roll<=0.0:return id
+	return pool.keys()[pool.size()-1]
 
 func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=1.0):
 	var data=BWData.entry("enemies",id)

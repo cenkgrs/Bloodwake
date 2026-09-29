@@ -29,6 +29,9 @@ godot --path godot
 | System | Source |
 | --- | --- |
 | Catalogs, class stats, scaling and effect definitions | `data/catalogs.json`, `scripts/data.gd` |
+| Districts, props, garrison weights and blocking | `scripts/arena.gd` |
+| Class skills and ultimates | `scripts/skills.gd` |
+| Transient combat effects | `scripts/fx.gd` |
 | Weapons, upgrades, inventory, XP and damage stats | `scripts/run_state.gd` |
 | Persistence, skill tree, equipment and three loadouts | `scripts/meta.gd` |
 | 3D movement, aiming, weapons, enemies, bosses, waves | `scripts/world.gd` |
@@ -38,7 +41,10 @@ godot --path godot
 
 The Dart catalogs were extracted with `tools/migrate_catalogs.py`: 7 weapons,
 4 abilities, 7 enemy types, 22 upgrades, 11 shop items, 9 permanent equipment
-items and 15 skill nodes. Distances use 50 legacy pixels per world meter.
+items and 15 skill nodes. Distances use 50 legacy pixels per world meter. Each district carries a `garrison`
+table that weights what a wave draws there on top of the catalog's own
+`spawnWeight`; it shifts the mix rather than choosing it, so nothing the run has
+unlocked is ever unreachable in a given district.
 Basic grunt melee damage is 8 (also updated in the source Dart catalog). The port is playable, but this is not a claim of pixel-perfect or
 exhaustively verified behavioral equivalence with Flutter.
 

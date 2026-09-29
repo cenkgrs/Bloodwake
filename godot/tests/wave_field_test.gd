@@ -62,16 +62,33 @@ func suite():
 	# --- The spawn pool. Enemy types are gated by wave, so wave one cannot field a
 	# commander and a long run must be able to field everything.
 	for wave in [1,2,3,4,5,6,30]:
-		var pool={}
-		for row in BWData.rows("enemies"):
-			if row.id!="boss" and wave>=row.get("unlockWave",1):pool[row.id]=true
-		for row in BWData.rows("enemies"):
-			if row.id=="boss":continue
-			var unlocked=wave>=row.get("unlockWave",1)
-			check(pool.has(row.id)==unlocked,"spawn pool gate: %s at wave %d" % [row.id,wave])
-		check(not pool.has("boss"),"the boss never joins an ordinary wave: "+str(wave))
-		if wave==1:check(pool.size()==1 and pool.has("grunt"),"wave one fields grunts alone")
-		if wave==30:check(pool.size()==6,"a long run fields every ordinary type")
+		for district in BWArena.ZONES:
+			var pool=world.spawn_pool(wave,district.id)
+			for row in BWData.rows("enemies"):
+				if row.id=="boss":continue
+				var unlocked=wave>=row.get("unlockWave",1)
+				check(pool.has(row.id)==unlocked,"spawn pool gate: %s at wave %d in %s" % [row.id,wave,district.id])
+			check(not pool.has("boss"),"the boss never joins an ordinary wave: "+str(wave))
+			# A district flavours the mix; it must never make an unlocked type
+			# unreachable, or leave a wave with nothing to draw.
+			check(not pool.is_empty(),"a district always has something to field: "+district.id)
+			for id in pool:check(pool[id]>0.0,"every unlocked type stays drawable: %s in %s" % [id,district.id])
+			if wave==1:check(pool.size()==1 and pool.has("grunt"),"wave one fields grunts alone")
+			if wave==30:check(pool.size()==6,"a long run fields every ordinary type")
+
+	# The districts must actually differ, or the garrison table is decoration. Each
+	# one that declares a garrison weights its own theme above the neutral courtyard.
+	var neutral=world.spawn_pool(30,"courtyard")
+	for pairing in [["ossuary","grunt"],["ruins","archer"],["altar","healer"],["grove","assassin"]]:
+		var district_pool=world.spawn_pool(30,pairing[0])
+		check(district_pool[pairing[1]]>neutral[pairing[1]],"%s fields more %s than the courtyard" % pairing)
+	check(world.spawn_pool(30,"courtyard").hash()==neutral.hash(),"the courtyard stays the neutral mix")
+
+	# A draw always returns something the pool actually offers.
+	for i in 200:
+		var drawn=world._draw_from(world.spawn_pool(30,"grove"))
+		check(neutral.has(drawn),"a draw returns a type from the pool")
+		if not neutral.has(drawn):break
 
 	# --- Wave shaping. These are formulas, not tables, so they must stay monotone
 	# and stay inside their bounds however far a run goes.
