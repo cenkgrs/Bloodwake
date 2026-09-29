@@ -59,12 +59,21 @@ copied to PC. The user data location can be opened through Godot's project menu.
 
 ```sh
 godot --headless --path godot --script tests/test_suite.gd
+godot --headless --path godot --script tests/combat_flow_test.gd
+godot --headless --path godot --script tests/class_kit_test.gd
+godot --headless --path godot --script tests/wave_field_test.gd
+godot --headless --path godot --script tests/enemy_asset_test.gd
+godot --headless --path godot --script tests/altar_props_test.gd
 godot --headless --path godot -- --smoke
 godot --path godot -- --qa
 ```
 
-The suite checks catalogs, upgrade gates, purchases, XP, persistence, equipment,
-all class/enemy instantiation and intermission flow. `--smoke` runs a short combat
+Each suite prints its own count and exits non-zero on a failure. `test_suite`
+checks catalogs, upgrade gates, purchases, XP, persistence, equipment, all
+class/enemy instantiation and intermission flow. `combat_flow` covers damage,
+animation tempo and the wave/death transitions. `class_kit` drives all eight
+bound skills, and `wave_field` covers the district tour, the wave-gated spawn
+pool, elite scaling and the burn/bleed/slow timers. `--smoke` runs a short combat
 session and exits. `--qa` captures menus, four movement directions, boss, upgrades
 and shop in `user://`. Run tests with isolated `XDG_DATA_HOME` on Linux to avoid
 using personal progression.
