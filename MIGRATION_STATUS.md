@@ -68,3 +68,82 @@ Yerel commit başka PC'ye otomatik ulaşmaz; remote'a push veya repo aktarımı 
   animasyonu açıkça görünüyor, ardından 2,7 saniye YOU DIED ve sonuç menüsü geliyor.
 - `godot/tests/combat_flow_test.gd` hasarı, animasyon temposunu, el VFX’ini ve
   geçiş sürelerini kontrol ediyor.
+
+## Devir: evde devam edilecek işler (29 Eylül 2026)
+
+Bu oturumda bitenler commit'li (`c8449f2`..`9a4dc50`, hepsi master'da, push YOK —
+evdeki PC'ye ulaşması için `git push` gerekiyor). Aşağıdakiler açık.
+
+### 1. Oyun içi donma — AÇIK, sebebi bulunamadı
+
+**Belirti (Cenk):** wave'in ortasında, saldırı yaparken oyun kısa süre kilitleniyor.
+"7-8 saniyede bir" ifadesi farazi, ölçülmüş değil. Wave geçişinde DEĞİL.
+
+Ölçüm için `godot/tools/perf_probe.gd` yazıldı (commit'lenmedi, untracked):
+
+    godot --path godot --script tools/perf_probe.gd
+
+Oyunu 120 sn kendi kendine oynatıp 80 ms üstü her kareyi, 5 sn'de bir de
+wave/level/düşman sayısını basar. Gerçek ekran gerekir; headless render yapmadığı
+için renderer kaynaklı bir takılma orada hiç görünmez.
+
+Bulunanlar:
+- Probe 60 fps sabit gidiyor ve Cenk'in tarif ettiği donmayı ÜRETEMİYOR. Eksik olan
+  muhtemelen gerçek girdi: sol/sağ tık saldırıları, yetenekler ve onların VFX'i.
+  Probe sadece `auto_fire` kullanıyor.
+- Ayrı ve gerçek bir sorun ölçüldü: bir düşman tipinin modeli ilk kez yüklenirken
+  `BWVisual.configure` **1191 ms** sürüyor (`CONFIGURE grunt 1191.6 ms`).
+  Sebep `visual.gd:45` — `load()` sonucu yerel değişkende, `instantiate()` sonrası
+  PackedScene referansı düşüyor, yani sahne önbellekte tutulmuyor. Statik bir
+  sözlükte cache'lemek doğru düzeltme. Bu Cenk'in şikayeti değil ama giderilmeli.
+
+Sıradaki adım: probe'a gerçek saldırı/yetenek girdisi ekleyip donmayı yakalamak.
+Yakalanmadan bir şey "düzeltilmemeli" — bu oturumda wave geçişi sanılıp yanlış
+teşhis kondu.
+
+### 2. Zorluk eğrisi — AÇIK, hiç başlanmadı
+
+Cenk: "4-5 wave sonra oyun kolaylaşıyor, boss wave'inde gelen 10 düşmanı tek
+hareketle siliyorum."
+
+- Düşman canı/hasarı wave ile artmalı. Şu an tek çarpan
+  `data.gd:40` → `"multiplier":1+(wave-1)*0.08` ve `spawn_enemy` onu maxHp ile
+  damage'a uyguluyor. %8 lineer artış açıkça yetersiz.
+- Seviye atlama çok hızlı: `run_state.gd:41` → eşik `20+(level-1)*15`. Wave başına
+  4-5 seçim çıkıyor. Hedef: **wave başına en fazla ~1 seviye**.
+- İkisi birbirine bağlı; XP eğrisini düzeltmeden düşman gücünü artırmak yanıltır.
+
+### 3. Boyut sorunları — AÇIK
+
+- Düşman warrior aşırı küçük duruyor. Boy `world.gd:317`'de `configure(...)`'a
+  geçilen sabitlerden geliyor (`3.5` boss / `2.3` tank / `1.9` elit / `1.7` diğer);
+  `enemy_warrior.glb` muhtemelen bu ölçekle uyuşmuyor.
+- Cenk seviye arttıkça hem oyuncunun hem düşmanların büyümesini istiyor. Şu an
+  oyuncu boyu `world.gd:98`'de sabit `2.05`.
+
+### 4. Warrior Whirl klibi — Cenk'te
+
+`shield_thrust` kaldırıldı, yerine `whirl` geldi (`522137c`). Kod hazır, klip yok.
+Cenk Blender'da yapacak; dosya **`art/warrior/source/mixamo/Warrior Whirl.fbx`**
+olarak konacak. Pipeline onu `reexported` listesinde bekliyor, yani leaf bone / fps /
+nesne kanalı tuzaklarını otomatik hallediyor. Klip gelene kadar cast jenerik savurma
+klibine düşüyor ve build `MISSING CLIP Whirl` basıyor.
+
+Klip şartları: gövde yerinde dönsün (ileri kaymasın), ~1.2-2 sn, kılıcı dosyaya
+koymaya gerek yok (pipeline kendi takıyor).
+
+### Dikkat: kılıç tutuşu elle taşınıyor
+
+`build_mixamo_warrior.py` içindeki `GRIP` matrisi `art/warrior/source/4slah.blend`
+dosyasındaki Child Of constraint'inden okundu ve **sabit olarak gömüldü**. Blender'da
+tutuş değişirse bu matris kendiliğinden güncellenmez. Yeniden okuyan bir araç
+yazılması konuşuldu, yazılmadı.
+
+### Godot import cache tuzağı
+
+Sahneyi editörsüz çalıştırmak `.godot/imported/*.scn` içindeki eski sürümü oynatır;
+glb değişse bile. Render almadan önce bir kez:
+
+    godot --path godot --headless --editor --quit
+
+Bu oturumda iki kez günler öncesine ait asset render edilip "doğrulandı" sanıldı.
