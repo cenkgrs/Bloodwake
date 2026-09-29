@@ -31,3 +31,16 @@ godot/builds/
 # are large. Regenerated on any fresh import, so they are not worth tracking.
 godot/assets/models/enemy_healer_*
 godot/assets/models/enemy_warrior_*
+
+# Flutter/Dart scaffolding and build output. The Flutter prototype was removed in
+# 268bb6f, but running any flutter command at the root regenerates these - and
+# .flutter-plugins-dependencies says in its own first line not to check it in.
+# Anchored to the root so an art pipeline's own build/ directory is unaffected.
+/build/
+/.dart_tool/
+/.flutter-plugins-dependencies
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
