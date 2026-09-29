@@ -18,19 +18,19 @@ const EDGE = HALF - 1.5      # bodies are kept this far inside the wall
 const ZONES = [
 	{"id": "courtyard", "name": "THE COURTYARD", "at": Vector2(0, 0), "radius": 15.0,
 		"ground": Color("4a4f58"), "ambient": Color("8fa2bb"), "fog": Color("1b232f"),
-		"energy": 0.55, "props": {"pillar": 7, "brazier": 4, "rubble": 10, "urn": 6}},
+		"energy": 0.55, "props": {"pillar_plain": 7, "brazier": 4, "rubble": 10, "urn_plain": 6}},
 	{"id": "ossuary", "name": "THE OSSUARY", "at": Vector2(-22, -18), "radius": 13.0,
 		"ground": Color("5a5548"), "ambient": Color("93ad9a"), "fog": Color("1d261f"),
-		"energy": 0.42, "props": {"bones": 14, "wall": 5, "brazier": 2, "urn": 7}},
+		"energy": 0.42, "props": {"bones": 14, "wall": 5, "brazier": 2, "urn_plain": 7}},
 	{"id": "ruins", "name": "THE RUINS", "at": Vector2(23, -17), "radius": 14.0,
 		"ground": Color("4f4a44"), "ambient": Color("a9a08d"), "fog": Color("241f1a"),
-		"energy": 0.48, "props": {"wall": 8, "boulder": 6, "rubble": 12, "urn": 5}},
+		"energy": 0.48, "props": {"wall": 8, "boulder": 6, "rubble": 12, "urn_plain": 5}},
 	{"id": "altar", "name": "THE BLOOD ALTAR", "at": Vector2(-20, 21), "radius": 12.0,
 		"ground": Color("52393b"), "ambient": Color("c2707a"), "fog": Color("2a1416"),
 		"energy": 0.5, "props": {"pillar": 6, "brazier": 5, "bones": 8, "urn": 4}},
 	{"id": "grove", "name": "THE DEAD GROVE", "at": Vector2(22, 20), "radius": 14.0,
 		"ground": Color("42463f"), "ambient": Color("7d8f86"), "fog": Color("161c19"),
-		"energy": 0.34, "props": {"tree": 10, "boulder": 5, "rubble": 8, "urn": 5}},
+		"energy": 0.34, "props": {"tree": 10, "boulder": 5, "rubble": 8, "urn_plain": 5}},
 ]
 
 # radius: how far a body is held off it. hp > 0 means it breaks.
@@ -39,13 +39,17 @@ const ZONES = [
 const PROPS = {
 	"altar": {"radius": 1.5, "height": 1.2, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/altar/altar.glb"},
 	"pillar": {"radius": 0.62, "height": 3.4, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/altar/pillar.glb"},
-	"wall": {"radius": 1.15, "height": 1.9, "blocks": true, "hp": 0.0, "mesh": ""},
-	"boulder": {"radius": 0.95, "height": 1.3, "blocks": true, "hp": 0.0, "mesh": ""},
-	"tree": {"radius": 0.5, "height": 4.2, "blocks": true, "hp": 0.0, "mesh": ""},
+	"wall": {"radius": 1.15, "height": 1.9, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/props/wall.glb"},
+	"boulder": {"radius": 0.95, "height": 1.3, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/props/boulder.glb"},
+	"tree": {"radius": 0.5, "height": 4.2, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/props/tree.glb"},
 	"brazier": {"radius": 0.45, "height": 1.5, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/altar/brazier.glb", "light": true},
 	"urn": {"radius": 0.42, "height": 0.9, "blocks": false, "hp": 12.0, "mesh": "res://assets/models/environment/altar/urn.glb"},
 	"bones": {"radius": 0.7, "height": 0.25, "blocks": false, "hp": 0.0, "mesh": "res://assets/models/environment/altar/bones.glb"},
-	"rubble": {"radius": 0.6, "height": 0.28, "blocks": false, "hp": 0.0, "mesh": ""},
+	"rubble": {"radius": 0.6, "height": 0.28, "blocks": false, "hp": 0.0, "mesh": "res://assets/models/environment/props/rubble.glb"},
+	# The altar's pillar and urn carry blood sigils. Used everywhere they would make
+	# the whole map read as one district, so the other zones get plain stone and clay.
+	"pillar_plain": {"radius": 0.62, "height": 3.4, "blocks": true, "hp": 0.0, "mesh": "res://assets/models/environment/props/pillar_plain.glb"},
+	"urn_plain": {"radius": 0.42, "height": 0.9, "blocks": false, "hp": 12.0, "mesh": "res://assets/models/environment/props/urn_plain.glb"},
 }
 
 var quality = "PC"
@@ -86,20 +90,29 @@ func _ground():
 	add_child(ground)
 	# A tinted disc per district. The ground is the cheapest way to tell the player
 	# which part of the map they are standing in, and it costs one quad each.
+	# One tinted disc per district, over the shared ground texture so the stone
+	# detail carries through. Two other shapes were tried here: a lit alpha quad
+	# became a second, brighter ground that the bloom seized on, and a multiply
+	# blend zeroed the floor wherever the mask was transparent. What actually stops
+	# the rim reading as a drawn circle is keeping the tint close to the ground it
+	# sits on - the district is told apart by its light and its props, and this only
+	# has to agree with them.
+	var base = Color("545a63")
 	for zone in ZONES:
 		var patch = MeshInstance3D.new()
 		var disc = CylinderMesh.new()
 		disc.top_radius = zone.radius
 		disc.bottom_radius = zone.radius
 		disc.height = 0.02
-		disc.radial_segments = 32
+		disc.radial_segments = 48
 		patch.mesh = disc
 		var tint = StandardMaterial3D.new()
 		tint.albedo_texture = load("res://assets/art/arena.png")
 		tint.uv1_scale = Vector3(6, 6, 6)
-		tint.albedo_color = zone.ground
+		tint.albedo_color = zone.ground.lerp(base, 0.45)
 		tint.roughness = 0.95
 		patch.material_override = tint
+		patch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		patch.position = Vector3(zone.at.x, 0.012, zone.at.y)
 		add_child(patch)
 
@@ -161,7 +174,15 @@ func _model(kind: String, spec: Dictionary, zone: Dictionary) -> Node3D:
 			imported.add_child(model)
 			var bounds = _prop_bounds(model)
 			if bounds.size.y > 0.001:
-				var factor = minf(spec.height / bounds.size.y, spec.radius * 2.0 / maxf(bounds.size.x, bounds.size.z))
+				# Height alone. The radius on a row is how far a body is held off the
+				# prop, not how wide the model may be - clamping the mesh to it turned
+				# a four metre dead tree, whose branches reach well past its trunk,
+				# into a shrub. Only a model that is absurdly wide for its height gets
+				# pulled in, so one bad generation cannot swallow a district.
+				var factor = spec.height / bounds.size.y
+				var width = maxf(bounds.size.x, bounds.size.z) * factor
+				if width > spec.radius * 6.0:
+					factor *= spec.radius * 6.0 / width
 				model.scale *= factor
 				model.position = Vector3(-bounds.get_center().x, -bounds.position.y, -bounds.get_center().z) * factor
 				if kind == "brazier":
@@ -375,23 +396,39 @@ func _prop_bounds(node: Node3D, transform: Transform3D = Transform3D.IDENTITY) -
 				result = box if result.size.length_squared() == 0 else result.merge(box)
 	return result
 
+# Coals, not a bonfire. Seen straight down, the old full-bright sphere filled the
+# bowl and blew past the glow threshold, so every brazier read as a flat orange
+# blob instead of a fire inside a piece of ironwork.
 func _brazier_fire(holder: Node3D, height: float, radius: float):
 	var fire = MeshInstance3D.new()
 	fire.name = "Embers"
 	var flame = SphereMesh.new()
-	flame.radius = radius * 0.48
-	flame.height = radius * 0.5
+	flame.radius = radius * 0.26
+	flame.height = radius * 0.34
+	flame.radial_segments = 8
+	flame.rings = 4
 	fire.mesh = flame
 	var lit = StandardMaterial3D.new()
-	lit.albedo_color = Color("ff9b48")
+	lit.albedo_color = Color("c84f16")
+	lit.emission_enabled = true
+	lit.emission = Color("ff8a3c")
+	lit.emission_energy_multiplier = 1.5
 	lit.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	fire.material_override = lit
-	fire.position.y = height
+	fire.position.y = height * 0.94
 	holder.add_child(fire)
-	if quality == "PC":
-		var lamp = OmniLight3D.new()
-		lamp.light_color = Color("ff9854")
-		lamp.light_energy = 2.2
-		lamp.omni_range = 7.0
-		lamp.position.y = height + 0.25
-		holder.add_child(lamp)
+	if quality != "PC":
+		return
+	var lamp = OmniLight3D.new()
+	lamp.light_color = Color("ff8f52")
+	lamp.light_energy = 1.45
+	lamp.omni_range = 5.5
+	lamp.position.y = height + 0.2
+	holder.add_child(lamp)
+	# A slow, uneven flicker. Without it a brazier is a lamp, and a still light is
+	# the thing that makes a lit scene look printed rather than burning.
+	var flicker = holder.create_tween().set_loops()
+	for step in 4:
+		var beat = rng.randf_range(0.18, 0.4)
+		flicker.tween_property(lamp, "light_energy", rng.randf_range(1.05, 1.75), beat)
+		flicker.parallel().tween_property(fire, "scale", Vector3.ONE * rng.randf_range(0.82, 1.18), beat)
