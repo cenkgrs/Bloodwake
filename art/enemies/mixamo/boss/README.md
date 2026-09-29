@@ -21,12 +21,12 @@ for 2.5 seconds, an extra charge closes the gap without consuming that step.
 | Sweep | Great Sword High Spin Attack | 0.80 s; 270° sector, 3.8 m | 0.65 s | 1.2 |
 | Charge | Great Sword Slide Attack | 0.90 s; 8 × 2 m lane | 0.60 s after 0.60 s lunge | 1.35, once |
 | Hex Volley | Great Sword Casting | 1.00 s; three fixed aiming rays | 0.65 s | 0.7 per missile |
-| Summon | Roar | 1.50 s; green ring + two spawn portals | 0.80 s | Two grunts; no direct damage |
+| Summon | Roar | 1.50 s; green ring + ten spawn portals | 0.80 s | Ten grunts; no direct damage |
 
 `godot/scripts/boss.gd` owns the timings and contact fractions. Directions lock at
 the start of warnings; normal hits cannot interrupt the performance; death cancels
-pending damage and warnings. Summoning respects the 24-enemy cap and has no hidden
-periodic timer. Charge stops at obstacles and checks the swept movement segment.
+pending damage and warnings. Each summon adds ten grunts, including when earlier adds are still alive; there
+is no hidden periodic timer. Charge stops at obstacles and checks the swept movement segment.
 
 Validation:
 - `godot --headless --path godot --script res://tests/boss_pattern_test.gd`
@@ -37,3 +37,13 @@ Validation:
 The boss now has 2700 base HP. The HUD displays only its name and health.
 Ground tells use an additive procedural ember shader: fixed collision borders,
 flickering inner glow and faint fractures; impacts expand and fade with sparks.
+
+Base damage is 65 (quick strike 65, slam 130, sweep 78, charge 87.75,
+volley 45.5 per missile, before player armor). Summon portals alternate 4.6 m
+and 6 m from the boss to spread the ten arrivals around it.
+
+Ordinary enemies have stable direct/left/right pursuit roles, predict up to
+1.5 seconds of measured player travel, and collapse their flank offsets near
+melee contact. Two of every three ordinary arrivals prefer the escape direction;
+the existing wave quota and spawn interval remain authoritative. Alternate arrival
+bearings avoid crowding and keep at least 7.5 m away even at arena corners.
