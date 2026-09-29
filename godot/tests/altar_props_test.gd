@@ -11,7 +11,10 @@ func suite():
   var bounds = arena._prop_bounds(obj.get_child(0))
   check(absf(bounds.position.y)<0.001,"grounded: "+kind)
   check(bounds.size.y<=spec.height+0.001,"height: "+kind)
-  check(maxf(bounds.size.x,bounds.size.z)<=spec.radius*2+0.001,"footprint: "+kind)
+  # radius is how far a body is held off a prop, not a cap on how wide the mesh may
+  # be: _model deliberately lets a model spread to radius*6 so a branching tree is
+  # not squashed into a shrub. Assert that ceiling, which is the rule the code has.
+  check(maxf(bounds.size.x,bounds.size.z)<=spec.radius*6+0.001,"footprint: "+kind)
   if kind=="brazier":check(obj.get_child_count()==3,"brazier keeps embers and light")
   obj.queue_free()
  var urn=arena.breakables[0]

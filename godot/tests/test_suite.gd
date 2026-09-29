@@ -70,7 +70,11 @@ func suite():
 		if id=="gunslinger":check(scene.world.visual.clips.size()==5,"five real skeletal clips")
 		if id=="warrior":
 			var visual=scene.world.visual
-			check(visual.clips.size()==6,"Warrior has six Mixamo clips including Ultimate")
+			# The rig gained the melee chain and the spin after this suite was written,
+			# so an exact clip count just goes stale on the next animation added. What
+			# matters is that every clip the combat code reaches for is actually there.
+			for required in ["idle","run","attack","hit","death","ultimate","attack1","attack2","attack3","attack4","spinattack"]:
+				check(visual.clips.has(required),"Warrior clip present: "+required)
 			check(visual.model.position.is_equal_approx(Vector3.ZERO),"Warrior rig stays centered on actor")
 			check(visual.model.scale.is_equal_approx(Vector3.ONE*(2.05/1.8)),"Warrior rig (authored at 1.8 m) is scaled to the player's 2.05 m presence height")
 			check(visual.model.find_child("Greatsword",true,false)!=null,"Warrior carries supplied greatsword")

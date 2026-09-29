@@ -35,15 +35,23 @@ func suite():
 	var target=world.spawn_enemy("tank",Vector3(0.7,0,0));target.cooldown=100;target.hp=100;run.stats.criticalChance=0
 	world.auto_fire=true;visual.lock_time=0;world._weapons(0.016)
 	check(target.hp==100 and world.pending_attacks.size()==1,"sword waits for contact frame")
-	world._pending_attacks(0.10);check(target.hp==100,"sword does not hit during wind-up")
+	# When the strike lands is a tuning number (clip length, combo_pace, the per-clip
+	# IMPACT fraction) that has already moved once. Read it off the queued attack
+	# instead of hardcoding it, so retuning the chain does not fail this suite.
+	var contact=world.pending_attacks[0].time
+	check(contact>0.0,"the queued swing carries a contact frame")
+	world._pending_attacks(contact*0.5);check(target.hp==100,"sword does not hit during wind-up")
 	# 20 catalogue damage x the warrior's 3.0 damage stat, on a 100 hp target.
-	world._pending_attacks(0.06);check(target.hp==40,"sword deals one hit on contact")
+	world._pending_attacks(contact*0.5+0.001);check(target.hp==40,"sword deals one hit on contact")
 	world._pending_attacks(0.5);check(target.hp==40,"pending attack resolves only once")
 	visual.lock_time=0;run.weapons.sword.cooldown=0;run.stats.attackSpeed=3;world._weapons(0.016)
 	check(visual.lock_time<0.2,"attack animation accelerates with attack speed")
 	world.enemies.erase(target);target.node.queue_free()
 	var far_target=world.spawn_enemy("tank",Vector3(0,0,-0.7));far_target.cooldown=100;far_target.hp=100
-	visual.rotation.y=1.0;visual.lock_time=0;run.weapons.sword.cooldown=0;world.auto_fire=true;world._weapons(0.016)
+	# The chain gates a melee swing on swing_gate, not lock_time; leaving the previous
+	# swing's gate up made _weapons bail before it could turn the fighter.
+	visual.rotation.y=1.0;visual.lock_time=0;world.swing_gate=0.0;world.combo_timer=0.0
+	run.weapons.sword.cooldown=0;world.auto_fire=true;world._weapons(0.016)
 	var attack_dir=(far_target.node.position-world.player.position).normalized()
 	check(is_equal_approx(visual.rotation.y,atan2(attack_dir.x,attack_dir.z)),"attack snaps to face its target regardless of whichever way the character was already facing")
 	world.enemies.erase(far_target);far_target.node.queue_free()
