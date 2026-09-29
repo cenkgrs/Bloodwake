@@ -61,6 +61,20 @@ Progression is stored at `user://bloodwake_progression.json`. Settings can impor
 a legacy progression JSON with confirmation. Phone app storage is not automatically
 copied to PC. The user data location can be opened through Godot's project menu.
 
+## Balance
+
+`docs/balance.md` lays out every damage, health and wave number in one place,
+generated from the catalogs so it cannot drift from them:
+
+```sh
+godot --headless --path godot --script tools/balance_table.gd
+```
+
+It also measures what the rigs actually allow, which the catalogs cannot show:
+a melee class is gated by its own animation, so its real attack rate can sit
+well under the `attacksPerSecond` on its weapon row. Regenerate the file after
+touching `data/catalogs.json`, class stats or an attack clip.
+
 ## Conventions
 
 These four rules carried over from the original project and still hold. They are
