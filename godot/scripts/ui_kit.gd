@@ -225,7 +225,7 @@ const SKILL_GLYPHS = {
 
 const ABILITY_GLYPHS = {
 	"war_cry": "burst", "fan_shot": "fan", "frost_nova": "snowflake", "shadow_strike": "dagger",
-	"arcane_meteor": "comet", "void_leap": "spiral", "sunder_leap": "impact", "shield_thrust": "shield",
+	"arcane_meteor": "comet", "void_leap": "spiral", "sunder_leap": "impact", "whirl": "slashes",
 	"phantom_volley": "volley", "ricochet_round": "zigzag", "powder_charge": "flame", "mark_of_ruin": "rune"
 }
 

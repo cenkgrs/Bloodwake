@@ -30,7 +30,7 @@ func suite():
 	# Every class fields exactly two bound skills, and each one is a behaviour the
 	# kit actually dispatches - a typo in a catalog behaviour would otherwise cast
 	# nothing at all and still spend the cooldown.
-	var behaviours=["meteor","voidLeap","thrust","backstepVolley","ricochet","powderCharge","markOfRuin"]
+	var behaviours=["meteor","voidLeap","whirl","backstepVolley","ricochet","powderCharge","markOfRuin"]
 	for id in BWData.CLASSES:
 		for skill_id in BWData.skills(id):
 			var row=BWData.entry("abilities",skill_id)
@@ -50,7 +50,7 @@ func suite():
 	world.skill(0)
 	# Read the cooldown here: the world ticks it down through the flight below.
 	check(run.skill_cd.sunder_leap==sunder.cooldown,"Sunder Leap spends its own cooldown")
-	check(run.skill_ready("shield_thrust"),"the warrior's second skill is untouched by the first")
+	check(run.skill_ready("whirl"),"the warrior's second skill is untouched by the first")
 	check(world.airborne,"Sunder Leap leaves the ground")
 	check(victim.hp==2000,"Sunder Leap damage waits for the landing")
 	var mid=run.stats.hp;world._hurt_player(30)
@@ -61,23 +61,25 @@ func suite():
 	check(launch.distance_to(world.player.position)>1.0,"Sunder Leap covers ground")
 	check(victim.hp<2000,"Sunder Leap's crater damages what is standing in it")
 
-	# --- Warrior E: Shield Thrust. A lane, not a circle: something beside the
-	# fighter must survive a lunge that kills what is lined up in front of it.
-	run.skill_cd.sunder_leap=0.0;run.skill_cd.shield_thrust=0.0
+	# --- Warrior E: Whirl. A circle, not a lane: the fighter turns on the spot, so
+	# standing behind it is no safer than standing in front, and only being outside
+	# the circle saves anything. The damage arrives in sweeps spread across the clip,
+	# so the checks have to wait the clip out rather than read the first frame.
+	run.skill_cd.sunder_leap=0.0;run.skill_cd.whirl=0.0
 	for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
 	world.player.position=Vector3.ZERO;world.aim=Vector3.FORWARD
-	var thrust=BWData.entry("abilities","shield_thrust")
-	var reach=thrust.range*run.stats.attackRange*BWData.UNIT
-	var lane=thrust.blastRadius*run.stats.attackRange*BWData.UNIT
+	var whirl=BWData.entry("abilities","whirl")
+	var radius=whirl.blastRadius*run.stats.attackRange*BWData.UNIT
 	var heading=world.aim.normalized()
-	var beside=heading.cross(Vector3.UP).normalized()
-	var ahead=dummy(world,heading*reach*0.5)
-	var aside=dummy(world,beside*lane*4.0)
+	var behind=dummy(world,-heading*radius*0.5)
+	var beside=dummy(world,heading.cross(Vector3.UP).normalized()*radius*0.5)
+	var clear_of_it=dummy(world,heading*radius*3.0)
 	world.skill(1)
-	check(ahead.hp<2000,"Shield Thrust spears what is lined up in front of it")
-	check(aside.hp==2000,"Shield Thrust spares what is beside the lane")
-	check(world.player.position.distance_to(Vector3.ZERO)>=0.0,"Shield Thrust commits the body forward")
-	await create_timer(0.3).timeout
+	var whirl_clip="whirl" if world.visual.clips.has("whirl") else "attack"
+	await create_timer(world.visual.clip_length(whirl_clip)+0.25).timeout
+	check(behind.hp<2000,"Whirl catches what is behind the fighter")
+	check(beside.hp<2000,"Whirl catches what is beside the fighter")
+	check(clear_of_it.hp==2000,"Whirl spares what is outside the circle")
 
 	# --- Gunslinger Q: Ricochet Round. One round, redirected: the point is that a
 	# second body it never pointed at still takes the hit.
@@ -204,7 +206,7 @@ func suite():
 			var behavior=String(data.behavior)
 			# Where the cast puts its damage decides where the caster has to stand.
 			var stand_off=prop_reach
-			if behavior=="thrust":stand_off=prop_reach*0.4
+			if behavior=="whirl":stand_off=prop_reach*0.5
 			elif behavior in ["ricochet","backstepVolley","markOfRuin"]:stand_off=minf(prop_reach*0.5,3.0)
 			var prop_heading=Vector3.FORWARD
 			world.player.position=urn.pos-prop_heading*stand_off

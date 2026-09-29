@@ -32,15 +32,12 @@ func skill(index: int):
 	match data.behavior:
 		"meteor":_cast_meteor(data,target)
 		"voidLeap":_cast_void_leap(data,target)
-		"thrust":_cast_thrust(data)
+		"whirl":_cast_whirl(data)
 		"backstepVolley":_cast_backstep_volley(data)
 		"ricochet":_cast_ricochet(data)
 		"powderCharge":_cast_powder_charge(data,target)
 		"markOfRuin":_cast_mark(data)
 	w.changed.emit()
-
-# A committed forward lunge: the warrior covers ground and spears everything in a
-# narrow lane, so it rewards lining w.enemies up instead of standing in a crowd.
 
 # One round that refuses to stop: it redirects to the next body it has not touched.
 # Rewards picking a lane through a crowd rather than spraying at the w.nearest target.
@@ -128,39 +125,48 @@ func _apply_mark(e: Dictionary,tone: Color):
 		pulse.tween_property(brand,"scale",Vector3.ONE,0.45).set_trans(Tween.TRANS_SINE)
 	w.fx.ring(e.node.position,0.9,tone,0.3)
 
-func _cast_thrust(data: Dictionary):
-	var reach=data.range*w.run.stats.attackRange*BWData.UNIT
-	var lane=data.blastRadius*w.run.stats.attackRange*BWData.UNIT
+# The whirl gives up the lunge's reach for a circle the fighter stands inside, and
+# it lands in sweeps rather than one hit - so a body that steps in halfway is still
+# caught, and standing behind the warrior stops being safe.
+#
+# It deliberately does not reuse the heavy-attack spin: that one is a single wide
+# instant hit the swing pays for, this one is a cooldown ability that bleeds its
+# damage out over the clip. Same shape on screen, different thing to play against.
+const WHIRL_SWEEPS = 3
+
+func _cast_whirl(data: Dictionary):
+	var radius=data.blastRadius*w.run.stats.attackRange*BWData.UNIT
+	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
+	# The authored whirl once the rig carries it, the plain swing until then, so the
+	# cast still reads as an attack instead of standing the body still.
+	var clip="whirl" if w.visual.clips.has("whirl") else "attack"
+	var length=maxf(w.visual.clip_length(clip),0.3)
+	w.visual.action(clip,length);w.sound("sword_swing")
+	var share=data.damage*w.run.stats.damage/float(WHIRL_SWEEPS)
+	var tween=create_tween()
+	for sweep in WHIRL_SWEEPS:
+		# Spaced inside the clip rather than at its ends: the first sweep wants the
+		# blade already moving, and the last wants it still moving.
+		tween.tween_interval(length/float(WHIRL_SWEEPS+1))
+		tween.tween_callback(_whirl_sweep.bind(radius,share,tone,accent))
+
+# Each sweep reads the body's position again instead of the one it was cast from,
+# so a warrior who keeps walking drags the circle along rather than leaving it.
+func _whirl_sweep(radius: float,share: float,tone: Color,accent: Color):
+	if not is_instance_valid(w.player):return
+	var origin=w.player.position
 	var heading=w.aim.normalized() if w.aim.length_squared()>0.01 else w.last_move
 	if heading.length_squared()<0.01:heading=Vector3.FORWARD
-	w.visual.rotation.y=atan2(heading.x,heading.z)
-	w.visual.action("attack",0.3);w.sound("sword_swing")
-	var start=w.player.position
-	var destination=start+heading*reach
-	destination.x=clampf(destination.x,-BWArena.EDGE,BWArena.EDGE);destination.z=clampf(destination.z,-BWArena.EDGE,BWArena.EDGE)
-	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
-	create_tween().tween_property(w.player,"position",destination,0.16).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	w.fx.slash(start+heading*lane,heading,lane*1.6,accent)
-	for step in 4:
-		w.fx.shockwave(start.lerp(destination,float(step)/3.0),lane*0.85,tone,0.26,step*0.035,1.7)
-	# A lane, not a circle: step along it so a pot halfway down the lunge breaks
-	# too, instead of only whatever is standing at the far end.
-	for step in 5:
-		w.arena.damage_area(start.lerp(destination,float(step)/4.0),lane,data.damage*w.run.stats.damage)
 	var hit=[]
 	for e in w.enemies.duplicate():
-		var offset=e.node.position-start
-		var along=offset.dot(heading)
-		if along<-0.4 or along>reach+lane:continue
-		if (offset-heading*along).length()>lane+e.radius:continue
-		var roll=w.run.damage_roll(data.damage*w.run.stats.damage)
+		if origin.distance_to(e.node.position)>radius+e.radius:continue
+		var roll=w.run.damage_roll(share)
 		w._damage_enemy(e,roll.damage,roll.critical,true,"ability");hit.append(e)
-	w.fx.burst_ring(destination,lane,accent,22,4.0,0.5)
-	w.fx.flash_light(destination,tone,2.4,lane*2.0,0.26)
-	w.shake=maxf(w.shake,0.1 if hit.is_empty() else 0.15)
-
-# Break away from whatever is on top of you, then answer with three blades the way
-# you came - the dash and the daggers deliberately point opposite ways.
+	w.arena.damage_area(origin,radius,share)
+	for turn in 3:
+		w.fx.slash(origin,heading.rotated(Vector3.UP,TAU*turn/3.0),radius,accent)
+	w.fx.shockwave(origin,radius,tone,0.24,0.0,1.6)
+	w.shake=maxf(w.shake,0.08 if hit.is_empty() else 0.13)
 
 func _cast_backstep_volley(data: Dictionary):
 	var reach=data.range*w.run.stats.attackRange*BWData.UNIT

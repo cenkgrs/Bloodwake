@@ -144,17 +144,17 @@
 	  "description": "A shorter jump for a far wider crater."
 	},
 	{
-	  "id": "shield_thrust",
-	  "name": "Shield Thrust",
-	  "behavior": "thrust",
-	  "icon": "sword",
-	  "damage": 26,
-	  "cooldown": 5,
-	  "range": 220,
-	  "blastRadius": 60,
+	  "id": "whirl",
+	  "name": "Whirl",
+	  "behavior": "whirl",
+	  "icon": "slashes",
+	  "damage": 30,
+	  "cooldown": 7,
+	  "range": 130,
+	  "blastRadius": 130,
 	  "tone": "ffd08a",
 	  "accent": "ff9a4d",
-	  "description": "A committed lunge that spears a narrow lane."
+	  "description": "Turns on the spot and sweeps everything within reach."
 	},
 	{
 	  "id": "phantom_volley",
