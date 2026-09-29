@@ -4,7 +4,7 @@ extends RefCounted
 # Every health level uses the same vocabulary. Recovery is a punish window;
 # direction and origin are committed when the floor warning appears.
 const PATTERN = ["attack", "sweep", "cast", "charge", "slam", "summon"]
-const NAMES = {"attack":"QUICK STRIKE","slam":"HEAVY SLAM","sweep":"SWEEP","charge":"CHARGE","cast":"HEX VOLLEY","summon":"SUMMON"}
+const WARNING_SHADER = preload("res://shaders/boss_warning.gdshader")
 const ATTACKS = {
 	"attack": {"windup":0.38,"recovery":0.42,"contact":0.40,"radius":2.8,"arc":70.0,"damage":1.0,"color":Color("ffb55c")},
 	"slam": {"windup":1.25,"recovery":0.9,"contact":0.62,"radius":4.2,"arc":360.0,"damage":2.0,"color":Color("ff5547")},
@@ -42,7 +42,7 @@ static func tick(world, e: Dictionary, dt: float, speed: float) -> bool:
 	if e.state=="boss_windup":
 		if is_instance_valid(e.get("warning")):
 			var mat=e.warning.material_override
-			mat.albedo_color.a=lerpf(0.16,0.48,clampf(1.0-e.timer/ATTACKS[e.boss_attack].windup,0,1))
+			mat.set_shader_parameter("progress",clampf(1.0-e.timer/ATTACKS[e.boss_attack].windup,0,1))
 		if e.timer<=0:_strike(world,e)
 	elif e.state=="boss_charge":
 		var previous: Vector3=e.node.position
@@ -102,7 +102,7 @@ static func _strike(world, e: Dictionary):
 			if in_sector(world.player.position,e.attack_origin,e.attack_direction,spec.radius,spec.arc):
 				world._hurt_player(e.damage*spec.damage)
 			if attack=="slam":
-				world.fx.ring(e.attack_origin,spec.radius,spec.color,0.45)
+				_impact(world,e.attack_origin,spec.radius,spec.color)
 				world.fx.radial_streaks(e.attack_origin,spec.radius,spec.color,18)
 				world.shake=0.24;world.sound("boss_phase",-3.0)
 			else:
@@ -119,7 +119,7 @@ static func _strike(world, e: Dictionary):
 					bullet.node.add_child(world.fx.glow_sprite(spec.color,0.75,1.6))
 			world.sound("orb_cast")
 		"summon":
-			world.fx.ring(e.attack_origin,3.5,spec.color,0.6)
+			_impact(world,e.attack_origin,3.5,spec.color)
 			for point in e.summon_points:
 				if world.enemies.size()>=24:break
 				world.fx.spark(point+Vector3.UP*0.5,spec.color,20)
@@ -135,7 +135,7 @@ static func clear_warning(e: Dictionary):
 		e.warning.queue_free()
 	e.warning=null
 
-# Filled sector/lane geometry uses the same dimensions as collision. Warnings
+# Ember outlines use the same sector/lane dimensions as collision. Warnings
 # stay fixed in world space and disappear on impact or death, including portals.
 static func _warning(origin: Vector3, direction: Vector3, spec: Dictionary, attack: String) -> MeshInstance3D:
 	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -156,8 +156,24 @@ static func _warning(origin: Vector3, direction: Vector3, spec: Dictionary, atta
 			mesh.surface_add_vertex(direction.rotated(Vector3.UP,-arc*0.5+arc*(i+1)/48.0)*spec.radius)
 	mesh.surface_end()
 	var node=MeshInstance3D.new();node.mesh=mesh;node.position=origin+Vector3.UP*0.06
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.cull_mode=BaseMaterial3D.CULL_DISABLED
-	mat.albedo_color=Color(spec.color,0.23);node.material_override=mat
+	var mat=ShaderMaterial.new();mat.shader=WARNING_SHADER
+	mat.set_shader_parameter("tone",spec.color)
+	mat.set_shader_parameter("forward_axis",Vector2(direction.x,direction.z))
+	mat.set_shader_parameter("radius",float(spec.radius))
+	mat.set_shader_parameter("half_arc",deg_to_rad(spec.get("arc",360.0)*0.5))
+	mat.set_shader_parameter("lane_width",spec.get("width",2.0))
+	mat.set_shader_parameter("shape",1 if attack=="charge" else 2 if attack=="cast" else 0)
+	node.material_override=mat
 	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return node
+
+static func _impact(world, origin: Vector3, radius: float, color: Color):
+	var wave=_warning(origin,Vector3.FORWARD,{"radius":radius,"arc":360.0,"color":color},"impact")
+	world.add_child(wave);wave.scale=Vector3.ONE*0.2
+	wave.material_override.set_shader_parameter("progress",1.0)
+	var tween=wave.create_tween();tween.set_parallel(true)
+	tween.tween_property(wave,"scale",Vector3.ONE,0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_method(func(value):wave.material_override.set_shader_parameter("tone",Color(color*value,1.0)),1.0,0.0,0.55)
+	tween.chain().tween_callback(wave.queue_free)
+	world.fx.spark(origin+Vector3.UP*0.15,color,24)
+	world.fx.flash_light(origin,color,2.0,radius*1.4,0.3)

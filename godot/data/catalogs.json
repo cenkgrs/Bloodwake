@@ -319,7 +319,7 @@
     {
       "type": "boss",
       "aiType": "bossPhased",
-      "maxHp": 900,
+      "maxHp": 2700,
       "moveSpeed": 70,
       "damage": 22,
       "attackRange": 70,

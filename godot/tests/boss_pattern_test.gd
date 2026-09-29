@@ -18,6 +18,7 @@ func suite():
 	await process_frame
 	check(not scene.boss_label.text.contains("PHASE"),"HUD no longer reads health phases")
 	check(boss.visual.enemy_asset,"boss uses its own rig")
+	check(boss.maxHp==2700 and boss.hp==2700,"boss starts with triple health")
 	check(boss.visual.clips.size()==10,"boss has locomotion, six attacks, hit and death")
 	for name in BWBoss.PATTERN:check(boss.visual.clips.has(name),"distinct boss clip: "+name)
 	for health in [1.0,0.5,0.1]:
@@ -66,6 +67,8 @@ func suite():
 	# Casting has a distinct performance, emits nothing before contact and freezes aim.
 	boss.node.position=Vector3.ZERO;world.player.position=Vector3(0,0,6)
 	BWBoss.begin(world,boss,"cast");var count=world.bullets.size()
+	await process_frame
+	check(scene.boss_label.text=="THE BLOOD WARDEN   ·   %d / %d" % [ceili(boss.hp),int(boss.maxHp)],"HUD shows health only during attack")
 	world._enemy_tick(boss,0.9)
 	check(world.bullets.size()==count and boss.visual.state=="cast","cast visibly prepares before firing")
 	world.player.position=Vector3(5,0,0);world._enemy_tick(boss,0.11)
