@@ -1,0 +1,34 @@
+{
+  "model": "boss.fbx",
+  "clips": {
+    "Idle": "great sword idle.fbx",
+    "Run": "great sword run.fbx",
+    "Attack": "great sword attack.fbx",
+    "Slam": "Downward Slam.fbx",
+    "Sweep": "great sword high spin attack.fbx",
+    "Charge": "great sword slide attack.fbx",
+    "Cast": "great sword casting.fbx",
+    "Summon": "Roar.fbx",
+    "Hit": "great sword impact.fbx",
+    "Death": "two handed sword death.fbx"
+  },
+  "weapon": {
+    "hand": "RightHand",
+    "grip": [
+      0,
+      0.81,
+      0
+    ],
+    "axis": [
+      0,
+      -1,
+      0
+    ],
+    "direction": [
+      0,
+      -0.7,
+      0.7
+    ],
+    "scale": 1.35
+  }
+}

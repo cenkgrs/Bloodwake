@@ -54,7 +54,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 				if key.contains(pair[0]) and not clips.has(pair[1]):clips[pair[1]]=anim_name
 		# The substring pass above folds Attack1..4 and SpinAttack into "attack",
 		# so the combo links are registered by their exact clip name instead.
-		for exact in ["Attack1","Attack2","Attack3","Attack4","SpinAttack"]:
+		for exact in ["Attack1","Attack2","Attack3","Attack4","SpinAttack","Slam","Sweep","Charge","Cast","Summon"]:
 			if animation.has_animation(exact):clips[exact.to_lower()]=exact
 		if file=="warrior":
 			for desired in {"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}:
@@ -161,6 +161,7 @@ func flinch(direction: Vector3,strength: float=1.0):
 	knock.chain().tween_property(model,"position",Vector3.ZERO,0.11).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func hit_react(direction: Vector3,strength: float=1.0):
+	if actor_kind=="boss" and lock_time>0:return
 	flinch(direction,strength)
 	if hit_clip_time>0 or not clips.has("hit"):return
 	hit_clip_time=0.45

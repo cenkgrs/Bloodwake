@@ -276,7 +276,7 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=1.0
 	var color=Color(ENEMY_COLORS[id]);if elite:color=Color("c59857")
 	art.configure(id,true,color,3.5 if id=="boss" else 2.3 if id=="tank" else 1.9 if elite else 1.7)
 	var max_hp=data.maxHp*multiplier*(2.5 if elite else 1)
-	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*multiplier*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"summon":7.0,"phase":1,"pending_phase":1,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
+	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*multiplier*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
 	enemies.append(enemy)
 	return enemy
 
@@ -339,34 +339,9 @@ func _enemy_tick(e: Dictionary,dt: float):
 					move=-direction*speed*1.3
 					if e.timer<=0:e.state="chase"
 		"boss":
-			var phase=1 if e.hp/e.maxHp>0.66 else 2 if e.hp/e.maxHp>0.33 else 3
-			if phase!=e.phase:e.phase=phase;sound("boss_phase");shake=0.15
-			if e.state=="telegraph":
-				e.timer-=dt
-				if e.timer<=0:
-					match e.pending_phase:
-						1:
-							if distance<=1.4+0.36:_hurt_player(e.damage)
-							e.cooldown=2.0
-						2:
-							for i in 3:_bullet(node.position,direction.rotated(Vector3.UP,(i-1)*0.3),5.2,e.damage*0.6,10.4,false,0,"",0,0,false)
-							e.cooldown=1.6
-						3:
-							if distance<=3:_hurt_player(e.damage*0.75)
-							e.cooldown=2.4
-					e.visual.action("attack");e.state="chase"
-			else:
-				var preferred=1.4 if phase==1 else 6.24 if phase==2 else 4.5
-				if distance>preferred:move=direction*speed*(1 if phase==1 else 0.5 if phase==2 else 0.3)
-				if e.cooldown<=0:
-					e.state="telegraph";e.timer=0.5;e.pending_phase=phase
-					fx.ring(node.position,1.4 if phase==1 else 0.52 if phase==2 else 3.0,Color("e3564d"),0.5)
-			if phase==3:
-				e.summon-=dt
-				if e.summon<=0:
-					e.summon=7
-					for i in 2:
-						if enemies.size()<24:spawn_enemy("grunt",node.position+Vector3(randf_range(-1.8,1.8),0,randf_range(-1.8,1.8)))
+			var moving=BWBoss.tick(self,e,dt,speed)
+			e.visual.tick(dt,moving)
+			return
 		_:
 			if distance>range_value:move=direction*speed
 			elif e.cooldown<=0:
@@ -687,6 +662,7 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 		e.visual.hit_react(e.node.position-player.position,1.35 if critical else 1.0)
 		fx.spark(e.node.position+Vector3.UP*0.9,Color("ffe0a6") if critical else Color("ffb072"),14 if critical else 7)
 	if e.hp>0:return
+	if e.id=="boss":BWBoss.clear_warning(e)
 	enemies.erase(e);e.visual.action("death")
 	if e.get("marked",false):
 		var heir=nearest(e.node.position,9.0)

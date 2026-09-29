@@ -116,9 +116,11 @@ func _process(dt):
 		skill_label.text="\n".join(lines)
 		boss_label.text=""
 		for enemy in world.enemies:
-			if enemy.id=="boss":boss_label.text="THE BLOOD WARDEN   ·   PHASE %d   ·   %d / %d" % [enemy.phase,ceili(enemy.hp),int(enemy.maxHp)]
+			if enemy.id=="boss":
+				var tell=BWBoss.NAMES.get(enemy.get("boss_attack",""),"") if enemy.state.begins_with("boss_") else ""
+				boss_label.text="THE BLOOD WARDEN   ·   %d / %d%s" % [ceili(enemy.hp),int(enemy.maxHp),"   ·   "+tell if not tell.is_empty() else ""]
 		var hint=world.zone_hint()
-		if not hint.is_empty():boss_label.text=hint
+		if not hint.is_empty() and boss_label.text.is_empty():boss_label.text=hint
 		if world.rest_time>0:boss_label.text="THE NEXT WAVE ARRIVES IN %.0f" % ceil(world.rest_time)
 
 func _unhandled_input(event):
