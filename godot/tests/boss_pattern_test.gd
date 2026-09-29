@@ -18,6 +18,7 @@ func suite():
 	await process_frame
 	check(not scene.boss_label.text.contains("PHASE"),"HUD no longer reads health phases")
 	check(boss.visual.enemy_asset,"boss uses its own rig")
+	check(boss.damage==65,"boss base damage punishes mistakes")
 	check(boss.maxHp==2700 and boss.hp==2700,"boss starts with triple health")
 	check(boss.visual.clips.size()==10,"boss has locomotion, six attacks, hit and death")
 	for name in BWBoss.PATTERN:check(boss.visual.clips.has(name),"distinct boss clip: "+name)
@@ -76,10 +77,13 @@ func suite():
 	check(world.bullets[-2].direction.is_equal_approx(Vector3.BACK),"cast direction cannot track after warning")
 	# Summoning belongs to the pattern, not a hidden periodic spawn timer.
 	BWBoss.begin(world,boss,"summon");count=world.enemies.size()
-	check(boss.warning.get_child_count()==2,"summon shows two destination portals")
+	check(boss.warning.get_child_count()==10,"summon shows ten destination portals")
 	world._enemy_tick(boss,1.4);check(world.enemies.size()==count,"no grunt spawns during summon tell")
-	world._enemy_tick(boss,0.11);check(world.enemies.size()==count+2,"roar spawns two grunts at contact")
-	world._enemy_tick(boss,0.2);check(world.enemies.size()==count+2,"summon cannot duplicate during recovery")
+	world._enemy_tick(boss,0.11);check(world.enemies.size()==count+10,"roar spawns ten grunts at contact")
+	world._enemy_tick(boss,0.2);check(world.enemies.size()==count+10,"summon cannot duplicate during recovery")
+	for repeat in 2:
+		BWBoss.begin(world,boss,"summon");world._enemy_tick(boss,1.51)
+	check(world.enemies.size()==count+30,"each summon adds ten even when existing enemies exceed the old cap")
 	# Attacking a boss must not erase the cast telegraph animation; killing must cancel it.
 	BWBoss.begin(world,boss,"cast");world._damage_enemy(boss,1)
 	check(boss.visual.state=="cast","damage cannot interrupt a committed boss performance")

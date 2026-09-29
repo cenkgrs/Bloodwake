@@ -321,7 +321,7 @@
       "aiType": "bossPhased",
       "maxHp": 2700,
       "moveSpeed": 70,
-      "damage": 22,
+      "damage": 65,
       "attackRange": 70,
       "attackCooldown": 2.0,
       "xpReward": 150,

@@ -75,8 +75,8 @@ static func begin(world, e: Dictionary, attack: String):
 	world.add_child(e.warning)
 	if attack=="summon":
 		e.summon_points=[]
-		for side in [-1,1]:
-			var point=world.arena.push_out(e.attack_origin+e.attack_direction.rotated(Vector3.UP,side*1.3)*3.0,0.5)
+		for index in 10:
+			var point=world.arena.push_out(e.attack_origin+e.attack_direction.rotated(Vector3.UP,TAU*index/10.0)*(4.6 if index%2==0 else 6.0),0.5)
 			e.summon_points.append(point)
 			var portal=_warning(point,Vector3.FORWARD,{"radius":0.7,"arc":360.0,"color":spec.color},"portal")
 			e.warning.add_child(portal);portal.top_level=true;portal.position=point+Vector3.UP*0.06
@@ -121,7 +121,6 @@ static func _strike(world, e: Dictionary):
 		"summon":
 			_impact(world,e.attack_origin,3.5,spec.color)
 			for point in e.summon_points:
-				if world.enemies.size()>=24:break
 				world.fx.spark(point+Vector3.UP*0.5,spec.color,20)
 				world.spawn_enemy("grunt",point)
 

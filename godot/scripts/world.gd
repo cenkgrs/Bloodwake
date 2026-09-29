@@ -29,6 +29,8 @@ var fire_input = false
 var touch_aim = Vector2.ZERO
 var aim = Vector3.FORWARD
 var last_move = Vector3.FORWARD
+var player_velocity = Vector3.ZERO
+var enemy_serial = 0
 var quality = "PC"
 var elapsed = 0.0
 var rest_time = 0.0
@@ -177,11 +179,14 @@ func _physics_process(dt: float):
 	var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
 	input=input.limit_length()
 	var movement=Vector3(input.x,0,input.y)
+	var previous_player_position=player.position
 	# A leap owns the body until it lands; steering mid-flight would fight its tween.
 	if airborne:movement=Vector3.ZERO
 	else:
 		player.position+=movement*run.stats.moveSpeed*BWData.UNIT*dt
 		player.position=arena.push_out(player.position,0.42)
+	var measured_velocity=(player.position-previous_player_position)/maxf(dt,0.001) if not airborne else Vector3.ZERO
+	player_velocity=player_velocity.lerp(measured_velocity,1.0-exp(-dt*6.0))
 	if movement.length_squared()>0.001:last_move=movement.normalized()
 	var aim_stick=Input.get_vector("aim_left","aim_right","aim_up","aim_down")
 	if touch_aim.length_squared()>0.04:aim=Vector3(touch_aim.x,0,touch_aim.y).normalized()
@@ -243,10 +248,45 @@ func _spawn_point() -> Vector3:
 	# rather than sweeping round in order.
 	spawn_slot+=SPAWN_STRIDE
 	var angle=spawn_bearing+slot+rng.randf_range(-0.28,0.28)
+	# Two arrivals out of three contest the direction of travel. The remaining
+	# arrival preserves rear pressure; no new enemies are added outside the quota.
+	if player_velocity.length()>0.7 and (spawn_slot/SPAWN_STRIDE)%3!=0:
+		angle=atan2(player_velocity.z,player_velocity.x)+(-0.65 if spawn_slot%2==0 else 0.65)+rng.randf_range(-0.18,0.18)
 	var distance=SPAWN_RING+rng.randf_range(-0.9,0.9)
-	var spot=player.position+Vector3(cos(angle),0,sin(angle))*distance
-	spot.x=clampf(spot.x,-BWArena.EDGE,BWArena.EDGE);spot.z=clampf(spot.z,-BWArena.EDGE,BWArena.EDGE)
-	return arena.push_out(spot,0.6)
+	var best=Vector3.ZERO;var best_score=-INF
+	# Sample alternate bearings when an edge or pillar blocks the desired arrival.
+	# Never clamp a spawn onto the player at the arena boundary.
+	for i in 16:
+		var bearing=angle+TAU*i/16.0
+		var candidate=arena.push_out(player.position+Vector3(cos(bearing),0,sin(bearing))*distance,0.6)
+		var gap=candidate.distance_to(player.position)
+		if gap<7.5:continue
+		var score=cos(bearing-angle)*2.0
+		for enemy in enemies:
+			var separation=candidate.distance_to(enemy.node.position)
+			if separation<3.0:score-=(3.0-separation)*0.35
+		if score>best_score:best_score=score;best=candidate
+	return best if best_score>-INF else arena.push_out(player.position-Vector3(cos(angle),0,sin(angle))*SPAWN_RING,0.6)
+
+# The goal is a position ahead of the runner, not their trail. Stable left/right
+# roles split a pack; the flank width collapses near contact so enemies commit
+# their attacks instead of orbiting. Ranged/support actors use this only to close.
+func _pursuit_direction(e: Dictionary, distance: float) -> Vector3:
+	var direct: Vector3=player.position-e.node.position;direct.y=0
+	if distance<1.5:return direct.normalized()
+	var role: int=e.hunt_role
+	var ahead=player_velocity.limit_length(run.stats.moveSpeed*BWData.UNIT)
+	var lead=clampf(distance/6.0,0.35,1.5)*(0.45 if role==0 else 1.0)
+	var target: Vector3=player.position+ahead*lead
+	var spread=clampf((distance-1.5)/3.0,0.0,1.0)
+	if role!=0:
+		if ahead.length()>0.7:
+			var lateral=ahead.normalized().cross(Vector3.UP)
+			target+=lateral*e.hunt_side*(1.8+e.hunt_depth*0.8)*spread
+		else:
+			var outward=(e.node.position-player.position).normalized()
+			target+=outward.rotated(Vector3.UP,e.hunt_side*0.7)*2.0*spread
+	return arena.steer(e.node.position,(target-e.node.position).normalized(),e.radius)
 
 # What an ordinary wave can field here: every type the run has unlocked, weighted
 # by the catalog and then again by whichever district the wave is being held in.
@@ -277,6 +317,10 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=1.0
 	art.configure(id,true,color,3.5 if id=="boss" else 2.3 if id=="tank" else 1.9 if elite else 1.7)
 	var max_hp=data.maxHp*multiplier*(2.5 if elite else 1)
 	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*multiplier*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
+	enemy.hunt_role=enemy_serial%3
+	enemy.hunt_side=-1.0 if enemy_serial%2==0 else 1.0
+	enemy.hunt_depth=(enemy_serial%5)/4.0
+	enemy_serial+=1
 	enemies.append(enemy)
 	return enemy
 
@@ -301,18 +345,19 @@ func _enemy_tick(e: Dictionary,dt: float):
 	if distance>CLOSE_RANGE:speed*=lerpf(1.0,CLOSE_RUSH,clampf((distance-CLOSE_RANGE)/CLOSE_FALLOFF,0.0,1.0))
 	var move=Vector3.ZERO;e.cooldown-=dt
 	var range_value=data.attackRange*BWData.UNIT
+	var pursuit=_pursuit_direction(e,distance) if e.id!="boss" else direction
 	match e.id:
 		"archer":
 			var preferred=data.preferredRange*BWData.UNIT
 			if distance<preferred*0.75:move=-direction*speed
-			elif distance>preferred*1.1:move=direction*speed
+			elif distance>preferred*1.1:move=pursuit*speed
 			if distance<=range_value and e.cooldown<=0:
 				_bullet(node.position,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
 				e.cooldown=data.attackCooldown;e.visual.action("attack")
 		"healer","commander":
 			var preferred=data.preferredRange*BWData.UNIT
 			if distance<preferred*(0.65 if e.id=="commander" else 1):move=-direction*speed
-			elif distance>preferred*1.5:move=direction*speed*0.4
+			elif distance>preferred*1.5:move=pursuit*speed*0.4
 			if e.cooldown<=0:
 				e.cooldown=data.attackCooldown
 				var best={};var missing=0.0
@@ -327,7 +372,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 			match e.state:
 				"chase":
 					if distance<3.2:e.state="vanish";e.timer=0.35;e.visual.visible=false
-					else:move=direction*speed
+					else:move=pursuit*speed
 				"vanish":
 					if e.timer<=0:
 						var angle=rng.randf()*TAU;node.position=player.position+Vector3(cos(angle),0,sin(angle))*3.2;e.visual.visible=true;e.state="dash"
@@ -343,7 +388,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 			e.visual.tick(dt,moving)
 			return
 		_:
-			if distance>range_value:move=direction*speed
+			if distance>range_value:move=pursuit*speed
 			elif e.cooldown<=0:
 				_hurt_player(e.damage*(1.25 if e.aura>0 else 1));e.cooldown=data.attackCooldown;e.visual.action("attack")
 	if move.length_squared()>0.01:
@@ -355,7 +400,8 @@ func _enemy_tick(e: Dictionary,dt: float):
 		move+=separation*speed*1.4
 		node.position+=move.limit_length(speed*(4.5 if e.state=="dash" else 1.3))*dt
 	node.position=arena.push_out(node.position,e.radius*0.8)
-	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(direction.x,direction.z),minf(1,dt*10))
+	var facing=move.normalized() if move.length_squared()>0.01 else direction
+	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*10))
 	e.visual.tick(dt,move.length_squared()>0.01)
 
 func nearest(origin: Vector3,range_value: float,excluded: Array=[]):
