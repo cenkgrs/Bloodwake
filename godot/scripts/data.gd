@@ -33,8 +33,11 @@ static func stats(id: String) -> Dictionary:
 	result.hp = result.maxHp
 	return result
 
+# Quota is the wave's body count, cap how many may stand at once, interval how
+# fast they arrive. All three carry twice what they used to: the wave is meant to
+# read as a horde closing in, not a queue trickling towards the player.
 static func wave_rules(wave: int) -> Dictionary:
-	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 6+wave*4, "cap":clampi(5+wave,5,20), "interval":clampf(1.2-wave*0.04,0.35,1.2), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+(wave-1)*0.08}
+	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 12+wave*8, "cap":clampi(10+wave*2,10,40), "interval":clampf(0.6-wave*0.02,0.18,0.6), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+(wave-1)*0.08}
 
 static func effects(id: String) -> Array:
 	var table = {

@@ -80,6 +80,7 @@ func _cast_powder_charge(data: Dictionary,target: Vector3):
 
 func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,accent: Color):
 	w.sound_at("shoot_shotgun",position,3.0)
+	w.arena.damage_area(position,radius,damage)
 	for e in w.enemies.duplicate():
 		var offset=e.node.position-position
 		if offset.length()>radius+e.radius:continue
@@ -142,6 +143,10 @@ func _cast_thrust(data: Dictionary):
 	w.fx.slash(start+heading*lane,heading,lane*1.6,accent)
 	for step in 4:
 		w.fx.shockwave(start.lerp(destination,float(step)/3.0),lane*0.85,tone,0.26,step*0.035,1.7)
+	# A lane, not a circle: step along it so a pot halfway down the lunge breaks
+	# too, instead of only whatever is standing at the far end.
+	for step in 5:
+		w.arena.damage_area(start.lerp(destination,float(step)/4.0),lane,data.damage*w.run.stats.damage)
 	var hit=[]
 	for e in w.enemies.duplicate():
 		var offset=e.node.position-start
@@ -205,6 +210,7 @@ func _cast_meteor(data: Dictionary,target: Vector3):
 
 func _meteor_blast(position: Vector3,radius: float,damage: float):
 	w.sound_at("skill_meteor_blast",position,2.0)
+	w.arena.damage_area(position,radius,damage)
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
@@ -245,6 +251,7 @@ func _cast_void_leap(data: Dictionary,target: Vector3):
 
 func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color("8f74ff"),accent: Color=Color("cfc0ff")):
 	w.sound_at("skill_leap_land",position,2.0)
+	w.arena.damage_area(position,radius,damage)
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
@@ -285,6 +292,7 @@ func _resolve_ability(data: Dictionary):
 			strike_position.x=clampf(strike_position.x,-BWArena.EDGE,BWArena.EDGE);strike_position.z=clampf(strike_position.z,-BWArena.EDGE,BWArena.EDGE)
 			create_tween().tween_property(w.player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			range_value=65*w.run.stats.attackRange*BWData.UNIT
+		w.arena.damage_area(strike_position,range_value,data.damage*w.run.stats.damage)
 		for e in w.enemies.duplicate():
 			if e.node.position.distance_to(strike_position)<=range_value+e.radius:
 				var roll=w.run.damage_roll(data.damage*w.run.stats.damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")

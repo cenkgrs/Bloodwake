@@ -28,8 +28,8 @@ func suite():
 	for wave in [1,9,10,20,100,999]:
 		var rules=BWData.wave_rules(wave)
 		check(rules.boss==(wave%10==0),"boss formula")
-		check(rules.quota==(1 if wave%10==0 else 6+wave*4),"quota")
-		check(rules.cap<=20 and rules.interval>=0.35,"spawn bounds")
+		check(rules.quota==(1 if wave%10==0 else 12+wave*8),"quota")
+		check(rules.cap<=40 and rules.interval>=0.18,"spawn bounds")
 	var allowed={"warrior":["greatsword","storm_blade","shockwave"],"gunslinger":["rifle_tempo","rifle_caliber","rifle_range"],"mage":["orb_pierce","orb_power","orb_range"],"assassin":["dagger_tempo","dagger_reach","dagger_edge"]}
 	for id in BWData.CLASSES:
 		var state=BWRun.new(id)

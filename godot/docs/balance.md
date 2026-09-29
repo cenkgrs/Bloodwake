@@ -63,18 +63,18 @@ with no upgrades at all - the pessimistic end of the range.
 
 | Wave | Quota | Cap | Interval | Elite | Mult | Grunt HP | Tank HP | Elite HP | TTK Warrior | TTK Bloodbound | TTK Mage | TTK Assassin |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 10 | 6 | 1.16 | 0% | 1.0x | 30 | 90 | 75 | 0.3s | 1.15s | 1.36s | 0.57s |
-| 3 | 18 | 8 | 1.08 | 6% | 1.16x | 35 | 104 | 87 | 0.35s | 1.33s | 1.57s | 0.66s |
-| 5 | 26 | 10 | 1.0 | 12% | 1.32x | 40 | 119 | 99 | 0.4s | 1.52s | 1.79s | 0.75s |
-| 7 | 34 | 12 | 0.92 | 18% | 1.48x | 44 | 133 | 111 | 0.45s | 1.7s | 2.01s | 0.84s |
-| 10 | 1 | 15 | 0.8 | 27% | 1.72x | 52 | 155 | 129 | 0.52s | 1.97s | 2.33s | 0.98s |
-| 13 | 58 | 18 | 0.68 | 35% | 1.96x | 59 | 176 | 147 | 0.6s | 2.25s | 2.66s | 1.12s |
-| 15 | 66 | 20 | 0.6 | 35% | 2.12x | 64 | 191 | 159 | 0.65s | 2.43s | 2.87s | 1.21s |
-| 20 | 1 | 20 | 0.4 | 35% | 2.52x | 76 | 227 | 189 | 0.77s | 2.89s | 3.41s | 1.43s |
-| 25 | 106 | 20 | 0.35 | 35% | 2.92x | 88 | 263 | 219 | 0.89s | 3.35s | 3.96s | 1.66s |
-| 30 | 1 | 20 | 0.35 | 35% | 3.32x | 100 | 299 | 249 | 1.01s | 3.81s | 4.5s | 1.89s |
-| 40 | 1 | 20 | 0.35 | 35% | 4.12x | 124 | 371 | 309 | 1.26s | 4.73s | 5.58s | 2.35s |
-| 50 | 1 | 20 | 0.35 | 35% | 4.92x | 148 | 443 | 369 | 1.5s | 5.65s | 6.67s | 2.8s |
+| 1 | 20 | 12 | 0.58 | 0% | 1.0x | 30 | 90 | 75 | 0.3s | 1.15s | 1.36s | 0.57s |
+| 3 | 36 | 16 | 0.54 | 6% | 1.16x | 35 | 104 | 87 | 0.35s | 1.33s | 1.57s | 0.66s |
+| 5 | 52 | 20 | 0.5 | 12% | 1.32x | 40 | 119 | 99 | 0.4s | 1.52s | 1.79s | 0.75s |
+| 7 | 68 | 24 | 0.46 | 18% | 1.48x | 44 | 133 | 111 | 0.45s | 1.7s | 2.01s | 0.84s |
+| 10 | 1 | 30 | 0.4 | 27% | 1.72x | 52 | 155 | 129 | 0.52s | 1.97s | 2.33s | 0.98s |
+| 13 | 116 | 36 | 0.34 | 35% | 1.96x | 59 | 176 | 147 | 0.6s | 2.25s | 2.66s | 1.12s |
+| 15 | 132 | 40 | 0.3 | 35% | 2.12x | 64 | 191 | 159 | 0.65s | 2.43s | 2.87s | 1.21s |
+| 20 | 1 | 40 | 0.2 | 35% | 2.52x | 76 | 227 | 189 | 0.77s | 2.89s | 3.41s | 1.43s |
+| 25 | 212 | 40 | 0.18 | 35% | 2.92x | 88 | 263 | 219 | 0.89s | 3.35s | 3.96s | 1.66s |
+| 30 | 1 | 40 | 0.18 | 35% | 3.32x | 100 | 299 | 249 | 1.01s | 3.81s | 4.5s | 1.89s |
+| 40 | 1 | 40 | 0.18 | 35% | 4.12x | 124 | 371 | 309 | 1.26s | 4.73s | 5.58s | 2.35s |
+| 50 | 1 | 40 | 0.18 | 35% | 4.92x | 148 | 443 | 369 | 1.5s | 5.65s | 6.67s | 2.8s |
 
 ### Boss
 
@@ -121,26 +121,25 @@ clip, played at the pace it was authored at.
 
 | Swing | Clip (s) | Played (s) | Cancel gate (s) | Actual gap (s) |
 | --- | ---: | ---: | ---: | ---: |
-| attack | 2.117 | 1.411 | 0.875 | 0.875 |
+| attack | 2.117 | 0.375 | 0.232 | 0.417 |
 
-A full cycle of 1 swing(s) takes **0.87s**, so the sustained rate is
-**1.14 swings/s** against a catalogued **2.4/s** - the player gets **48%**
+A full cycle of 1 swing(s) takes **0.42s**, so the sustained rate is
+**2.4 swings/s** against a catalogued **2.4/s** - the player gets **100%**
 of the table figure, and every DPS number above for this class is
 overstated by the same margin.
 
 | | Focus DPS |
 | --- | ---: |
 | As catalogued | 52.7 |
-| As the rig plays it | 25.1 |
+| As the rig plays it | 52.7 |
 
 ## Disagreements worth a look
 
-- **Assassin** only gets **48%** of its catalogued attack rate: the animation gates it to 1.14 swings/s against 2.4/s on the row, so its real opening DPS is **25.1**, not the 52.7 the tables above show. This rig has no chain clips, so one long swing sets the whole tempo.
 - **Warrior** only gets **91%** of its catalogued attack rate: the animation gates it to 1.46 swings/s against 1.6/s on the row, so its real opening DPS is **89.9**, not the 98.4 the tables above show.
 - Opening single-target DPS spans **4.44x**: Warrior at 98.4, Mage at 22.1. Everything else being equal, that is how much longer the weakest class holds each body in front of it. Note this uses catalogued rates; see the rig figures above.
 - Effective health spans **1.91x**, Warrior at 162 down to Mage at 85.
 - Experience per point of health spans **3.41x**: assassin pays 0.45 per HP, tank only 0.13. Waves that lean on the cheap end level the player noticeably faster.
 - The boss is a flat 900 HP at every boss wave while an ordinary grunt goes from 52 HP at wave 10 to 148 at wave 50. The first boss is worth **17 grunts**, the fifth-from-last **6** - relative to the wave around it, the boss gets steadily easier.
-- The spawn cap tops out at 20 from **wave 15**, and the interval bottoms out at 0.35s from **wave 22**. Past those, a wave gets longer rather than denser - the quota keeps climbing but the pressure on screen does not.
+- The spawn cap tops out at 40 from **wave 15**, and the interval bottoms out at 0.18s from **wave 21**. Past those, a wave gets longer rather than denser - the quota keeps climbing but the pressure on screen does not.
 - A healer restores **5.0 HP/s** to one ally (12.5 in an elite). Against the slowest opening class that is 23% of its whole single-target output, so an unfocused healer can stall a wave outright.
 

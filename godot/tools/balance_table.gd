@@ -242,6 +242,9 @@ func _melee_reality():
 			if not visual.clips.has(clip):continue
 			var authored=visual.clip_length(clip)
 			var played=authored/pace
+			# A rig with no chain has its swing fitted to the weapon's cadence rather
+			# than played at the authored pace - mirror what _weapons does.
+			if chain.size()<=1:played=minf(played,cooldown*BWWorld.SOLO_SWING)
 			var gate=played*BWWorld.CANCEL
 			var actual=maxf(cooldown,gate)
 			chain_total+=actual
@@ -335,11 +338,11 @@ func _flags():
 		num(float(boss.maxHp)/(float(grunt.maxHp)*first),0),num(float(boss.maxHp)/(float(grunt.maxHp)*later),0)])
 
 	# Where the spawn cap stops being the thing that limits a wave.
-	for wave in range(1,200):
-		var rules=BWData.wave_rules(wave)
-		if rules.cap>=20:
-			notes.append("The spawn cap tops out at 20 from **wave %d**, and the interval bottoms out at %ss from **wave %d**. Past those, a wave gets longer rather than denser - the quota keeps climbing but the pressure on screen does not." % [
-				wave,num(BWData.wave_rules(999).interval,2),_interval_floor()])
+	var ceiling=BWData.wave_rules(999).cap
+	for wave in range(1,500):
+		if BWData.wave_rules(wave).cap>=ceiling:
+			notes.append("The spawn cap tops out at %d from **wave %d**, and the interval bottoms out at %ss from **wave %d**. Past those, a wave gets longer rather than denser - the quota keeps climbing but the pressure on screen does not." % [
+				ceiling,wave,num(BWData.wave_rules(999).interval,2),_interval_floor()])
 			break
 
 	# A healer that outheals what a class can put into it is a stall.
@@ -355,5 +358,5 @@ func _flags():
 
 func _interval_floor() -> int:
 	for wave in range(1,500):
-		if BWData.wave_rules(wave).interval<=0.35:return wave
+		if BWData.wave_rules(wave).interval<=BWData.wave_rules(999).interval:return wave
 	return -1

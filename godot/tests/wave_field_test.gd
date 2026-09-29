@@ -17,47 +17,61 @@ func suite():
 	world.running=false;world.auto_fire=false
 	run.stats.dodgeChance=0;run.stats.armor=0;run.stats.lifesteal=0;run.stats.regenPerSecond=0
 
-	# --- The tour. A run always walks the same districts in the same order, and a
-	# boss is always held at the altar, so the map has somewhere to go.
-	var districts=[]
-	for wave in range(1,BWArena.ZONES.size()+1):
-		run.wave=wave
-		districts.append(world.wave_zone_id())
-	check(districts.size()==districts.duplicate().size(),"the tour covers a district per wave")
-	var seen={}
-	for d in districts:seen[d]=true
-	check(seen.size()==BWArena.ZONES.size(),"every district hosts a wave before any repeats")
-	for wave in [10,20,50,100]:
-		run.wave=wave
-		check(world.wave_zone_id()=="altar","a boss wave is always held at the altar: "+str(wave))
-	run.wave=1
-	check(world.wave_zone_id()==world.current_zone().id,"the wave's district resolves to a real zone")
-	for wave in range(1,25):
-		run.wave=wave
-		check(not world.current_zone().is_empty(),"every wave resolves to a district: "+str(wave))
-
-	# --- The hint only speaks while the player is somewhere else. Standing in the
-	# district is the condition for the wave to arrive at all.
-	run.wave=1
-	# The hint is silent outside a live wave, so asking while running is false would
-	# pass the first check for the wrong reason.
+	# --- The district is wherever the player is standing. It decides what turns up,
+	# not whether anything does: the wave forms around the player either way.
+	for district in BWArena.ZONES:
+		world.player.position=Vector3(district.at.x,0,district.at.y)
+		check(world.wave_zone_id()==district.id,"the district under the player is the wave's district: "+district.id)
+		check(world.current_zone().id==district.id,"the zone resolves from the player's position: "+district.id)
 	world.running=true
-	var zone=world.current_zone()
-	world.player.position=Vector3(zone.at.x,0,zone.at.y)
-	check(world.zone_hint()=="","no hint while the player is where the wave is")
-	world.player.position=Vector3(zone.at.x,0,zone.at.y)+Vector3(zone.radius+30.0,0,0)
-	check(world.zone_hint()!="","the hint names the district once the player is away from it")
-	check(world.zone_hint().contains(zone.name),"the hint names the district it is pointing at")
+	for district in BWArena.ZONES:
+		world.player.position=Vector3(district.at.x,0,district.at.y)
+		check(world.zone_hint()==district.name,"the hint names where the player is, and sends them nowhere: "+district.id)
+		check(not world.zone_hint().contains("GATHERING"),"the hint no longer points somewhere else: "+district.id)
 
-	# Standing elsewhere does not summon the wave.
-	world.rest_time=0;world.spawned=0;world.spawn_timer=0
+	# The wave arrives wherever the player stands - including a corner of the map
+	# that is no district's centre. Hunting for a wave was the thing being fixed.
+	for spot in [Vector3.ZERO,Vector3(-BWArena.EDGE+2,0,-BWArena.EDGE+2),Vector3(BWArena.EDGE-2,0,BWArena.EDGE-2),Vector3(-30,0,28)]:
+		world.player.position=spot
+		world.rest_time=0;world.spawned=0;world.spawn_timer=0
+		for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
+		world._spawn_tick(1.0)
+		check(world.spawned==1,"the wave gathers where the player is standing: "+str(spot))
+		check(world.enemies.size()==1,"and puts a body on the field")
+		var arrival=world.enemies[0].node.position
+		check(arrival.distance_to(spot)<BWWorld.SPAWN_RING+2.5,"a body arrives close enough to find: "+str(arrival.distance_to(spot)))
+		check(absf(arrival.x)<=BWArena.EDGE+0.01 and absf(arrival.z)<=BWArena.EDGE+0.01,"and inside the arena")
+
+	# --- Surrounded, not queued. A run of spawns has to come from all round the
+	# player rather than piling onto one side and leaving an open back.
+	world.player.position=Vector3.ZERO
 	for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
-	world._spawn_tick(1.0)
-	check(world.spawned==0,"a wave does not gather while the player is in another district")
-	world.player.position=Vector3(zone.at.x,0,zone.at.y)
-	world.spawn_timer=0
-	world._spawn_tick(1.0)
-	check(world.spawned==1,"the wave gathers once the player arrives")
+	world.spawned=0;world.spawn_timer=0;world.spawn_slot=0;world.spawn_bearing=0.0
+	var quadrants={}
+	for i in 8:
+		world.spawn_timer=0
+		world._spawn_tick(1.0)
+	check(world.enemies.size()==8,"eight spawns land")
+	for e in world.enemies:
+		var bearing=atan2(e.node.position.z,e.node.position.x)
+		quadrants[int(floor((bearing+PI)/(PI*0.5)))%4]=true
+	check(quadrants.size()==4,"a turn of the ring covers every side of the player, not one flank")
+	for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
+
+	# --- A horde closes. A body far away hurries in; one already in your face does
+	# not, or the approach boost would quietly make melee harder than it is tuned to.
+	world.running=false
+	world.player.position=Vector3.ZERO
+	var far=world.spawn_enemy("grunt",Vector3(0,0,9.0));far.cooldown=1e9
+	var near=world.spawn_enemy("grunt",Vector3(0,0,1.5));near.cooldown=1e9
+	var far_before=far.node.position.distance_to(world.player.position)
+	var near_before=near.node.position.distance_to(world.player.position)
+	world._enemy_tick(far,0.2);world._enemy_tick(near,0.2)
+	var far_closed=far_before-far.node.position.distance_to(world.player.position)
+	var near_closed=near_before-near.node.position.distance_to(world.player.position)
+	check(far_closed>near_closed,"a distant body closes faster than one already in contact")
+	check(far_closed<=far_before,"and does not overshoot the player")
+	for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
 
 	# --- The spawn pool. Enemy types are gated by wave, so wave one cannot field a
 	# commander and a long run must be able to field everything.
@@ -95,8 +109,8 @@ func suite():
 	var previous=BWData.wave_rules(1)
 	for wave in range(2,120):
 		var rules=BWData.wave_rules(wave)
-		check(rules.cap>=5 and rules.cap<=20,"spawn cap stays in bounds: "+str(wave))
-		check(rules.interval>=0.35 and rules.interval<=1.2,"spawn interval stays in bounds: "+str(wave))
+		check(rules.cap>=10 and rules.cap<=40,"spawn cap stays in bounds: "+str(wave))
+		check(rules.interval>=0.18 and rules.interval<=0.6,"spawn interval stays in bounds: "+str(wave))
 		check(rules.elite>=0.0 and rules.elite<=0.35,"elite odds stay in bounds: "+str(wave))
 		check(rules.multiplier>previous.multiplier,"waves keep getting harder: "+str(wave))
 		if not rules.boss and not previous.boss:check(rules.quota>previous.quota,"the quota climbs between ordinary waves: "+str(wave))
@@ -104,6 +118,7 @@ func suite():
 
 	# --- Elites. One flag has to move every number that makes an elite an elite.
 	world.running=false
+	world.player.position=Vector3.ZERO
 	for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
 	var plain=world.spawn_enemy("grunt",Vector3(6,0,0),false,1.0)
 	var elite=world.spawn_enemy("grunt",Vector3(8,0,0),true,1.0)

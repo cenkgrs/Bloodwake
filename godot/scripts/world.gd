@@ -20,6 +20,8 @@ var bullets: Array = []
 var pickups: Array = []
 var spawn_timer = 0.0
 var spawned = 0
+var spawn_slot = 0
+var spawn_bearing = 0.0
 var running = true
 var auto_fire = false
 var move_input = Vector2.ZERO
@@ -43,6 +45,19 @@ var bullet_mesh: SphereMesh
 var bullet_material: StandardMaterial3D
 var rng = RandomNumberGenerator.new()
 const ARENA_HALF = BWArena.HALF
+# How far out a body appears: outside the view the camera gives, close enough
+# that it is on the player within a couple of seconds.
+const SPAWN_RING = 9.6
+# The ring is divided into this many bearings, and each spawn takes the next one.
+const SPAWN_ARC = 8
+# Coprime with SPAWN_ARC, so successive spawns land across the ring from each
+# other rather than walking round it in order.
+const SPAWN_STRIDE = 3
+# Inside this the approach boost is gone and a body fights at its catalogued
+# speed; it ramps to CLOSE_RUSH over the next CLOSE_FALLOFF metres.
+const CLOSE_RANGE = 2.6
+const CLOSE_FALLOFF = 6.0
+const CLOSE_RUSH = 2.1
 const ARMORED = ["tank","boss"]
 const WEAPON_SHOT = {"rapid_rifle":"gun_rifle","basic_pistol":"gun_pistol","shotgun":"gun_shotgun","magic_orb":"orb_cast","lightning":"lightning_cast"}
 const HURT_FLASH_COLOR = Color("ff3b30")
@@ -62,6 +77,9 @@ const CANCEL = 0.62
 # Static so the debug menu can dial it between runs while it is being tuned.
 static var combo_pace = 1.5
 static var spin_pace = 1.5
+# How much of its cooldown a chainless rig may spend on one swing. Under 1 so the
+# blade has finished before the next is allowed, leaving the strike readable.
+const SOLO_SWING = 0.9
 const SPIN_COOLDOWN = 2.6
 const SPIN_RADIUS = 1.9
 const SPIN_DAMAGE = 2.2
@@ -110,19 +128,20 @@ func _environment():
 # The district a wave belongs to is a plain function of the wave number, so it
 # needs no state and a run always walks the same tour. Boss waves are always held
 # at the altar.
-func wave_zone_id() -> String:
-	if run!=null and run.wave%10==0:return "altar"
-	return BWArena.ZONES[((run.wave if run!=null else 1)-1)%BWArena.ZONES.size()].id
-
 func current_zone() -> Dictionary:
-	return arena.zone_by_id(wave_zone_id())
+	if arena==null:return {}
+	return arena.zone_at(player.position if player!=null else Vector3.ZERO)
 
-# Empty while the player is where the wave is; otherwise the line the HUD shows.
+func wave_zone_id() -> String:
+	var zone=current_zone()
+	return zone.id if zone.has("id") else "courtyard"
+
+# The district the player is standing in. It names where the fight is, it does not
+# send the player anywhere - the wave comes to them.
 func zone_hint() -> String:
 	if arena==null or not running:return ""
 	var zone=current_zone()
-	if Vector2(player.position.x,player.position.z).distance_to(zone.at)<=zone.radius+4.0:return ""
-	return "%s   ·   THE WAVE IS GATHERING THERE" % zone.name
+	return zone.name if zone.has("name") else ""
 
 # Ambient and fog are blended toward the district under the player. One end of the
 # map lit like the other is what made every part of it feel the same.
@@ -202,18 +221,32 @@ func _spawn_tick(dt: float):
 				pickup.node.queue_free()
 			pickups.clear();pending_attacks.clear();running=false;wave_cleared.emit()
 		return
-	# A wave belongs to a district. Standing somewhere else does not summon it, which
-	# is what gives the map somewhere to go.
+	# The wave forms around the player, wherever that is. The district under them
+	# only decides what turns up, so walking somewhere changes who comes for you
+	# rather than whether anything does.
 	var zone=current_zone()
-	if Vector2(player.position.x,player.position.z).distance_to(zone.at)>zone.radius+4.0:return
 	spawn_timer-=dt
 	if spawn_timer>0 or enemies.size()>=rules.cap:return
 	spawn_timer=rules.interval
-	var id="boss" if rules.boss else _draw_from(spawn_pool(run.wave,zone.id))
-	var angle=rng.randf()*TAU;var pos=player.position+Vector3(cos(angle),0,sin(angle))*10.4
-	pos=arena.push_out(pos,0.6)
-	spawn_enemy(id,pos,not rules.boss and rng.randf()<rules.elite,rules.multiplier if not rules.boss else 1.0)
+	var id="boss" if rules.boss else _draw_from(spawn_pool(run.wave,zone.get("id","courtyard")))
+	spawn_enemy(id,_spawn_point(),not rules.boss and rng.randf()<rules.elite,rules.multiplier if not rules.boss else 1.0)
 	spawned+=1
+
+# Where the next body comes in. Taking a uniformly random bearing let a run of
+# spawns land on the same side and leave the player an open back to walk into;
+# handing each spawn the next slot of a rotating ring puts them all the way round
+# instead. The slot is jittered so the ring does not read as a drawn circle.
+func _spawn_point() -> Vector3:
+	var slot=TAU*float(spawn_slot%SPAWN_ARC)/float(SPAWN_ARC)
+	# Step by an amount coprime with the slot count: every bearing is still used
+	# once per turn of the ring, but consecutive spawns land across from each other
+	# rather than sweeping round in order.
+	spawn_slot+=SPAWN_STRIDE
+	var angle=spawn_bearing+slot+rng.randf_range(-0.28,0.28)
+	var distance=SPAWN_RING+rng.randf_range(-0.9,0.9)
+	var spot=player.position+Vector3(cos(angle),0,sin(angle))*distance
+	spot.x=clampf(spot.x,-BWArena.EDGE,BWArena.EDGE);spot.z=clampf(spot.z,-BWArena.EDGE,BWArena.EDGE)
+	return arena.push_out(spot,0.6)
 
 # What an ordinary wave can field here: every type the run has unlocked, weighted
 # by the catalog and then again by whichever district the wave is being held in.
@@ -262,6 +295,10 @@ func _enemy_tick(e: Dictionary,dt: float):
 	# enemy grinds against for the rest of the wave.
 	if distance>0.6:direction=arena.steer(node.position,direction,e.radius)
 	var speed=e.speed*BWData.UNIT*(1.22 if e.aura>0 else 1)*(1-e.slow_amount if e.slow>0 else 1)
+	# A horde closes. Beyond arm's reach a body hurries to get there, and the boost
+	# falls off as it arrives, so the press stays as fast as it was to fight once
+	# it lands - this buys the approach, not the melee.
+	if distance>CLOSE_RANGE:speed*=lerpf(1.0,CLOSE_RUSH,clampf((distance-CLOSE_RANGE)/CLOSE_FALLOFF,0.0,1.0))
 	var move=Vector3.ZERO;e.cooldown-=dt
 	var range_value=data.attackRange*BWData.UNIT
 	match e.id:
@@ -397,6 +434,11 @@ func _weapons(dt: float):
 				# swing into 0.45 s is what made the chain read as fast-forward.
 				var authored=visual.clip_length(clip)
 				if authored>0.0:duration=authored/(combo_pace*clampf(run.stats.attackSpeed,0.8,1.5))
+				# That pace exists to keep the seams of a chain readable. A rig with no
+				# chain has no seams to protect, and one long clip then sets the whole
+				# tempo: the assassin's single 2.1 s swing gated a 2.4/s weapon down to
+				# 1.1. Without a chain, fit the swing to the cadence the weapon asks for.
+				if not has_chain():duration=minf(duration,cooldown*SOLO_SWING)
 				swing_gate=duration*CANCEL
 				combo_timer=duration+0.5
 				# The last link is the finisher: it runs longer and carries the class's
@@ -471,6 +513,14 @@ func _resolve_weapon(id: String,direction: Vector3):
 	# reports here, as the projectile leaves.
 	if behavior!="melee":sound(WEAPON_SHOT.get(id,"gun_pistol"))
 
+# Does the equipped rig carry the melee chain, or only a single swing? The
+# warrior has all four links; the assassin has none of them yet.
+func has_chain() -> bool:
+	if not is_instance_valid(visual):return false
+	for clip in COMBO:
+		if visual.clips.has(clip):return true
+	return false
+
 # Does the equipped rig actually carry the spin clip? Only the warrior has it for
 # now, and the HUD asks the same question before advertising the binding.
 func has_heavy() -> bool:
@@ -501,6 +551,8 @@ func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 		var next=nearest(origin,radius,hit)
 		if next==null:return
 		var end=next.node.position;fx.beam(origin+Vector3.UP,end+Vector3.UP,Color("a5cfff"))
+		# The arc earths itself on whatever it passes through.
+		arena.damage_area(end,1.0,base)
 		var roll=run.damage_roll(base);_damage_enemy(next,roll.damage,roll.critical,true,"chain")
 		if next.hp>0:next.burn=2;next.burn_dps=4
 		hit.append(next);origin=end
@@ -676,6 +728,7 @@ func _pickups(dt: float):
 func next_wave():
 	for b in bullets:b.node.queue_free()
 	bullets.clear();run.wave+=1;spawned=0;spawn_timer=0;rest_time=4;running=true
+	spawn_slot=0;spawn_bearing=rng.randf()*TAU
 	sound("wave_start");wave_music();changed.emit()
 
 func wave_music():

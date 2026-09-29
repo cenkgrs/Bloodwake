@@ -153,6 +153,71 @@ func suite():
 	check(heir.get("marked",false) or plain.get("marked",false),"the brand outlives its host and moves to the next body")
 	check(world.mark_chain==1,"each jump deepens the chain")
 
+	# --- A rig without chain clips must not be held to the chain's pace. The
+	# assassin's one 2.1s swing was gating a 2.4/s weapon down to about 1.1.
+	for id in BWData.CLASSES:
+		var weapon=BWData.entry("weapons",BWData.CLASSES[id].weapon)
+		if weapon.get("behavior","")!="melee":continue
+		pair=await arena(scene,id)
+		world=pair[0];run=pair[1]
+		var chained=world.has_chain()
+		var foe=dummy(world,Vector3(0,0,0.6))
+		world.auto_fire=true;world.visual.lock_time=0;world.swing_gate=0.0;world.combo_timer=0.0
+		run.weapons[weapon.id].cooldown=0.0
+		world._weapons(0.016)
+		var cooldown=1.0/(float(weapon.attacksPerSecond)*run.stats.attackSpeed)
+		check(world.swing_gate>0.0,"a melee swing gates the next one: "+id)
+		if chained:
+			check(world.has_chain(),"the warrior keeps its chain: "+id)
+		else:
+			# Without a chain the swing is fitted to the weapon's own cadence, so the
+			# gate cannot outlast the cooldown the catalogue asks for.
+			check(world.swing_gate<=cooldown,"a chainless rig swings at the weapon's cadence, not the clip's: %s (gate %.3f vs cooldown %.3f)" % [id,world.swing_gate,cooldown])
+			check(world.visual.lock_time<=cooldown,"and its clip is fitted to that cadence: "+id)
+		check(world.pending_attacks.size()==1,"the swing queues its contact frame: "+id)
+		var contact=world.pending_attacks[0].time
+		check(contact<cooldown,"and lands within the weapon's own cadence: "+id)
+		world._pending_attacks(contact+0.001)
+		check(foe.hp<2000,"the swing connects: "+id)
+		for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
+
+	# --- Breakables answer to every kind of damage, not just a sword swing. Only
+	# the melee branch called damage_area, so a mage could not break a pot at all.
+	var casts=[["mage",0,"arcane_meteor",true],["mage",1,"void_leap",true],
+		["warrior",0,"sunder_leap",true],["warrior",1,"shield_thrust",false],
+		["gunslinger",1,"powder_charge",true]]
+	for entry in casts:
+		pair=await arena(scene,entry[0])
+		world=pair[0];run=pair[1]
+		var data=BWData.entry("abilities",entry[2])
+		world.player.position=Vector3.ZERO;world.aim=Vector3.FORWARD
+		var prop_spot=world.ground_target(data.range*run.stats.attackRange*BWData.UNIT) if entry[3] else world.player.position+world.aim*1.5
+		# Plant a breakable exactly where the cast lands and see it off.
+		world.arena.breakables.append({"node":Node3D.new(),"pos":prop_spot,"radius":0.4,"hp":12.0,"kind":"urn"})
+		world.add_child(world.arena.breakables[-1].node)
+		var before=world.arena.breakables.size()
+		world.skill(entry[1])
+		await create_timer(1.0).timeout
+		check(world.arena.breakables.size()<before,"%s breaks what is standing in it" % entry[2])
+		for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
+
+	# The ultimates are area damage too.
+	for id in ["mage","warrior","assassin"]:
+		pair=await arena(scene,id)
+		world=pair[0];run=pair[1]
+		world.player.position=Vector3.ZERO;world.aim=Vector3.FORWARD
+		# Shadow Strike dashes before it lands, so put the pot where the blast will
+		# actually be rather than on top of where the class is standing now.
+		var ult=BWData.entry("abilities",BWData.CLASSES[id].ability)
+		var dash=ult.range*BWData.UNIT*0.5 if ult.id=="shadow_strike" else 0.0
+		world.arena.breakables.append({"node":Node3D.new(),"pos":world.aim*(dash+0.4),"radius":0.4,"hp":12.0,"kind":"urn"})
+		world.add_child(world.arena.breakables[-1].node)
+		var before_ult=world.arena.breakables.size()
+		world.ability()
+		world._pending_attacks(1.0)
+		await create_timer(0.4).timeout
+		check(world.arena.breakables.size()<before_ult,"the %s ultimate breaks what is standing in it" % id)
+
 	scene.queue_free();await process_frame
 	await create_timer(1.0).timeout
 	print("CLASS_KIT_TESTS ",checks," checks / ",failures," failures")
