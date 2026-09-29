@@ -183,40 +183,93 @@ func suite():
 
 	# --- Breakables answer to every kind of damage, not just a sword swing. Only
 	# the melee branch called damage_area, so a mage could not break a pot at all.
-	var casts=[["mage",0,"arcane_meteor",true],["mage",1,"void_leap",true],
-		["warrior",0,"sunder_leap",true],["warrior",1,"shield_thrust",false],
-		["gunslinger",1,"powder_charge",true]]
-	for entry in casts:
-		pair=await arena(scene,entry[0])
-		world=pair[0];run=pair[1]
-		var data=BWData.entry("abilities",entry[2])
-		world.player.position=Vector3.ZERO;world.aim=Vector3.FORWARD
-		var prop_spot=world.ground_target(data.range*run.stats.attackRange*BWData.UNIT) if entry[3] else world.player.position+world.aim*1.5
-		# Plant a breakable exactly where the cast lands and see it off.
-		world.arena.breakables.append({"node":Node3D.new(),"pos":prop_spot,"radius":0.4,"hp":12.0,"kind":"urn"})
-		world.add_child(world.arena.breakables[-1].node)
-		var before=world.arena.breakables.size()
-		world.skill(entry[1])
-		await create_timer(1.0).timeout
-		check(world.arena.breakables.size()<before,"%s breaks what is standing in it" % entry[2])
-		for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
+	#
+	# This drives real urns that arena.build() placed, not a dict planted into the
+	# breakables list: an earlier version of this check planted its own and passed
+	# while the game was still broken, because it never exercised where a cast
+	# actually lands. Two things have to be right for that, and both were wrong
+	# the first time - a ground-targeted cast lands at its full reach, not next to
+	# the caster, and ground_target reads the mouse unless a stick or touch is
+	# live, which in headless silently aims everything at the origin.
+	for id in BWData.CLASSES:
+		for index in [0,1]:
+			var skill_id=BWData.skills(id)[index]
+			var data=BWData.entry("abilities",skill_id)
+			pair=await arena(scene,id)
+			world=pair[0];run=pair[1]
+			check(not world.arena.breakables.is_empty(),"the arena builds breakables at all")
+			if world.arena.breakables.is_empty():continue
+			var urn=world.arena.breakables[0]
+			var prop_reach=data.range*run.stats.attackRange*BWData.UNIT
+			var behavior=String(data.behavior)
+			# Where the cast puts its damage decides where the caster has to stand.
+			var stand_off=prop_reach
+			if behavior=="thrust":stand_off=prop_reach*0.4
+			elif behavior in ["ricochet","backstepVolley","markOfRuin"]:stand_off=minf(prop_reach*0.5,3.0)
+			var prop_heading=Vector3.FORWARD
+			world.player.position=urn.pos-prop_heading*stand_off
+			world.aim=prop_heading
+			# Touch aim keeps ground_target off the headless mouse cursor.
+			world.touch_aim=Vector2(prop_heading.x,prop_heading.z)
+			var hp_before=urn.hp
+			world.skill(index)
+			await create_timer(1.2).timeout
+			var damaged=not world.arena.breakables.has(urn) or urn.hp<hp_before
+			# Mark of Ruin brands rather than damages, so it is the one cast that
+			# legitimately leaves a pot standing. Everything else - blast, lane or
+			# thrown round - has to clear it.
+			if behavior=="markOfRuin":
+				check(not damaged,"%s brands rather than damages, so the urn stands" % skill_id)
+			else:
+				check(damaged,"%s clears a real urn" % skill_id)
+			for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
 
-	# The ultimates are area damage too.
+	# --- A shot breaks what it flies through. Every class's normal attack had to be
+	# able to clear a pot, and for the three ranged ones that meant projectiles,
+	# which passed straight through until now.
+	for id in BWData.CLASSES:
+		pair=await arena(scene,id)
+		world=pair[0];run=pair[1]
+		var weapon_id=BWData.CLASSES[id].weapon
+		var weapon_row=BWData.entry("weapons",weapon_id)
+		var shot_urn=world.arena.breakables[0]
+		var melee_weapon=weapon_row.get("behavior","")=="melee"
+		# Stand a swing away for melee, a short flight away for anything thrown.
+		var gap=0.6 if melee_weapon else 3.0
+		world.player.position=shot_urn.pos-Vector3.FORWARD*gap
+		world.aim=Vector3.FORWARD;world.touch_aim=Vector2(0,-1)
+		# The mage fires from a hand bone, and a skeleton's global transform only
+		# catches up on the next frame. Teleporting and firing in the same one
+		# launched the orb from wherever the player used to be.
+		await process_frame
+		await process_frame
+		var shot_hp=shot_urn.hp
+		world.auto_fire=false;world.visual.lock_time=0;world.swing_gate=0.0;world.combo_timer=0.0
+		run.weapons[weapon_id].cooldown=0.0
+		world._resolve_weapon(weapon_id,Vector3.FORWARD)
+		# Let a projectile cover the gap.
+		for i in 120:
+			world._projectiles(0.016)
+			await process_frame
+			if not world.arena.breakables.has(shot_urn) or shot_urn.hp<shot_hp:break
+		check(not world.arena.breakables.has(shot_urn) or shot_urn.hp<shot_hp,
+			"%s's normal attack (%s) damages a real urn" % [id,weapon_id])
+
+	# The ultimates are area damage too, and land on the caster or a short dash away.
 	for id in ["mage","warrior","assassin"]:
 		pair=await arena(scene,id)
 		world=pair[0];run=pair[1]
-		world.player.position=Vector3.ZERO;world.aim=Vector3.FORWARD
-		# Shadow Strike dashes before it lands, so put the pot where the blast will
-		# actually be rather than on top of where the class is standing now.
 		var ult=BWData.entry("abilities",BWData.CLASSES[id].ability)
+		if ult.id=="fan_shot":continue
+		var urn_ult=world.arena.breakables[0]
 		var dash=ult.range*BWData.UNIT*0.5 if ult.id=="shadow_strike" else 0.0
-		world.arena.breakables.append({"node":Node3D.new(),"pos":world.aim*(dash+0.4),"radius":0.4,"hp":12.0,"kind":"urn"})
-		world.add_child(world.arena.breakables[-1].node)
-		var before_ult=world.arena.breakables.size()
+		world.player.position=urn_ult.pos-Vector3.FORWARD*dash
+		world.aim=Vector3.FORWARD;world.touch_aim=Vector2(0,-1)
+		var ult_hp=urn_ult.hp
 		world.ability()
 		world._pending_attacks(1.0)
-		await create_timer(0.4).timeout
-		check(world.arena.breakables.size()<before_ult,"the %s ultimate breaks what is standing in it" % id)
+		await create_timer(0.5).timeout
+		check(not world.arena.breakables.has(urn_ult) or urn_ult.hp<ult_hp,"the %s ultimate puts its area damage into a real urn" % id)
 
 	scene.queue_free();await process_frame
 	await create_timer(1.0).timeout

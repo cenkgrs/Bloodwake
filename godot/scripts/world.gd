@@ -634,7 +634,7 @@ func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,dista
 		lamp.light_energy=1.8 if orb else 1.0;lamp.omni_range=2.6 if orb else 1.5
 		node.add_child(lamp)
 		node.add_child(fx.trail_emitter(halo_tone,0.075 if orb else 0.045,0.32 if orb else 0.2,18 if orb else 12))
-	var record={"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical,"radius":0.5 if weapon=="magic_orb" else 0.16}
+	var record={"node":node,"direction":direction.normalized(),"speed":speed,"damage":damage,"remaining":distance,"friendly":friendly,"pierce":pierce,"hit":[],"props":[],"weapon":weapon,"burn":burn,"slow":slow,"critical":critical,"radius":0.5 if weapon=="magic_orb" else 0.16}
 	bullets.append(record)
 	return record
 
@@ -642,6 +642,12 @@ func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,dista
 func _projectiles(dt: float):
 	for b in bullets.duplicate():
 		var previous=b.node.position;var step=b.direction*b.speed*dt;b.node.position+=step;b.remaining-=step.length()
+		# A shot breaks what it flies through. It is not stopped by a clay pot, so
+		# pierce is untouched - the round carries on to whatever it was aimed at.
+		if b.friendly:
+			for prop in arena.breakables_on(previous,b.node.position,b.radius,b.props):
+				b.props.append(prop.node.get_instance_id())
+				arena.hurt_prop(prop,b.damage)
 		var targets=enemies.duplicate() if b.friendly else [{"node":player,"radius":0.36,"hp":run.stats.hp}]
 		for target in targets:
 			if target.hp<=0 or b.hit.has(target.node.get_instance_id()):continue

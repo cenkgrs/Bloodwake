@@ -354,17 +354,38 @@ func damage_area(spot: Vector3, radius: float, damage: float) -> Array:
 	for prop in breakables.duplicate():
 		if prop.pos.distance_to(Vector3(spot.x, prop.pos.y, spot.z)) > radius + prop.radius:
 			continue
-		prop.hp -= damage
-		if prop.hp > 0.0:
-			var shove = create_tween()
-			shove.tween_property(prop.node, "rotation:z", rng.randf_range(-0.12, 0.12), 0.08)
-			shove.tween_property(prop.node, "rotation:z", 0.0, 0.14)
-			continue
-		breakables.erase(prop)
-		broken.append({"position": prop.pos, "kind": prop.kind})
-		prop_broken.emit(prop.pos, prop.kind)
-		_shatter(prop)
+		if hurt_prop(prop, damage):
+			broken.append({"position": prop.pos, "kind": prop.kind})
 	return broken
+
+# One prop taking one hit. Shared so a shot passing through a pot and a blast
+# going off under it break it the same way.
+func hurt_prop(prop: Dictionary, damage: float) -> bool:
+	prop.hp -= damage
+	if prop.hp > 0.0:
+		var shove = create_tween()
+		shove.tween_property(prop.node, "rotation:z", rng.randf_range(-0.12, 0.12), 0.08)
+		shove.tween_property(prop.node, "rotation:z", 0.0, 0.14)
+		return false
+	breakables.erase(prop)
+	prop_broken.emit(prop.pos, prop.kind)
+	_shatter(prop)
+	return true
+
+# The breakables a shot passes through between two points this frame. `skip` holds
+# the ones this shot has already broken, so a slow orb cannot grind the same pot
+# down over several frames.
+func breakables_on(from: Vector3, to: Vector3, radius: float, skip: Array) -> Array:
+	var found = []
+	var a = Vector3(from.x, 0, from.z)
+	var b = Vector3(to.x, 0, to.z)
+	for prop in breakables:
+		if skip.has(prop.node.get_instance_id()):
+			continue
+		var p = Vector3(prop.pos.x, 0, prop.pos.z)
+		if p.distance_to(Geometry3D.get_closest_point_to_segment(p, a, b)) <= radius + prop.radius:
+			found.append(prop)
+	return found
 
 func _shatter(prop: Dictionary):
 	var origin = prop.node.position
