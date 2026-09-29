@@ -20,13 +20,30 @@ clips={
  'Attack1':('Great Sword Slash 1-2-3',(13,81)),
  'Attack2':('Great Sword Slash 1-2-3',(81,138)),
  'Attack3':('Great Sword Slash 1-2-3',(138,205)),
- 'Attack4':('Great Sword Slash 4',[(8,56),(120,196)]),
+ 'Attack4':('Great Sword Slash 4 With Animation',[(8,56),(120,196)]),
  'SpinAttack':('Great Sword High Spin Attack',(2,112)),
+ # The Whirl skill's own clip, authored in Blender rather than downloaded. It is
+ # optional on purpose: the file is Cenk's to make, and a warrior that is missing it
+ # should still build - the cast falls back to the plain swing until it lands.
+ 'Whirl':('Warrior Whirl',None),
  # Retargeted off a Meshy generation by tools/retarget_meshy.py.
  'SunderLeap':('Warrior Sunder Leap',None),
  'Hit':('Great Sword Impact',None),
  'Death':('Two Handed Sword Death',None),
  'Ultimate':('Warrior Ultimate',None),
+}
+# Files re-exported from Blender rather than downloaded from Mixamo need two
+# overrides, and both fail silently without them.
+#  ignore_leaf_bones: Blender's FBX exporter appends a '_end' leaf per chain,
+#   which lands the rig on 78 bones and trips the skeleton assert. Mixamo's own
+#   downloads carry no leaf bones, so the flag must NOT be set for those - it
+#   would strip 13 real bones and leave 52.
+#  fps: the exporter wrote 24 fps while the source performance is 60. Left alone
+#   the 60/source rescale below stretches the keys 2.5x, and the spans above -
+#   which are frame numbers - then cut somewhere else entirely.
+reexported={
+ 'Great Sword Slash 4 With Animation':{'ignore_leaf_bones':True,'fps':60.0},
+ 'Warrior Whirl':{'ignore_leaf_bones':True,'fps':60.0},
 }
 
 def sliced(source,name,spans):
@@ -50,19 +67,38 @@ def sliced(source,name,spans):
      fc.update()
  return out
 
-rig=None;actions={};sources={}
+rig=None;actions={};sources={};optional=[]
 for name,(filename,span) in clips.items():
  if filename in sources:
   actions[name]=sliced(sources[filename],name,span) if span else sources[filename]
   continue
  before=set(bpy.data.objects)
- bpy.ops.import_scene.fbx(filepath=str(SRC/'mixamo'/(filename+'.fbx')))
+ override=reexported.get(filename,{})
+ if not (SRC/'mixamo'/(filename+'.fbx')).exists():
+  # Skipped, loudly. A clip silently missing from the rig is the kind of thing that
+  # only surfaces mid-fight, so say it here rather than let the glb ship short.
+  print('MISSING CLIP %s -> %s.fbx not in art/warrior/source/mixamo'%(name,filename))
+  optional.append(name);continue
+ bpy.ops.import_scene.fbx(filepath=str(SRC/'mixamo'/(filename+'.fbx')),
+                          ignore_leaf_bones=override.get('ignore_leaf_bones',False))
  imported=set(bpy.data.objects)-before
  arm=next(o for o in imported if o.type=='ARMATURE')
  action=arm.animation_data.action;action.use_fake_user=True
+ if override:
+  # A Blender re-export animates the armature OBJECT as well as its pose, and the
+  # Mixamo downloads never do. Those channels are replayed onto the rig the moment
+  # plant_feet assigns the action and steps a frame, overwriting the 1.8 m
+  # normalisation further down with the authoring file's own scale and rotation -
+  # which is what halved the knight, silently, with every clip still correct.
+  for layer in action.layers:
+   for strip in layer.strips:
+    for bag in strip.channelbags:
+     for fc in [f for f in bag.fcurves if not f.data_path.startswith('pose.bones')]:
+      print('DROP object channel %s[%d] from %s'%(fc.data_path,fc.array_index,filename))
+      bag.fcurves.remove(fc)
  # FBX imports can change the scene FPS (these packs mix 30 and 60 FPS).
  # Convert keys to a common 60 FPS timeline before importing the next file.
- source_fps=bpy.context.scene.render.fps/bpy.context.scene.render.fps_base
+ source_fps=override.get('fps',bpy.context.scene.render.fps/bpy.context.scene.render.fps_base)
  ratio=60.0/source_fps
  for layer in action.layers:
   for strip in layer.strips:
@@ -168,18 +204,44 @@ bpy.context.view_layer.objects.active=sword
 bpy.ops.object.select_all(action='DESELECT');sword.select_set(True)
 mod=sword.modifiers.new('Game mesh reduction','DECIMATE');mod.ratio=.008
 bpy.ops.object.modifier_apply(modifier=mod.name)
-# Align the supplied diagonal blade with the two hand grips in the idle pose.
+# The grip is authored, not guessed. In art/warrior/source/4slah.blend the sword
+# is held by a Child Of constraint on mixamorig:RightHand; GRIP is that constraint's
+# offset, read straight out of the file. It is a constant offset, so one matrix
+# covers every frame - checked across frames 1/40/80/117/160/196 with zero deviation.
+# This has to be carried by hand because FBX export silently drops Child Of: the
+# sword arrives unparented at its unevaluated transform, which is why the earlier
+# heuristic had to infer a grip from the midpoints of the two hand bones.
+GRIP=Matrix(((-0.379822,-0.141915,-0.914109,0.842242),
+             (-0.924771, 0.033573, 0.379040,0.046414),
+             (-0.023102, 0.989310,-0.143990,0.154829),
+             ( 0.0,      0.0,      0.0,     1.0)))
 bpy.context.scene.frame_set(1);bpy.context.view_layer.update()
-r=rig.pose.bones['mixamorig:RightHand'];l=rig.pose.bones['mixamorig:LeftHand']
-right=rig.matrix_world@(r.head+(r.tail-r.head)*.55)
-left=rig.matrix_world@(l.head+(l.tail-l.head)*.55)
-axis=(right-left).normalized();source_axis=Vector((-1,0,-1)).normalized()
-rotation=source_axis.rotation_difference(axis).to_matrix().to_4x4()
-placement=Matrix.Translation(right)@rotation@Matrix.Scale(1.3,4)@Matrix.Translation(Vector((-.19,0,-.69)))
+r=rig.pose.bones['mixamorig:RightHand']
+# GRIP is metric, measured on a rig whose hand sits at 1.96 m. This rig is
+# normalised to 1.8 m, so the grip cannot be pasted on at face value: offset and
+# blade both have to follow the body down, or the knight swings a sword sized for
+# someone taller. Both rigs are the same skeleton, so one bone length is the ratio.
+HAND_LEN_AUTHORED=0.130888  # mixamorig:RightHand in 4slah.blend, metres
+bone=rig.matrix_world@r.matrix
+# The basis magnitude is the rig's own unit normalisation - measured, not read from
+# rig.scale, because the Mixamo FBX arrives pre-scaled and rig.scale compounds it.
+unit=bone.to_3x3().col[0].length
+bone=bone@Matrix.Scale(1.0/unit,4)@Matrix.Scale(rig.data.bones[r.name].length*unit/HAND_LEN_AUTHORED,4)
 # Bake vertices into rest-bone space, then bind rigidly to the right-hand bone.
 rest=rig.data.bones[r.name].matrix_local
 posed=r.matrix
-convert=rest@posed.inverted()@rig.matrix_world.inverted()@placement@sword.matrix_world
+placed=bone@GRIP@sword.matrix_world
+# Tip-to-tip length, which unlike a bounding box does not change with orientation.
+# Checked here, before the vertices are baked into rest-bone space - measuring after
+# the bake reads rest-space coordinates and silently reports half the real figure.
+def _diameter(points):
+ far=max(points,key=lambda q:(q-points[0]).length)
+ return max((q-far).length for q in points)
+_ratio=rig.data.bones[r.name].length*unit/HAND_LEN_AUTHORED
+_got=_diameter([placed@v.co for v in sword.data.vertices])
+print('SWORD_LENGTH got %.4f want %.4f (body ratio %.4f)'%(_got,1.3627*_ratio,_ratio))
+assert abs(_got-1.3627*_ratio)<.02, 'grip transform introduced a scale of its own'
+convert=rest@posed.inverted()@rig.matrix_world.inverted()@placed
 for v in sword.data.vertices:v.co=convert@v.co
 sword.matrix_world=rig.matrix_world.copy()
 group=sword.vertex_groups.new(name=r.name);group.add(list(range(len(sword.data.vertices))),1,'REPLACE')
@@ -200,4 +262,5 @@ bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/warrior_player.
 rig.animation_data.action=actions['Idle'];rig.animation_data.action_slot=actions['Idle'].slots[0]
 bpy.context.scene.frame_set(1)
 bpy.ops.wm.save_as_mainfile(filepath='/tmp/warrior_review.blend')
+if optional:print('BUILT WITHOUT: %s'%', '.join(optional))
 print('WARRIOR_BUILD',len(body.data.vertices),len(sword.data.vertices),[(n,tuple(a.frame_range)) for n,a in actions.items()])
