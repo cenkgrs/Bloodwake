@@ -90,6 +90,19 @@ blocks - the brazier is the current outlier.
 `BWData.wave_rules` derives quota, cap, interval, elite odds and the multiplier
 from the wave, and the boss is `wave % 10 == 0`. Do not add an `if wave == 7`.
 
+### Repo and commits
+
+Git identity is set per repository, not globally - a clone starts without it,
+and `.git/config` is not something a push carries:
+
+```sh
+git config --local user.email "cenkgrs@gmail.com"
+git config --local user.name "Cenk Gürses"
+```
+
+Commit messages take a descriptive subject and an itemized body. No
+`Co-Authored-By` trailer.
+
 ## Verification
 
 ```sh
