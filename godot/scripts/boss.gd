@@ -120,9 +120,17 @@ static func _strike(world, e: Dictionary):
 			world.sound("orb_cast")
 		"summon":
 			_impact(world,e.attack_origin,3.5,spec.color)
-			for point in e.summon_points:
+			for index in e.summon_points.size():
+				var point: Vector3=e.summon_points[index]
 				world.fx.spark(point+Vector3.UP*0.5,spec.color,20)
-				world.spawn_enemy("grunt",point)
+				var minion=world.spawn_enemy("grunt",point)
+				if index%5!=0:
+					# Eight adds take actual waypoints around the player; two rush in.
+					var lateral: Vector3=e.attack_direction.cross(Vector3.UP)
+					minion.summon_route=0;minion.summon_age=0.0
+					minion.summon_forward=e.attack_direction
+					minion.summon_side=1.0 if (point-world.player.position).dot(lateral)>=0 else -1.0
+					minion.summon_width=4.0+(index%5)*0.4
 
 static func in_sector(point: Vector3, origin: Vector3, direction: Vector3, radius: float, arc: float) -> bool:
 	var offset=point-origin;offset.y=0

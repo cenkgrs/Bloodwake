@@ -272,6 +272,8 @@ func _spawn_point() -> Vector3:
 # roles split a pack; the flank width collapses near contact so enemies commit
 # their attacks instead of orbiting. Ranged/support actors use this only to close.
 func _pursuit_direction(e: Dictionary, distance: float) -> Vector3:
+	if e.has("summon_route") and e.summon_route<2:
+		return _summon_pursuit(e)
 	var direct: Vector3=player.position-e.node.position;direct.y=0
 	if distance<1.5:return direct.normalized()
 	var role: int=e.hunt_role
@@ -286,6 +288,23 @@ func _pursuit_direction(e: Dictionary, distance: float) -> Vector3:
 		else:
 			var outward=(e.node.position-player.position).normalized()
 			target+=outward.rotated(Vector3.UP,e.hunt_side*0.7)*2.0*spread
+	return arena.steer(e.node.position,(target-e.node.position).normalized(),e.radius)
+
+# Boss adds first travel around the player's flanks, then close from those sides.
+# This route is exclusive to summoned bodies; ordinary wave pursuit is unchanged.
+func _summon_pursuit(e: Dictionary) -> Vector3:
+	var forward: Vector3=e.summon_forward
+	var side=forward.cross(Vector3.UP)*e.summon_side
+	var lead=player_velocity.limit_length(run.stats.moveSpeed*BWData.UNIT)*0.65
+	var target: Vector3=player.position+lead
+	if e.summon_route==0:
+		target+=side*e.summon_width
+	else:
+		target+=side*2.8+forward*2.4
+	target=arena.push_out(target,e.radius)
+	if e.node.position.distance_to(target)<1.1 or e.summon_age>7.0:
+		e.summon_route+=1;e.summon_age=0.0
+		if e.summon_route>=2:return (player.position-e.node.position).normalized()
 	return arena.steer(e.node.position,(target-e.node.position).normalized(),e.radius)
 
 # What an ordinary wave can field here: every type the run has unlocked, weighted
@@ -343,6 +362,9 @@ func _enemy_tick(e: Dictionary,dt: float):
 	# falls off as it arrives, so the press stays as fast as it was to fight once
 	# it lands - this buys the approach, not the melee.
 	if distance>CLOSE_RANGE:speed*=lerpf(1.0,CLOSE_RUSH,clampf((distance-CLOSE_RANGE)/CLOSE_FALLOFF,0.0,1.0))
+	if e.has("summon_route") and e.summon_route<2:
+		e.summon_age+=dt
+		if distance>2.5:speed*=1.35
 	var move=Vector3.ZERO;e.cooldown-=dt
 	var range_value=data.attackRange*BWData.UNIT
 	var pursuit=_pursuit_direction(e,distance) if e.id!="boss" else direction
