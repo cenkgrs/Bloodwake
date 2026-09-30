@@ -119,6 +119,47 @@ dosyasındaki Child Of constraint'inden okundu ve **sabit olarak gömüldü**. B
 tutuş değişirse bu matris kendiliğinden güncellenmez. Yeniden okuyan bir araç
 yazılması konuşuldu, yazılmadı.
 
+### 5. Kalabalık yerine derli toplu savaş — YAPILDI (30 Eylül 2026)
+
+Dalga başına gövde sayısı yarıdan aza indi (`quota` 12+8w → 5+2w, aynı anda en
+fazla 12), eksik baskı gövdelerin kendisine yazıldı: can, hasar, hız ve ödül
+katalog satırlarında büyüdü. Harita 72 m kareden 52 m kareye çekildi; bölgeler
+duruyor, aralar kısaldı.
+
+Vuruş hissiyatı: bir kılıç darbesi artık önündeki 105° koni içindeki en yakın 3
+gövdeyi keser (shockwave yükseltmesinin aldığı her üçüncü darbe hâlâ tam daire ve
+6 gövde). Her isabet gövdeyi sersemletir ve geri iter. Düşmanlar kol mesafesinde
+durur, oyuncunun içine girmez.
+
+Archer ve yeni `mage` tipi presin içine girmiyor: oyuncunun sağına/soluna 8,6 m
+uzaklıkta bir mevzi tutuyorlar (kamera dönmediği için dünya x ekseni ekranın
+yatay eksenidir). Archer okunu bırakmadan önce 0,4 s nişan çizgisi gösteriyor.
+Mage bir mermi, bir de zamanlı rün kuruyor: fitili görünen bir yapı: üstünden
+çekilerek ya da kırılarak etkisiz bırakılabilir. Rünler `world.gd` içindeki
+`hazards` listesi; `BWWorld.damage_area` prop ve rünü tek çağrıda kapsıyor.
+
+`tests/skirmish_test.gd` bunların hepsini sürüyor. **Hiçbiri bu makinede
+çalıştırılmadı — burada Godot kurulu değil.** Evde sırayla:
+
+    godot --headless --path godot --script tests/test_suite.gd
+    godot --headless --path godot --script tests/skirmish_test.gd
+    godot --headless --path godot --script tests/wave_field_test.gd
+    godot --headless --path godot --script tests/horde_pressure_test.gd
+    godot --headless --path godot --script tests/xp_pacing_test.gd
+    godot --headless --path godot --script tests/combat_flow_test.gd
+    godot --headless --path godot --script tools/balance_table.gd
+
+Son komut `docs/balance.md`'yi yeniden üretir; katalog değiştiği için dosya şu an
+eski sayılar duruyor. Sayılar oyunda ölçülmedi: gövde sayısı/hız/standoff ilk
+oynanışta ayarlanacak asıl yer.
+
+### 6. Sıradaki iş: Blender objeleri ve VFX
+
+VFX'in yapmacık durmasının kaynağı efektlerin tamamının kod içinde kurulan
+additive billboard/quad olması (`scripts/fx.gd`). Rün yapısı da bilerek ilkel bir
+kutu olarak bırakıldı (`world.gd` `_plant_rune`): Blender'dan gelecek mesh'in
+takılacağı yer orası, prop'lardaki `mesh` alanı mantığıyla aynı.
+
 ### Godot import cache tuzağı
 
 Sahneyi editörsüz çalıştırmak `.godot/imported/*.scn` içindeki eski sürümü oynatır;
