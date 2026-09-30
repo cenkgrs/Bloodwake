@@ -28,6 +28,23 @@ var flash_surfaces = []
 var flinch_time = 0.0
 var hit_clip_time = 0.0
 
+# Keep strong references: the resource loader's weak cache otherwise releases a
+# PackedScene when its last body dies, forcing a synchronous GLB reload on spawn.
+static var model_scenes: Dictionary = {}
+
+static func model_scene(file: String) -> PackedScene:
+	if model_scenes.has(file):return model_scenes[file]
+	var start=Time.get_ticks_usec()
+	var packed=load("res://assets/models/%s.glb" % file) as PackedScene
+	if packed!=null:model_scenes[file]=packed
+	if "--profile" in OS.get_cmdline_user_args():
+		print("MODEL_LOAD t=",Time.get_ticks_msec()," asset=",file," ms=",(Time.get_ticks_usec()-start)/1000.0)
+	return packed
+
+static func warm_enemy_models():
+	for file in ["warrior","enemy_warrior","enemy_healer","enemy_assassin","enemy_archer","enemy_tank","enemy_commander","enemy_boss"]:
+		if ResourceLoader.exists("res://assets/models/%s.glb" % file):model_scene(file)
+
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
 	var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
 	var enemy_file="enemy_"+{"grunt":"warrior"}.get(kind,kind)
@@ -42,7 +59,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 	if enemy_asset:file=enemy_file
 	if kind in ["mage","healer"] and enemy and not enemy_asset:
 		_mage(tint);procedural=true;return
-	var packed = load("res://assets/models/%s.glb" % file)
+	var packed = model_scene(file)
 	if not packed is PackedScene:
 		_mage(tint);procedural=true;return
 	model=packed.instantiate();add_child(model)

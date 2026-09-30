@@ -1,0 +1,24 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.84 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 4090
+
+MODEL_LOAD t=1379 asset=bloodbound ms=622.971
+MODEL_LOAD t=2534 asset=warrior_player ms=508.203
+MODEL_LOAD t=3715 asset=enemy_warrior ms=1141.844
+MODEL_LOAD t=6253 asset=enemy_assassin ms=1174.427
+BEAT t=  5.0s wave=5 level=1 pending=0 enemies= 6 bullets= 0 hp=100000
+BEAT t= 10.0s wave=5 level=2 pending=1 enemies=10 bullets= 0 hp=100000
+MODEL_LOAD t=14991 asset=enemy_healer ms=1129.571
+BEAT t= 15.0s wave=5 level=2 pending=1 enemies=14 bullets= 0 hp=99992
+MODEL_LOAD t=23288 asset=enemy_assassin ms=1210.636
+BEAT t= 20.0s wave=5 level=3 pending=2 enemies=14 bullets= 0 hp=99975
+BEAT t= 25.0s wave=5 level=4 pending=3 enemies=19 bullets= 0 hp=99890
+BEAT t= 30.0s wave=5 level=5 pending=4 enemies=18 bullets= 0 hp=99816
+BEAT t= 35.1s wave=5 level=6 pending=5 enemies=10 bullets= 0 hp=99819
+BEAT t= 40.1s wave=5 level=6 pending=5 enemies=10 bullets= 0 hp=99819
+BEAT t= 45.1s wave=5 level=6 pending=5 enemies=10 bullets= 0 hp=99819
+BEAT t= 50.1s wave=5 level=6 pending=5 enemies= 3 bullets= 0 hp=99797
+BEAT t= 55.1s wave=5 level=6 pending=5 enemies= 3 bullets= 0 hp=99797
+PROBE 3387 frames over 60.0s (56.4 fps avg), 3 spikes over 80 ms
+SPIKE t=  2.54s   1193.0 ms  gap= 2.54s  wave=5  enemies= 3  bullets=0
+SPIKE t= 11.27s   1147.3 ms  gap= 8.74s  wave=5  enemies=11  bullets=0
+SPIKE t= 19.57s   1227.5 ms  gap= 8.30s  wave=5  enemies=15  bullets=0

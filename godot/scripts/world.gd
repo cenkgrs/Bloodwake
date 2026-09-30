@@ -89,6 +89,7 @@ const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assass
 
 func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	run=state;quality=profile;audio=mixer;rng.randomize()
+	BWVisual.warm_enemy_models()
 	fx=BWFx.new();add_child(fx);fx.configure(quality)
 	skills=BWSkills.new();add_child(skills);skills.bind(self)
 	_environment()
