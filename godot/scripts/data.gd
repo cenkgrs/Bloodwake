@@ -39,6 +39,13 @@ static func stats(id: String) -> Dictionary:
 static func wave_rules(wave: int) -> Dictionary:
 	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 12+wave*8, "cap":clampi(10+wave*2,10,40), "interval":clampf(0.6-wave*0.02,0.18,0.6), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+0.25*(wave-1)+0.035*pow(wave-1,2), "damage_multiplier":1+0.09*(wave-1)+0.002*pow(wave-1,2)}
 
+static func actor_growth(level: int) -> float:
+	return 1.0+0.025*clampi(level-1,0,20)
+
+static func enemy_height(id: String, elite: bool=false) -> float:
+	var height=3.5 if id=="boss" else 2.3 if id=="tank" else 2.15 if id=="grunt" else 1.7
+	return height*(1.12 if elite else 1.0)
+
 static func enemy_power(wave: int, id: String) -> Dictionary:
 	if id=="boss":
 		var tier=maxf(0.0,floorf(wave/10.0)-1.0)

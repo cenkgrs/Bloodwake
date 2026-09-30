@@ -176,7 +176,7 @@ func _physics_process(dt: float):
 	# Enemies get visibly bigger/tankier as the run goes on (elite odds and the
 	# tank/boss mix both climb with wave); grow the player to match instead of
 	# shrinking into an ant by wave 10, capped so a long run doesn't get silly.
-	visual.set_level_scale(1.0+minf(run.level-1,20)*0.015)
+	visual.set_level_scale(BWData.actor_growth(run.level))
 	var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
 	input=input.limit_length()
 	var movement=Vector3(input.x,0,input.y)
@@ -336,7 +336,8 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.
 	var actor=Node3D.new();add_child(actor);actor.position=pos
 	var art=BWVisual.new();actor.add_child(art)
 	var color=Color(ENEMY_COLORS[id]);if elite:color=Color("c59857")
-	art.configure(id,true,color,3.5 if id=="boss" else 2.3 if id=="tank" else 1.9 if elite else 1.7)
+	art.configure(id,true,color,BWData.enemy_height(id,elite))
+	art.set_level_scale(BWData.actor_growth(run.level))
 	var max_hp=data.maxHp*power.health*(2.5 if elite else 1)
 	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*power.damage*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
 	enemy.hunt_role=enemy_serial%3
@@ -348,6 +349,7 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.
 
 func _enemy_tick(e: Dictionary,dt: float):
 	if e.hp<=0:return
+	e.visual.set_level_scale(BWData.actor_growth(run.level))
 	var node=e.node;var data=e.data
 	e.aura=maxf(0,e.aura-dt);e.slow=maxf(0,e.slow-dt)
 	for status in ["burn","bleed"]:
