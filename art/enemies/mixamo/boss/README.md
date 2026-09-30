@@ -47,3 +47,14 @@ Ordinary enemies have stable direct/left/right pursuit roles, predict up to
 melee contact. Two of every three ordinary arrivals prefer the escape direction;
 the existing wave quota and spawn interval remain authoritative. Alternate arrival
 bearings avoid crowding and keep at least 7.5 m away even at arena corners.
+
+Boss summons now use a separate two-waypoint approach: two adds rush directly,
+eight fan out 4.4–5.6 m to their spawn-side flank, then move to a front-side
+position before joining ordinary melee pursuit. Their approach gets a 1.35x
+speed factor outside 2.5 m to compensate for the longer route. Each waypoint
+has a seven-second timeout so blocked adds cannot orbit forever. Normal wave
+units do not receive these routes or the speed factor.
+
+`tests/summon_motion_test.gd` advances the actual summoned enemies for nine
+seconds and checks sustained bilateral spread, reaching the front and returning
+to melee. `tools/preview_summon.gd` captures their approach with arena obstacles.
