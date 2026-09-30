@@ -12,6 +12,7 @@ var gold = 0
 var level = 1
 var xp = 0
 var pending_levels = 0
+var level_awarded_wave = -1
 var ability_cd = 0.0
 # Extra class skills each run their own timer; the ulti keeps ability_cd.
 var skill_cd: Dictionary = {}
@@ -36,10 +37,19 @@ func add_weapon(id: String) -> bool:
 	weapons[id]={"data":data,"cooldown":0.0,"damage":1.0,"speed":1.0,"range":1.0,"pierce":0,"chain":0,"shockwave":0.0,"burn":0.0,"bleed":0.0,"swings":0}
 	return true
 
+func xp_needed() -> int:
+	var step=level-1
+	return 80+30*step+5*step*step
+
 func add_xp(amount: int):
+	if amount<=0:return
 	xp+=int(round(amount*stats.xpMultiplier))
-	while xp>=20+(level-1)*15:
-		xp-=20+(level-1)*15;level+=1;pending_levels+=1
+	# A large pickup or summon farm cannot buy several upgrade picks in one wave.
+	# Carry at most half the next bar; XP bonuses help reach the pick earlier and
+	# prepare the following wave without stockpiling dozens of future levels.
+	if level_awarded_wave!=wave and xp>=xp_needed():
+		xp-=xp_needed();level+=1;pending_levels+=1;level_awarded_wave=wave
+	if level_awarded_wave==wave:xp=mini(xp,xp_needed()/2)
 
 func available(row: Dictionary,kind: String) -> bool:
 	if kind=="upgrades" and upgrades.get(row.id,0)>=row.maxLevel:return false

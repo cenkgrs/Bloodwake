@@ -104,7 +104,8 @@ func _process(dt):
 	if is_instance_valid(world) and page=="playing":
 		if is_instance_valid(touch):world.move_input=touch.movement;world.fire_input=touch.firing
 		hp_bar.max_value=run.stats.maxHp;hp_bar.value=run.stats.hp
-		xp_bar.max_value=20+(run.level-1)*15;xp_bar.value=run.xp
+		xp_bar.max_value=run.xp_needed();xp_bar.value=run.xp
+		xp_bar.tooltip_text="Wave level earned · saving up to half of the next XP bar" if run.level_awarded_wave==run.wave else "XP to next level"
 		hud_label.text="WAVE %02d     ·     LV %d\n%d / %d HP     ·     %d GOLD     ·     %d KILLS" % [run.wave,run.level,ceili(run.stats.hp),int(run.stats.maxHp),run.gold,run.kills]
 		var lines=["%s  ·  %s" % [BWData.entry("abilities",BWData.CLASSES[run.class_id].ability).name,"READY [SPACE / RMB]" if run.ability_cd<=0 else "%.1fs" % run.ability_cd]]
 		var keys=["Q","E"]

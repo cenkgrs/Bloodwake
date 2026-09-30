@@ -43,7 +43,7 @@ func suite():
 	rifle.gold=100;check(rifle.buy_item("rifle_mechanism"),"shop buys owned weapon effect")
 	var gold=rifle.gold;check(not rifle.buy_item("rifle_mechanism") and rifle.gold==gold,"duplicate purchase cannot charge")
 	check(not rifle.buy_item("gold_sword"),"wrong weapon item blocked")
-	rifle.add_xp(100);check(rifle.level==3 and rifle.pending_levels==2 and rifle.xp==45,"XP overflow")
+	rifle.add_xp(100);check(rifle.level==2 and rifle.pending_levels==1 and rifle.xp==20,"one level with XP carry")
 	rifle.stats.hasSecondWind=true;rifle.hurt(10000);check(rifle.stats.hp==1 and not rifle.stats.hasSecondWind,"second wind")
 	rifle.hurt(10000);check(rifle.stats.hp==0,"second wind consumed")
 	var meta=BWMeta.new();meta.path="user://test_progression.json";meta.essence=100
