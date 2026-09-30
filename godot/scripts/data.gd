@@ -37,7 +37,14 @@ static func stats(id: String) -> Dictionary:
 # fast they arrive. All three carry twice what they used to: the wave is meant to
 # read as a horde closing in, not a queue trickling towards the player.
 static func wave_rules(wave: int) -> Dictionary:
-	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 12+wave*8, "cap":clampi(10+wave*2,10,40), "interval":clampf(0.6-wave*0.02,0.18,0.6), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+(wave-1)*0.08}
+	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 12+wave*8, "cap":clampi(10+wave*2,10,40), "interval":clampf(0.6-wave*0.02,0.18,0.6), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+0.25*(wave-1)+0.035*pow(wave-1,2), "damage_multiplier":1+0.09*(wave-1)+0.002*pow(wave-1,2)}
+
+static func enemy_power(wave: int, id: String) -> Dictionary:
+	if id=="boss":
+		var tier=maxf(0.0,floorf(wave/10.0)-1.0)
+		return {"health":1.0+0.65*tier+0.2*tier*tier,"damage":1.0+0.25*tier}
+	var rules=wave_rules(maxi(wave,1))
+	return {"health":rules.multiplier,"damage":rules.damage_multiplier}
 
 static func effects(id: String) -> Array:
 	var table = {

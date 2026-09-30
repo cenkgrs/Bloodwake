@@ -235,7 +235,7 @@ func _spawn_tick(dt: float):
 	if spawn_timer>0 or enemies.size()>=rules.cap:return
 	spawn_timer=rules.interval
 	var id="boss" if rules.boss else _draw_from(spawn_pool(run.wave,zone.get("id","courtyard")))
-	spawn_enemy(id,_spawn_point(),not rules.boss and rng.randf()<rules.elite,rules.multiplier if not rules.boss else 1.0)
+	spawn_enemy(id,_spawn_point(),not rules.boss and rng.randf()<rules.elite)
 	spawned+=1
 
 # Where the next body comes in. Taking a uniformly random bearing let a run of
@@ -329,14 +329,16 @@ func _draw_from(pool: Dictionary) -> String:
 		if roll<=0.0:return id
 	return pool.keys()[pool.size()-1]
 
-func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=1.0):
+func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.0):
 	var data=BWData.entry("enemies",id)
+	var power=BWData.enemy_power(run.wave,id)
+	if multiplier>=0:power={"health":multiplier,"damage":multiplier}
 	var actor=Node3D.new();add_child(actor);actor.position=pos
 	var art=BWVisual.new();actor.add_child(art)
 	var color=Color(ENEMY_COLORS[id]);if elite:color=Color("c59857")
 	art.configure(id,true,color,3.5 if id=="boss" else 2.3 if id=="tank" else 1.9 if elite else 1.7)
-	var max_hp=data.maxHp*multiplier*(2.5 if elite else 1)
-	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*multiplier*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
+	var max_hp=data.maxHp*power.health*(2.5 if elite else 1)
+	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*power.damage*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
 	enemy.hunt_role=enemy_serial%3
 	enemy.hunt_side=-1.0 if enemy_serial%2==0 else 1.0
 	enemy.hunt_depth=(enemy_serial%5)/4.0

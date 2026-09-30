@@ -52,7 +52,7 @@ a type well above the others pays out faster than it costs to kill.
 | assassin | 22 | 14 | 1.0 | 14.0 | 130 | 0.6 | 10 | 2 | 0.45 | 4 | 2 |
 | healer | 25 | 0 | 2.0 | 0.0 | 85 | 0.0 | 10 | 3 | 0.4 | 5 | 1 |
 | commander | 55 | 8 | 4.5 | 1.8 | 72 | 3.8 | 18 | 6 | 0.33 | 6 | 1 |
-| boss | 900 | 22 | 2.0 | 11.0 | 70 | 1.4 | 150 | 80 | 0.17 | - | - |
+| boss | 2700 | 65 | 2.0 | 32.5 | 70 | 1.4 | 150 | 80 | 0.06 | - | - |
 
 ## Wave curve
 
@@ -64,29 +64,29 @@ with no upgrades at all - the pessimistic end of the range.
 | Wave | Quota | Cap | Interval | Elite | Mult | Grunt HP | Tank HP | Elite HP | TTK Warrior | TTK Bloodbound | TTK Mage | TTK Assassin |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | 20 | 12 | 0.58 | 0% | 1.0x | 30 | 90 | 75 | 0.3s | 1.15s | 1.36s | 0.57s |
-| 3 | 36 | 16 | 0.54 | 6% | 1.16x | 35 | 104 | 87 | 0.35s | 1.33s | 1.57s | 0.66s |
-| 5 | 52 | 20 | 0.5 | 12% | 1.32x | 40 | 119 | 99 | 0.4s | 1.52s | 1.79s | 0.75s |
-| 7 | 68 | 24 | 0.46 | 18% | 1.48x | 44 | 133 | 111 | 0.45s | 1.7s | 2.01s | 0.84s |
-| 10 | 1 | 30 | 0.4 | 27% | 1.72x | 52 | 155 | 129 | 0.52s | 1.97s | 2.33s | 0.98s |
-| 13 | 116 | 36 | 0.34 | 35% | 1.96x | 59 | 176 | 147 | 0.6s | 2.25s | 2.66s | 1.12s |
-| 15 | 132 | 40 | 0.3 | 35% | 2.12x | 64 | 191 | 159 | 0.65s | 2.43s | 2.87s | 1.21s |
-| 20 | 1 | 40 | 0.2 | 35% | 2.52x | 76 | 227 | 189 | 0.77s | 2.89s | 3.41s | 1.43s |
-| 25 | 212 | 40 | 0.18 | 35% | 2.92x | 88 | 263 | 219 | 0.89s | 3.35s | 3.96s | 1.66s |
-| 30 | 1 | 40 | 0.18 | 35% | 3.32x | 100 | 299 | 249 | 1.01s | 3.81s | 4.5s | 1.89s |
-| 40 | 1 | 40 | 0.18 | 35% | 4.12x | 124 | 371 | 309 | 1.26s | 4.73s | 5.58s | 2.35s |
-| 50 | 1 | 40 | 0.18 | 35% | 4.92x | 148 | 443 | 369 | 1.5s | 5.65s | 6.67s | 2.8s |
+| 3 | 36 | 16 | 0.54 | 6% | 1.64x | 49 | 148 | 123 | 0.5s | 1.88s | 2.22s | 0.93s |
+| 5 | 52 | 20 | 0.5 | 12% | 2.56x | 77 | 230 | 192 | 0.78s | 2.94s | 3.47s | 1.46s |
+| 7 | 68 | 24 | 0.46 | 18% | 3.76x | 113 | 338 | 282 | 1.15s | 4.32s | 5.09s | 2.14s |
+| 10 | 1 | 30 | 0.4 | 27% | 6.09x | 183 | 548 | 456 | 1.86s | 6.98s | 8.25s | 3.46s |
+| 13 | 116 | 36 | 0.34 | 35% | 9.04x | 271 | 814 | 678 | 2.76s | 10.38s | 12.25s | 5.15s |
+| 15 | 132 | 40 | 0.3 | 35% | 11.36x | 341 | 1022 | 852 | 3.46s | 13.04s | 15.39s | 6.47s |
+| 20 | 1 | 40 | 0.2 | 35% | 18.39x | 552 | 1655 | 1379 | 5.61s | 21.1s | 24.91s | 10.47s |
+| 25 | 212 | 40 | 0.18 | 35% | 27.16x | 815 | 2444 | 2037 | 8.28s | 31.17s | 36.8s | 15.46s |
+| 30 | 1 | 40 | 0.18 | 35% | 37.69x | 1131 | 3392 | 2826 | 11.49s | 43.25s | 51.06s | 21.45s |
+| 40 | 1 | 40 | 0.18 | 35% | 63.99x | 1920 | 5759 | 4799 | 19.51s | 73.44s | 86.7s | 36.42s |
+| 50 | 1 | 40 | 0.18 | 35% | 97.29x | 2919 | 8756 | 7296 | 29.66s | 111.66s | 131.82s | 55.38s |
 
 ### Boss
 
-The boss does not take the wave multiplier - it is a flat 900 HP at every
-boss wave, which is every tenth. Time to kill it, on starting damage alone:
+The first boss has 2700 HP; later bosses scale with boss tier.
+Bosses arrive every tenth wave. First-boss TTK on starting damage alone:
 
 | Class | Focus DPS | Boss TTK |
 | --- | ---: | ---: |
-| Warrior | 98.4 | 9.1s |
-| Bloodbound | 26.1 | 34.4s |
-| Mage | 22.1 | 40.7s |
-| Assassin | 52.7 | 17.1s |
+| Warrior | 98.4 | 27.4s |
+| Bloodbound | 26.1 | 103.3s |
+| Mage | 22.1 | 122.0s |
+| Assassin | 52.7 | 51.2s |
 
 ## Melee: catalogue against clip
 
@@ -139,7 +139,7 @@ overstated by the same margin.
 - Opening single-target DPS spans **4.44x**: Warrior at 98.4, Mage at 22.1. Everything else being equal, that is how much longer the weakest class holds each body in front of it. Note this uses catalogued rates; see the rig figures above.
 - Effective health spans **1.91x**, Warrior at 162 down to Mage at 85.
 - Experience per point of health spans **3.41x**: assassin pays 0.45 per HP, tank only 0.13. Waves that lean on the cheap end level the player noticeably faster.
-- The boss is a flat 900 HP at every boss wave while an ordinary grunt goes from 52 HP at wave 10 to 148 at wave 50. The first boss is worth **17 grunts**, the fifth-from-last **6** - relative to the wave around it, the boss gets steadily easier.
+- The boss is a flat 2700 HP at every boss wave while an ordinary grunt goes from 183 HP at wave 10 to 2919 at wave 50. The first boss is worth **15 grunts**, the fifth-from-last **1** - relative to the wave around it, the boss gets steadily easier.
 - The spawn cap tops out at 40 from **wave 15**, and the interval bottoms out at 0.18s from **wave 21**. Past those, a wave gets longer rather than denser - the quota keeps climbing but the pressure on screen does not.
 - A healer restores **5.0 HP/s** to one ally (12.5 in an elite). Against the slowest opening class that is 23% of its whole single-target output, so an unfocused healer can stall a wave outright.
 
