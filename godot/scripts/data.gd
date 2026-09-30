@@ -34,16 +34,19 @@ static func stats(id: String) -> Dictionary:
 	return result
 
 # Quota is the wave's body count, cap how many may stand at once, interval how
-# fast they arrive. All three carry twice what they used to: the wave is meant to
-# read as a horde closing in, not a queue trickling towards the player.
+# fast they arrive. All three were once carrying twice these numbers, and the
+# crowd that produced cost the fight its readability: a swing landed on five
+# bodies at once, so no single hit registered as a hit. A wave is now a handful
+# of enemies that each have to be dealt with, paid for by the health, damage and
+# reward on the catalog rows and by the speed they close at.
 static func wave_rules(wave: int) -> Dictionary:
-	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 12+wave*8, "cap":clampi(10+wave*2,10,40), "interval":clampf(0.6-wave*0.02,0.18,0.6), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+0.25*(wave-1)+0.035*pow(wave-1,2), "damage_multiplier":1+0.09*(wave-1)+0.002*pow(wave-1,2)}
+	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 5+wave*2, "cap":clampi(4+wave,5,12), "interval":clampf(0.95-wave*0.03,0.45,0.95), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+0.25*(wave-1)+0.035*pow(wave-1,2), "damage_multiplier":1+0.09*(wave-1)+0.002*pow(wave-1,2)}
 
 static func actor_growth(level: int) -> float:
 	return 1.0+0.025*clampi(level-1,0,20)
 
 static func enemy_height(id: String, elite: bool=false) -> float:
-	var height=3.5 if id=="boss" else 2.3 if id=="tank" else 2.15 if id=="grunt" else 1.7
+	var height=3.5 if id=="boss" else 2.3 if id=="tank" else 2.15 if id=="grunt" else 1.95 if id=="mage" else 1.7
 	return height*(1.12 if elite else 1.0)
 
 static func enemy_power(wave: int, id: String) -> Dictionary:

@@ -9,7 +9,12 @@ extends Node3D
 # Everything here is data. A prop's mesh is either a primitive built in code or a
 # res:// path, so a generated model drops in by filling MESH on one row.
 
-const HALF = 36.0            # the map is HALF*2 square
+# The map used to be 72 m square. At that size a wave spread out over ground the
+# camera never showed at once, and the answer to pressure was to walk away from it
+# until the next body arrived. Pulling the walls in makes the fight happen where
+# the player is standing: the districts still read as separate places, they are
+# just a short walk apart instead of a hike.
+const HALF = 26.0            # the map is HALF*2 square
 const EDGE = HALF - 1.5      # bodies are kept this far inside the wall
 
 # A district: where it is, how big, how it is lit, and what tends to hold it.
@@ -21,26 +26,26 @@ const EDGE = HALF - 1.5      # bodies are kept this far inside the wall
 # unlocked can always turn up anywhere, so a low number is rare rather than
 # absent, and no district can empty its own pool.
 const ZONES = [
-	{"id": "courtyard", "name": "THE COURTYARD", "at": Vector2(0, 0), "radius": 15.0,
+	{"id": "courtyard", "name": "THE COURTYARD", "at": Vector2(0, 0), "radius": 12.0,
 		"ground": Color("4a4f58"), "ambient": Color("8fa2bb"), "fog": Color("1b232f"),
-		"energy": 0.55, "props": {"pillar_plain": 7, "brazier": 4, "rubble": 10, "urn_plain": 6},
+		"energy": 0.55, "props": {"pillar_plain": 5, "brazier": 3, "rubble": 7, "urn_plain": 4},
 		"garrison": {}},
-	{"id": "ossuary", "name": "THE OSSUARY", "at": Vector2(-22, -18), "radius": 13.0,
+	{"id": "ossuary", "name": "THE OSSUARY", "at": Vector2(-15, -12.5), "radius": 10.0,
 		"ground": Color("5a5548"), "ambient": Color("93ad9a"), "fog": Color("1d261f"),
-		"energy": 0.42, "props": {"bones": 14, "wall": 5, "brazier": 2, "urn_plain": 7},
-		"garrison": {"grunt": 2.0, "tank": 1.6, "archer": 0.5, "assassin": 0.6}},
-	{"id": "ruins", "name": "THE RUINS", "at": Vector2(23, -17), "radius": 14.0,
+		"energy": 0.42, "props": {"bones": 10, "wall": 4, "brazier": 2, "urn_plain": 5},
+		"garrison": {"grunt": 2.0, "tank": 1.6, "archer": 0.5, "assassin": 0.6, "mage": 0.5}},
+	{"id": "ruins", "name": "THE RUINS", "at": Vector2(15.5, -12), "radius": 10.5,
 		"ground": Color("4f4a44"), "ambient": Color("a9a08d"), "fog": Color("241f1a"),
-		"energy": 0.48, "props": {"wall": 8, "boulder": 6, "rubble": 12, "urn_plain": 5},
-		"garrison": {"archer": 2.4, "commander": 1.5, "grunt": 0.7, "tank": 0.6}},
-	{"id": "altar", "name": "THE BLOOD ALTAR", "at": Vector2(-20, 21), "radius": 12.0,
+		"energy": 0.48, "props": {"wall": 6, "boulder": 4, "rubble": 8, "urn_plain": 4},
+		"garrison": {"archer": 2.4, "commander": 1.5, "mage": 1.8, "grunt": 0.7, "tank": 0.6}},
+	{"id": "altar", "name": "THE BLOOD ALTAR", "at": Vector2(-14, 14), "radius": 9.5,
 		"ground": Color("52393b"), "ambient": Color("c2707a"), "fog": Color("2a1416"),
-		"energy": 0.5, "props": {"pillar": 6, "brazier": 5, "bones": 8, "urn": 4},
-		"garrison": {"healer": 2.6, "commander": 2.0, "tank": 1.4, "archer": 0.6}},
-	{"id": "grove", "name": "THE DEAD GROVE", "at": Vector2(22, 20), "radius": 14.0,
+		"energy": 0.5, "props": {"pillar": 4, "brazier": 4, "bones": 6, "urn": 3},
+		"garrison": {"healer": 2.6, "mage": 2.4, "commander": 2.0, "tank": 1.4, "archer": 0.6}},
+	{"id": "grove", "name": "THE DEAD GROVE", "at": Vector2(15, 14), "radius": 10.5,
 		"ground": Color("42463f"), "ambient": Color("7d8f86"), "fog": Color("161c19"),
-		"energy": 0.34, "props": {"tree": 10, "boulder": 5, "rubble": 8, "urn_plain": 5},
-		"garrison": {"assassin": 2.6, "archer": 1.3, "grunt": 0.8, "tank": 0.4}},
+		"energy": 0.34, "props": {"tree": 7, "boulder": 4, "rubble": 6, "urn_plain": 4},
+		"garrison": {"assassin": 2.6, "archer": 1.3, "grunt": 0.8, "mage": 0.7, "tank": 0.4}},
 ]
 
 # radius: how far a body is held off it. hp > 0 means it breaks.

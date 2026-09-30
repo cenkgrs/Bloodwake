@@ -93,7 +93,7 @@ func suite():
 	# The districts must actually differ, or the garrison table is decoration. Each
 	# one that declares a garrison weights its own theme above the neutral courtyard.
 	var neutral=world.spawn_pool(30,"courtyard")
-	for pairing in [["ossuary","grunt"],["ruins","archer"],["altar","healer"],["grove","assassin"]]:
+	for pairing in [["ossuary","grunt"],["ruins","archer"],["altar","healer"],["altar","mage"],["grove","assassin"]]:
 		var district_pool=world.spawn_pool(30,pairing[0])
 		check(district_pool[pairing[1]]>neutral[pairing[1]],"%s fields more %s than the courtyard" % pairing)
 	check(world.spawn_pool(30,"courtyard").hash()==neutral.hash(),"the courtyard stays the neutral mix")
@@ -109,8 +109,8 @@ func suite():
 	var previous=BWData.wave_rules(1)
 	for wave in range(2,120):
 		var rules=BWData.wave_rules(wave)
-		check(rules.cap>=10 and rules.cap<=40,"spawn cap stays in bounds: "+str(wave))
-		check(rules.interval>=0.18 and rules.interval<=0.6,"spawn interval stays in bounds: "+str(wave))
+		check(rules.cap>=5 and rules.cap<=12,"spawn cap stays in bounds: "+str(wave))
+		check(rules.interval>=0.45 and rules.interval<=0.95,"spawn interval stays in bounds: "+str(wave))
 		check(rules.elite>=0.0 and rules.elite<=0.35,"elite odds stay in bounds: "+str(wave))
 		check(rules.multiplier>previous.multiplier,"waves keep getting harder: "+str(wave))
 		if not rules.boss and not previous.boss:check(rules.quota>previous.quota,"the quota climbs between ordinary waves: "+str(wave))

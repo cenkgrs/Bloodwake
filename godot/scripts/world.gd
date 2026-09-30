@@ -18,6 +18,7 @@ var wave_zone = "courtyard"
 var enemies: Array = []
 var bullets: Array = []
 var pickups: Array = []
+var hazards: Array = []
 var spawn_timer = 0.0
 var spawned = 0
 var spawn_slot = 0
@@ -59,7 +60,33 @@ const SPAWN_STRIDE = 3
 # speed; it ramps to CLOSE_RUSH over the next CLOSE_FALLOFF metres.
 const CLOSE_RANGE = 2.6
 const CLOSE_FALLOFF = 6.0
-const CLOSE_RUSH = 2.1
+const CLOSE_RUSH = 2.45
+# How much room a body leaves the player. The catalogued attack range on a grunt is
+# shorter than the two bodies are wide, so a wave used to close until it was
+# standing inside the player. Enemies now ring them at arm's length: the press is
+# still a press, but every member of it is a separate thing you can see and hit.
+const PERSONAL_SPACE = 0.62
+# A swing is one blade travelling through one arc, so only what is in front of it
+# is cut, and only the nearest few. Landing on everything within reach is what made
+# a hit on six bodies feel like a hit on none. The shockwave upgrade is the stated
+# exception: that swing is bought to clear a crowd, so it keeps the full circle.
+const MELEE_ARC = 105.0
+const MELEE_TARGETS = 3
+const SHOCKWAVE_TARGETS = 6
+# What a landed hit does to the body that took it, beyond the number: it is stopped
+# for a beat and shoved back. Armour and elites resist both.
+const STAGGER_TIME = 0.15
+const KNOCKBACK = 0.24
+# Where missile troops stand: off to the player's left or right, far enough out to
+# read as the edge of the arena. The camera never rotates, so the world x axis is
+# screen-horizontal and a post on it is a post the player can see winding up.
+const FLANK_STANDOFF = 8.6
+# How long an archer holds its aim before the arrow leaves, and how long a mage
+# commits to a cast. Both exist so a shot from the flank can be read and dodged.
+const DRAW_TIME = 0.4
+const CAST_TIME = 0.55
+# Runes a mage may have standing at once. A wave of mages must not carpet the floor.
+const HAZARD_LIMIT = 6
 const ARMORED = ["tank","boss"]
 const WEAPON_SHOT = {"rapid_rifle":"gun_rifle","basic_pistol":"gun_pistol","shotgun":"gun_shotgun","magic_orb":"orb_cast","lightning":"lightning_cast"}
 const HURT_FLASH_COLOR = Color("ff3b30")
@@ -85,7 +112,7 @@ const SOLO_SWING = 0.9
 const SPIN_COOLDOWN = 2.6
 const SPIN_RADIUS = 1.9
 const SPIN_DAMAGE = 2.2
-const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assassin":"667482","healer":"72b78e","commander":"c4a75e","boss":"8a3440"}
+const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assassin":"667482","healer":"72b78e","commander":"c4a75e","mage":"8f6fc4","boss":"8a3440"}
 
 func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	run=state;quality=profile;audio=mixer;rng.randomize()
@@ -211,6 +238,7 @@ func _physics_process(dt: float):
 	for enemy in enemies.duplicate():
 		if is_instance_valid(enemy.node):_enemy_tick(enemy,dt)
 	_projectiles(dt)
+	_hazards(dt)
 	if run.stats.hp>0:_pickups(dt)
 	if run.stats.hp<=0:
 		running=false;pending_attacks.clear();visual.action("death");sound("player_death")
@@ -225,7 +253,7 @@ func _spawn_tick(dt: float):
 			for pickup in pickups:
 				if pickup.kind=="xp":run.add_xp(pickup.amount)
 				pickup.node.queue_free()
-			pickups.clear();pending_attacks.clear();running=false;wave_cleared.emit()
+			pickups.clear();pending_attacks.clear();clear_hazards();running=false;wave_cleared.emit()
 		return
 	# The wave forms around the player, wherever that is. The district under them
 	# only decides what turns up, so walking somewhere changes who comes for you
@@ -339,7 +367,7 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.
 	art.configure(id,true,color,BWData.enemy_height(id,elite))
 	art.set_level_scale(BWData.actor_growth(run.level))
 	var max_hp=data.maxHp*power.health*(2.5 if elite else 1)
-	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*power.damage*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0}
+	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*power.damage*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0,"stagger":0.0,"cast_kind":""}
 	enemy.hunt_role=enemy_serial%3
 	enemy.hunt_side=-1.0 if enemy_serial%2==0 else 1.0
 	enemy.hunt_depth=(enemy_serial%5)/4.0
@@ -357,6 +385,13 @@ func _enemy_tick(e: Dictionary,dt: float):
 			e[status]=maxf(0,e[status]-dt)
 			_damage_enemy(e,e[status+"_dps"]*dt,false,false)
 			if e.hp<=0:return
+	# A staggered body is off its feet for a moment: it does not advance, attack or
+	# tick its cooldown down. This is the whole of what a landed hit buys, and it is
+	# why the fight now reads as an exchange with each enemy rather than a crowd.
+	if e.stagger>0 and e.id!="boss":
+		e.stagger=maxf(0.0,e.stagger-dt)
+		e.visual.tick(dt,false)
+		return
 	var delta=player.position-node.position;delta.y=0
 	var distance=delta.length();var direction=delta.normalized()
 	# Not pathfinding - just enough steering that a pillar does not become a wall an
@@ -375,12 +410,22 @@ func _enemy_tick(e: Dictionary,dt: float):
 	var pursuit=_pursuit_direction(e,distance) if e.id!="boss" else direction
 	match e.id:
 		"archer":
-			var preferred=data.preferredRange*BWData.UNIT
-			if distance<preferred*0.75:move=-direction*speed
-			elif distance>preferred*1.1:move=pursuit*speed
-			if distance<=range_value and e.cooldown<=0:
-				_bullet(node.position,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
-				e.cooldown=data.attackCooldown;e.visual.action("attack")
+			e.timer-=dt
+			# Kiting along the line the player is on kept archers in the middle of the
+			# melee, shooting through bodies. A post to one side takes them out of the
+			# press and puts them where the camera can show the draw.
+			move=_to_post(e,speed,distance,minf(data.preferredRange*BWData.UNIT,FLANK_STANDOFF))
+			if e.state=="draw":
+				move*=0.25
+				if e.timer<=0:
+					e.state="chase"
+					_bullet(node.position+direction*0.4,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
+			elif distance<=range_value and e.cooldown<=0:
+				e.state="draw";e.timer=DRAW_TIME;e.cooldown=data.attackCooldown
+				e.visual.action("attack")
+				# The aim line is the fairness: an arrow arriving from the edge of the
+				# screen has to announce itself before it leaves the bow.
+				fx.beam(node.position+Vector3.UP*1.1,player.position+Vector3.UP*0.6,Color("e8c48a"),DRAW_TIME)
 		"healer","commander":
 			var preferred=data.preferredRange*BWData.UNIT
 			if distance<preferred*(0.65 if e.id=="commander" else 1):move=-direction*speed
@@ -394,6 +439,28 @@ func _enemy_tick(e: Dictionary,dt: float):
 					elif e.id=="healer" and ally.maxHp-ally.hp>missing:best=ally;missing=ally.maxHp-ally.hp
 				if not best.is_empty():best.hp=minf(best.maxHp,best.hp+data.healAmount*(2.5 if e.elite else 1))
 				fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("619c82") if e.id=="healer" else Color("cfab53"),0.45)
+		"mage":
+			e.timer-=dt
+			move=_to_post(e,speed,distance,minf(data.preferredRange*BWData.UNIT,FLANK_STANDOFF))
+			if e.state=="cast":
+				move*=0.15
+				if e.timer<=0:
+					e.state="chase"
+					if e.cast_kind=="rune":
+						_plant_rune(e)
+					else:
+						var bolt=_bullet(node.position+direction*0.4+Vector3.UP*0.3,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
+						if bolt!=null:bolt.node.add_child(fx.glow_sprite(Color("c07bff"),0.7,1.5))
+						sound_at("orb_cast",node.position,-4.0)
+			elif e.cooldown<=0 and distance<=range_value:
+				# Every other cast is a rune instead of a bolt, so a mage is a thing to
+				# close on rather than a turret to trade with. At the rune limit it
+				# spends the cast on a bolt instead of stacking the floor.
+				e.pattern_index+=1
+				e.cast_kind="rune" if e.pattern_index%2==0 and hazards.size()<HAZARD_LIMIT else "bolt"
+				e.state="cast";e.timer=CAST_TIME;e.visual.action("attack")
+				e.cooldown=float(data.get("runeCooldown",6.5)) if e.cast_kind=="rune" else data.attackCooldown
+				fx.spark(node.position+Vector3.UP*1.2,Color("c07bff"),6)
 		"assassin":
 			e.timer-=dt
 			match e.state:
@@ -415,7 +482,10 @@ func _enemy_tick(e: Dictionary,dt: float):
 			e.visual.tick(dt,moving)
 			return
 		_:
-			if distance>range_value:move=pursuit*speed
+			# A body stops where its blade can reach and not a step closer, so the
+			# player can see which enemy is swinging at them.
+			var standoff=maxf(range_value,e.radius+PERSONAL_SPACE)
+			if distance>standoff:move=pursuit*speed
 			elif e.cooldown<=0:
 				_hurt_player(e.damage*(1.25 if e.aura>0 else 1));e.cooldown=data.attackCooldown;e.visual.action("attack")
 	if move.length_squared()>0.01:
@@ -427,6 +497,12 @@ func _enemy_tick(e: Dictionary,dt: float):
 		move+=separation*speed*1.4
 		node.position+=move.limit_length(speed*(4.5 if e.state=="dash" else 1.3))*dt
 	node.position=arena.push_out(node.position,e.radius*0.8)
+	# Whatever the steering did, nothing but the assassin's dash ends its frame inside
+	# the player. Bodies ring them; they do not occupy them.
+	if e.state!="dash":
+		var gap=e.radius+PERSONAL_SPACE*0.8
+		var out=node.position-player.position;out.y=0
+		if out.length()<gap and out.length()>0.001:node.position=player.position+out.normalized()*gap
 	var facing=move.normalized() if move.length_squared()>0.01 else direction
 	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*10))
 	e.visual.tick(dt,move.length_squared()>0.01)
@@ -527,16 +603,22 @@ func _resolve_weapon(id: String,direction: Vector3):
 	match behavior:
 		"melee":
 			slot.swings+=1
-			var radius=range_value+(slot.shockwave*BWData.UNIT if slot.swings%3==0 else 0)
+			# The shockwave upgrade turns every third swing into the crowd answer: full
+			# circle, more bodies. Every other swing is a blade with a front and a limit.
+			var wide=slot.shockwave>0 and slot.swings%3==0
+			var radius=range_value+(slot.shockwave*BWData.UNIT if wide else 0.0)
 			var hit=[]
 			var blade="dagger" if id=="daggers" else "sword"
-			for e in enemies.duplicate():
-				if e.node.position.distance_to(player.position)<=radius+e.radius:
-					var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
-					if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
-			arena.damage_area(player.position,radius,base)
+			for entry in _reachable(direction,radius,wide,SHOCKWAVE_TARGETS if wide else MELEE_TARGETS):
+				var e=entry.enemy
+				var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
+				if e.hp>0:
+					_stagger(e)
+					if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
+			damage_area(player.position,radius,base)
 			fx.slash(player.position,direction,radius,Color("ffca7a"))
-			if not hit.is_empty():shake=maxf(shake,0.035)
+			# A connecting swing is felt in the camera as well as on the body it hit.
+			if not hit.is_empty():shake=maxf(shake,0.06)
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
 		"chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
 		_:
@@ -585,8 +667,10 @@ func _resolve_spin(id: String,direction: Vector3):
 		if e.node.position.distance_to(player.position)<=radius+e.radius:
 			var roll=run.damage_roll(base)
 			_damage_enemy(e,roll.damage,roll.critical,true,"sword");hit.append(e)
-			if e.hp>0 and slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
-	arena.damage_area(player.position,radius,base)
+			if e.hp>0:
+				_stagger(e,1.5)
+				if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
+	damage_area(player.position,radius,base)
 	for turn in 3:
 		fx.slash(player.position,direction.rotated(Vector3.UP,TAU*turn/3.0),radius,Color("ffd08a"))
 	fx.shockwave(player.position,radius,Color("ffb066"),0.3,0.0,1.8)
@@ -600,7 +684,7 @@ func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 		if next==null:return
 		var end=next.node.position;fx.beam(origin+Vector3.UP,end+Vector3.UP,Color("a5cfff"))
 		# The arc earths itself on whatever it passes through.
-		arena.damage_area(end,1.0,base)
+		damage_area(end,1.0,base)
 		var roll=run.damage_roll(base);_damage_enemy(next,roll.damage,roll.critical,true,"chain")
 		if next.hp>0:next.burn=2;next.burn_dps=4
 		hit.append(next);origin=end
@@ -622,6 +706,122 @@ func ground_target(reach: float) -> Vector3:
 	point.x=clampf(point.x,-BWArena.EDGE,BWArena.EDGE);point.z=clampf(point.z,-BWArena.EDGE,BWArena.EDGE)
 	point.y=0
 	return point
+
+# Which bodies one swing may actually cut: inside the blade's reach, in front of it
+# unless the swing is the wide one, nearest first, and never more than the cap.
+# Returned as records so the caller can damage them while enemies is being mutated.
+func _reachable(direction: Vector3,radius: float,wide: bool,limit: int) -> Array:
+	var found=[]
+	var threshold=cos(deg_to_rad(MELEE_ARC*0.5))
+	for e in enemies:
+		if e.hp<=0:continue
+		var offset=e.node.position-player.position;offset.y=0
+		var gap=offset.length()-e.radius
+		if gap>radius:continue
+		# A body already against the player is cut whichever way the blade points -
+		# there is no front to be outside of at that distance.
+		if not wide and gap>0.5 and direction.dot(offset.normalized())<threshold:continue
+		found.append({"enemy":e,"gap":gap})
+	found.sort_custom(func(a,b):return a.gap<b.gap)
+	return found.slice(0,limit)
+
+# A hit has to land on the body, not only on its health bar. The blow stops it for a
+# beat and shoves it back, which is what makes one enemy at a time readable.
+func _stagger(e: Dictionary,force: float=1.0):
+	if e.id=="boss":return
+	var resist=0.5 if e.id in ARMORED or e.elite else 1.0
+	e.stagger=maxf(e.stagger,STAGGER_TIME*resist*force)
+	var away=e.node.position-player.position;away.y=0
+	if away.length()<=0.01:return
+	e.node.position=arena.push_out(e.node.position+away.normalized()*KNOCKBACK*resist*force,e.radius*0.8)
+
+# A missile trooper's standing post: off to the player's left or right at its own
+# reach, jittered along the depth axis so two of them do not share one spot.
+func _flank_post(e: Dictionary,standoff: float) -> Vector3:
+	var post=player.position+Vector3(e.hunt_side*standoff,0,(e.hunt_depth-0.5)*3.6)
+	post.x=clampf(post.x,-BWArena.EDGE,BWArena.EDGE);post.z=clampf(post.z,-BWArena.EDGE,BWArena.EDGE)
+	return arena.push_out(Vector3(post.x,0,post.z),e.radius)
+
+# Movement towards that post. Closer than it wants to be, it hurries out: a caster
+# being stood on has to be able to leave, or the answer to every caster is to hug it.
+func _to_post(e: Dictionary,speed: float,distance: float,standoff: float) -> Vector3:
+	var offset=_flank_post(e,standoff)-e.node.position;offset.y=0
+	if offset.length()<=0.7:return Vector3.ZERO
+	return arena.steer(e.node.position,offset.normalized(),e.radius)*speed*(1.5 if distance<3.0 else 1.0)
+
+# A mage builds as well as casts. The rune is planted where the player is standing,
+# burns a visible fuse, and then goes off - so the ground becomes something to read
+# and leave. It can be broken first, which is the point of it: a swing spent on the
+# rune is a swing not spent on the mage that planted it.
+func _plant_rune(e: Dictionary):
+	var spot=arena.push_out(player.position+Vector3(rng.randf_range(-0.5,0.5),0,rng.randf_range(-0.5,0.5)),0.6)
+	var radius=float(e.data.get("runeRadius",150))*BWData.UNIT
+	var fuse=float(e.data.get("runeFuse",2.3))
+	var tone=Color("c07bff")
+	# A primitive stand-in, the way every prop starts: one mesh with a known
+	# footprint, so a built model replaces it by loading a scene here.
+	var node=Node3D.new();add_child(node);node.position=spot
+	var pylon=MeshInstance3D.new();var shard=BoxMesh.new();shard.size=Vector3(0.3,0.78,0.3)
+	pylon.mesh=shard;pylon.position.y=0.39;pylon.rotation.y=PI*0.25
+	var skin=StandardMaterial3D.new();skin.albedo_color=Color("2a1b3d")
+	skin.emission_enabled=true;skin.emission=tone;skin.emission_energy_multiplier=1.6
+	pylon.material_override=skin;pylon.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.add_child(pylon)
+	node.add_child(fx.glow_sprite(tone,0.9,1.4))
+	fx.telegraph(spot,radius,tone,fuse)
+	hazards.append({"node":node,"pos":spot,"radius":radius,"fuse":fuse,"life":fuse,
+		"hp":maxf(8.0,e.maxHp*0.35),"damage":e.damage*float(e.data.get("runeDamage",1.7)),"tone":tone})
+	sound_at("orb_cast",spot,-2.0)
+
+func _hazards(dt: float):
+	for h in hazards.duplicate():
+		h.fuse-=dt
+		if is_instance_valid(h.node):
+			# The fuse is shown on the structure itself: it rises and beats faster as
+			# the time runs out, so leaving is a decision and not a surprise.
+			var spent=1.0-clampf(h.fuse/h.life,0.0,1.0)
+			var beat=1.0+0.18*sin(elapsed*(7.0+14.0*spent))*spent
+			h.node.scale=Vector3(beat,1.0+spent*0.45,beat)
+		if h.fuse<=0:_detonate(h,true)
+
+func _detonate(h: Dictionary,blast: bool):
+	if not hazards.has(h):return
+	hazards.erase(h)
+	if blast:
+		if player.position.distance_to(h.pos)<=h.radius+0.36:_hurt_player(h.damage)
+		damage_area(h.pos,h.radius,h.damage)
+		for e in enemies.duplicate():
+			# A rune is a bomb, not an ally: whatever is standing over it takes it.
+			if e.node.position.distance_to(h.pos)<=h.radius+e.radius:_damage_enemy(e,h.damage*0.5,false,true,"ability")
+		fx.shockwave(h.pos,h.radius,h.tone,0.34,0.0,1.7)
+		fx.spark(h.pos+Vector3.UP*0.4,h.tone,22)
+		fx.flash_light(h.pos,h.tone,2.4,h.radius*1.6,0.28)
+		shake=maxf(shake,0.1)
+		sound_at("hit_heavy",h.pos)
+	else:
+		fx.spark(h.pos+Vector3.UP*0.5,h.tone,14)
+		sound_at("sword_hit_armor",h.pos,-2.0)
+	if is_instance_valid(h.node):h.node.queue_free()
+
+# Anything the player lands on an area lands on what is standing in it. Breaking a
+# rune before its fuse ends defuses it: it comes apart without the blast.
+func damage_hazards(origin: Vector3,radius: float,amount: float):
+	for h in hazards.duplicate():
+		if origin.distance_to(h.pos)>radius+0.4:continue
+		h.hp-=amount
+		fx.spark(h.pos+Vector3.UP*0.5,h.tone,5)
+		if h.hp<=0:_detonate(h,false)
+
+# One call for "this blast covers this circle", so a new area attack cannot hit the
+# scenery and miss the runes, or the other way round.
+func damage_area(spot: Vector3,radius: float,amount: float) -> Array:
+	damage_hazards(spot,radius,amount)
+	return arena.damage_area(spot,radius,amount)
+
+func clear_hazards():
+	for h in hazards:
+		if is_instance_valid(h.node):h.node.queue_free()
+	hazards.clear()
 
 func _nearest_unhit(origin: Vector3,reach: float,hit_ids: Array):
 	var best=null;var best_distance=reach*reach
@@ -782,7 +982,7 @@ func _pickups(dt: float):
 
 func next_wave():
 	for b in bullets:b.node.queue_free()
-	bullets.clear();run.wave+=1;spawned=0;spawn_timer=0;rest_time=4;running=true
+	bullets.clear();clear_hazards();run.wave+=1;spawned=0;spawn_timer=0;rest_time=4;running=true
 	spawn_slot=0;spawn_bearing=rng.randf()*TAU
 	sound("wave_start");wave_music();changed.emit()
 

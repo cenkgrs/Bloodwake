@@ -103,10 +103,12 @@ func slash(origin: Vector3,direction: Vector3,radius: float,color: Color):
 	tween.tween_property(mat,"albedo_color",Color(0,0,0),0.17)
 	tween.chain().tween_callback(pivot.queue_free)
 
-func beam(a: Vector3,b: Vector3,color: Color):
+# duration exists for the aim line an archer draws: a chain arc is gone in a frame,
+# a telegraph has to stay up as long as the wind-up it is announcing.
+func beam(a: Vector3,b: Vector3,color: Color,duration: float=0.15):
 	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_LINES);mesh.surface_add_vertex(a);mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex(b);mesh.surface_end()
 	var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.surface_set_material(0,mat);node.material_override=mat;add_child(node)
-	get_tree().create_timer(0.15).timeout.connect(node.queue_free)
+	get_tree().create_timer(duration).timeout.connect(node.queue_free)
 
 # A soft additive billboard. Layering two or three of these at different sizes is
 # what turns a flat coloured dot into something that reads as light.

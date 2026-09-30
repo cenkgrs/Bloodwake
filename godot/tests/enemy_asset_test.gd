@@ -4,7 +4,7 @@ func check(ok: bool,message: String):
 	if not ok:failures+=1;push_error(message)
 func _initialize():call_deferred("suite")
 func suite():
-	for id in ["grunt","healer","assassin","archer","tank","commander","boss"]:
+	for id in ["grunt","healer","assassin","archer","tank","commander","mage","boss"]:
 		var file="warrior" if id=="grunt" else id
 		if not ResourceLoader.exists("res://assets/models/enemy_%s.glb" % file):continue
 		var visual=BWVisual.new();root.add_child(visual);visual.configure(id,true,Color.WHITE,1.7)

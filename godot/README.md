@@ -39,21 +39,35 @@ godot --path godot
 | Menus, HUD, shop, rewards, pause, settings | `scripts/main.gd` |
 | Touch input | `scripts/touch_controls.gd` |
 
-`data/catalogs.json` holds 7 weapons, 12 abilities, 7 enemy types, 22 upgrades,
+`data/catalogs.json` holds 7 weapons, 12 abilities, 8 enemy types, 22 upgrades,
 11 shop items, 9 permanent equipment items and 15 skill nodes. It was extracted
 once from the original Dart catalogs and is the source of truth now.
 Distances use 50 legacy pixels per world meter. Each district carries a `garrison`
 table that weights what a wave draws there on top of the catalog's own
 `spawnWeight`; it shifts the mix rather than choosing it, so nothing the run has
 unlocked is ever unreachable in a given district.
-Basic grunt melee damage is 8.
+Basic grunt melee damage is 10.
+
+A wave is a handful of enemies, not a horde. `BWData.wave_rules` fields `5+wave*2`
+bodies with at most `4+wave` (capped at 12) standing at once, and the catalog rows
+carry the health, damage and reward that used to be spread over twice as many
+kills. The map is 52 m square so the fight happens where the player is, a swing
+cuts at most `BWWorld.MELEE_TARGETS` bodies inside a `MELEE_ARC` cone in front of
+it, and every landed hit staggers and shoves what it hit. Archers and mages do not
+join the press: they take a post `FLANK_STANDOFF` metres to the player's left or
+right - screen-left and screen-right, since the camera never rotates - and
+telegraph from there. A mage alternates a bolt with a planted rune: a structure on
+the ground with a visible fuse that can be walked out of or broken before it goes
+off. Runes are the `hazards` list in `world.gd`; `BWWorld.damage_area` is the one
+call that covers props and runes together.
 
 Bloodbound uses the user's rigged GLB with idle/run/attack/hit/death clips, normalized
 from `art/bloodbound/source/bloodbound_game.glb`. Its internal class ID is still
 `gunslinger`. All facings are 3D rotations. The playable Warrior uses the supplied Tripo knight and greatsword with five
 Mixamo two-handed clips (Idle, Run, Attack, Hit, Death), built as
 `assets/models/warrior_player.glb`. The sword is rigidly skinned to the right hand;
-planar root motion is removed. Enemy Warriors retain the Quaternius placeholder. Assassin's current model still needs authored animation clips. The playable Mage
+planar root motion is removed. Enemy Warriors retain the Quaternius placeholder. Enemy mages use the procedural
+robed body until `enemy_mage.glb` exists. Assassin's current model still needs authored animation clips. The playable Mage
 uses the supplied unarmed model with six Mixamo clips, including Ultimate, and
 animated right-hand spell VFX. Enemy healers keep their procedural placeholder.
 
@@ -124,6 +138,7 @@ godot --headless --path godot --script tests/test_suite.gd
 godot --headless --path godot --script tests/combat_flow_test.gd
 godot --headless --path godot --script tests/class_kit_test.gd
 godot --headless --path godot --script tests/wave_field_test.gd
+godot --headless --path godot --script tests/skirmish_test.gd
 godot --headless --path godot --script tests/enemy_asset_test.gd
 godot --headless --path godot --script tests/altar_props_test.gd
 godot --headless --path godot -- --smoke
@@ -135,7 +150,9 @@ checks catalogs, upgrade gates, purchases, XP, persistence, equipment, all
 class/enemy instantiation and intermission flow. `combat_flow` covers damage,
 animation tempo and the wave/death transitions. `class_kit` drives all eight
 bound skills, and `wave_field` covers the district tour, the wave-gated spawn
-pool, elite scaling and the burn/bleed/slow timers. `--smoke` runs a short combat
+pool, elite scaling and the burn/bleed/slow timers. `skirmish` covers the swing
+arc and target cap, stagger and knockback, the standoff that keeps bodies out of
+the player, the flank posts and the mage's runes. `--smoke` runs a short combat
 session and exits. `--qa` captures menus, four movement directions, boss, upgrades
 and shop in `user://`. Run tests with isolated `XDG_DATA_HOME` on Linux to avoid
 using personal progression.

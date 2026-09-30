@@ -77,7 +77,7 @@ func _cast_powder_charge(data: Dictionary,target: Vector3):
 
 func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,accent: Color):
 	w.sound_at("shoot_shotgun",position,3.0)
-	w.arena.damage_area(position,radius,damage)
+	w.damage_area(position,radius,damage)
 	for e in w.enemies.duplicate():
 		var offset=e.node.position-position
 		if offset.length()>radius+e.radius:continue
@@ -162,7 +162,7 @@ func _whirl_sweep(radius: float,share: float,tone: Color,accent: Color):
 		if origin.distance_to(e.node.position)>radius+e.radius:continue
 		var roll=w.run.damage_roll(share)
 		w._damage_enemy(e,roll.damage,roll.critical,true,"ability");hit.append(e)
-	w.arena.damage_area(origin,radius,share)
+	w.damage_area(origin,radius,share)
 	for turn in 3:
 		w.fx.slash(origin,heading.rotated(Vector3.UP,TAU*turn/3.0),radius,accent)
 	w.fx.shockwave(origin,radius,tone,0.24,0.0,1.6)
@@ -216,7 +216,7 @@ func _cast_meteor(data: Dictionary,target: Vector3):
 
 func _meteor_blast(position: Vector3,radius: float,damage: float):
 	w.sound_at("skill_meteor_blast",position,2.0)
-	w.arena.damage_area(position,radius,damage)
+	w.damage_area(position,radius,damage)
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
@@ -257,7 +257,7 @@ func _cast_void_leap(data: Dictionary,target: Vector3):
 
 func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color("8f74ff"),accent: Color=Color("cfc0ff")):
 	w.sound_at("skill_leap_land",position,2.0)
-	w.arena.damage_area(position,radius,damage)
+	w.damage_area(position,radius,damage)
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
@@ -298,7 +298,7 @@ func _resolve_ability(data: Dictionary):
 			strike_position.x=clampf(strike_position.x,-BWArena.EDGE,BWArena.EDGE);strike_position.z=clampf(strike_position.z,-BWArena.EDGE,BWArena.EDGE)
 			create_tween().tween_property(w.player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			range_value=65*w.run.stats.attackRange*BWData.UNIT
-		w.arena.damage_area(strike_position,range_value,data.damage*w.run.stats.damage)
+		w.damage_area(strike_position,range_value,data.damage*w.run.stats.damage)
 		for e in w.enemies.duplicate():
 			if e.node.position.distance_to(strike_position)<=range_value+e.radius:
 				var roll=w.run.damage_roll(data.damage*w.run.stats.damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")

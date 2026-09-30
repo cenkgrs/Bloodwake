@@ -31,7 +31,7 @@ func suite():
 			if offset.normalized().dot(direction)>0.4:ahead+=1
 			check(offset.length()>=7.5,"reactive spawns keep a safe arrival distance")
 		check(ahead>=15,"most arrivals contest current escape direction: "+str(direction))
-	for corner in [Vector3(34,0,34),Vector3(-34,0,-34),Vector3(-34,0,34),Vector3(34,0,-34)]:
+	for corner in [Vector3(BWArena.EDGE,0,BWArena.EDGE),Vector3(-BWArena.EDGE,0,-BWArena.EDGE),Vector3(-BWArena.EDGE,0,BWArena.EDGE),Vector3(BWArena.EDGE,0,-BWArena.EDGE)]:
 		world.player.position=corner;world.player_velocity=corner.normalized()*3
 		for i in 12:
 			var point=world._spawn_point()

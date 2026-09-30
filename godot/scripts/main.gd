@@ -692,6 +692,7 @@ func _smoke():
 	start_run("gunslinger")
 	world.spawn_enemy("tank",Vector3(2,0,1))
 	world.spawn_enemy("archer",Vector3(-4,0,-2))
+	world.spawn_enemy("mage",Vector3(-6,0,3))
 	await get_tree().create_timer(3).timeout
 	world.ability()
 	await get_tree().create_timer(3).timeout
