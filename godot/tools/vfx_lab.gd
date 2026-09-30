@@ -21,13 +21,13 @@ const SCENARIOS = [
 		"enemies":[Vector3(1.4,0,0),Vector3(-1.2,0,0.6)],"enemy":"tank"},
 	{"class_id":"mage","zoom":9.0,"name":"orb_through_crowd","frames":34,
 		"enemies":[Vector3(3.0,0,0),Vector3(5.0,0,0.3),Vector3(6.8,0,-0.2)],"enemy":"grunt"},
-	{"class_id":"mage","zoom":8.0,"name":"ability_frost_nova","frames":7,"cast":true,
+	{"class_id":"mage","zoom":8.0,"name":"ability_frost_nova","frames":24,"cast":true,"strip":true,
 		"enemies":RING,"enemy":"grunt"},
-	{"class_id":"warrior","zoom":8.0,"name":"ability_war_cry","frames":6,"cast":true,
+	{"class_id":"warrior","zoom":8.0,"name":"ability_war_cry","frames":20,"cast":true,"strip":true,
 		"enemies":RING,"enemy":"grunt"},
-	{"class_id":"assassin","zoom":8.0,"name":"ability_shadow_strike","frames":7,"cast":true,
+	{"class_id":"assassin","zoom":8.0,"name":"ability_shadow_strike","frames":20,"cast":true,"strip":true,
 		"enemies":RING,"enemy":"grunt"},
-	{"class_id":"gunslinger","zoom":8.0,"name":"ability_fan_shot","frames":5,"cast":true,
+	{"class_id":"gunslinger","zoom":8.0,"name":"ability_fan_shot","frames":16,"cast":true,"strip":true,
 		"enemies":RING,"enemy":"grunt"},
 ]
 
@@ -64,7 +64,14 @@ func run_lab():
 		if cast:
 			world.aim=Vector3(1,0,0)
 			for i in 4:await process_frame
-			world._resolve_ability(BWData.entry("abilities",BWData.CLASSES[row.class_id].ability))
-		for i in row.frames:await process_frame
+			# The ability lives in the kit since world.gd was split; the lab calls the
+			# same entry point the game does rather than a copy of it.
+			world.skills._resolve_ability(BWData.entry("abilities",BWData.CLASSES[row.class_id].ability))
+		# strip writes every frame, numbered. A single still says whether an effect
+		# exists; only the strip says whether it reads as anticipation, impact and
+		# settle rather than one quad scaling up and fading out.
+		for i in row.frames:
+			await process_frame
+			if row.get("strip",false):await shot("%s_%02d" % [row.name,i])
 		await shot(row.name)
 	quit()
