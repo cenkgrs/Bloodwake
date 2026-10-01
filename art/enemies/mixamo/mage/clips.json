@@ -1,0 +1,13 @@
+{
+  "model": "mage_mixamo.fbx",
+  "material_source": "art/enemies/source/Mage/fantasy_wizard.glb",
+  "clips": {
+    "Idle": "standing idle.fbx",
+    "Run": "Standing Run Forward.fbx",
+    "Attack": "Standing 1H Magic Attack 01.fbx",
+    "Cast": "Standing 2H Magic Area Attack 01.fbx",
+    "Hit": "Standing React Small From Front.fbx",
+    "Death": "Standing React Death Backward.fbx"
+  },
+  "weapons": []
+}
