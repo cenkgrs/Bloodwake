@@ -416,13 +416,17 @@ func _enemy_tick(e: Dictionary,dt: float):
 			# press and puts them where the camera can show the draw.
 			move=_to_post(e,speed,distance,minf(data.preferredRange*BWData.UNIT,FLANK_STANDOFF))
 			if e.state=="draw":
-				move*=0.25
+				move=Vector3.ZERO
 				if e.timer<=0:
 					e.state="chase"
-					_bullet(node.position+direction*0.4,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
+					e.visual.action("attack",0.35)
+					var shot: Vector3=e.shot_direction
+					_bullet(node.position+shot*0.4,shot,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
 			elif distance<=range_value and e.cooldown<=0:
 				e.state="draw";e.timer=DRAW_TIME;e.cooldown=data.attackCooldown
-				e.visual.action("attack")
+				move=Vector3.ZERO
+				e.shot_direction=delta.normalized()
+				e.visual.action("draw",DRAW_TIME)
 				# The aim line is the fairness: an arrow arriving from the edge of the
 				# screen has to announce itself before it leaves the bow.
 				fx.beam(node.position+Vector3.UP*1.1,player.position+Vector3.UP*0.6,Color("e8c48a"),DRAW_TIME)
@@ -504,6 +508,9 @@ func _enemy_tick(e: Dictionary,dt: float):
 		var out=node.position-player.position;out.y=0
 		if out.length()<gap and out.length()>0.001:node.position=player.position+out.normalized()*gap
 	var facing=move.normalized() if move.length_squared()>0.01 else direction
+	# The bow follows its announced shot, not the archer's strafing velocity.
+	if e.id=="archer" and (e.state=="draw" or (e.visual.state=="attack" and e.visual.lock_time>0)):
+		facing=e.get("shot_direction",direction)
 	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*10))
 	e.visual.tick(dt,move.length_squared()>0.01)
 

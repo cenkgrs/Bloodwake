@@ -13,19 +13,21 @@ func suite():
 	world.running=false;world.auto_fire=false;run.stats.dodgeChance=0;run.stats.armor=0;run.stats.lifesteal=0
 	var grunt=world.spawn_enemy("grunt",Vector3(0.4,0,0));grunt.cooldown=0
 	var hp=run.stats.hp;world._enemy_tick(grunt,0.016)
-	check(run.stats.hp==hp-8,"grunt melee deals eight damage")
+	check(run.stats.hp==hp-grunt.damage,"grunt melee deals its configured damage")
 	hp=run.stats.hp;world._enemy_tick(grunt,0.016);check(run.stats.hp==hp,"melee respects cooldown")
 	world.enemies.erase(grunt);grunt.node.queue_free()
 	var tank=world.spawn_enemy("tank",Vector3(0.4,0,0));tank.cooldown=0
-	hp=run.stats.hp;world._enemy_tick(tank,0.016);check(run.stats.hp==hp-16,"tank deals damage")
+	hp=run.stats.hp;world._enemy_tick(tank,0.016);check(run.stats.hp==hp-tank.damage,"tank deals its configured damage")
 	world.enemies.erase(tank);tank.node.queue_free()
 	var archer=world.spawn_enemy("archer",Vector3(2,0,0));archer.cooldown=0
 	hp=run.stats.hp;world._enemy_tick(archer,0.016)
+	check(world.bullets.is_empty(),"archer waits for its draw before firing")
+	world._enemy_tick(archer,BWWorld.DRAW_TIME+0.001)
 	await process_frame
 	for i in 40:
 		world._projectiles(0.016)
 		await process_frame
-	check(run.stats.hp==hp-7,"archer projectile damages player")
+	check(run.stats.hp==hp-archer.damage,"archer projectile deals its configured damage")
 	world.enemies.erase(archer);archer.node.queue_free()
 	visual.lock_time=0;visual.action("attack",0.45)
 	check(is_equal_approx(visual.lock_time,0.45),"Warrior attack fits 450 ms")

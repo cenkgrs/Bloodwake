@@ -71,7 +71,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 				if key.contains(pair[0]) and not clips.has(pair[1]):clips[pair[1]]=anim_name
 		# The substring pass above folds Attack1..4 and SpinAttack into "attack",
 		# so the combo links are registered by their exact clip name instead.
-		for exact in ["Attack1","Attack2","Attack3","Attack4","SpinAttack","Slam","Sweep","Charge","Cast","Summon"]:
+		for exact in ["Attack1","Attack2","Attack3","Attack4","SpinAttack","Slam","Sweep","Charge","Cast","Summon","Draw"]:
 			if animation.has_animation(exact):clips[exact.to_lower()]=exact
 		if file=="warrior":
 			for desired in {"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}:
@@ -231,7 +231,7 @@ func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 	# Nor may it cut a swing short. Being staggered out of every attack is what made
 	# the chain read as broken rather than as heavy; the screen flash still sells the
 	# hit without stealing the animation.
-	if next=="hit" and lock_time>0 and (state.begins_with("attack") or state in ["ultimate","hit","spinattack"]):return false
+	if next=="hit" and lock_time>0 and (state.begins_with("attack") or state in ["ultimate","hit","spinattack","draw"]):return false
 	if next=="death":
 		dead=true
 		# tick() stops for a corpse (it leaves the enemies array), so a kill landed

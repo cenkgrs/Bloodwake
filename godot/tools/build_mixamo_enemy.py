@@ -2,7 +2,7 @@
 Blender -b -t 4 --python godot/tools/build_mixamo_enemy.py -- warrior
 Animation selection lives in art/enemies/mixamo/<id>/clips.json.
 """
-import bpy, bmesh, json, sys
+import bpy, bmesh, json, sys, math
 from pathlib import Path
 from mathutils import Vector, Matrix
 ROOT=Path(__file__).resolve().parents[2]
@@ -66,8 +66,9 @@ def material(kind):
  return mat
 mat=material('character')
 for body in bodies:body.name=identifier+'_body';body.data.materials.clear();body.data.materials.append(mat)
-rig.animation_data_create();rig.animation_data.action=actions['Idle'];rig.animation_data.action_slot=actions['Idle'].slots[0]
-bpy.context.scene.frame_set(1);bpy.context.view_layer.update()
+attachment_action=actions[config.get('attachment_pose','Idle')]
+rig.animation_data_create();rig.animation_data.action=attachment_action;rig.animation_data.action_slot=attachment_action.slots[0]
+bpy.context.scene.frame_set(config.get('attachment_frame',1));bpy.context.view_layer.update()
 weapons=[]
 for settings in config.get('weapons',[config.get('weapon')]):
  before=set(bpy.data.objects)
@@ -78,6 +79,12 @@ for settings in config.get('weapons',[config.get('weapon')]):
   mesh=bmesh.new();mesh.from_mesh(weapon.data)
   bmesh.ops.delete(mesh,geom=[v for v in mesh.verts if v.co.x*settings['half']<0],context='VERTS')
   mesh.to_mesh(weapon.data);mesh.free()
+ if 'x_range' in settings:
+  # Some source props contain a bow and a separate arrow in the same object.
+  lo,hi=settings['x_range']
+  mesh=bmesh.new();mesh.from_mesh(weapon.data)
+  bmesh.ops.delete(mesh,geom=[v for v in mesh.verts if not lo<=v.co.x<=hi],context='VERTS')
+  mesh.to_mesh(weapon.data);mesh.free()
  # Author placement in world space relative to the posed hand. Grip and blade axis
  # are stored explicitly so attachments remain reproducible for every source mesh.
  hand=rig.pose.bones['mixamorig:'+settings.get('hand','RightHand')]
@@ -85,6 +92,7 @@ for settings in config.get('weapons',[config.get('weapon')]):
  source_axis=Vector(settings['axis']).normalized()
  target_axis=Vector(settings['direction']).normalized()
  rotation=source_axis.rotation_difference(target_axis).to_matrix().to_4x4()
+ rotation=Matrix.Rotation(math.radians(settings.get('roll',0)),4,target_axis)@rotation
  placement=Matrix.Translation(point)@rotation@Matrix.Scale(settings['scale'],4)@Matrix.Translation(-Vector(settings['grip']))
  convert=rig.data.bones[hand.name].matrix_local@hand.matrix.inverted()@rig.matrix_world.inverted()@placement
  # OBJ local coordinates are Y-up, matching the recorded source grip.
