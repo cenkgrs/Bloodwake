@@ -24,13 +24,13 @@ func suite():
 	var shot: Vector3=archer.shot_direction
 	world.player.position=Vector3(3,0,0)
 	for i in 7:world._enemy_tick(archer,0.05)
-	check(world.bullets.is_empty(),"Arrow waits the full warning time")
-	check(archer.shot_direction.is_equal_approx(shot),"Dodging does not bend the announced aim")
+	check(world.bullets.is_empty(),"Arrow waits the full draw time")
+	check(archer.shot_direction.is_equal_approx(shot),"Dodging does not bend the committed aim")
 	world._enemy_tick(archer,0.06)
 	check(world.bullets.size()==1,"Windup releases exactly one arrow")
 	check(archer.visual.state=="attack","Release plays recoil clip")
 	if not world.bullets.is_empty():
-		check(world.bullets[0].direction.is_equal_approx(shot),"Arrow follows the warning direction")
+		check(world.bullets[0].direction.is_equal_approx(shot),"Arrow follows the committed direction")
 	var facing=Vector3(sin(archer.visual.rotation.y),0,cos(archer.visual.rotation.y))
 	check(facing.dot(shot)>0.98,"Archer faces the shot while strafing")
 	for i in 8:world._enemy_tick(archer,0.05)

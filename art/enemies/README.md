@@ -31,10 +31,10 @@ OBJ conversion alone is not a rigged/animated runtime asset.
 ## Integrated characters
 
 - Warrior (`grunt`): 65-bone Mixamo rig; Idle, Run, Attack, Hit, Death; original armor PBR and rigid right-hand sword. Runtime `enemy_warrior.glb`. Attack 0.45 s, run 0.65 s, death 2.2 s.
-- Healer: 65-bone Mixamo rig, five magic/locomotion/reaction clips, original PBR and left-hand lantern staff; right hand casts spells.
+- Healer: refreshed Mixamo rig from the October 1 upload, Idle/Run/Magic Heal/Hit/Death clips, original PBR and left-hand lantern staff. The right hand heals an injured ally after 0.4 s of a 0.9 s cast; dead or out-of-range targets are skipped.
 - Assassin: 65-bone Mixamo rig; dedicated Double Dagger Stab attack, Idle/Run/Hit/Death; supplied paired daggers split at their disconnected centre and bound rigidly to separate hands. Runtime attack 0.3 s, run 0.5 s.
 - Boss: integrated with six distinct attack patterns and a right-hand greatsword.
-- Archer: Mixamo Pro Longbow clips (Idle, Run, Draw, Attack/recoil, Hit, Death), original PBR and supplied bow bound to the left hand. The separate arrow in the source prop is excluded from the hand attachment. Draw lasts 0.4 s, then releases one projectile with 0.35 s recoil; the archer plants its feet during the draw and keeps facing the announced shot through recoil. Runtime `enemy_archer.glb`.
+- Archer: Mixamo Pro Longbow clips (Idle, Run, Draw, Attack/recoil, Hit, Death), original PBR and supplied bow bound to the left hand. The separate arrow in the source prop is excluded from the hand attachment. Draw lasts 0.4 s, then releases one projectile with 0.35 s recoil; the archer plants its feet during the draw and keeps facing the committed shot through recoil. No aiming line is drawn. Runtime `enemy_archer.glb`.
 - Tank and Commander: static conversion complete; Mixamo rig and integration pending.
 
 Build a character: `blender -b -t 4 --python godot/tools/build_mixamo_enemy.py -- warrior`.

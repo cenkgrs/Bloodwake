@@ -427,22 +427,33 @@ func _enemy_tick(e: Dictionary,dt: float):
 				move=Vector3.ZERO
 				e.shot_direction=delta.normalized()
 				e.visual.action("draw",DRAW_TIME)
-				# The aim line is the fairness: an arrow arriving from the edge of the
-				# screen has to announce itself before it leaves the bow.
-				fx.beam(node.position+Vector3.UP*1.1,player.position+Vector3.UP*0.6,Color("e8c48a"),DRAW_TIME)
 		"healer","commander":
 			var preferred=data.preferredRange*BWData.UNIT
 			if distance<preferred*(0.65 if e.id=="commander" else 1):move=-direction*speed
 			elif distance>preferred*1.5:move=pursuit*speed*0.4
-			if e.cooldown<=0:
+			if e.id=="healer" and e.state=="heal":
+				move=Vector3.ZERO;e.timer-=dt
+				if e.timer<=0:
+					e.state="chase"
+					for ally in enemies:
+						if ally.node.get_instance_id()==e.heal_target and ally.hp>0 and ally.node.position.distance_to(node.position)<=data.supportRadius*BWData.UNIT:
+							ally.hp=minf(ally.maxHp,ally.hp+data.healAmount*(2.5 if e.elite else 1))
+							fx.ring(ally.node.position,ally.radius*2.0,Color("619c82"),0.45)
+							break
+					e.erase("heal_target")
+			elif e.cooldown<=0:
 				e.cooldown=data.attackCooldown
 				var best={};var missing=0.0
 				for ally in enemies:
 					if ally==e or ally.node.position.distance_to(node.position)>data.supportRadius*BWData.UNIT:continue
 					if e.id=="commander" and ally.id not in ["commander","boss"]:ally.aura=data.auraDuration
 					elif e.id=="healer" and ally.maxHp-ally.hp>missing:best=ally;missing=ally.maxHp-ally.hp
-				if not best.is_empty():best.hp=minf(best.maxHp,best.hp+data.healAmount*(2.5 if e.elite else 1))
-				fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("619c82") if e.id=="healer" else Color("cfab53"),0.45)
+				if not best.is_empty():
+					e.heal_target=best.node.get_instance_id();e.state="heal";e.timer=0.4;move=Vector3.ZERO
+					e.heal_direction=(best.node.position-node.position).normalized()
+					e.visual.action("attack",0.9)
+				elif e.id=="commander":
+					fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("cfab53"),0.45)
 		"mage":
 			e.timer-=dt
 			move=_to_post(e,speed,distance,minf(data.preferredRange*BWData.UNIT,FLANK_STANDOFF))
@@ -508,9 +519,11 @@ func _enemy_tick(e: Dictionary,dt: float):
 		var out=node.position-player.position;out.y=0
 		if out.length()<gap and out.length()>0.001:node.position=player.position+out.normalized()*gap
 	var facing=move.normalized() if move.length_squared()>0.01 else direction
-	# The bow follows its announced shot, not the archer's strafing velocity.
+	# The bow follows its committed shot, not the archer's strafing velocity.
 	if e.id=="archer" and (e.state=="draw" or (e.visual.state=="attack" and e.visual.lock_time>0)):
 		facing=e.get("shot_direction",direction)
+	if e.id=="healer" and e.visual.state=="attack" and e.visual.lock_time>0:
+		facing=e.get("heal_direction",direction)
 	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*10))
 	e.visual.tick(dt,move.length_squared()>0.01)
 
