@@ -35,7 +35,7 @@ OBJ conversion alone is not a rigged/animated runtime asset.
 - Assassin: 65-bone Mixamo rig; dedicated Double Dagger Stab attack, Idle/Run/Hit/Death; supplied paired daggers split at their disconnected centre and bound rigidly to separate hands. Runtime attack 0.3 s, run 0.5 s.
 - Boss: integrated with six distinct attack patterns and a right-hand greatsword.
 - Archer: Mixamo Pro Longbow clips (Idle, Run, Draw, Attack/recoil, Hit, Death), original PBR and supplied bow bound to the left hand. The separate arrow in the source prop is excluded from the hand attachment. Draw lasts 0.4 s, then releases one projectile with 0.35 s recoil; the archer plants its feet during the draw and keeps facing the committed shot through recoil. No aiming line is drawn. Runtime `enemy_archer.glb`.
-- Mage: supplied `source/Mage/fantasy_wizard.glb` with original embedded PBR textures; new Mixamo rig, Idle/Run/Attack/Cast/Hit/Death. Unarmed: one-hand bolt and two-hand ground rune are separate clips. Cast lasts 0.9 s with contact after the existing 0.55 s windup. Runtime `enemy_mage.glb`.
+- Mage: supplied `source/Mage/fantasy_wizard.glb` with original embedded PBR textures; new Mixamo rig, Idle/Run/Attack/Cast/Hit/Death. Unarmed: one-hand bolt and two-hand ground rune are separate clips. Cast lasts 0.9 s with contact after the existing 0.55 s windup. Runtime `enemy_mage.glb`. Holds its casting position; at close range it makes a short sidestep, with a 4.5 s relocation cooldown, and stands still during casts.
 - Tank and Commander: static conversion complete; Mixamo rig and integration pending.
 
 Build a character: `blender -b -t 4 --python godot/tools/build_mixamo_enemy.py -- warrior`.
