@@ -86,8 +86,8 @@ func suite():
 	check(closest>=floor_gap-0.01,"a grunt closes to arm's length and no further: "+str(closest))
 	check(closest<1.6,"it does close - the standoff is not a reason to hang back")
 
-	# --- Missile troops take the flank the camera can see.
-	for id in ["archer","mage"]:
+	# --- Archers take the flank; mages hold their casting spot (mage_movement_test).
+	for id in ["archer"]:
 		clear_enemies(world)
 		var shooter=world.spawn_enemy(id,Vector3(0,0,-7))
 		shooter.hunt_side=1.0;shooter.hunt_depth=0.5

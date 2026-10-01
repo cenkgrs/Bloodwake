@@ -456,9 +456,9 @@ func _enemy_tick(e: Dictionary,dt: float):
 					fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("cfab53"),0.45)
 		"mage":
 			e.timer-=dt
-			move=_to_post(e,speed,distance,minf(data.preferredRange*BWData.UNIT,FLANK_STANDOFF))
+			move=_mage_step(e,dt,distance)
 			if e.state=="cast":
-				move*=0.15
+				move=Vector3.ZERO
 				if e.timer<=0:
 					e.state="chase"
 					if e.cast_kind=="rune":
@@ -474,6 +474,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 				e.pattern_index+=1
 				e.cast_kind="rune" if e.pattern_index%2==0 and hazards.size()<HAZARD_LIMIT else "bolt"
 				e.state="cast";e.timer=CAST_TIME
+				move=Vector3.ZERO
 				e.visual.action("cast" if e.cast_kind=="rune" else "attack",0.9)
 				e.cooldown=float(data.get("runeCooldown",6.5)) if e.cast_kind=="rune" else data.attackCooldown
 				fx.spark(node.position+Vector3.UP*1.2,Color("c07bff"),6)
@@ -771,6 +772,26 @@ func _to_post(e: Dictionary,speed: float,distance: float,standoff: float) -> Vec
 	var offset=_flank_post(e,standoff)-e.node.position;offset.y=0
 	if offset.length()<=0.7:return Vector3.ZERO
 	return arena.steer(e.node.position,offset.normalized(),e.radius)*speed*(1.5 if distance<3.0 else 1.0)
+
+# Cast from a fixed spot. One short sidestep buys space, then a long planted
+# interval lets the player catch the caster. Never chase a player-relative post.
+func _mage_step(e: Dictionary,dt: float,distance: float) -> Vector3:
+	e.step_cooldown=maxf(0.0,e.get("step_cooldown",0.0)-dt)
+	e.step_left=maxf(0.0,e.get("step_left",0.0)-dt)
+	if e.state=="cast" or (e.visual.lock_time>0 and e.visual.state in ["attack","cast"]):return Vector3.ZERO
+	var speed=e.speed*BWData.UNIT*(1-e.slow_amount if e.slow>0 else 1)
+	var toward=(player.position-e.node.position).normalized()
+	if distance>e.data.attackRange*BWData.UNIT*0.95:
+		return arena.steer(e.node.position,toward,e.radius)*speed
+	if distance<3.0 and e.step_cooldown<=0:
+		var side=toward.cross(Vector3.UP)*e.hunt_side
+		e.step_target=arena.push_out(e.node.position+side*1.7-toward*0.5,e.radius)
+		e.step_left=0.95;e.step_cooldown=4.5;e.hunt_side*=-1.0
+	if e.step_left>0:
+		var offset: Vector3=e.step_target-e.node.position;offset.y=0
+		if offset.length()>0.2:return arena.steer(e.node.position,offset.normalized(),e.radius)*speed*0.8
+		e.step_left=0.0
+	return Vector3.ZERO
 
 # A mage builds as well as casts. The rune is planted where the player is standing,
 # burns a visible fuse, and then goes off - so the ground becomes something to read
