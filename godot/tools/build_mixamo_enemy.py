@@ -50,6 +50,20 @@ for unused in list(bpy.data.actions):
  if unused not in actions.values():bpy.data.actions.remove(unused)
 
 def material(kind):
+ if kind=='character' and config.get('material_source'):
+  before=set(bpy.data.objects)
+  bpy.ops.import_scene.gltf(filepath=str(ROOT/config['material_source']))
+  imported=set(bpy.data.objects)-before
+  sources=[o for o in imported if o.type=='MESH']
+  assert len(sources)==1 and len(sources[0].data.materials)==1,'Expected a single UV-matched source material'
+  mat=sources[0].data.materials[0]
+  mat.name=identifier+'_character_PBR'
+  for node in mat.node_tree.nodes:
+   if node.type=='TEX_IMAGE' and node.image:
+    if max(node.image.size)>2048:node.image.scale(2048,2048)
+    node.image.pack()
+  for obj in imported:bpy.data.objects.remove(obj,do_unlink=True)
+  return mat
  source=ROOT/next(e['source'] for e in manifest if e['id']==identifier and e['kind']==kind)
  textures=source.with_suffix('.fbm')
  mat=bpy.data.materials.new(identifier+'_'+kind+'_PBR');mat.use_nodes=True

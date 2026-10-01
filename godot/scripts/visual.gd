@@ -231,7 +231,7 @@ func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 	# Nor may it cut a swing short. Being staggered out of every attack is what made
 	# the chain read as broken rather than as heavy; the screen flash still sells the
 	# hit without stealing the animation.
-	if next=="hit" and lock_time>0 and (state.begins_with("attack") or state in ["ultimate","hit","spinattack","draw"]):return false
+	if next=="hit" and lock_time>0 and (state.begins_with("attack") or state in ["ultimate","hit","spinattack","draw","cast"]):return false
 	if next=="death":
 		dead=true
 		# tick() stops for a corpse (it leaves the enemies array), so a kill landed

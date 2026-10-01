@@ -473,7 +473,8 @@ func _enemy_tick(e: Dictionary,dt: float):
 				# spends the cast on a bolt instead of stacking the floor.
 				e.pattern_index+=1
 				e.cast_kind="rune" if e.pattern_index%2==0 and hazards.size()<HAZARD_LIMIT else "bolt"
-				e.state="cast";e.timer=CAST_TIME;e.visual.action("attack")
+				e.state="cast";e.timer=CAST_TIME
+				e.visual.action("cast" if e.cast_kind=="rune" else "attack",0.9)
 				e.cooldown=float(data.get("runeCooldown",6.5)) if e.cast_kind=="rune" else data.attackCooldown
 				fx.spark(node.position+Vector3.UP*1.2,Color("c07bff"),6)
 		"assassin":
@@ -524,6 +525,8 @@ func _enemy_tick(e: Dictionary,dt: float):
 		facing=e.get("shot_direction",direction)
 	if e.id=="healer" and e.visual.state=="attack" and e.visual.lock_time>0:
 		facing=e.get("heal_direction",direction)
+	if e.id=="mage" and e.visual.state in ["attack","cast"] and e.visual.lock_time>0:
+		facing=delta.normalized()
 	if distance>0.01:e.visual.rotation.y=lerp_angle(e.visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*10))
 	e.visual.tick(dt,move.length_squared()>0.01)
 
