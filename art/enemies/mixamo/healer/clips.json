@@ -2,8 +2,8 @@
   "model": "healer_mixamo.fbx",
   "clips": {
     "Idle": "standing idle.fbx",
-    "Run": "Standing Walk Forward.fbx",
-    "Attack": "standing 1H cast spell 01.fbx",
+    "Run": "Standing Run Forward.fbx",
+    "Attack": "Magic Heal.fbx",
     "Hit": "Standing React Small From Front.fbx",
     "Death": "Standing React Death Backward.fbx"
   },

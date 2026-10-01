@@ -133,7 +133,7 @@ durur, oyuncunun içine girmez.
 
 Archer ve yeni `mage` tipi presin içine girmiyor: oyuncunun sağına/soluna 8,6 m
 uzaklıkta bir mevzi tutuyorlar (kamera dönmediği için dünya x ekseni ekranın
-yatay eksenidir). Archer okunu bırakmadan önce 0,4 s nişan çizgisi gösteriyor.
+yatay eksenidir). Archer okunu bırakmadan önce 0,4 s yay çekme animasyonu oynuyor; sarı nişan çizgisi kaldırıldı.
 Mage bir mermi, bir de zamanlı rün kuruyor: fitili görünen bir yapı: üstünden
 çekilerek ya da kırılarak etkisiz bırakılabilir. Rünler `world.gd` içindeki
 `hazards` listesi; `BWWorld.damage_area` prop ve rünü tek çağrıda kapsıyor.
