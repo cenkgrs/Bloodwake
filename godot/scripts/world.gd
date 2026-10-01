@@ -590,12 +590,9 @@ func _weapons(dt: float):
 				combo_timer=duration+0.5
 				# The last link is the finisher: it runs longer and carries the class's
 				# ability effect, which is what makes finishing the chain worth doing.
-				if combo_step==COMBO.size()-1:
-					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
-					skills._ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
 				visual.action(clip,duration)
 			else:visual.action(clip,duration)
-			pending_attacks.append({"time":duration*IMPACT.get(clip,0.32),"id":id,"direction":direction})
+			pending_attacks.append({"time":duration*IMPACT.get(clip,0.32),"id":id,"direction":direction,"finisher":melee and combo_step==COMBO.size()-1})
 		else:
 			_resolve_weapon(id,direction)
 			# Rapid fire outpaces the 0.96s clip ~5x, so playing it full length left the
@@ -616,7 +613,11 @@ func _pending_attacks(dt: float):
 			if run.stats.hp<=0:continue
 			if attack.id=="ultimate":skills._resolve_ability(attack.data)
 			elif attack.get("spin",false):_resolve_spin(attack.id,attack.direction)
-			else:_resolve_weapon(attack.id,attack.direction)
+			else:
+				_resolve_weapon(attack.id,attack.direction)
+				if attack.get("finisher",false):
+					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
+					skills._ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
 
 func _resolve_weapon(id: String,direction: Vector3):
 	var slot=run.weapons[id];var data=slot.data

@@ -323,3 +323,43 @@ func damage_text(pos: Vector3,amount: float,color: Color):
 	if quality!="PC" and randf()>0.4:return
 	var label=Label3D.new();label.text=str(int(round(amount)));label.font_size=38;label.pixel_size=0.008;label.modulate=color;label.billboard=BaseMaterial3D.BILLBOARD_ENABLED;label.no_depth_test=true;label.position=pos+Vector3(rng.randf_range(-0.2,0.2),2.0,0);add_child(label)
 	var tween=create_tween();tween.set_parallel(true);tween.tween_property(label,"position:y",label.position.y+0.6,0.55);tween.tween_property(label,"modulate:a",0.0,0.55);tween.chain().tween_callback(label.queue_free)
+
+# Physical impact: fragments rise and fall, dust settles, the cracked imprint
+# remains for 1.9 seconds. All animation belongs to the impact's own root.
+func ground_impact(pos: Vector3,radius: float):
+	var root=Node3D.new();root.name="GroundImpact";root.position=pos;add_child(root)
+	var scar=MeshInstance3D.new();scar.name="Scar"
+	var plane=PlaneMesh.new();plane.size=Vector2.ONE*radius*2.0;scar.mesh=plane
+	var ink=ShaderMaterial.new();ink.shader=preload("res://shaders/ground_scar.gdshader")
+	scar.material_override=ink;scar.position.y=0.035;scar.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;root.add_child(scar)
+	var rock=PrismMesh.new();rock.size=Vector3(0.24,0.23,0.20)
+	var stone=StandardMaterial3D.new();stone.albedo_color=Color("625343");stone.roughness=1.0
+	var count=14 if quality=="PC" else 7
+	for i in count:
+		var angle=TAU*i/count+rng.randf_range(-0.2,0.2)
+		var direction=Vector3(cos(angle),0,sin(angle))
+		var piece=MeshInstance3D.new();piece.mesh=rock;piece.material_override=stone
+		piece.position=direction*radius*rng.randf_range(0.12,0.4)
+		piece.rotation=Vector3(rng.randf(),angle,rng.randf());piece.scale=Vector3.ONE*rng.randf_range(0.6,1.7)
+		piece.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;root.add_child(piece)
+		var landing=direction*radius*rng.randf_range(0.55,0.95);landing.y=0.08
+		var apex=(piece.position+landing)*0.5+Vector3.UP*rng.randf_range(0.35,0.95)
+		var flight=piece.create_tween()
+		flight.tween_property(piece,"position",apex,0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		flight.tween_property(piece,"position",landing,0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		flight.tween_interval(0.65)
+		flight.tween_property(piece,"scale",Vector3.ZERO,0.35)
+	var dust=CPUParticles3D.new();dust.amount=22 if quality=="PC" else 10
+	dust.one_shot=true;dust.explosiveness=1.0;dust.lifetime=0.8
+	dust.direction=Vector3.UP;dust.spread=75;dust.initial_velocity_min=0.6;dust.initial_velocity_max=1.7
+	dust.gravity=Vector3(0,-0.8,0);dust.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;dust.emission_sphere_radius=radius*0.4
+	var puff=QuadMesh.new();puff.size=Vector2(0.7,0.7)
+	var haze=StandardMaterial3D.new();haze.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	haze.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;haze.billboard_mode=BaseMaterial3D.BILLBOARD_ENABLED
+	haze.albedo_texture=glow_texture;haze.albedo_color=Color("8a7460");haze.vertex_color_use_as_albedo=true
+	puff.material=haze;dust.mesh=puff
+	var ramp=Gradient.new();ramp.set_color(0,Color(1,1,1,0.38));ramp.set_color(1,Color(1,1,1,0));dust.color_ramp=ramp
+	root.add_child(dust);dust.emitting=true
+	var lifetime=root.create_tween()
+	lifetime.tween_method(func(value: float):ink.set_shader_parameter("age",value),0.0,1.9,1.9)
+	lifetime.tween_callback(root.queue_free)

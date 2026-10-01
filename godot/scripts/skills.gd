@@ -259,12 +259,15 @@ func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color(
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
 			if e.hp>0:e.slow=2;e.slow_amount=0.3
-	w.fx.shockwave(position,radius,tone,0.38,0.0,2.0)
-	w.fx.shockwave(position,radius*1.2,tone.darkened(0.35),0.46,0.09,1.5)
-	w.fx.radial_streaks(position,radius*1.15,accent,9,0.32)
-	w.fx.burst_ring(position,radius,accent.darkened(0.15),34,4.8,0.62)
-	w.fx.shards(position,radius*0.85,Color("b3a2ff"),10)
-	w.fx.flash_light(position,Color("8f74ff"),3.2,radius*1.8,0.34)
+	if w.run.class_id=="warrior":
+		w.fx.ground_impact(position,radius)
+	else:
+		w.fx.shockwave(position,radius,tone,0.38,0.0,2.0)
+		w.fx.shockwave(position,radius*1.2,tone.darkened(0.35),0.46,0.09,1.5)
+		w.fx.radial_streaks(position,radius*1.15,accent,9,0.32)
+		w.fx.burst_ring(position,radius,accent.darkened(0.15),34,4.8,0.62)
+		w.fx.shards(position,radius*0.85,Color("b3a2ff"),10)
+		w.fx.flash_light(position,Color("8f74ff"),3.2,radius*1.8,0.34)
 	w.shake=maxf(w.shake,0.18)
 
 func ability():
@@ -310,11 +313,8 @@ func _ability_effect(id: String,pos: Vector3,radius: float):
 			w.fx.arcane_blast(pos,radius,Color("19cbff"),Color("168cda"))
 			w.shake=maxf(w.shake,0.05)
 		"war_cry":
-			w.fx.shockwave(pos,radius,Color("ffb066"),0.3,0.0,2.2)
-			w.fx.shockwave(pos,radius*1.15,Color("ff7a4d"),0.38,0.1,1.6)
-			w.fx.radial_streaks(pos,radius*1.05,Color("ffc27a"),7,0.28)
-			w.fx.burst_ring(pos,radius,Color("ffc98a"),30,4.6,0.55)
-			w.fx.flash_light(pos,Color("ff9a52"),2.6,radius*1.5,0.28)
+			w.fx.ground_impact(pos,radius)
+			w.fx.flash_light(pos,Color("bf956b"),0.8,radius,0.16)
 			w.shake=maxf(w.shake,0.16)
 		"shadow_strike":
 			w.fx.shockwave(pos,radius*1.15,Color("7a46d8"),0.28,0.0,1.3)
