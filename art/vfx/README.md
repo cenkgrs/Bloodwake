@@ -26,3 +26,17 @@ simultaneous projectiles. This is a local test, not a minimum-spec guarantee.
 Validation: VFX lifecycle (PC and reduced profile), enemy mage, mage movement,
 class kit, combat flow and skirmish suites. Low profile reduces tail sheets, flame
 crown pieces and particles; transient cleanup is checked for both profiles.
+
+## Warrior ground strikes
+
+Sunder Leap landing and War Cry/combo finisher use physical earth fragments and
+alpha-blended dust. The cracked imprint holds through 1.3 seconds and fades by
+1.9 seconds. Finisher effects now resolve at the queued sword contact, rather
+than at the start of the animation. Damage and hit areas are unchanged.
+`warrior_ground_test.gd` checks delayed contact and the scar's lifetime.
+
+`preview_warrior_impact.gd` also captures a camera comparison: current 53-degree
+pitch versus a 35-degree diagonal view, both at orthographic size 13 for the
+comparison. Production camera settings remain unchanged; this is a preview.
+A diagonal production camera would also need screen-relative movement/aim and
+occlusion review before adoption.
