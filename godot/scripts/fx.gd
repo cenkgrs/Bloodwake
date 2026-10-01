@@ -9,6 +9,11 @@ extends Node3D
 # below are positioned in world coordinates, so moving this node would silently
 # drag every one of them off its mark.
 
+const SURFACE_SHADER = preload("res://shaders/combat_surface.gdshader")
+const FLAME_SHADER = preload("res://shaders/arcane_flame.gdshader")
+const TRAIL_SHADER = preload("res://shaders/arcane_trail.gdshader")
+const CORE_SHADER = preload("res://shaders/arcane_core.gdshader")
+
 var quality = "PC"
 var rng = RandomNumberGenerator.new()
 var glow_texture: GradientTexture2D
@@ -56,55 +61,112 @@ func flash_light(pos: Vector3,color: Color,energy: float,range_value: float,dura
 	tween.tween_property(lamp,"light_energy",0.0,duration)
 	tween.tween_callback(lamp.queue_free)
 
-func orb_dressing(tone: Color,rich: bool) -> Node3D:
-	var rig=Node3D.new()
-	rig.add_child(glow_sprite(tone,1.3,1.1))
-	rig.add_child(glow_sprite(Color("5ea8ff"),0.8,1.3))
-	if not rich:return rig
-	var motes=Node3D.new();motes.name="Motes";rig.add_child(motes)
-	for i in 3:
-		var mote=glow_sprite(Color("dce9ff"),0.24,1.7)
-		mote.position=Vector3.RIGHT.rotated(Vector3.UP,TAU*i/3.0)*0.32
-		motes.add_child(mote)
+static func arcane_material(tone: Color,accent: Color=Color("234aff")) -> ShaderMaterial:
+	var mat=ShaderMaterial.new();mat.shader=CORE_SHADER;mat.set_shader_parameter("tone",tone);mat.set_shader_parameter("accent",accent)
+	return mat
+
+func arcane_core(tone: Color,radius: float) -> MeshInstance3D:
+	var core=MeshInstance3D.new();var sphere=SphereMesh.new()
+	sphere.radius=radius;sphere.height=radius*2.0;sphere.radial_segments=20;sphere.rings=10
+	core.mesh=sphere;core.material_override=arcane_material(tone)
+	core.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return core
+
+# Two crossed sheets give the moving plasma tail volume without a particle cloud.
+func arcane_tail(tone: Color,accent: Color,length_value: float=2.1) -> Node3D:
+	var rig=Node3D.new();rig.name="PlasmaTail"
+	var mat=ShaderMaterial.new();mat.shader=TRAIL_SHADER
+	mat.set_shader_parameter("tone",tone);mat.set_shader_parameter("accent",accent)
+	for i in (2 if quality=="PC" else 1):
+		var sheet=MeshInstance3D.new();var plane=PlaneMesh.new();plane.size=Vector2(0.85,length_value)
+		sheet.mesh=plane;sheet.material_override=mat;sheet.position.z=length_value*0.48
+		sheet.rotation.z=PI*0.5*i;sheet.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;rig.add_child(sheet)
 	return rig
 
-# A thin ground ring marking where an aimed skill will land, held until it does.
-# ring() draws a filled glow, which at blast radius reads as a solid blob.
-func telegraph(pos: Vector3,radius: float,color: Color,duration: float):
-	var mark=flat_sprite(color,radius*2.3,radius*2.3,0.8,ring_texture)
-	mark.position=pos+Vector3.UP*0.05;mark.scale=Vector3.ONE*0.9;add_child(mark)
-	var mat=mark.get_child(0).material_override
-	var fade=minf(0.14,duration*0.4)
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(mark,"scale",Vector3.ONE,duration*0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),fade).set_delay(maxf(0.0,duration-fade))
-	tween.chain().tween_callback(mark.queue_free)
+# Three curved dark blades orbit the energy, like the reference's broken shell.
+func orb_dressing(tone: Color,rich: bool,accent: Color=Color("234aff")) -> Node3D:
+	var rig=Node3D.new();rig.name="ArcaneOrb"
+	rig.add_child(glow_sprite(tone,0.95,0.65))
+	var core=arcane_core(tone,0.21);core.material_override=arcane_material(tone,accent);rig.add_child(core)
+	var motes=Node3D.new();motes.name="Motes";rig.add_child(motes)
+	var shell_material=StandardMaterial3D.new();shell_material.albedo_color=accent.darkened(0.75)
+	shell_material.metallic=0.55;shell_material.roughness=0.5
+	shell_material.emission_enabled=true;shell_material.emission=tone;shell_material.emission_energy_multiplier=0.06
+	shell_material.cull_mode=BaseMaterial3D.CULL_DISABLED
+	var blade=ImmediateMesh.new();blade.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 10:
+		var t0=i/10.0;var t1=(i+1)/10.0
+		var a0=t0*1.7;var a1=t1*1.7
+		var outer0=Vector3(cos(a0),0,sin(a0))*(0.29+sin(t0*PI)*0.10)
+		var outer1=Vector3(cos(a1),0,sin(a1))*(0.29+sin(t1*PI)*0.10)
+		var inner0=Vector3(cos(a0),0.035,sin(a0))*0.28
+		var inner1=Vector3(cos(a1),0.035,sin(a1))*0.28
+		for v in [outer0,inner0,outer1,outer1,inner0,inner1]:
+			blade.surface_set_normal(Vector3.UP);blade.surface_add_vertex(v)
+	blade.surface_end()
+	for i in 3:
+		var shard=MeshInstance3D.new();shard.mesh=blade;shard.material_override=shell_material
+		shard.rotation=Vector3(0.5,TAU*i/3.0,0.45);shard.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;motes.add_child(shard)
+		if rich:
+			var mote=glow_sprite(tone.lightened(0.25),0.1,1.2);mote.position=Vector3.RIGHT.rotated(Vector3.UP,TAU*i/3.0)*0.31;motes.add_child(mote)
+	return rig
+
+func flame_crown(pos: Vector3,radius: float,tone: Color,accent: Color):
+	var root=Node3D.new();root.position=pos;add_child(root)
+	var mat=ShaderMaterial.new();mat.shader=FLAME_SHADER
+	mat.set_shader_parameter("tone",tone);mat.set_shader_parameter("accent",accent)
+	var count=18 if quality=="PC" else 8
+	var quad=QuadMesh.new();quad.size=Vector2(0.7,1.25)
+	for i in count:
+		var angle=TAU*i/count+rng.randf_range(-0.05,0.05)
+		var tall=rng.randf_range(0.55,1.1)
+		var flame=MeshInstance3D.new();flame.mesh=quad;flame.material_override=mat
+		flame.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		flame.position=Vector3(cos(angle),0,sin(angle))*radius*0.91+Vector3.UP*tall*0.6
+		flame.rotation.y=-angle+PI/2;flame.scale=Vector3(1,tall,1);root.add_child(flame)
+	root.scale=Vector3.ONE*0.2
+	var tween=root.create_tween();tween.set_parallel(true)
+	tween.tween_property(root,"scale",Vector3.ONE,0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_method(func(value: float):mat.set_shader_parameter("progress",value),0.0,1.0,0.7)
+	tween.chain().tween_callback(root.queue_free)
+
+func arcane_blast(pos: Vector3,radius: float,tone: Color,accent: Color):
+	surface(pos+Vector3.UP*0.08,radius,tone,0.85,3,0.95)
+	shockwave(pos,radius,tone,0.42,0.0,1.6)
+	flame_crown(pos,radius,tone,accent)
+	burst_ring(pos,radius,tone,28 if quality=="PC" else 12,3.5,0.65)
+	flash_light(pos,tone,2.2,radius*1.25,0.3)
+
+# Radius is the actual outer boundary, not the size of a blurry sprite.
+func surface(pos: Vector3,radius: float,color: Color,duration: float,shape: int,energy: float=1.2,delay: float=0.0) -> Node3D:
+	var pivot=Node3D.new();pivot.position=pos;add_child(pivot)
+	var plane=MeshInstance3D.new();var quad=QuadMesh.new();quad.size=Vector2.ONE*radius*2.0
+	plane.mesh=quad;plane.rotation.x=-PI/2;plane.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mat=ShaderMaterial.new();mat.shader=SURFACE_SHADER
+	mat.set_shader_parameter("tone",color);mat.set_shader_parameter("shape",shape);mat.set_shader_parameter("energy",energy)
+	plane.material_override=mat;pivot.add_child(plane)
+	pivot.visible=delay<=0
+	var tween=pivot.create_tween()
+	if delay>0:
+		tween.tween_interval(delay);tween.tween_callback(func():pivot.visible=true)
+	tween.tween_method(func(value: float):mat.set_shader_parameter("progress",value),0.0,1.0,maxf(duration,0.01))
+	tween.tween_callback(pivot.queue_free)
+	return pivot
+
+func telegraph(pos: Vector3,radius: float,color: Color,duration: float) -> Node3D:
+	return surface(pos+Vector3.UP*0.055,radius,color,duration,2,0.9)
 
 func ring(pos: Vector3,radius: float,color: Color,duration: float):
-	var pulse=flat_sprite(color,radius*2.3,radius*2.3,1.3)
-	pulse.position=pos+Vector3.UP*0.06;pulse.scale=Vector3.ONE*0.3;add_child(pulse)
-	var mat=pulse.get_child(0).material_override
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(pulse,"scale",Vector3.ONE,maxf(duration*0.35,0.09)).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),maxf(duration*0.45,0.12)).set_delay(duration*0.55)
-	tween.chain().tween_callback(pulse.queue_free)
+	surface(pos+Vector3.UP*0.065,radius,color,duration,0,1.15)
 
 # A swing reads as an arc swept in front of the fighter, not a circle drawn around it.
 
 func slash(origin: Vector3,direction: Vector3,radius: float,color: Color):
-	var pivot=Node3D.new();pivot.position=origin+Vector3.UP*0.55;add_child(pivot)
-	aim_along(pivot,direction)
-	var arc=flat_sprite(color,radius*2.6,radius*1.35,2.6)
-	arc.position=Vector3(0,0,-radius*0.6);pivot.add_child(arc)
-	var mat=arc.get_child(0).material_override
-	pivot.rotation.y+=0.6
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(pivot,"rotation:y",pivot.rotation.y-1.2,0.17).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),0.17)
-	tween.chain().tween_callback(pivot.queue_free)
+	var pivot=surface(origin+Vector3.UP*0.6,radius,color,0.22,1,1.6)
+	aim_along(pivot,direction);pivot.rotation.y+=0.45
+	var tween=pivot.create_tween()
+	tween.tween_property(pivot,"rotation:y",pivot.rotation.y-0.9,0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
-# duration exists for the aim line an archer draws: a chain arc is gone in a frame,
-# a telegraph has to stay up as long as the wind-up it is announcing.
 func beam(a: Vector3,b: Vector3,color: Color,duration: float=0.15):
 	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_LINES);mesh.surface_add_vertex(a);mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex(b);mesh.surface_end()
 	var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.surface_set_material(0,mat);node.material_override=mat;add_child(node)
@@ -165,15 +227,7 @@ func flat_sprite(color: Color,width: float,length: float,energy: float=1.0,textu
 # outwards rather than one circle appearing at full size.
 
 func shockwave(pos: Vector3,radius: float,color: Color,duration: float,delay: float=0.0,energy: float=1.6):
-	var wave=flat_sprite(color,radius*2.3,radius*2.3,energy,ring_texture)
-	wave.position=pos+Vector3.UP*0.07;wave.scale=Vector3.ONE*0.18;add_child(wave)
-	var mat=wave.get_child(0).material_override
-	mat.albedo_color=Color(0,0,0)
-	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(wave,"scale",Vector3.ONE,duration).set_delay(delay).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat,"albedo_color",color*energy,0.05).set_delay(delay)
-	tween.tween_property(mat,"albedo_color",Color(0,0,0),duration*0.8).set_delay(delay+duration*0.25)
-	tween.chain().tween_callback(wave.queue_free)
+	surface(pos+Vector3.UP*0.07,radius,color,duration,0,energy*0.7,delay)
 
 # Particles thrown outward along the ground from a ring, for dust and frost fronts.
 
@@ -190,7 +244,7 @@ func burst_ring(pos: Vector3,radius: float,color: Color,amount: int,speed: float
 	p.scale_amount_min=0.5;p.scale_amount_max=1.1
 	var curve=Curve.new();curve.add_point(Vector2(0,1.0));curve.add_point(Vector2(1,0.0))
 	var shrink=CurveTexture.new();shrink.curve=curve;p.scale_amount_curve=shrink
-	var mesh=SphereMesh.new();mesh.radius=0.045;mesh.height=0.09;mesh.radial_segments=4;mesh.rings=2
+	var mesh=SphereMesh.new();mesh.radius=0.022;mesh.height=0.044;mesh.radial_segments=4;mesh.rings=2
 	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.blend_mode=BaseMaterial3D.BLEND_MODE_ADD;mat.albedo_color=color
 	mesh.material=mat;p.mesh=mesh;p.material_override=mat
@@ -219,15 +273,18 @@ func shards(pos: Vector3,radius: float,color: Color,count: int):
 		tween.tween_callback(spike.queue_free)
 
 func impact(pos: Vector3,weapon: String,friendly: bool):
-	var tone=Color("9fc6ff") if weapon=="magic_orb" else (Color("ffcf8a") if friendly else Color("ff8a72"))
-	spark(pos,tone,16 if weapon=="magic_orb" else 9)
-	var burst=glow_sprite(tone,0.95 if weapon=="magic_orb" else 0.6,1.15)
+	var magic=weapon in ["magic_orb","enemy_magic_orb"]
+	var tone=(Color("23cfff") if friendly else Color("ed46b8")) if magic else (Color("ffcf8a") if friendly else Color("ff8a72"))
+	spark(pos,tone,16 if magic else 9)
+	var burst=glow_sprite(tone,0.75 if magic else 0.6,1.15)
 	burst.position=pos;add_child(burst)
 	var tween=create_tween();tween.set_parallel(true)
-	tween.tween_property(burst,"scale",Vector3.ONE*(1.7 if weapon=="magic_orb" else 1.4),0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(burst,"scale",Vector3.ONE*(1.7 if magic else 1.4),0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(burst.material_override,"albedo_color",Color(0,0,0),0.18)
 	tween.chain().tween_callback(burst.queue_free)
-	if weapon=="magic_orb":ring(pos,0.9,Color("7fb0ff"),0.22)
+	if magic:
+		surface(Vector3(pos.x,0.08,pos.z),0.9,tone,0.4,3,1.1)
+		shockwave(Vector3(pos.x,0,pos.z),0.9,tone,0.3)
 
 func spark(pos: Vector3,color: Color,amount: int=8):
 	if quality!="PC" and rng.randf()>0.45:return
@@ -235,7 +292,7 @@ func spark(pos: Vector3,color: Color,amount: int=8):
 	node.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;node.emission_sphere_radius=0.09
 	node.direction=Vector3.UP;node.spread=180;node.initial_velocity_min=1.3;node.initial_velocity_max=3.4
 	node.gravity=Vector3(0,-5.5,0);node.scale_amount_min=0.45;node.scale_amount_max=1.0
-	var mesh=SphereMesh.new();mesh.radius=0.028;mesh.height=0.056;mesh.radial_segments=4;mesh.rings=2
+	var mesh=PrismMesh.new();mesh.size=Vector3(0.025,0.09,0.018)
 	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color
 	mesh.material=mat;node.mesh=mesh;node.material_override=mat
 	node.position=pos;add_child(node);node.emitting=true

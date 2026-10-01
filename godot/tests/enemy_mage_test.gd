@@ -19,6 +19,9 @@ func suite():
 	check(w.bullets.is_empty(),"Bolt waits for casting pose")
 	w._enemy_tick(mage,BWWorld.CAST_TIME+0.01)
 	check(w.bullets.size()==1,"Bolt releases at contact")
+	if not w.bullets.is_empty():
+		check(w.bullets[0].weapon=="enemy_magic_orb","Hostile bolt uses its own VFX palette")
+		check(is_equal_approx(w.bullets[0].radius,0.16),"VFX update preserves hostile bolt hitbox")
 	mage.cooldown=0;w._enemy_tick(mage,0.01)
 	check(mage.cast_kind=="rune" and mage.visual.state=="cast","Rune uses distinct two-hand cast")
 	check(w.hazards.is_empty(),"Rune waits for contact")

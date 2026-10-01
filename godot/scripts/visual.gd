@@ -94,7 +94,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 	base_scale=model.scale
 	if enemy and not enemy_asset:_tint(model,tint)
 	play("idle")
-	if kind=="mage" and not enemy:_attach_hand_magic()
+	if kind=="mage" and (not enemy or enemy_asset):_attach_hand_magic()
 
 var level_scale = 1.0
 
@@ -285,13 +285,14 @@ func _attach_hand_magic():
 	hand_magic=Node3D.new();hand_magic.name="HandMagic";add_child(hand_magic)
 	hand_magic.top_level=true
 	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color=Color("86e8ff");mat.emission_enabled=true;mat.emission=Color("70bfff");mat.emission_energy_multiplier=2.0
-	var orb=MeshInstance3D.new();orb.name="Core";var sphere=SphereMesh.new();sphere.radius=0.075;sphere.height=0.15;sphere.radial_segments=16;sphere.rings=8;orb.mesh=sphere;orb.material_override=mat;hand_magic.add_child(orb)
+	var tone=Color("ec45b5") if enemy_asset else Color("18bfff")
+	mat.albedo_color=tone;mat.emission_enabled=true;mat.emission=tone;mat.emission_energy_multiplier=1.4
+	var orb=MeshInstance3D.new();orb.name="Core";var sphere=SphereMesh.new();sphere.radius=0.075;sphere.height=0.15;sphere.radial_segments=16;sphere.rings=8;orb.mesh=sphere;orb.material_override=BWFx.arcane_material(tone,Color("e02c50") if enemy_asset else Color("234aff"));hand_magic.add_child(orb)
 	for i in 2:
 		var ring=MeshInstance3D.new();ring.name="Rune"+str(i);var torus=TorusMesh.new();torus.inner_radius=0.12+i*0.03;torus.outer_radius=0.13+i*0.03;torus.rings=24;torus.ring_segments=4;ring.mesh=torus;ring.material_override=mat;ring.rotation.x=PI/2 if i==0 else 0;hand_magic.add_child(ring)
 	var sparks=CPUParticles3D.new();sparks.name="Sparks";sparks.amount=18;sparks.lifetime=0.55;sparks.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;sparks.emission_sphere_radius=0.1;sparks.direction=Vector3.UP;sparks.spread=180;sparks.initial_velocity_min=0.1;sparks.initial_velocity_max=0.35;sparks.gravity=Vector3(0,0.2,0)
 	var fleck=SphereMesh.new();fleck.radius=0.012;fleck.height=0.024;fleck.radial_segments=6;fleck.rings=3;fleck.material=mat;sparks.mesh=fleck;sparks.material_override=mat;hand_magic.add_child(sparks)
-	var lamp=OmniLight3D.new();lamp.light_color=Color("7cc7ff");lamp.light_energy=0.7;lamp.omni_range=1.2;hand_magic.add_child(lamp)
+	var lamp=OmniLight3D.new();lamp.light_color=tone;lamp.light_energy=0.7;lamp.omni_range=1.2;hand_magic.add_child(lamp)
 
 func _process(delta: float):
 	if not is_instance_valid(hand_magic) or dead:return

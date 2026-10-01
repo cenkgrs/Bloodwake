@@ -464,8 +464,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 					if e.cast_kind=="rune":
 						_plant_rune(e)
 					else:
-						var bolt=_bullet(node.position+direction*0.4+Vector3.UP*0.3,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"",0,0,false)
-						if bolt!=null:bolt.node.add_child(fx.glow_sprite(Color("c07bff"),0.7,1.5))
+						_bullet(node.position+direction*0.4+Vector3.UP*0.3,direction,data.projectileSpeed*BWData.UNIT,e.damage*(1.25 if e.aura>0 else 1),range_value,false,0,"enemy_magic_orb",0,0,false)
 						sound_at("orb_cast",node.position,-4.0)
 			elif e.cooldown<=0 and distance<=range_value:
 				# Every other cast is a rune instead of a bolt, so a mage is a thing to
@@ -801,20 +800,20 @@ func _plant_rune(e: Dictionary):
 	var spot=arena.push_out(player.position+Vector3(rng.randf_range(-0.5,0.5),0,rng.randf_range(-0.5,0.5)),0.6)
 	var radius=float(e.data.get("runeRadius",150))*BWData.UNIT
 	var fuse=float(e.data.get("runeFuse",2.3))
-	var tone=Color("c07bff")
+	var tone=Color("df45bc")
 	# A primitive stand-in, the way every prop starts: one mesh with a known
 	# footprint, so a built model replaces it by loading a scene here.
 	var node=Node3D.new();add_child(node);node.position=spot
-	var pylon=MeshInstance3D.new();var shard=BoxMesh.new();shard.size=Vector3(0.3,0.78,0.3)
+	var pylon=MeshInstance3D.new();var shard=PrismMesh.new();shard.size=Vector3(0.38,0.9,0.38)
 	pylon.mesh=shard;pylon.position.y=0.39;pylon.rotation.y=PI*0.25
 	var skin=StandardMaterial3D.new();skin.albedo_color=Color("2a1b3d")
 	skin.emission_enabled=true;skin.emission=tone;skin.emission_energy_multiplier=1.6
 	pylon.material_override=skin;pylon.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(pylon)
 	node.add_child(fx.glow_sprite(tone,0.9,1.4))
-	fx.telegraph(spot,radius,tone,fuse)
+	var mark=fx.telegraph(spot,radius,tone,fuse)
 	hazards.append({"node":node,"pos":spot,"radius":radius,"fuse":fuse,"life":fuse,
-		"hp":maxf(8.0,e.maxHp*0.35),"damage":e.damage*float(e.data.get("runeDamage",1.7)),"tone":tone})
+		"hp":maxf(8.0,e.maxHp*0.35),"damage":e.damage*float(e.data.get("runeDamage",1.7)),"tone":tone,"mark":mark})
 	sound_at("orb_cast",spot,-2.0)
 
 func _hazards(dt: float):
@@ -831,13 +830,14 @@ func _hazards(dt: float):
 func _detonate(h: Dictionary,blast: bool):
 	if not hazards.has(h):return
 	hazards.erase(h)
+	if is_instance_valid(h.get("mark")):h.mark.queue_free()
 	if blast:
 		if player.position.distance_to(h.pos)<=h.radius+0.36:_hurt_player(h.damage)
 		damage_area(h.pos,h.radius,h.damage)
 		for e in enemies.duplicate():
 			# A rune is a bomb, not an ally: whatever is standing over it takes it.
 			if e.node.position.distance_to(h.pos)<=h.radius+e.radius:_damage_enemy(e,h.damage*0.5,false,true,"ability")
-		fx.shockwave(h.pos,h.radius,h.tone,0.34,0.0,1.7)
+		fx.arcane_blast(h.pos,h.radius,h.tone,Color("de2851"))
 		fx.spark(h.pos+Vector3.UP*0.4,h.tone,22)
 		fx.flash_light(h.pos,h.tone,2.4,h.radius*1.6,0.28)
 		shake=maxf(shake,0.1)
@@ -864,6 +864,7 @@ func damage_area(spot: Vector3,radius: float,amount: float) -> Array:
 
 func clear_hazards():
 	for h in hazards:
+		if is_instance_valid(h.get("mark")):h.mark.queue_free()
 		if is_instance_valid(h.node):h.node.queue_free()
 	hazards.clear()
 
@@ -901,17 +902,20 @@ func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,dista
 	# to catch, one or two soft halos around it, and a world-space trail behind.
 	var node=Node3D.new();add_child(node);node.position=origin+Vector3.UP*0.8
 	var rich=quality=="PC"
-	var orb=weapon=="magic_orb"
-	var tone=Color("8ac8ff") if orb else (Color("ffd9a0") if friendly else Color("ff9d86"))
-	var halo_tone=Color("6fa8ff") if orb else (Color("ffab4d") if friendly else Color("ff5a4a"))
+	var orb=weapon in ["magic_orb","enemy_magic_orb"]
+	var arcane_tone=Color("19cbff") if friendly else Color("ec45b5")
+	var arcane_accent=Color("2448df") if friendly else Color("e02c50")
+	var tone=arcane_tone if orb else (Color("ffd9a0") if friendly else Color("ff9d86"))
+	var halo_tone=arcane_tone if orb else (Color("ffab4d") if friendly else Color("ff5a4a"))
 	var core=MeshInstance3D.new();core.mesh=bullet_mesh
 	var core_mat=bullet_material.duplicate();core_mat.albedo_color=tone*(1.0 if orb else 1.7)
 	core.material_override=core_mat;core.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(core)
 	if orb:
-		core.scale=Vector3.ONE*1.05
-		var rig=fx.orb_dressing(halo_tone,rich)
+		core.visible=false
+		var rig=fx.orb_dressing(halo_tone,rich,arcane_accent)
 		node.add_child(rig)
+		var tail=fx.arcane_tail(halo_tone,arcane_accent);node.add_child(tail);fx.aim_along(tail,direction)
 		# The spin has to be owned by the node it turns: a world-bound looping tween
 		# outlives the projectile and keeps cycling against a freed target.
 		var motes=rig.get_node_or_null("Motes")

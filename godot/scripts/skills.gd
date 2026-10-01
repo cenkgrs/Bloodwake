@@ -200,13 +200,14 @@ func _cast_meteor(data: Dictionary,target: Vector3):
 	var apex=target+Vector3.UP*6.0
 	var travel=clampf(origin.distance_to(target)/(data.projectileSpeed*BWData.UNIT),0.26,0.55)
 	var rock=Node3D.new();add_child(rock);rock.position=origin
-	rock.add_child(w.fx.glow_sprite(Color("c9a0ff"),1.5,1.6))
-	rock.add_child(w.fx.glow_sprite(Color("f0e2ff"),0.7,2.2))
+	rock.add_child(w.fx.arcane_core(Color("248fff"),0.32))
+	rock.add_child(w.fx.glow_sprite(Color("19bfff"),1.1,0.85))
+	rock.add_child(w.fx.glow_sprite(Color("b5f5ff"),0.48,0.65))
 	if w.quality=="PC":
-		var lamp=OmniLight3D.new();lamp.light_color=Color("b07dff");lamp.light_energy=2.4;lamp.omni_range=4.0;rock.add_child(lamp)
-		rock.add_child(w.fx.trail_emitter(Color("b07dff"),0.09,0.36,22))
+		var lamp=OmniLight3D.new();lamp.light_color=Color("248fff");lamp.light_energy=2.4;lamp.omni_range=4.0;rock.add_child(lamp)
+		rock.add_child(w.fx.trail_emitter(Color("248fff"),0.09,0.36,22))
 	var radius=data.blastRadius*w.run.stats.attackRange*BWData.UNIT
-	w.fx.telegraph(target,radius,Color("b07dff"),travel)
+	w.fx.telegraph(target,radius,Color("248fff"),travel)
 	var tween=create_tween()
 	tween.tween_property(rock,"position",apex,travel*0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(rock,"position",target+Vector3.UP*0.2,travel*0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -220,12 +221,8 @@ func _meteor_blast(position: Vector3,radius: float,damage: float):
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
-	w.fx.shockwave(position,radius,Color("b07dff"),0.34,0.0,1.8)
-	w.fx.shockwave(position,radius*0.68,Color("f2e4ff"),0.22,0.05,2.0)
-	w.fx.radial_streaks(position,radius*1.1,Color("d9b8ff"),8,0.3)
-	w.fx.burst_ring(position,radius,Color("c9a0ff"),30,4.2,0.6)
-	w.fx.spark(position+Vector3.UP*0.4,Color("e9d4ff"),22)
-	w.fx.flash_light(position,Color("b07dff"),2.8,radius*1.7,0.32)
+	w.fx.arcane_blast(position,radius,Color("19cbff"),Color("2448df"))
+	w.fx.spark(position+Vector3.UP*0.4,Color("91ebff"),18)
 	w.shake=maxf(w.shake,0.14)
 
 func _cast_void_leap(data: Dictionary,target: Vector3):
@@ -278,6 +275,7 @@ func ability():
 		w.pending_attacks.clear()
 		w.visual.action("ultimate",0.9)
 		w.pending_attacks.append({"time":0.45,"id":"ultimate","data":data})
+		w.fx.surface(w.player.position+Vector3.UP*0.08,1.2,Color("19cbff"),0.45,3,0.8)
 	else:
 		_resolve_ability(data);w.visual.action("attack")
 	w.changed.emit()
@@ -309,11 +307,7 @@ func _resolve_ability(data: Dictionary):
 func _ability_effect(id: String,pos: Vector3,radius: float):
 	match id:
 		"frost_nova":
-			w.fx.shockwave(pos,radius,Color("8fd8ff"),0.34,0.0,1.9)
-			w.fx.shockwave(pos,radius*0.72,Color("dff2ff"),0.22,0.05,2.2)
-			w.fx.shards(pos,radius,Color("9ad6ff"),12)
-			w.fx.burst_ring(pos,radius,Color("cfeeff"),26,3.4,0.6)
-			w.fx.flash_light(pos,Color("8fd8ff"),3.2,radius*1.6,0.3)
+			w.fx.arcane_blast(pos,radius,Color("19cbff"),Color("168cda"))
 			w.shake=maxf(w.shake,0.05)
 		"war_cry":
 			w.fx.shockwave(pos,radius,Color("ffb066"),0.3,0.0,2.2)
