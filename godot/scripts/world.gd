@@ -88,6 +88,8 @@ const FLANK_STANDOFF = 8.6
 const TANK_SWING_TIME = 1.3
 # Downward axe contact pose at source 1.15 s of the 2.267 s clip, verified in-game.
 const TANK_CONTACT = TANK_SWING_TIME * (69.0 / 136.0)
+const COMMANDER_CAST_TIME = 1.1
+const COMMANDER_RELEASE = 0.55
 const DRAW_TIME = 0.4
 const CAST_TIME = 0.55
 # Runes a mage may have standing at once. A wave of mages must not carpet the floor.
@@ -399,7 +401,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 	# A staggered body is off its feet for a moment: it does not advance, attack or
 	# tick its cooldown down. This is the whole of what a landed hit buys, and it is
 	# why the fight now reads as an exchange with each enemy rather than a crowd.
-	if e.stagger>0 and e.id!="boss" and e.state!="tank_swing":
+	if e.stagger>0 and e.id!="boss" and e.state not in ["tank_swing","rally"]:
 		e.stagger=maxf(0.0,e.stagger-dt)
 		e.visual.tick(dt,false)
 		return
@@ -438,11 +440,29 @@ func _enemy_tick(e: Dictionary,dt: float):
 				move=Vector3.ZERO
 				e.shot_direction=delta.normalized()
 				e.visual.action("draw",DRAW_TIME)
-		"healer","commander":
+		"commander":
+			if e.state=="rally":
+				e.timer-=dt
+				if e.timer<=0:
+					e.state="chase"
+					for ally in enemies:
+						if ally.hp>0 and ally.id not in ["commander","boss"] and ally.node.position.distance_to(node.position)<=data.supportRadius*BWData.UNIT:
+							ally.aura=data.auraDuration
+					fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("cfab53"),0.45)
+			elif e.visual.state=="attack" and e.visual.lock_time>0:
+				pass
+			elif e.cooldown<=0:
+				e.cooldown=data.attackCooldown;e.state="rally";e.timer=COMMANDER_RELEASE
+				e.heal_direction=delta.normalized();e.visual.action("attack",COMMANDER_CAST_TIME)
+			else:
+				var preferred=data.preferredRange*BWData.UNIT
+				if distance<preferred*0.65:move=-direction*speed
+				elif distance>preferred*1.5:move=pursuit*speed*0.4
+		"healer":
 			var preferred=data.preferredRange*BWData.UNIT
-			if distance<preferred*(0.65 if e.id=="commander" else 1):move=-direction*speed
+			if distance<preferred:move=-direction*speed
 			elif distance>preferred*1.5:move=pursuit*speed*0.4
-			if e.id=="healer" and e.state=="heal":
+			if e.state=="heal":
 				move=Vector3.ZERO;e.timer-=dt
 				if e.timer<=0:
 					e.state="chase"
@@ -457,14 +477,11 @@ func _enemy_tick(e: Dictionary,dt: float):
 				var best={};var missing=0.0
 				for ally in enemies:
 					if ally==e or ally.node.position.distance_to(node.position)>data.supportRadius*BWData.UNIT:continue
-					if e.id=="commander" and ally.id not in ["commander","boss"]:ally.aura=data.auraDuration
-					elif e.id=="healer" and ally.maxHp-ally.hp>missing:best=ally;missing=ally.maxHp-ally.hp
+					if ally.maxHp-ally.hp>missing:best=ally;missing=ally.maxHp-ally.hp
 				if not best.is_empty():
 					e.heal_target=best.node.get_instance_id();e.state="heal";e.timer=0.4;move=Vector3.ZERO
 					e.heal_direction=(best.node.position-node.position).normalized()
 					e.visual.action("attack",0.9)
-				elif e.id=="commander":
-					fx.ring(node.position,data.supportRadius*BWData.UNIT,Color("cfab53"),0.45)
 		"mage":
 			e.timer-=dt
 			move=_mage_step(e,dt,distance)
@@ -551,7 +568,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 		facing=e.get("shot_direction",direction)
 	if e.id=="archer" and (e.state=="draw" or (e.visual.state=="attack" and e.visual.lock_time>0)):
 		facing=e.get("shot_direction",direction)
-	if e.id=="healer" and e.visual.state=="attack" and e.visual.lock_time>0:
+	if e.id in ["healer","commander"] and e.visual.state=="attack" and e.visual.lock_time>0:
 		facing=e.get("heal_direction",direction)
 	if e.id=="mage" and e.visual.state in ["attack","cast"] and e.visual.lock_time>0:
 		facing=delta.normalized()

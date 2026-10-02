@@ -200,7 +200,7 @@ func _clear_flash():
 func clip_speed(next: String,duration: float=-1.0) -> float:
 	if not animation or not clips.has(next):return 1.0
 	if not fitted_timing and not enemy_asset and not (fitted_attack and next=="attack"):return 1.0
-	var run_targets={"warrior":0.62,"mage":0.72,"assassin":0.5,"tank":1.05}
+	var run_targets={"warrior":0.62,"mage":0.72,"assassin":0.5,"tank":1.05,"commander":0.95}
 	var attack_targets={"assassin":0.3,"gunslinger":0.3}
 	var targets={"run":run_targets.get(actor_kind,0.65),"attack":attack_targets.get(actor_kind,0.45),"hit":0.22,"ultimate":0.9,"death":2.2}
 	var target=duration if duration>0 else targets.get(next,-1.0)
