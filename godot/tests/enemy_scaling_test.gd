@@ -14,11 +14,15 @@ func suite():
 		check(grunt.maxHp>last_hp and grunt.damage>last_damage,"spawned enemy grows at wave "+str(wave))
 		print("ENEMY_SCALE wave=",wave," grunt_hp=",grunt.maxHp," damage=",grunt.damage)
 		last_hp=grunt.maxHp;last_damage=grunt.damage
+	for e in w.enemies:e.node.queue_free()
+	w.enemies.clear()
 	w.run.wave=10
 	var boss=w.spawn_enemy("boss",Vector3.ZERO)
-	check(boss.maxHp==2700 and boss.damage==65,"first boss retains its authored balance")
+	check(boss.maxHp==3240 and boss.damage==65,"first boss retains its authored balance")
 	BWBoss.begin(w,boss,"summon");w._enemy_tick(boss,1.51)
-	for e in w.enemies.slice(-10):check(e.maxHp>3*60,"boss adds use wave scaling and survive a basic 60-damage hit")
+	for e in w.enemies:
+		if e.id=="boss":continue
+		check(e.maxHp>3*60,"boss adds use wave scaling and survive a basic 60-damage hit")
 	w.run.wave=20
 	var next_boss=w.spawn_enemy("boss",Vector3.ZERO)
 	check(next_boss.maxHp>boss.maxHp and next_boss.damage>boss.damage,"later bosses also grow")

@@ -51,11 +51,11 @@ func suite():
 	for i in 8:
 		world.spawn_timer=0
 		world._spawn_tick(1.0)
-	check(world.enemies.size()==8,"eight spawns land")
+	check(world.enemies.size()==5,"five spawns land and further arrivals stop")
 	for e in world.enemies:
 		var bearing=atan2(e.node.position.z,e.node.position.x)
 		quadrants[int(floor((bearing+PI)/(PI*0.5)))%4]=true
-	check(quadrants.size()==4,"a turn of the ring covers every side of the player, not one flank")
+	check(quadrants.size()>=3,"five arrivals occupy at least three sides")
 	for e in world.enemies.duplicate():world.enemies.erase(e);e.node.queue_free()
 
 	# --- A horde closes. A body far away hurries in; one already in your face does
@@ -88,7 +88,7 @@ func suite():
 			check(not pool.is_empty(),"a district always has something to field: "+district.id)
 			for id in pool:check(pool[id]>0.0,"every unlocked type stays drawable: %s in %s" % [id,district.id])
 			if wave==1:check(pool.size()==1 and pool.has("grunt"),"wave one fields grunts alone")
-			if wave==30:check(pool.size()==6,"a long run fields every ordinary type")
+			if wave==30:check(pool.size()==BWData.rows("enemies").size()-1,"a long run fields every ordinary type")
 
 	# The districts must actually differ, or the garrison table is decoration. Each
 	# one that declares a garrison weights its own theme above the neutral courtyard.
@@ -109,11 +109,11 @@ func suite():
 	var previous=BWData.wave_rules(1)
 	for wave in range(2,120):
 		var rules=BWData.wave_rules(wave)
-		check(rules.cap>=5 and rules.cap<=12,"spawn cap stays in bounds: "+str(wave))
+		check(rules.cap==5,"spawn cap stays in bounds: "+str(wave))
 		check(rules.interval>=0.45 and rules.interval<=0.95,"spawn interval stays in bounds: "+str(wave))
 		check(rules.elite>=0.0 and rules.elite<=0.35,"elite odds stay in bounds: "+str(wave))
 		check(rules.multiplier>previous.multiplier,"waves keep getting harder: "+str(wave))
-		if not rules.boss and not previous.boss:check(rules.quota>previous.quota,"the quota climbs between ordinary waves: "+str(wave))
+		if not rules.boss and not previous.boss:check(rules.quota==5,"ordinary waves retain five authored enemies: "+str(wave))
 		previous=rules
 
 	# --- Elites. One flag has to move every number that makes an elite an elite.

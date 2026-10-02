@@ -4,7 +4,7 @@ extends RefCounted
 # Distances and speeds in legacy catalogs use pixels. 50 px = one metre.
 const UNIT = 0.02
 const CLASSES = {
-	"warrior": {"blurb":"Heavy plate and a heavier blade. Walks into the press on purpose, and is still standing when it clears.", "name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":200.0,"armor":0.2}, "skills":["sunder_leap","whirl"]},
+	"warrior": {"blurb":"Heavy plate and a heavier blade. Walks into the press on purpose, and is still standing when it clears.", "name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":170.0,"armor":0.2}, "skills":["sunder_leap","whirl"]},
 	"gunslinger": {"blurb":"Powder, iron and a debt paid in blood. Answers every wave with more rounds than it sent.", "name":"Bloodbound", "tag":"RANGED / RELENTLESS", "weapon":"rapid_rifle", "ability":"fan_shot", "color":"d7ae64", "stats":{"maxHp":90.0,"moveSpeed":250.0,"attackSpeed":0.85}, "skills":["ricochet_round","powder_charge"]},
 	"mage": {"blurb":"Borrowed cold and falling stone. Holds ground it never has to stand on.", "name":"Mage", "tag":"ARCANE / AREA CONTROL", "weapon":"magic_orb", "ability":"frost_nova", "skills":["arcane_meteor","void_leap"], "color":"9b83de", "stats":{"maxHp":85.0,"moveSpeed":215.0,"damage":1.5}},
 	"assassin": {"blurb":"Fast, brittle, and always behind you. Every cut is meant to be the last one.", "name":"Assassin", "tag":"MOBILE / CRITICAL", "weapon":"daggers", "ability":"shadow_strike", "color":"63bd9f", "stats":{"maxHp":80.0,"moveSpeed":350.0,"criticalChance":0.8,"criticalDamage":2.8,"dodgeChance":0.3}, "skills":["phantom_volley","mark_of_ruin"]}
@@ -33,14 +33,21 @@ static func stats(id: String) -> Dictionary:
 	result.hp = result.maxHp
 	return result
 
-# Quota is the wave's body count, cap how many may stand at once, interval how
-# fast they arrive. All three were once carrying twice these numbers, and the
-# crowd that produced cost the fight its readability: a swing landed on five
-# bodies at once, so no single hit registered as a hit. A wave is now a handful
-# of enemies that each have to be dealt with, paid for by the health, damage and
-# reward on the catalog rows and by the speed they close at.
+# Authored five-enemy encounters, rotated after the introductory waves.
+const ENCOUNTER_CAP = 5
+const ENCOUNTERS = [
+	["mage","grunt","grunt","grunt","grunt"],
+	["grunt","grunt","grunt","tank","mage"],
+	["assassin","healer","tank","tank","archer"],
+	["commander","grunt","tank","archer","mage"],
+	["grunt","assassin","healer","archer","tank"]
+]
+static func wave_roster(wave: int) -> Array:
+	if wave%10==0:return ["boss"]
+	return ENCOUNTERS[(maxi(wave,1)-1)%ENCOUNTERS.size()].duplicate()
+
 static func wave_rules(wave: int) -> Dictionary:
-	return {"boss":wave % 10 == 0, "quota":1 if wave % 10 == 0 else 5+wave*2, "cap":clampi(4+wave,5,12), "interval":clampf(0.95-wave*0.03,0.45,0.95), "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+0.25*(wave-1)+0.035*pow(wave-1,2), "damage_multiplier":1+0.09*(wave-1)+0.002*pow(wave-1,2)}
+	return {"boss":wave % 10 == 0, "quota":wave_roster(wave).size(), "cap":ENCOUNTER_CAP, "interval":0.55, "elite":clampf(0.03*(wave-1),0,0.35), "multiplier":1+0.25*(wave-1)+0.035*pow(wave-1,2), "damage_multiplier":1+0.09*(wave-1)+0.002*pow(wave-1,2)}
 
 static func actor_growth(level: int) -> float:
 	return 1.0+0.025*clampi(level-1,0,20)

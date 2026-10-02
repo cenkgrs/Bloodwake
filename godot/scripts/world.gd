@@ -62,7 +62,7 @@ const SPAWN_STRIDE = 3
 # speed; it ramps to CLOSE_RUSH over the next CLOSE_FALLOFF metres.
 const CLOSE_RANGE = 2.6
 const CLOSE_FALLOFF = 6.0
-const CLOSE_RUSH = 2.45
+const CLOSE_RUSH = 1.15
 # How much room a body leaves the player. The catalogued attack range on a grunt is
 # shorter than the two bodies are wide, so a wave used to close until it was
 # standing inside the player. Enemies now ring them at arm's length: the press is
@@ -215,6 +215,11 @@ func _physics_process(dt: float):
 	var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
 	input=input.limit_length()
 	var movement=screen_direction(input)
+	# Full-body sword clips plant the feet through contact. Movement can cancel
+	# their recovery, avoiding a sliding attack pose while keeping steering responsive.
+	if run.class_id=="warrior" and visual.state.begins_with("attack") and visual.lock_time>0:
+		if swing_gate>0:movement=Vector3.ZERO
+		elif movement.length_squared()>0.001:visual.lock_time=0
 	var previous_player_position=player.position
 	# A leap owns the body until it lands; steering mid-flight would fight its tween.
 	if airborne:movement=Vector3.ZERO
@@ -268,14 +273,11 @@ func _spawn_tick(dt: float):
 				pickup.node.queue_free()
 			pickups.clear();pending_attacks.clear();clear_hazards();running=false;wave_cleared.emit()
 		return
-	# The wave forms around the player, wherever that is. The district under them
-	# only decides what turns up, so walking somewhere changes who comes for you
-	# rather than whether anything does.
-	var zone=current_zone()
+	# Each wave uses its authored roster and never refills defeated slots.
 	spawn_timer-=dt
 	if spawn_timer>0 or enemies.size()>=rules.cap:return
 	spawn_timer=rules.interval
-	var id="boss" if rules.boss else _draw_from(spawn_pool(run.wave,zone.get("id","courtyard")))
+	var id=BWData.wave_roster(run.wave)[spawned]
 	spawn_enemy(id,_spawn_point(),not rules.boss and rng.randf()<rules.elite)
 	spawned+=1
 
@@ -637,7 +639,7 @@ func _weapons(dt: float):
 				# ability effect, which is what makes finishing the chain worth doing.
 				visual.action(clip,duration)
 			else:visual.action(clip,duration)
-			pending_attacks.append({"time":duration*IMPACT.get(clip,0.32),"id":id,"direction":direction,"finisher":melee and combo_step==COMBO.size()-1})
+			pending_attacks.append({"time":duration*(0.55 if id=="magic_orb" else IMPACT.get(clip,0.32)),"id":id,"direction":direction,"finisher":melee and combo_step==COMBO.size()-1})
 		else:
 			_resolve_weapon(id,direction)
 			# Rapid fire outpaces the 0.96s clip ~5x, so playing it full length left the
@@ -698,14 +700,13 @@ func _resolve_weapon(id: String,direction: Vector3):
 				var origin=player.position
 				var shot_direction=direction.rotated(Vector3.UP,angle)
 				if id=="magic_orb" and is_instance_valid(visual.hand_magic):
-					var hand=visual.hand_magic.global_position
+					var hand=visual.magic_palm_position()
 					var target=nearest(player.position,range_value)
 					var destination=player.position+shot_direction*range_value+Vector3.UP*0.8
 					if target!=null and (target.node.position-player.position).normalized().dot(shot_direction)>0.95:destination=target.node.position+Vector3.UP*0.8
 					shot_direction=(destination-hand).normalized()
-					# Clear the hand/body mesh - the orb used to spawn right at the palm and
-					# visibly poke out of the model instead of appearing in front of it.
-					origin=hand+shot_direction*0.45-Vector3.UP*0.8
+					# Cancel _bullet’s standard height offset to spawn at the live palm.
+					origin=hand-Vector3.UP*0.8
 				if i==0:fx.muzzle(origin+Vector3.UP*0.8,shot_direction,Color("8db8f4") if id=="magic_orb" else Color("ffce7a"))
 				_bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
 	# Melee already played its swing as the animation started; everything else

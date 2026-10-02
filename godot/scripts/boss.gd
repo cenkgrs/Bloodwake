@@ -75,8 +75,9 @@ static func begin(world, e: Dictionary, attack: String):
 	world.add_child(e.warning)
 	if attack=="summon":
 		e.summon_points=[]
-		for index in 10:
-			var point=world.arena.push_out(e.attack_origin+e.attack_direction.rotated(Vector3.UP,TAU*index/10.0)*(4.6 if index%2==0 else 6.0),0.5)
+		var slots=maxi(0,BWData.ENCOUNTER_CAP-world.enemies.size())
+		for index in slots:
+			var point=world.arena.push_out(e.attack_origin+e.attack_direction.rotated(Vector3.UP,TAU*index/maxi(slots,1))*(4.6 if index%2==0 else 6.0),0.5)
 			e.summon_points.append(point)
 			var portal=_warning(point,Vector3.FORWARD,{"radius":0.7,"arc":360.0,"color":spec.color},"portal")
 			e.warning.add_child(portal);portal.top_level=true;portal.position=point+Vector3.UP*0.06
@@ -121,6 +122,7 @@ static func _strike(world, e: Dictionary):
 		"summon":
 			_impact(world,e.attack_origin,3.5,spec.color)
 			for index in e.summon_points.size():
+				if world.enemies.size()>=BWData.ENCOUNTER_CAP:break
 				var point: Vector3=e.summon_points[index]
 				world.fx.spark(point+Vector3.UP*0.5,spec.color,20)
 				var minion=world.spawn_enemy("grunt",point)

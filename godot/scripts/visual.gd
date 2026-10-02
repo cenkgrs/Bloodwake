@@ -200,7 +200,7 @@ func _clear_flash():
 func clip_speed(next: String,duration: float=-1.0) -> float:
 	if not animation or not clips.has(next):return 1.0
 	if not fitted_timing and not enemy_asset and not (fitted_attack and next=="attack"):return 1.0
-	var run_targets={"warrior":0.62,"mage":0.72,"assassin":0.5,"tank":1.05,"commander":0.95}
+	var run_targets={"warrior":0.82,"mage":0.72,"assassin":0.5,"tank":1.05,"commander":0.95,"grunt":1.0}
 	var attack_targets={"assassin":0.3,"gunslinger":0.3}
 	var targets={"run":run_targets.get(actor_kind,0.65),"attack":attack_targets.get(actor_kind,0.45),"hit":0.22,"ultimate":0.9,"death":2.2}
 	var target=duration if duration>0 else targets.get(next,-1.0)
@@ -279,31 +279,33 @@ func _attach_hand_magic():
 	hand_skeleton=_find_skeleton(model)
 	if not hand_skeleton:return
 	for index in hand_skeleton.get_bone_count():
-		if String(hand_skeleton.get_bone_name(index)).ends_with("RightHand"):
+		if String(hand_skeleton.get_bone_name(index)).ends_with("RightHand" if enemy_asset else "LeftHand"):
 			hand_bone=index;break
 	if hand_bone<0:return
 	hand_magic=Node3D.new();hand_magic.name="HandMagic";add_child(hand_magic)
 	hand_magic.top_level=true
-	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	var tone=Color("ec45b5") if enemy_asset else Color("18bfff")
-	mat.albedo_color=tone;mat.emission_enabled=true;mat.emission=tone;mat.emission_energy_multiplier=1.4
-	var orb=MeshInstance3D.new();orb.name="Core";var sphere=SphereMesh.new();sphere.radius=0.075;sphere.height=0.15;sphere.radial_segments=16;sphere.rings=8;orb.mesh=sphere;orb.material_override=BWFx.arcane_material(tone,Color("e02c50") if enemy_asset else Color("234aff"));hand_magic.add_child(orb)
-	for i in 2:
-		var ring=MeshInstance3D.new();ring.name="Rune"+str(i);var torus=TorusMesh.new();torus.inner_radius=0.12+i*0.03;torus.outer_radius=0.13+i*0.03;torus.rings=24;torus.ring_segments=4;ring.mesh=torus;ring.material_override=mat;ring.rotation.x=PI/2 if i==0 else 0;hand_magic.add_child(ring)
-	var sparks=CPUParticles3D.new();sparks.name="Sparks";sparks.amount=18;sparks.lifetime=0.55;sparks.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;sparks.emission_sphere_radius=0.1;sparks.direction=Vector3.UP;sparks.spread=180;sparks.initial_velocity_min=0.1;sparks.initial_velocity_max=0.35;sparks.gravity=Vector3(0,0.2,0)
-	var fleck=SphereMesh.new();fleck.radius=0.012;fleck.height=0.024;fleck.radial_segments=6;fleck.rings=3;fleck.material=mat;sparks.mesh=fleck;sparks.material_override=mat;hand_magic.add_child(sparks)
+	# Reuse the projectile's core, dark curved shell and halo at a smaller held size.
+	var tone=Color("ec45b5") if enemy_asset else Color("19cbff")
+	var accent=Color("e02c50") if enemy_asset else Color("2448df")
+	var factory=BWFx.new();factory.configure("Mobile" if OS.has_feature("mobile") else "PC")
+	var orb=factory.orb_dressing(tone,not OS.has_feature("mobile"),accent)
+	factory.free()
+	hand_magic.add_child(orb)
 	var lamp=OmniLight3D.new();lamp.light_color=tone;lamp.light_energy=0.7;lamp.omni_range=1.2;hand_magic.add_child(lamp)
+
+func magic_palm_position() -> Vector3:
+	if not is_instance_valid(hand_skeleton) or hand_bone<0:return global_position+Vector3.UP
+	var pose=hand_skeleton.global_transform*hand_skeleton.get_bone_global_pose(hand_bone)
+	return pose.origin+pose.basis.orthonormalized()*Vector3(0,0.10,0.035)
 
 func _process(delta: float):
 	if not is_instance_valid(hand_magic) or dead:return
 	magic_time+=delta
-	var pose=hand_skeleton.global_transform*hand_skeleton.get_bone_global_pose(hand_bone)
-	hand_magic.global_position=pose.origin+pose.basis.orthonormalized()*Vector3(0,0.10,0.035)
-	var pulse=1.0+sin(magic_time*5)*0.10
+	hand_magic.global_position=magic_palm_position()
+	var pulse=0.75*(1.0+sin(magic_time*5)*0.06)
 	if state=="ultimate" and lock_time>0:pulse*=1.8
 	hand_magic.scale=Vector3.ONE*pulse
-	hand_magic.get_node("Rune0").rotate_y(delta*2.5)
-	hand_magic.get_node("Rune1").rotate_z(-delta*3)
+	hand_magic.get_node("ArcaneOrb/Motes").rotate_y(delta*TAU/0.9)
 
 func _mage(tint: Color):
 	model=Node3D.new();add_child(model)

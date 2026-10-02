@@ -35,7 +35,7 @@ func suite():
 	visual.lock_time=0;visual.action("attack",0.45)
 	check(is_equal_approx(visual.lock_time,0.45),"Warrior attack fits 450 ms")
 	visual.tick(0.46,true);check(visual.state=="run","Warrior returns to movement without long recovery")
-	check(is_equal_approx(visual.animation.get_animation(visual.clips.run).length/visual.clip_speed("run"),0.62),"Warrior locomotion has responsive cadence")
+	check(is_equal_approx(visual.animation.get_animation(visual.clips.run).length/visual.clip_speed("run"),0.82),"Warrior locomotion has responsive cadence")
 	visual.tick(0.01,true,1.5);check(is_equal_approx(visual.animation.speed_scale,1.5),"movement upgrades affect cadence")
 	var target=world.spawn_enemy("tank",Vector3(0.7,0,0));target.cooldown=100;target.hp=100;run.stats.criticalChance=0
 	world.auto_fire=true;visual.lock_time=0;world._weapons(0.016)
