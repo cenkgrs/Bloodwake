@@ -9,6 +9,8 @@ var run: BWRun
 var audio: BWAudio
 var player: Node3D
 var visual: BWVisual
+const CAMERA_OFFSET = Vector3(12,14,16)
+const CAMERA_SIZE = 13.0
 var camera: Camera3D
 var arena: BWArena
 var fx: BWFx
@@ -78,8 +80,8 @@ const SHOCKWAVE_TARGETS = 6
 const STAGGER_TIME = 0.15
 const KNOCKBACK = 0.24
 # Where missile troops stand: off to the player's left or right, far enough out to
-# read as the edge of the arena. The camera never rotates, so the world x axis is
-# screen-horizontal and a post on it is a post the player can see winding up.
+# read as the edge of the arena. Posts use the camera’s ground-plane basis so they stay
+# screen-horizontal with the diagonal view and expose the attack wind-up.
 const FLANK_STANDOFF = 8.6
 # How long an archer holds its aim before the arrow leaves, and how long a mage
 # commits to a cast. Both exist so a shot from the flank can be read and dodged.
@@ -126,8 +128,9 @@ func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	visual=BWVisual.new();player.add_child(visual);visual.configure(run.class_id,false,Color.WHITE,2.05)
 	get_viewport().msaa_3d=Viewport.MSAA_4X if quality=="PC" else Viewport.MSAA_DISABLED
 	var fill=OmniLight3D.new();fill.position=Vector3(0,2.5,1);fill.omni_range=4;fill.light_energy=1.0;fill.light_color=Color("d1def0");player.add_child(fill)
-	camera=Camera3D.new();camera.projection=Camera3D.PROJECTION_ORTHOGONAL;camera.size=17
-	camera.position=Vector3(0,16,12);camera.current=true;add_child(camera);camera.look_at(Vector3.ZERO)
+	camera=Camera3D.new();camera.projection=Camera3D.PROJECTION_ORTHOGONAL;camera.size=CAMERA_SIZE
+	camera.position=CAMERA_OFFSET;camera.current=true;add_child(camera);camera.look_at(Vector3.ZERO)
+	last_move=screen_direction(Vector2.UP);aim=last_move
 	var flash_layer=CanvasLayer.new();flash_layer.layer=2;add_child(flash_layer)
 	flash_rect=ColorRect.new();flash_rect.color=Color(HURT_FLASH_COLOR,0.0)
 	flash_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE;flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -206,7 +209,7 @@ func _physics_process(dt: float):
 	visual.set_level_scale(BWData.actor_growth(run.level))
 	var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
 	input=input.limit_length()
-	var movement=Vector3(input.x,0,input.y)
+	var movement=screen_direction(input)
 	var previous_player_position=player.position
 	# A leap owns the body until it lands; steering mid-flight would fight its tween.
 	if airborne:movement=Vector3.ZERO
@@ -217,19 +220,19 @@ func _physics_process(dt: float):
 	player_velocity=player_velocity.lerp(measured_velocity,1.0-exp(-dt*6.0))
 	if movement.length_squared()>0.001:last_move=movement.normalized()
 	var aim_stick=Input.get_vector("aim_left","aim_right","aim_up","aim_down")
-	if touch_aim.length_squared()>0.04:aim=Vector3(touch_aim.x,0,touch_aim.y).normalized()
-	elif aim_stick.length_squared()>0.04:aim=Vector3(aim_stick.x,0,aim_stick.y).normalized()
+	if touch_aim.length_squared()>0.04:aim=screen_direction(touch_aim).normalized()
+	elif aim_stick.length_squared()>0.04:aim=screen_direction(aim_stick).normalized()
 	elif Input.is_action_pressed("fire") and not OS.has_feature("mobile"):
 		var mouse=get_viewport().get_mouse_position();var plane=Plane(Vector3.UP,0)
 		var hit=plane.intersects_ray(camera.project_ray_origin(mouse),camera.project_ray_normal(mouse))
 		if hit!=null and player.position.distance_squared_to(hit)>0.01:aim=(hit-player.position).normalized()
 	elif movement.length_squared()>0.001:aim=last_move
-	var facing=aim if Input.is_action_pressed("fire") or aim_stick.length_squared()>0.04 else last_move
+	var facing=aim if Input.is_action_pressed("fire") or aim_stick.length_squared()>0.04 or touch_aim.length_squared()>0.04 else last_move
 	if facing.length_squared()>0.01:visual.rotation.y=lerp_angle(visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*16))
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
 	_apply_zone(arena.zone_at(player.position),1-exp(-dt*1.2))
-	var desired=player.position+Vector3(0,16,12);camera.position=camera.position.lerp(desired,1-exp(-dt*10))
-	if shake>0:camera.position+=Vector3(rng.randf_range(-shake,shake),rng.randf_range(-shake,shake),0);shake=move_toward(shake,0,dt*2)
+	var desired=player.position+CAMERA_OFFSET;camera.position=camera.position.lerp(desired,1-exp(-dt*10))
+	if shake>0:camera.position+=camera.basis.x*rng.randf_range(-shake,shake)+camera.basis.y*rng.randf_range(-shake,shake);shake=move_toward(shake,0,dt*2)
 	if combo_timer>0:combo_timer=maxf(0,combo_timer-dt)
 	if swing_gate>0:swing_gate=maxf(0,swing_gate-dt)
 	if hit_flash>0 or flash_rect.color.a>0:hit_flash=maxf(0,hit_flash-dt*1.9);flash_rect.color.a=hit_flash
@@ -713,8 +716,13 @@ func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 		if next.hp>0:next.burn=2;next.burn_dps=4
 		hit.append(next);origin=end
 
-# Where a targeted skill lands: the aimed point under the cursor/stick, pulled
-# back to the skill's reach and kept inside the arena walls.
+# Project screen controls onto the ground without changing analog input length.
+func screen_direction(input: Vector2) -> Vector3:
+	var right=camera.basis.x;right.y=0
+	var down=camera.basis.z;down.y=0
+	return right.normalized()*input.x+down.normalized()*input.y
+
+# Where a targeted skill lands, limited to its reach and the arena walls.
 func ground_target(reach: float) -> Vector3:
 	var point=player.position+aim*reach
 	# Stick and touch aim win when they are live; the cursor only picks the spot
@@ -762,7 +770,7 @@ func _stagger(e: Dictionary,force: float=1.0):
 # A missile trooper's standing post: off to the player's left or right at its own
 # reach, jittered along the depth axis so two of them do not share one spot.
 func _flank_post(e: Dictionary,standoff: float) -> Vector3:
-	var post=player.position+Vector3(e.hunt_side*standoff,0,(e.hunt_depth-0.5)*3.6)
+	var post=player.position+screen_direction(Vector2(e.hunt_side*standoff,(e.hunt_depth-0.5)*3.6))
 	post.x=clampf(post.x,-BWArena.EDGE,BWArena.EDGE);post.z=clampf(post.z,-BWArena.EDGE,BWArena.EDGE)
 	return arena.push_out(Vector3(post.x,0,post.z),e.radius)
 

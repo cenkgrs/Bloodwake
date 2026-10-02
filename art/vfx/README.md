@@ -35,8 +35,7 @@ alpha-blended dust. The cracked imprint holds through 1.3 seconds and fades by
 than at the start of the animation. Damage and hit areas are unchanged.
 `warrior_ground_test.gd` checks delayed contact and the scar's lifetime.
 
-`preview_warrior_impact.gd` also captures a camera comparison: current 53-degree
-pitch versus a 35-degree diagonal view, both at orthographic size 13 for the
-comparison. Production camera settings remain unchanged; this is a preview.
-A diagonal production camera would also need screen-relative movement/aim and
-occlusion review before adoption.
+The production camera now uses the approved 35-degree diagonal view, offset
+(12,14,16), orthographic size 13. Movement, stick/touch aim and ranged enemy flank
+posts follow the camera's ground-plane axes; mouse aiming keeps ray-plane picking.
+`preview_warrior_impact.gd` retains the previous 53-degree angle for comparison.

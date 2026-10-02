@@ -9,6 +9,7 @@ func capture():
 	var w=scene.world;w.running=false;w.auto_fire=false
 	for e in w.enemies:e.node.queue_free()
 	w.enemies.clear();w.camera.size=13
+	w.camera.position=Vector3(0,16,12);w.camera.look_at(Vector3.ZERO)
 	for row in [["grunt",Vector3(3,0,-2)],["mage",Vector3(-4,0,-3)],["healer",Vector3(2,0,4)]]:
 		w.spawn_enemy(row[0],row[1])
 	for i in 8:await process_frame

@@ -93,8 +93,8 @@ func suite():
 		shooter.hunt_side=1.0;shooter.hunt_depth=0.5
 		for i in 200:world._enemy_tick(shooter,0.05)
 		var post=shooter.node.position-world.player.position
-		check(post.x>6.0,"%s fights from the player's flank: x=%s" % [id,str(post.x)])
-		check(absf(post.z)<3.0,"%s holds a side, not the line the player is on" % id)
+		check(post.dot(world.screen_direction(Vector2.RIGHT))>6.0,"%s fights from the player's flank: x=%s" % [id,str(post.x)])
+		check(absf(post.dot(world.screen_direction(Vector2.DOWN)))<3.0,"%s holds a side, not the line the player is on" % id)
 		check(post.length()>4.0,"%s keeps its distance" % id)
 
 	# --- A mage builds. The rune burns a fuse, then goes off under whoever stayed.
