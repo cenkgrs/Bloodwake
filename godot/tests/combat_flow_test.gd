@@ -17,7 +17,10 @@ func suite():
 	hp=run.stats.hp;world._enemy_tick(grunt,0.016);check(run.stats.hp==hp,"melee respects cooldown")
 	world.enemies.erase(grunt);grunt.node.queue_free()
 	var tank=world.spawn_enemy("tank",Vector3(0.4,0,0));tank.cooldown=0
-	hp=run.stats.hp;world._enemy_tick(tank,0.016);check(run.stats.hp==hp-tank.damage,"tank deals its configured damage")
+	hp=run.stats.hp;world._enemy_tick(tank,0.016)
+	check(run.stats.hp==hp,"tank waits for axe contact")
+	world._enemy_tick(tank,BWWorld.TANK_CONTACT+0.001)
+	check(run.stats.hp==hp-tank.damage,"tank deals its configured damage at contact")
 	world.enemies.erase(tank);tank.node.queue_free()
 	var archer=world.spawn_enemy("archer",Vector3(2,0,0));archer.cooldown=0
 	hp=run.stats.hp;world._enemy_tick(archer,0.016)

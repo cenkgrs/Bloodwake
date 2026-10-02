@@ -85,6 +85,9 @@ const KNOCKBACK = 0.24
 const FLANK_STANDOFF = 8.6
 # How long an archer holds its aim before the arrow leaves, and how long a mage
 # commits to a cast. Both exist so a shot from the flank can be read and dodged.
+const TANK_SWING_TIME = 1.3
+# Downward axe contact pose at source 1.15 s of the 2.267 s clip, verified in-game.
+const TANK_CONTACT = TANK_SWING_TIME * (69.0 / 136.0)
 const DRAW_TIME = 0.4
 const CAST_TIME = 0.55
 # Runes a mage may have standing at once. A wave of mages must not carpet the floor.
@@ -396,7 +399,7 @@ func _enemy_tick(e: Dictionary,dt: float):
 	# A staggered body is off its feet for a moment: it does not advance, attack or
 	# tick its cooldown down. This is the whole of what a landed hit buys, and it is
 	# why the fight now reads as an exchange with each enemy rather than a crowd.
-	if e.stagger>0 and e.id!="boss":
+	if e.stagger>0 and e.id!="boss" and e.state!="tank_swing":
 		e.stagger=maxf(0.0,e.stagger-dt)
 		e.visual.tick(dt,false)
 		return
@@ -485,6 +488,21 @@ func _enemy_tick(e: Dictionary,dt: float):
 				e.visual.action("cast" if e.cast_kind=="rune" else "attack",0.9)
 				e.cooldown=float(data.get("runeCooldown",6.5)) if e.cast_kind=="rune" else data.attackCooldown
 				fx.spark(node.position+Vector3.UP*1.2,Color("c07bff"),6)
+		"tank":
+			if e.state=="tank_swing":
+				e.timer-=dt
+				if e.timer<=0:
+					e.state="chase"
+					if distance<=maxf(range_value,e.radius+PERSONAL_SPACE)+0.2 and e.shot_direction.dot(delta.normalized())>0.45:
+						_hurt_player(e.damage*(1.25 if e.aura>0 else 1))
+					fx.blade_arc(node.position,e.shot_direction,range_value,105.0)
+			elif e.visual.state=="attack" and e.visual.lock_time>0:
+				pass
+			elif distance>maxf(range_value,e.radius+PERSONAL_SPACE):move=pursuit*speed
+			elif e.cooldown<=0:
+				e.shot_direction=delta.normalized();e.state="tank_swing";e.timer=TANK_CONTACT
+				e.cooldown=data.attackCooldown;e.visual.action("attack",TANK_SWING_TIME)
+
 		"assassin":
 			e.timer-=dt
 			match e.state:
@@ -529,6 +547,8 @@ func _enemy_tick(e: Dictionary,dt: float):
 		if out.length()<gap and out.length()>0.001:node.position=player.position+out.normalized()*gap
 	var facing=move.normalized() if move.length_squared()>0.01 else direction
 	# The bow follows its committed shot, not the archer's strafing velocity.
+	if e.id=="tank" and e.visual.state=="attack" and e.visual.lock_time>0:
+		facing=e.get("shot_direction",direction)
 	if e.id=="archer" and (e.state=="draw" or (e.visual.state=="attack" and e.visual.lock_time>0)):
 		facing=e.get("shot_direction",direction)
 	if e.id=="healer" and e.visual.state=="attack" and e.visual.lock_time>0:
