@@ -1,0 +1,28 @@
+{
+  "model": "tank.fbx",
+  "clips": {
+    "Idle": "standing idle.fbx",
+    "Run": "standing walk forward.fbx",
+    "Attack": "standing melee attack downward.fbx",
+    "Hit": "standing react large gut.fbx",
+    "Death": "Standing React Death Backward.fbx"
+  },
+  "weapon": {
+    "grip": [
+      0,
+      0.23,
+      0
+    ],
+    "axis": [
+      0,
+      1,
+      0
+    ],
+    "direction": [
+      0,
+      0,
+      1
+    ],
+    "scale": 1.25
+  }
+}
