@@ -76,7 +76,7 @@ var ground: MeshInstance3D
 
 signal prop_broken(position: Vector3, kind: String)
 
-func build(profile: String, seed_value: int):
+func build(profile: String, seed_value: int, staged: bool = false):
 	quality = profile
 	rng.seed = seed_value
 	stone = StandardMaterial3D.new()
@@ -84,10 +84,14 @@ func build(profile: String, seed_value: int):
 	stone.roughness = 0.92
 	_ground()
 	_walls()
+	if staged:return
 	for zone in ZONES:
-		_populate(zone)
-		if zone.id == "altar":
-			_place("altar", Vector3(zone.at.x, 0, zone.at.y - 3.5), zone)
+		build_zone(zone)
+
+func build_zone(zone: Dictionary):
+	_populate(zone)
+	if zone.id == "altar":
+		_place("altar", Vector3(zone.at.x, 0, zone.at.y - 3.5), zone)
 
 func _ground():
 	ground = MeshInstance3D.new()

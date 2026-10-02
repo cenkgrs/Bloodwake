@@ -31,6 +31,7 @@ var hit_clip_time = 0.0
 # Keep strong references: the resource loader's weak cache otherwise releases a
 # PackedScene when its last body dies, forcing a synchronous GLB reload on spawn.
 static var model_scenes: Dictionary = {}
+const ENEMY_MODELS = ["warrior","enemy_warrior","enemy_healer","enemy_assassin","enemy_archer","enemy_tank","enemy_commander","enemy_mage","enemy_boss"]
 
 static func model_scene(file: String) -> PackedScene:
 	if model_scenes.has(file):return model_scenes[file]
@@ -42,7 +43,7 @@ static func model_scene(file: String) -> PackedScene:
 	return packed
 
 static func warm_enemy_models():
-	for file in ["warrior","enemy_warrior","enemy_healer","enemy_assassin","enemy_archer","enemy_tank","enemy_commander","enemy_mage","enemy_boss"]:
+	for file in ENEMY_MODELS:
 		if ResourceLoader.exists("res://assets/models/%s.glb" % file):model_scene(file)
 
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):

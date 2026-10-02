@@ -86,10 +86,15 @@ func suite():
 	pair=await arena(scene,"gunslinger")
 	world=pair[0];run=pair[1]
 	world.player.position=Vector3.ZERO;world.aim=Vector3.FORWARD
-	var first=dummy(world,Vector3(0,0,3.0))
-	var second=dummy(world,Vector3(1.6,0,3.4))
+	world.touch_aim=Vector2.RIGHT
+	var shot_heading=world.screen_direction(world.touch_aim).normalized()
+	var first=dummy(world,shot_heading*3.0)
+	var second=dummy(world,shot_heading*3.4+shot_heading.rotated(Vector3.UP,PI/2)*1.6)
+	var distraction=dummy(world,-shot_heading*1.5)
 	world.skill(0)
 	check(world.bullets.size()==1,"Ricochet Round fires a single round")
+	check(world.bullets[0].direction.is_equal_approx(shot_heading),"Q reads live aim instead of stale movement or nearest enemy")
+	world.enemies.erase(distraction);distraction.node.queue_free()
 	check(world.bullets[0].get("bounces",0)==BWData.entry("abilities","ricochet_round").bounces,"the round carries its bounce budget")
 	for i in 90:
 		world._projectiles(0.016)
@@ -97,6 +102,28 @@ func suite():
 		if first.hp<2000 and second.hp<2000:break
 	check(first.hp<2000,"the round hits what it was aimed at")
 	check(second.hp<2000,"the round redirects into a body it was never pointed at")
+	for b in world.bullets.duplicate():b.node.queue_free()
+	world.bullets.clear()
+	world.aim=-shot_heading;world.last_move=-shot_heading
+	world.ability()
+	check(world.bullets.size()==5,"Fan Shot fires five rounds")
+	check(world.bullets[2].direction.is_equal_approx(shot_heading),"Ultimate reads live aim instead of last movement")
+	world.touch_aim=Vector2.ZERO
+	var cursor=root.get_mouse_position()
+	var cursor_hit=Plane(Vector3.UP,0).intersects_ray(world.camera.project_ray_origin(cursor),world.camera.project_ray_normal(cursor))
+	check(cursor_hit!=null,"Mouse ray reaches the ground")
+	if cursor_hit!=null:
+		var cursor_heading=(cursor_hit-world.player.position).normalized()
+		world.aim=-cursor_heading;world.last_move=-cursor_heading
+		for b in world.bullets.duplicate():b.node.queue_free()
+		world.bullets.clear();run.ability_cd=0
+		world.ability()
+		check(world.bullets[2].direction.is_equal_approx(cursor_heading),"Ultimate follows mouse without holding fire")
+		for b in world.bullets.duplicate():b.node.queue_free()
+		world.bullets.clear();run.skill_cd.ricochet_round=0
+		world.aim=-cursor_heading
+		world.skill(0)
+		check(world.bullets[0].direction.is_equal_approx(cursor_heading),"Q follows mouse without holding fire")
 
 	# --- Gunslinger E: Powder Charge. Telegraphs, then detonates: damage must not
 	# land while the keg is still in the air.
@@ -208,11 +235,11 @@ func suite():
 			var stand_off=prop_reach
 			if behavior=="whirl":stand_off=prop_reach*0.5
 			elif behavior in ["ricochet","backstepVolley","markOfRuin"]:stand_off=minf(prop_reach*0.5,3.0)
-			var prop_heading=Vector3.FORWARD
+			var prop_heading=world.screen_direction(Vector2.UP).normalized()
 			world.player.position=urn.pos-prop_heading*stand_off
 			world.aim=prop_heading
 			# Touch aim keeps ground_target off the headless mouse cursor.
-			world.touch_aim=Vector2(prop_heading.x,prop_heading.z)
+			world.touch_aim=Vector2.UP
 			var hp_before=urn.hp
 			world.skill(index)
 			await create_timer(1.2).timeout

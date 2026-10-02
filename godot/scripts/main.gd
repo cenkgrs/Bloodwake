@@ -31,6 +31,8 @@ var menu_art: BWVisual
 var cfg=ConfigFile.new()
 var smoke_mode=false
 var transition_serial=0
+const RunIntro = preload("res://scripts/run_intro.gd")
+var run_intro: Control
 const WAVE_TRANSITION_SECONDS=2.0
 const DEATH_ANIMATION_SECONDS=2.0
 const DEATH_TRANSITION_SECONDS=2.7
@@ -218,6 +220,7 @@ func panel_page(heading: String,subtext: String="") -> VBoxContainer:
 
 func show_menu():
 	transition_serial+=1
+	if is_instance_valid(run_intro):run_intro.cancelled=true;run_intro.hide()
 	page="menu"
 	audio.duck(0.0);audio.music("menu")
 	if is_instance_valid(world):world.queue_free();world=null
@@ -276,7 +279,7 @@ func show_classes():
 	var actions=HBoxContainer.new();actions.alignment=BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation",18);column.add_child(actions)
 	banner(actions,"BACK",show_menu,190)
-	banner(actions,"SELECT CLASS",func():start_run(class_pick),320)
+	banner(actions,"SELECT CLASS",func():begin_run(class_pick),320)
 
 # Left of the split: who this class is, and its numbers as bars so the four can be
 # compared without reading a single figure.
@@ -341,14 +344,49 @@ func _framed(parent: Node,minimum: Vector2,expand: bool) -> VBoxContainer:
 	var column=VBoxContainer.new();column.add_theme_constant_override("separation",8);margin.add_child(column)
 	return column
 
-func start_run(id: String):
+func begin_run(id: String):
+	if page in ["loading","arrival"]:return
+	transition_serial+=1
+	var serial=transition_serial
+	page="loading"
+	if is_instance_valid(world):world.running=false
+	if is_instance_valid(hud):hud.hide()
+	var intro=RunIntro.new();run_intro=intro;root.add_child(intro)
+	if not await intro.close_screen(id) or not await intro.prepare(id):
+		var failed=not intro.cancelled
+		intro.queue_free()
+		if failed:
+			show_classes()
+			audio.play("ui_error")
+			label(content,"The courtyard could not be loaded. Please try again.",18)
+		return
+	if serial!=transition_serial:intro.queue_free();return
+	start_run(id,false,true)
+	serial=transition_serial
+	# Keep the curtain above the newly created HUD and warm each district across frames.
+	root.move_child(intro,-1)
+	for index in BWArena.ZONES.size():
+		world.arena.build_zone(BWArena.ZONES[index])
+		intro.progress.value=80.0+20.0*float(index+1)/BWArena.ZONES.size()
+		await get_tree().process_frame
+		if serial!=transition_serial or intro.cancelled:intro.queue_free();return
+	page="arrival"
+	if not await intro.arrival(world):intro.queue_free();return
+	if serial!=transition_serial:intro.queue_free();return
+	page="playing";world.running=true;hud.show()
+	audio.duck(0.0);world.wave_music();audio.play("wave_start")
+	intro.queue_free()
+
+# Immediate entry remains available to tools and isolated combat tests.
+func start_run(id: String,launch: bool=true,staged: bool=false):
 	transition_serial+=1
 	if is_instance_valid(backdrop):backdrop.queue_free();backdrop=null;menu_art=null
 	if is_instance_valid(world):world.queue_free()
-	run=BWRun.new(id,meta);world=BWWorld.new();add_child(world);world.start(run,quality,audio)
+	run=BWRun.new(id,meta);world=BWWorld.new();world.running=launch;add_child(world);world.start(run,quality,audio,staged)
 	world.wave_cleared.connect(_wave_complete);world.run_ended.connect(_death_transition)
-	audio.duck(0.0);world.wave_music()
-	page="playing";clear_page();_hud()
+	if launch:audio.duck(0.0);world.wave_music()
+	else:audio.duck(-7.0)
+	page="playing" if launch else "loading";clear_page();_hud();hud.visible=launch
 
 func _hud():
 	if is_instance_valid(hud):hud.queue_free()
@@ -468,7 +506,7 @@ func show_game_over():
 	var column=panel_page("YOUR OATH ENDURES","The night claimed you. Your strength remains.")
 	title(column,"WAVE %d   ·   %d KILLS" % [run.wave,run.kills],30)
 	label(column,"+%d ESSENCE   /   %d TOTAL" % [reward,meta.essence],24,GOLD)
-	button(column,"TRY AGAIN",func():start_run(run.class_id))
+	button(column,"TRY AGAIN",func():begin_run(run.class_id))
 	button(column,"RETURN TO SANCTUARY",show_menu)
 
 func show_skills():

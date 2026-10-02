@@ -53,7 +53,7 @@ static func actor_growth(level: int) -> float:
 	return 1.0+0.025*clampi(level-1,0,20)
 
 static func enemy_height(id: String, elite: bool=false) -> float:
-	var height=3.5 if id=="boss" else 2.3 if id=="tank" else 2.15 if id=="grunt" else 1.95 if id=="mage" else 1.7
+	var height=3.5 if id=="boss" else 2.3 if id=="tank" else 2.225 if id=="commander" else 2.15 if id=="grunt" else 1.95 if id=="mage" else 1.7
 	return height*(1.12 if elite else 1.0)
 
 static func enemy_power(wave: int, id: String) -> Dictionary:

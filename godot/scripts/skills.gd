@@ -26,6 +26,7 @@ func skill(index: int):
 	if not w.running or w.run.stats.hp<=0 or w.airborne or not w.run.skill_ready(id):return
 	var data=BWData.entry("abilities",id)
 	if data.is_empty():return
+	if w.run.class_id=="gunslinger":w.aim=w.skill_aim()
 	w.run.skill_cd[id]=data.cooldown
 	var reach=data.range*w.run.stats.attackRange*BWData.UNIT
 	var target=w.ground_target(reach)
@@ -45,8 +46,6 @@ func _cast_ricochet(data: Dictionary):
 	var reach=data.range*w.run.stats.attackRange*BWData.UNIT
 	var heading=w.aim.normalized() if w.aim.length_squared()>0.01 else w.last_move
 	if heading.length_squared()<0.01:heading=Vector3.FORWARD
-	var first=w.nearest(w.player.position,reach)
-	if first!=null:heading=(first.node.position-w.player.position).normalized()
 	w.visual.rotation.y=atan2(heading.x,heading.z)
 	w.visual.action("attack",0.26);w.sound("shoot_rifle")
 	var accent=Color(data.get("accent","ffe9bd"))
@@ -273,6 +272,9 @@ func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color(
 func ability():
 	if not w.running or w.run.ability_cd>0 or w.run.stats.hp<=0 or w.airborne:return
 	var data=BWData.entry("abilities",BWData.CLASSES[w.run.class_id].ability)
+	if w.run.class_id=="gunslinger":
+		w.aim=w.skill_aim()
+		w.visual.rotation.y=atan2(w.aim.x,w.aim.z)
 	w.run.ability_cd=data.cooldown
 	if w.visual.fitted_timing and w.visual.clips.has("ultimate"):
 		w.pending_attacks.clear()

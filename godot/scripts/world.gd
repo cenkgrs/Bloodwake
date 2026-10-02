@@ -100,6 +100,7 @@ const HURT_FLASH_COLOR = Color("ff3b30")
 # The melee chain, one clip per link. Attack1-3 are cut from a single Mixamo
 # performance so the seams share a pose; Attack4 is its own swing and ends the run.
 const COMBO = ["attack1","attack2","attack3","attack4"]
+const WARRIOR_SWING_STEP = 0.5
 # Where in each clip the blade is actually moving fastest, measured off the source
 # curves. The damage used to land at a flat 32% of every clip, which read early on
 # the wind-up-heavy links and late on the quick ones.
@@ -121,12 +122,12 @@ const SPIN_RADIUS = 1.9
 const SPIN_DAMAGE = 2.2
 const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assassin":"667482","healer":"72b78e","commander":"c4a75e","mage":"8f6fc4","boss":"8a3440"}
 
-func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
+func start(state: BWRun,profile: String="PC",mixer: BWAudio=null,staged: bool=false):
 	run=state;quality=profile;audio=mixer;rng.randomize()
 	BWVisual.warm_enemy_models()
 	fx=BWFx.new();add_child(fx);fx.configure(quality)
 	skills=BWSkills.new();add_child(skills);skills.bind(self)
-	_environment()
+	_environment(staged)
 	player=Node3D.new();player.name="Player";add_child(player)
 	# Enemies read as 1.7-3.5 m (tanks/bosses run bigger on purpose); the player
 	# was left at the 1.8 m rig default and looked undersized next to them.
@@ -143,7 +144,7 @@ func start(state: BWRun,profile: String="PC",mixer: BWAudio=null):
 	bullet_mesh=SphereMesh.new();bullet_mesh.radius=0.07;bullet_mesh.height=0.14;bullet_mesh.radial_segments=8;bullet_mesh.rings=4
 	bullet_material=StandardMaterial3D.new();bullet_material.albedo_color=Color("ffd99a");bullet_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 
-func _environment():
+func _environment(staged: bool=false):
 	var env_node=WorldEnvironment.new();var env=Environment.new()
 	env.background_mode=Environment.BG_COLOR;env.background_color=Color("121923")
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;env.ambient_light_color=Color("a6bad0");env.ambient_light_energy=0.55
@@ -159,7 +160,7 @@ func _environment():
 	environment=env
 	env_node.environment=env;add_child(env_node)
 	var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-55,-25,0);sun.light_color=Color("b4c7e0");sun.light_energy=1.15;sun.shadow_enabled=quality=="PC";sun.directional_shadow_max_distance=45;add_child(sun)
-	arena=BWArena.new();add_child(arena);arena.build(quality,rng.randi())
+	arena=BWArena.new();add_child(arena);arena.build(quality,rng.randi(),staged)
 	arena.prop_broken.connect(_prop_broken)
 	_apply_zone(arena.zone_at(Vector3.ZERO),1.0)
 
@@ -215,8 +216,8 @@ func _physics_process(dt: float):
 	var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
 	input=input.limit_length()
 	var movement=screen_direction(input)
-	# Full-body sword clips plant the feet through contact. Movement can cancel
-	# their recovery, avoiding a sliding attack pose while keeping steering responsive.
+	# Sword swings commit to their forward step until contact; steering can
+	# cancel recovery once the strike is finished.
 	if run.class_id=="warrior" and visual.state.begins_with("attack") and visual.lock_time>0:
 		if swing_gate>0:movement=Vector3.ZERO
 		elif movement.length_squared()>0.001:visual.lock_time=0
@@ -225,6 +226,13 @@ func _physics_process(dt: float):
 	if airborne:movement=Vector3.ZERO
 	else:
 		player.position+=movement*run.stats.moveSpeed*BWData.UNIT*dt
+		for attack in pending_attacks:
+			if not attack.has("step_time"):continue
+			var before=float(attack.step_time)/float(attack.step_duration)
+			attack.step_time=maxf(0.0,attack.step_time-dt)
+			var after=float(attack.step_time)/float(attack.step_duration)
+			# Ease out into contact, with the same total travel at every frame rate.
+			player.position+=attack.direction*WARRIOR_SWING_STEP*(before*before-after*after)
 		player.position=arena.push_out(player.position,0.42)
 	var measured_velocity=(player.position-previous_player_position)/maxf(dt,0.001) if not airborne else Vector3.ZERO
 	player_velocity=player_velocity.lerp(measured_velocity,1.0-exp(-dt*6.0))
@@ -640,6 +648,10 @@ func _weapons(dt: float):
 				visual.action(clip,duration)
 			else:visual.action(clip,duration)
 			pending_attacks.append({"time":duration*(0.55 if id=="magic_orb" else IMPACT.get(clip,0.32)),"id":id,"direction":direction,"finisher":melee and combo_step==COMBO.size()-1})
+			if melee and run.class_id=="warrior":
+				var strike=pending_attacks.back()
+				strike["step_duration"]=strike.time
+				strike["step_time"]=strike.time
 		else:
 			_resolve_weapon(id,direction)
 			# Rapid fire outpaces the 0.96s clip ~5x, so playing it full length left the
@@ -761,6 +773,19 @@ func screen_direction(input: Vector2) -> Vector3:
 	var right=camera.basis.x;right.y=0
 	var down=camera.basis.z;down.y=0
 	return right.normalized()*input.x+down.normalized()*input.y
+
+func skill_aim() -> Vector3:
+	if touch_aim.length_squared()>0.04:return screen_direction(touch_aim).normalized()
+	var stick=Input.get_vector("aim_left","aim_right","aim_up","aim_down")
+	if stick.length_squared()>0.04:return screen_direction(stick).normalized()
+	if not OS.has_feature("mobile"):
+		var mouse=get_viewport().get_mouse_position()
+		var hit=Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(mouse),camera.project_ray_normal(mouse))
+		if hit!=null:
+			var direction: Vector3=hit-player.position
+			direction.y=0
+			if direction.length_squared()>0.01:return direction.normalized()
+	return aim.normalized() if aim.length_squared()>0.01 else last_move.normalized()
 
 # Where a targeted skill lands, limited to its reach and the arena walls.
 func ground_target(reach: float) -> Vector3:
