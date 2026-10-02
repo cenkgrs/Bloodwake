@@ -10,9 +10,9 @@ func capture():
 	var enemy=world.spawn_enemy("tank",Vector3(1,0,0))
 	enemy.visual.rotation.y=-PI/2
 	world.camera.size=6
-	for pose in ["idle","attack","death"]:
+	for pose in ["idle","run","attack","death"]:
 		enemy.visual.animation.play(enemy.visual.clips[pose])
-		enemy.visual.animation.seek(1.15 if pose=="attack" else 1.7 if pose=="death" else 0.1,true)
+		enemy.visual.animation.seek(1.15 if pose=="attack" else 1.7 if pose=="death" else 0.4 if pose=="run" else 0.1,true)
 		enemy.visual.animation.pause()
 		for i in 8:await process_frame
 		await RenderingServer.frame_post_draw

@@ -14,3 +14,6 @@ Attack lasts 1.3 seconds. Contact is at 69/136 of the clip (source pose at 1.15 
 checked with preview_enemy_tank.gd. Tank holds its heading during the attack;
 range and facing are checked again at contact so moving away avoids damage.
 Validation: enemy_tank_test.gd and combat_flow_test.gd.
+
+Axe blade roll is -90 degrees around its shaft: its cutting face follows the
+forward walking direction instead of pointing sideways. Preview includes Run.
