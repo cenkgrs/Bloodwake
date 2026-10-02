@@ -332,7 +332,15 @@ func ground_impact(pos: Vector3,radius: float):
 	var plane=PlaneMesh.new();plane.size=Vector2.ONE*radius*2.0;scar.mesh=plane
 	var ink=ShaderMaterial.new();ink.shader=preload("res://shaders/ground_scar.gdshader")
 	scar.material_override=ink;scar.position.y=0.035;scar.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;root.add_child(scar)
-	var rock=PrismMesh.new();rock.size=Vector3(0.24,0.23,0.20)
+	var source=SphereMesh.new();source.radius=0.16;source.height=0.3;source.radial_segments=6;source.rings=3
+	var arrays=source.get_mesh_arrays()
+	var sculpt=SurfaceTool.new();sculpt.begin(Mesh.PRIMITIVE_TRIANGLES);sculpt.set_smooth_group(-1)
+	for index in arrays[Mesh.ARRAY_INDEX]:
+		var point: Vector3=arrays[Mesh.ARRAY_VERTEX][index]
+		var rough=1.0+sin(point.dot(Vector3(73,39,91)))*0.20
+		sculpt.add_vertex(point*rough*Vector3(1.0,0.7,0.85))
+	sculpt.generate_normals()
+	var rock=sculpt.commit()
 	var stone=StandardMaterial3D.new();stone.albedo_color=Color("625343");stone.roughness=1.0
 	var count=14 if quality=="PC" else 7
 	for i in count:
