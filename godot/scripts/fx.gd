@@ -167,6 +167,29 @@ func slash(origin: Vector3,direction: Vector3,radius: float,color: Color):
 	var tween=pivot.create_tween()
 	tween.tween_property(pivot,"rotation:y",pivot.rotation.y-0.9,0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
+# The sector uses the same radius and angle as melee hit detection.
+func blade_arc(origin: Vector3,direction: Vector3,radius: float,degrees: float) -> Node3D:
+	var root=Node3D.new();root.name="BladeArc";root.position=origin+Vector3.UP*0.09;add_child(root)
+	root.set_meta("radius",radius);root.set_meta("degrees",degrees)
+	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	var heading=direction.normalized();heading.y=0
+	var steps=72 if degrees>180 else 32
+	var half=deg_to_rad(degrees)*0.5
+	for i in steps:
+		var a=-half+2.0*half*float(i)/steps
+		var b=-half+2.0*half*float(i+1)/steps
+		mesh.surface_set_uv(Vector2(float(i)/steps,0));mesh.surface_add_vertex(Vector3.ZERO)
+		mesh.surface_set_uv(Vector2(float(i)/steps,1));mesh.surface_add_vertex(heading.rotated(Vector3.UP,a)*radius)
+		mesh.surface_set_uv(Vector2(float(i+1)/steps,1));mesh.surface_add_vertex(heading.rotated(Vector3.UP,b)*radius)
+	mesh.surface_end()
+	var node=MeshInstance3D.new();node.mesh=mesh;node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mat=ShaderMaterial.new();mat.shader=load("res://shaders/blade_arc.gdshader")
+	node.material_override=mat;root.add_child(node)
+	var tween=root.create_tween()
+	tween.tween_method(func(value: float):mat.set_shader_parameter("progress",value),0.0,1.0,0.24)
+	tween.tween_callback(root.queue_free)
+	return root
+
 func beam(a: Vector3,b: Vector3,color: Color,duration: float=0.15):
 	var mesh=ImmediateMesh.new();mesh.surface_begin(Mesh.PRIMITIVE_LINES);mesh.surface_add_vertex(a);mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex((a+b)*0.5+Vector3(0.1,0.2,0.1));mesh.surface_add_vertex(b);mesh.surface_end()
 	var node=MeshInstance3D.new();node.mesh=mesh;var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;mat.albedo_color=color;mesh.surface_set_material(0,mat);node.material_override=mat;add_child(node)

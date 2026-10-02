@@ -228,6 +228,11 @@ func _physics_process(dt: float):
 		if hit!=null and player.position.distance_squared_to(hit)>0.01:aim=(hit-player.position).normalized()
 	elif movement.length_squared()>0.001:aim=last_move
 	var facing=aim if Input.is_action_pressed("fire") or aim_stick.length_squared()>0.04 or touch_aim.length_squared()>0.04 else last_move
+	# Keep the body aligned with the committed blade until contact resolves.
+	for attack in pending_attacks:
+		if attack.id in run.weapons and run.weapons[attack.id].data.get("behavior","")=="melee":
+			facing=attack.direction
+			break
 	if facing.length_squared()>0.01:visual.rotation.y=lerp_angle(visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*16))
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
 	_apply_zone(arena.zone_at(player.position),1-exp(-dt*1.2))
@@ -643,7 +648,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 					_stagger(e)
 					if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 			damage_area(player.position,radius,base)
-			fx.slash(player.position,direction,radius,Color("ffca7a"))
+			fx.blade_arc(player.position,direction,radius,360.0 if wide else MELEE_ARC)
 			# A connecting swing is felt in the camera as well as on the body it hit.
 			if not hit.is_empty():shake=maxf(shake,0.06)
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
@@ -698,11 +703,8 @@ func _resolve_spin(id: String,direction: Vector3):
 				_stagger(e,1.5)
 				if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 	damage_area(player.position,radius,base)
-	for turn in 3:
-		fx.slash(player.position,direction.rotated(Vector3.UP,TAU*turn/3.0),radius,Color("ffd08a"))
-	fx.shockwave(player.position,radius,Color("ffb066"),0.3,0.0,1.8)
-	fx.radial_streaks(player.position,radius*1.05,Color("ffc27a"),9,0.26)
-	fx.flash_light(player.position,Color("ff9a52"),2.2,radius*1.5,0.24)
+	fx.blade_arc(player.position,direction,radius,360.0)
+	fx.radial_streaks(player.position,radius,Color("c7ccd2"),9,0.2)
 	shake=maxf(shake,0.11 if hit.is_empty() else 0.16)
 
 func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
