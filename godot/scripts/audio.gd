@@ -66,6 +66,7 @@ var flat: Array[AudioStreamPlayer] = []
 var world: Array[AudioStreamPlayer3D] = []
 var active: Dictionary = {}
 var last_played: Dictionary = {}
+var last_variant: Dictionary = {}
 var music_players: Array[AudioStreamPlayer] = []
 var music_track = ""
 var music_fade: Tween
@@ -79,7 +80,9 @@ func _ready():
 	for event in BANK:
 		for name in BANK[event].files:
 			if not streams.has(name):
-				streams[name] = load(DIR + name + ".wav")
+				var mastered=DIR+"polished/"+name+".wav"
+				var source=mastered if ResourceLoader.exists(mastered) else DIR+name+".wav"
+				streams[name] = load(source) if ResourceLoader.exists(source) else null
 	for key in MUSIC:
 		music_streams[key] = load(DIR + MUSIC[key] + ".ogg")
 		if music_streams[key] is AudioStreamOggVorbis:
@@ -135,6 +138,13 @@ func _buses():
 		AudioServer.set_bus_name(index, name)
 		AudioServer.set_bus_send(index, "Master")
 
+	var sfx=AudioServer.get_bus_index("SFX")
+	if AudioServer.get_bus_effect_count(sfx)==0:
+		var compressor=AudioEffectCompressor.new();compressor.threshold=-12.0;compressor.ratio=3.0;compressor.attack_us=2500;compressor.release_ms=90;compressor.gain=0.0
+		AudioServer.add_bus_effect(sfx,compressor)
+	var master=AudioServer.get_bus_index("Master")
+	if AudioServer.get_bus_effect_count(master)==0:AudioServer.add_bus_effect(master,AudioEffectLimiter.new())
+
 # --- sfx ------------------------------------------------------------------
 
 func play(event: String, db_offset: float = 0.0, variant: int = -1):
@@ -182,6 +192,8 @@ func _take(event: String, variant: int) -> Dictionary:
 	if int(active.get(event, 0)) >= entry.voices: return {}
 	var files = entry.files
 	var index = clampi(variant, 0, files.size() - 1) if variant >= 0 else rng.randi_range(0, files.size() - 1)
+	if variant<0 and files.size()>1 and index==last_variant.get(event,-1):index=(index+1+rng.randi_range(0,files.size()-2))%files.size()
+	last_variant[event]=index
 	var stream = streams.get(files[index])
 	if stream == null: return {}
 	last_played[event] = now

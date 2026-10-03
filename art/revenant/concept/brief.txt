@@ -1,0 +1,17 @@
+REVENANT — VAMPIRE DUELIST / V1
+
+Concept generated with the built-in image_gen tool. This is a design reference,
+not an installed 3D character or an animation asset.
+
+Tripo handoff:
+Create one game-ready humanoid matching revenant-vampire-v1.png. Lean predatory
+vampire, pale skin, swept-back black hair, pointed ears, crimson eyes, subtle
+fangs and claws. Fitted charcoal leather, restrained bone rib detailing,
+burgundy split coat tails, light bracers, tapered trousers and boots. Preserve
+the agile silhouette. No heavy knight armor, helmet, sword or wings. Separate
+arms from torso and legs from each other in a neutral A-pose; hands empty.
+Keep shoulders, elbows, hips and knees free for fast dashes and acrobatic melee.
+Single character, no ground plane, scenery or effects. Preserve all fingers.
+
+Suggested later animation direction: low predatory idle, light forward run,
+quick claw slashes, lunging finisher, lateral evade and a compact dash.

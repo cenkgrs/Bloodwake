@@ -60,7 +60,7 @@ func close_screen(id: String) -> bool:
 
 func prepare(id: String) -> bool:
 	var paths: Array[String]=["res://assets/art/arena.png"]
-	var player_file="bloodbound" if id=="gunslinger" else id+"_player"
+	var player_file=BWVisual.player_model(id)
 	var models=BWVisual.ENEMY_MODELS.duplicate();models.append(player_file)
 	for file in models:paths.append("res://assets/models/%s.glb" % file)
 	for spec in BWArena.PROPS.values():

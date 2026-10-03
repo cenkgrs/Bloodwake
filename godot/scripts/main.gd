@@ -143,7 +143,7 @@ func _unhandled_input(event):
 	if event.is_action_pressed("debug") and OS.is_debug_build():show_debug()
 
 const PORTRAIT_PLATE="res://assets/ui/portraits/%s.png"
-const CLASS_MARKS={"warrior":"sword","gunslinger":"crosshair","mage":"snowflake","assassin":"dagger"}
+const CLASS_MARKS={"warrior":"sword","gunslinger":"crosshair","mage":"snowflake","assassin":"dagger","revenant":"flame"}
 
 func _plate(id: String) -> Texture2D:
 	var texture=load(PORTRAIT_PLATE % id)
@@ -266,7 +266,7 @@ func show_classes():
 	var row=HBoxContainer.new();row.alignment=BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation",14);column.add_child(row)
 	for id in BWData.CLASSES:
-		var card=BWUI.ClassCard.new(BWData.CLASSES[id].name.to_upper(),_plate(id),CLASS_MARKS.get(id,"rune"))
+		var card=BWUI.ClassCard.new(BWData.CLASSES[id].name.to_upper(),_plate(id),CLASS_MARKS.get(id,"rune"),Vector2(180,242))
 		card.selected=(id==class_pick);card.crop_top=0.0;row.add_child(card)
 		card.chosen.connect(func():class_pick=id;audio.ui("ui_click");show_classes())
 		card.mouse_entered.connect(func():audio.ui("ui_select"))
@@ -298,7 +298,7 @@ func _class_dossier(parent: Node,id: String):
 	var stats=BWData.stats(id);meta.apply_to(stats)
 	for spec in [["DAMAGE","sword",stats.damage/3.6],["ATTACK SPEED","slashes",stats.attackSpeed/1.6],["SPEED","boot",stats.moveSpeed/380.0],["ARMOR","shield",stats.armor/0.45],["HEALTH","heart",stats.maxHp/170.0]]:
 		shell.add_child(BWUI.Meter.new(spec[0],spec[1],spec[2],BWKit.EMBER))
-	body(shell,"WEAPON   ·   %s" % BWData.entry("weapons",data.weapon).get("name","").to_upper(),11,BWKit.DIM,false)
+	body(shell,"WEAPON   ·   %s" % ("BLOOD CLAWS" if id=="revenant" else BWData.entry("weapons",data.weapon).get("name","").to_upper()),11,BWKit.DIM,false)
 
 # Right of the split: the full kit, laid out the way it is bound on the keyboard.
 func _class_kit(parent: Node,id: String):
@@ -328,7 +328,7 @@ func _kit_slot(parent: Node,key: String,ability: Dictionary):
 	name_line.custom_minimum_size.y=22;box.add_child(name_line)
 	var blurb=body(box,ability.get("description",""),11,BWKit.MUTED)
 	blurb.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	body(box,"%d SECOND COOLDOWN" % int(ability.get("cooldown",0)),10,BWKit.DIM,false).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	body(box,"%s SECOND COOLDOWN" % str(ability.get("cooldown",0)),10,BWKit.DIM,false).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 
 # A drawn frame with a column inside it. Drawn rather than styleboxed so the corner
 # ticks land on the panel edge whatever the panel ends up measuring.
@@ -473,10 +473,10 @@ func _next_pick():
 
 func _upgrades():
 	page="upgrades";var column=panel_page("BOSS SPOILS" if choosing_boss else "GROW STRONGER","Wave %d cleared · %d pending level choices" % [run.wave,run.pending_levels])
+	var cards=HFlowContainer.new();cards.add_theme_constant_override("h_separation",18);cards.add_theme_constant_override("v_separation",18);column.add_child(cards)
 	for row in choices:
-		var panel=PanelContainer.new();column.add_child(panel);var box=VBoxContainer.new();panel.add_child(box)
-		title(box,row.name,24);label(box,row.description,18);label(box,"%s · %d / %d" % [row.rarity.to_upper(),run.upgrades.get(row.id,0),row.maxLevel],14,MUTED)
-		button(box,"CLAIM",func():
+		var box=_reward_card(cards,row,false)
+		button(box,"CLAIM  ·  RANK %d" % (run.upgrades.get(row.id,0)+1),func():
 			if run.apply_upgrade(row.id):
 				audio.play("upgrade_pick")
 				if choosing_boss:boss_reward=false
@@ -487,11 +487,13 @@ func _upgrades():
 func _shop(new_offers: bool=false):
 	if new_offers:shop_offers=run.offers("items")
 	page="shop";var column=panel_page("THE NIGHT MERCHANT","%d gold · %d / 8 items · Wave %d survived" % [run.gold,run.items.size(),run.wave])
+	var cards=HFlowContainer.new();cards.add_theme_constant_override("h_separation",18);cards.add_theme_constant_override("v_separation",18);column.add_child(cards)
 	for item in shop_offers:
-		var panel=PanelContainer.new();column.add_child(panel);var box=VBoxContainer.new();panel.add_child(box)
-		title(box,item.name,24);label(box,item.description,18);label(box,item.rarity.to_upper(),14,MUTED)
-		button(box,"BUY — %d GOLD" % item.cost,func():
-			if run.buy_item(item.id):audio.play("purchase");_shop(),run.gold<item.cost or run.items.has(item.id) or run.items.size()>=8)
+		var box=_reward_card(cards,item,true)
+		var owned=run.items.has(item.id)
+		var caption="OWNED" if owned else ("INVENTORY FULL" if run.items.size()>=8 else ("NEED %d GOLD" % (item.cost-run.gold) if run.gold<item.cost else "BUY  ·  %d GOLD" % item.cost))
+		button(box,caption,func():
+			if run.buy_item(item.id):audio.play("purchase");_shop(),run.gold<item.cost or owned or run.items.size()>=8)
 	if shop_offers.is_empty():label(column,"No further equipment is available for this build.",18,MUTED)
 	button(column,"REFRESH — 20 GOLD (%d / 3)" % refreshes,func():run.gold-=20;refreshes+=1;_shop(true),refreshes>=3 or run.gold<20)
 	button(column,"ENTER WAVE %d" % (run.wave+1),func():world.next_wave();resume())
@@ -788,3 +790,24 @@ func _visual_qa():
 	show_menu();show_skills();await get_tree().create_timer(0.3).timeout;await _capture("skills")
 	print("BLOODWAKE_VISUAL_QA_COMPLETE")
 	_quit()
+
+func _reward_card(parent: Node,row: Dictionary,is_item: bool) -> VBoxContainer:
+	var accent=Color({"common":"93bdba","rare":"6bacf0","epic":"c49bfa","legendary":"ffd17b"}.get(row.rarity,"93bdba"))
+	var panel=PanelContainer.new();panel.custom_minimum_size=Vector2(350,395);parent.add_child(panel)
+	var style=StyleBoxFlat.new();style.bg_color=Color("171b25");style.border_color=accent.darkened(0.45)
+	style.set_border_width_all(2);style.set_corner_radius_all(12);style.content_margin_left=22;style.content_margin_right=22;style.content_margin_top=20;style.content_margin_bottom=20
+	panel.add_theme_stylebox_override("panel",style)
+	var box=VBoxContainer.new();box.add_theme_constant_override("separation",12);panel.add_child(box)
+	body(box,row.rarity.to_upper()+"  /  "+row.get("category","upgrade").to_upper(),12,accent)
+	var glyph=BWKit.reward_glyph(row.id)
+	var emblem=BWUI.Emblem.new(glyph,110,accent);emblem.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;box.add_child(emblem)
+	body(box,row.name,23,BWKit.INK)
+	body(box,row.description,19,accent).custom_minimum_size.y=62
+	if not is_item:
+		var ranks=HBoxContainer.new();ranks.add_theme_constant_override("separation",6);box.add_child(ranks)
+		for i in int(row.maxLevel):
+			var pip=ColorRect.new();pip.custom_minimum_size=Vector2(26,5);pip.color=accent if i<=int(run.upgrades.get(row.id,0)) else Color("343747");ranks.add_child(pip)
+		body(box,"RANK %d  →  %d" % [run.upgrades.get(row.id,0),run.upgrades.get(row.id,0)+1],12,BWKit.MUTED)
+	else:body(box,"%d GOLD  ·  APPLIES FOR THIS RUN" % row.cost,12,BWKit.MUTED)
+	var space=Control.new();space.size_flags_vertical=Control.SIZE_EXPAND_FILL;box.add_child(space)
+	return box

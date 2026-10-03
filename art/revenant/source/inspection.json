@@ -1,0 +1,21 @@
+{
+  "source": "revenant_original.glb",
+  "meshes": 1,
+  "skins": 0,
+  "animations": 0,
+  "vertices": 68910,
+  "triangles": 94993,
+  "materials": 1,
+  "textures": 3,
+  "bounds_min": [
+    -22.372859954833984,
+    0.0,
+    -9.64232063293457
+  ],
+  "bounds_max": [
+    22.372859954833984,
+    97.53892517089844,
+    9.64232063293457
+  ],
+  "status": "Original static source preserved; runtime rig built from Mixamo FBXs in source/mixamo."
+}

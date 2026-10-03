@@ -56,13 +56,13 @@ func available(row: Dictionary,kind: String) -> bool:
 	if kind=="items" and (items.has(row.id) or items.size()>=8):return false
 	var gate=row.get("isAvailable","")
 	var classes={"_warrior":"warrior","_gunslinger":"gunslinger","_mage":"mage","_assassin":"assassin"}
-	if classes.has(gate):return class_id==classes[gate]
+	if classes.has(gate):return class_id==classes[gate] or (class_id=="revenant" and gate=="_warrior")
 	var weapon_gates={"_ownsSword":"sword","_ownsLightning":"lightning","_ownsRifle":"rapid_rifle","_ownsOrb":"magic_orb","_ownsDaggers":"daggers"}
 	if weapon_gates.has(gate):return weapons.has(weapon_gates[gate])
 	var prerequisites={"thunderquake":["warrior","greatsword","storm_blade"],"armor_piercer":["gunslinger","rifle_caliber","rifle_range"],"spellfire":["mage","orb_pierce","orb_power"],"hemorrhage":["assassin","dagger_tempo","dagger_edge"]}
 	if prerequisites.has(row.id):
 		var req=prerequisites[row.id]
-		return class_id==req[0] and upgrades.get(req[1],0)>0 and upgrades.get(req[2],0)>0
+		return (class_id==req[0] or (class_id=="revenant" and req[0]=="warrior")) and upgrades.get(req[1],0)>0 and upgrades.get(req[2],0)>0
 	return true
 
 func offers(kind: String,boss: bool=false) -> Array:

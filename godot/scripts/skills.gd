@@ -275,6 +275,18 @@ func ability():
 	if w.run.class_id=="gunslinger":
 		w.aim=w.skill_aim()
 		w.visual.rotation.y=atan2(w.aim.x,w.aim.z)
+	if data.id=="ember_dash":
+		w.run.ability_cd=data.cooldown
+		w.dash_direction=w.last_move.normalized()
+		if w.dash_direction.length_squared()<0.01:w.dash_direction=w.aim.normalized()
+		w.dash_time=0.16
+		w.pending_attacks.clear();w.swing_gate=0.0;w.visual.lock_time=0.0
+		w.visual.rotation.y=atan2(w.dash_direction.x,w.dash_direction.z)
+		w.visual.action("dash",0.28)
+		for id in w.run.weapons:w.run.weapons[id].cooldown=0.0
+		w.fx.slash(w.player.position,w.dash_direction,2.2,Color("ffb45c"))
+		w.sound("dagger_swing");w.changed.emit()
+		return
 	w.run.ability_cd=data.cooldown
 	if w.visual.fitted_timing and w.visual.clips.has("ultimate"):
 		w.pending_attacks.clear()

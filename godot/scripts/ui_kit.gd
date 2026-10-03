@@ -224,7 +224,7 @@ const SKILL_GLYPHS = {
 }
 
 const ABILITY_GLYPHS = {
-	"war_cry": "burst", "fan_shot": "fan", "frost_nova": "snowflake", "shadow_strike": "dagger",
+	"ember_dash": "flame", "war_cry": "burst", "fan_shot": "fan", "frost_nova": "snowflake", "shadow_strike": "dagger",
 	"arcane_meteor": "comet", "void_leap": "spiral", "sunder_leap": "impact", "whirl": "slashes",
 	"phantom_volley": "volley", "ricochet_round": "zigzag", "powder_charge": "flame", "mark_of_ruin": "rune"
 }
@@ -268,3 +268,13 @@ static func paint_diamond(canvas: CanvasItem, center: Vector2, radius: float, co
 	else:
 		points.append(points[0])
 		canvas.draw_polyline(points, color, width, true)
+
+static func reward_glyph(id: String) -> String:
+	var marks={"sharpened":"sword","rapid_fire_stat":"slashes","vitality":"heart","predator":"crosshair","vampirism":"drop","swift":"boot","platinum_armor":"shield","swift_boots":"boot","hunters_scope":"crosshair","vampiric_amulet":"drop","lucky_charm":"coin","guardian_angel":"wing","greatsword":"sword","storm_blade":"zigzag","shockwave":"impact","thunderquake":"impact","armor_piercer":"arrow","spellfire":"flame","hemorrhage":"drop"}
+	if marks.has(id):return marks[id]
+	if id.contains("rifle"):return "crosshair"
+	if id.contains("orb"):return "snowflake"
+	if id.contains("dagger"):return "dagger"
+	if id.contains("sword"):return "sword"
+	if id.contains("thunder"):return "zigzag"
+	return "rune"

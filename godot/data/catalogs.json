@@ -207,6 +207,15 @@
 	  "tone": "63bd9f",
 	  "accent": "cdf5e4",
 	  "description": "Brand a target. It bites harder, and outlives its host."
+	},
+	{
+	  "id": "ember_dash",
+	  "name": "Ember Dash",
+	  "description": "Dash in your movement direction. Evade damage during the dash and immediately ready your next strike.",
+	  "cooldown": 0.85,
+	  "range": 145,
+	  "damage": 0,
+	  "behavior": "dash"
 	}
   ],
   "enemies": [
@@ -251,7 +260,7 @@
 	  "moveSpeed": 70,
 	  "damage": 20,
 	  "attackRange": 48,
-	  "attackCooldown": 1.6,
+	  "attackCooldown": 1.2,
 	  "xpReward": 24,
 	  "goldReward": 6,
 	  "radius": 22,

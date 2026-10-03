@@ -10,11 +10,11 @@ func suite():
 	w.move_input=Vector2.RIGHT;w.player.position=Vector3.ZERO
 	w.visual.action("attack1",0.8);w.swing_gate=0.4
 	w._physics_process(0.1)
-	check(w.player.position.length()<0.001,"Full-body attack plants feet through strike")
+	check(w.player.position.length()>0.0,"Movement can leave an empty attack recovery")
 	w.swing_gate=0;w._physics_process(0.1)
 	check(w.player.position.length()>0.2 and w.visual.state=="run","Movement cancels recovery into locomotion")
-	check(is_equal_approx(w.player.position.length(),0.34),"Warrior moves at reduced 3.4 m/s")
-	check(is_equal_approx(w.visual.clip_length("run")/w.visual.clip_speed("run"),0.82),"Slower locomotion cycle")
+	check(is_equal_approx(w.player.position.length(),0.84),"Warrior moves at 4.2 m/s across two steps")
+	check(is_equal_approx(w.visual.clip_length("run")/w.visual.clip_speed("run"),0.72),"Locomotion cycle matches grounded stride")
 	# A real button-triggered swing advances along its committed aim, even at rest.
 	w.move_input=Vector2.ZERO;w.player.position=Vector3.ZERO;w.aim=Vector3.RIGHT
 	w.visual.lock_time=0;w.swing_gate=0
@@ -32,5 +32,16 @@ func suite():
 	Input.action_press("fire");w._weapons(0);Input.action_release("fire")
 	for frame in 20:w._physics_process(0.05)
 	check(w.player.position.x<=0.081,"Swing step respects solid obstacles")
+	# Fourth link uses the exact ultimate clip and contacts the ground at 450 ms.
+	w.arena.blockers.clear();w.player.position=Vector3.ZERO;w.move_input=Vector2.RIGHT
+	w.pending_attacks.clear();w.visual.lock_time=0;w.swing_gate=0
+	w.combo_step=2;w.combo_timer=2
+	for id in w.run.weapons:w.run.weapons[id].cooldown=0
+	Input.action_press("fire");w._weapons(0);Input.action_release("fire")
+	check(w.visual.clips.attack4==w.visual.clips.ultimate,"Fourth swing uses ultimate ground slam")
+	check(w.visual.state=="attack4" and is_equal_approx(w.pending_attacks[0].time,0.45),"Finisher contacts at ultimate contact time")
+	check(not w.pending_attacks[0].has("step_time"),"Ground slam does not slide forward")
+	w._physics_process(0.1)
+	check(w.player.position.length()<0.001,"Slam stays planted despite movement input")
 	w.running=false;scene.queue_free();await process_frame
 	print("WARRIOR_MOVEMENT_TEST failures=",failures);quit(0 if failures==0 else 1)

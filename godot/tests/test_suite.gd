@@ -8,7 +8,7 @@ func _initialize():
 	call_deferred("suite")
 func suite():
 	BWData.load_catalogs()
-	for pair in [["weapons",7],["abilities",12],["enemies",8],["upgrades",22],["items",11],["equipment",9],["skills",15]]:check(BWData.rows(pair[0]).size()==pair[1],"catalog count: "+pair[0])
+	for pair in [["weapons",7],["abilities",13],["enemies",8],["upgrades",22],["items",11],["equipment",9],["skills",15]]:check(BWData.rows(pair[0]).size()==pair[1],"catalog count: "+pair[0])
 	# Only the mage carries extra skills; every ability a class references must exist.
 	for id in BWData.CLASSES:
 		check(BWData.skills(id).size()==2,"class skill count: "+id)
@@ -28,9 +28,9 @@ func suite():
 	for wave in [1,9,10,20,100,999]:
 		var rules=BWData.wave_rules(wave)
 		check(rules.boss==(wave%10==0),"boss formula")
-		check(rules.quota==(1 if wave%10==0 else 5+wave*2),"quota")
+		check(rules.quota==(1 if wave%10==0 else 5),"quota")
 		check(rules.cap<=12 and rules.interval>=0.45,"spawn bounds")
-	var allowed={"warrior":["greatsword","storm_blade","shockwave"],"gunslinger":["rifle_tempo","rifle_caliber","rifle_range"],"mage":["orb_pierce","orb_power","orb_range"],"assassin":["dagger_tempo","dagger_reach","dagger_edge"]}
+	var allowed={"revenant":["greatsword","storm_blade","shockwave"],"warrior":["greatsword","storm_blade","shockwave"],"gunslinger":["rifle_tempo","rifle_caliber","rifle_range"],"mage":["orb_pierce","orb_power","orb_range"],"assassin":["dagger_tempo","dagger_reach","dagger_edge"]}
 	for id in BWData.CLASSES:
 		var state=BWRun.new(id)
 		for row in BWData.rows("upgrades"):

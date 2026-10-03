@@ -33,6 +33,9 @@ var touch_aim = Vector2.ZERO
 var aim = Vector3.FORWARD
 var last_move = Vector3.FORWARD
 var player_velocity = Vector3.ZERO
+var dash_time = 0.0
+var dash_direction = Vector3.ZERO
+var impact_pause = 0.0
 var enemy_serial = 0
 var quality = "PC"
 var elapsed = 0.0
@@ -85,9 +88,9 @@ const KNOCKBACK = 0.24
 const FLANK_STANDOFF = 8.6
 # How long an archer holds its aim before the arrow leaves, and how long a mage
 # commits to a cast. Both exist so a shot from the flank can be read and dodged.
-const TANK_SWING_TIME = 1.3
-# Downward axe contact pose at source 1.15 s of the 2.267 s clip, verified in-game.
-const TANK_CONTACT = TANK_SWING_TIME * (69.0 / 136.0)
+const TANK_SWING_TIME = 1.1
+# Hit during the descending axe sweep, before the final ground-contact pose.
+const TANK_CONTACT = TANK_SWING_TIME * 0.42
 const COMMANDER_CAST_TIME = 1.1
 const COMMANDER_RELEASE = 0.55
 const DRAW_TIME = 0.4
@@ -202,6 +205,11 @@ func _physics_process(dt: float):
 	if not running:
 		visual.tick(dt,false)
 		return
+	if impact_pause>0:
+		impact_pause=maxf(0.0,impact_pause-dt)
+		if visual.animation:visual.animation.speed_scale=0.0
+		return
+	if visual.animation and visual.animation.speed_scale==0.0:visual.animation.speed_scale=1.0
 	elapsed+=dt
 	if rest_time>0:
 		rest_time=maxf(0,rest_time-dt)
@@ -219,13 +227,19 @@ func _physics_process(dt: float):
 	# Sword swings commit to their forward step until contact; steering can
 	# cancel recovery once the strike is finished.
 	if run.class_id=="warrior" and visual.state.begins_with("attack") and visual.lock_time>0:
-		if swing_gate>0:movement=Vector3.ZERO
+		if not pending_attacks.is_empty():movement=Vector3.ZERO
 		elif movement.length_squared()>0.001:visual.lock_time=0
 	var previous_player_position=player.position
 	# A leap owns the body until it lands; steering mid-flight would fight its tween.
 	if airborne:movement=Vector3.ZERO
 	else:
-		player.position+=movement*run.stats.moveSpeed*BWData.UNIT*dt
+		if dash_time>0:
+			var dash_step=minf(dt,dash_time)
+			dash_time=maxf(0.0,dash_time-dt)
+			var travel=18.0*dash_step
+			var steps=maxi(1,ceili(travel/0.12))
+			for step in steps:player.position=arena.push_out(player.position+dash_direction*travel/steps,0.42)
+		else:player.position+=movement*run.stats.moveSpeed*BWData.UNIT*dt
 		for attack in pending_attacks:
 			if not attack.has("step_time"):continue
 			var before=float(attack.step_time)/float(attack.step_duration)
@@ -260,7 +274,7 @@ func _physics_process(dt: float):
 	if swing_gate>0:swing_gate=maxf(0,swing_gate-dt)
 	if hit_flash>0 or flash_rect.color.a>0:hit_flash=maxf(0,hit_flash-dt*1.9);flash_rect.color.a=hit_flash
 	_pending_attacks(dt)
-	if not airborne:_weapons(dt)
+	if not airborne and dash_time<=0:_weapons(dt)
 	for enemy in enemies.duplicate():
 		if is_instance_valid(enemy.node):_enemy_tick(enemy,dt)
 	_projectiles(dt)
@@ -621,7 +635,8 @@ func _weapons(dt: float):
 			visual.rotation.y=atan2(direction.x,direction.z)
 			slot.cooldown=cooldown*SPIN_COOLDOWN
 			continue
-		var next_step=0 if combo_timer<=0 or combo_step>=COMBO.size()-1 else combo_step+1
+		var chain=["attack1","attack2"] if run.class_id=="revenant" else COMBO
+		var next_step=0 if combo_timer<=0 or combo_step>=chain.size()-1 else combo_step+1
 		# The swing is heard while the blade is still moving; impacts land later from
 		# _damage_enemy, so a connecting hit reads as whoosh-then-bite rather than one blip.
 		if melee:_swing(id,next_step)
@@ -630,12 +645,14 @@ func _weapons(dt: float):
 			var clip="attack"
 			if melee:
 				combo_step=next_step
-				clip=COMBO[combo_step] if visual.clips.has(COMBO[combo_step]) else "attack"
+				clip=chain[combo_step] if visual.clips.has(chain[combo_step]) else "attack"
 				# Play the swing at the pace it was authored at, nudged by attack speed
 				# rather than crushed into the weapon cooldown. Forcing a 1.1 s greatsword
 				# swing into 0.45 s is what made the chain read as fast-forward.
 				var authored=visual.clip_length(clip)
-				if authored>0.0:duration=authored/(combo_pace*clampf(run.stats.attackSpeed,0.8,1.5))
+				if authored>0.0:duration=authored/(combo_pace*clampf(run.stats.attackSpeed,0.8,2.5))
+				if run.class_id=="revenant":duration=minf(duration,cooldown*0.95)
+				if run.class_id=="warrior" and clip=="attack4":duration=0.9
 				# That pace exists to keep the seams of a chain readable. A rig with no
 				# chain has no seams to protect, and one long clip then sets the whole
 				# tempo: the assassin's single 2.1 s swing gated a 2.4/s weapon down to
@@ -647,8 +664,10 @@ func _weapons(dt: float):
 				# ability effect, which is what makes finishing the chain worth doing.
 				visual.action(clip,duration)
 			else:visual.action(clip,duration)
-			pending_attacks.append({"time":duration*(0.55 if id=="magic_orb" else IMPACT.get(clip,0.32)),"id":id,"direction":direction,"finisher":melee and combo_step==COMBO.size()-1})
-			if melee and run.class_id=="warrior":
+			var contact=0.5 if run.class_id=="warrior" and clip=="attack4" else IMPACT.get(clip,0.32)
+			if run.class_id=="revenant":contact=0.34 if clip=="attack1" else 0.46
+			pending_attacks.append({"time":duration*(0.55 if id=="magic_orb" else contact),"id":id,"direction":direction,"finisher":melee and run.class_id!="revenant" and combo_step==COMBO.size()-1})
+			if melee and run.class_id=="warrior" and clip!="attack4":
 				var strike=pending_attacks.back()
 				strike["step_duration"]=strike.time
 				strike["step_time"]=strike.time
@@ -691,7 +710,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 			var wide=slot.shockwave>0 and slot.swings%3==0
 			var radius=range_value+(slot.shockwave*BWData.UNIT if wide else 0.0)
 			var hit=[]
-			var blade="dagger" if id=="daggers" else "sword"
+			var blade="dagger" if id=="daggers" or run.class_id=="revenant" else "sword"
 			for entry in _reachable(direction,radius,wide,SHOCKWAVE_TARGETS if wide else MELEE_TARGETS):
 				var e=entry.enemy
 				var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
@@ -699,9 +718,13 @@ func _resolve_weapon(id: String,direction: Vector3):
 					_stagger(e)
 					if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 			damage_area(player.position,radius,base)
-			fx.blade_arc(player.position,direction,radius,360.0 if wide else MELEE_ARC)
+			if run.class_id=="revenant":
+				for offset in [-0.18,0.0,0.18]:fx.slash(player.position+Vector3.UP*offset,direction,radius,Color("d65075"))
+			else:fx.blade_arc(player.position,direction,radius,360.0 if wide else MELEE_ARC)
 			# A connecting swing is felt in the camera as well as on the body it hit.
-			if not hit.is_empty():shake=maxf(shake,0.06)
+			if not hit.is_empty():
+				shake=maxf(shake,0.10 if run.class_id=="revenant" else 0.075)
+				impact_pause=0.035 if run.class_id=="revenant" else 0.0
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
 		"chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
 		_:
@@ -1078,7 +1101,7 @@ func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: boo
 
 func _hurt_player(damage: float):
 	# Out of reach while the leap is in the air - that window is what the skill buys.
-	if airborne:return
+	if airborne or dash_time>0:return
 	var actual=run.hurt(damage,rng.randf())
 	if actual<=0:return
 	if visual.fitted_timing and visual.state=="attack":pending_attacks.clear()
@@ -1128,7 +1151,7 @@ func sound_at(event: String,position: Vector3,db_offset: float=0.0):
 	if audio!=null:audio.play_at(event,position,db_offset)
 
 func _swing(weapon: String,step: int):
-	sound("dagger_swing" if weapon=="daggers" else "sword_swing",0.0,step)
+	sound("dagger_swing" if weapon=="daggers" or run.class_id=="revenant" else "sword_swing",0.0,step)
 
 func _impact_sound(e: Dictionary,impact: String,critical: bool):
 	if audio==null:return

@@ -15,7 +15,7 @@ from PIL import Image, ImageFilter
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RAW = ROOT.parent / "art/portraits/raw"
 PLATES = ROOT / "assets/ui/portraits"
-CLASSES = ["warrior", "gunslinger", "mage", "assassin"]
+CLASSES = ["warrior", "gunslinger", "mage", "assassin", "revenant"]
 
 SHADOW = np.array([0.150, 0.055, 0.070])   # warm blood in the darks
 HIGHLIGHT = np.array([0.960, 0.925, 0.880])  # bone white in the lights

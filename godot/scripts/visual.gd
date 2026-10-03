@@ -46,17 +46,20 @@ static func warm_enemy_models():
 	for file in ENEMY_MODELS:
 		if ResourceLoader.exists("res://assets/models/%s.glb" % file):model_scene(file)
 
+static func player_model(kind: String) -> String:
+	return {"gunslinger":"bloodbound","revenant":"revenant_player"}.get(kind,kind+"_player")
+
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
 	var file = {"gunslinger":"bloodbound","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
 	var enemy_file="enemy_"+{"grunt":"warrior"}.get(kind,kind)
 	enemy_asset=enemy and ResourceLoader.exists("res://assets/models/%s.glb" % enemy_file)
 	actor_kind=kind
-	fitted_timing=not enemy and kind in ["warrior","mage","assassin"]
+	fitted_timing=not enemy and kind in ["warrior","mage","assassin","revenant"]
 	# The gunslinger keeps bloodbound.glb (there is no gunslinger_player rig) so it
 	# stays out of fitted_timing. Only its shot clip needs fitting - normalising the
 	# rest sent the run cycle to 1.9x and the hit clip to 4.4x.
 	fitted_attack=not enemy and kind=="gunslinger"
-	if fitted_timing:file=kind+"_player"
+	if fitted_timing:file=player_model(kind)
 	if enemy_asset:file=enemy_file
 	if kind in ["mage","healer"] and enemy and not enemy_asset:
 		_mage(tint);procedural=true;return
@@ -72,8 +75,10 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 				if key.contains(pair[0]) and not clips.has(pair[1]):clips[pair[1]]=anim_name
 		# The substring pass above folds Attack1..4 and SpinAttack into "attack",
 		# so the combo links are registered by their exact clip name instead.
-		for exact in ["Attack1","Attack2","Attack3","Attack4","SpinAttack","Slam","Sweep","Charge","Cast","Summon","Draw"]:
+		for exact in ["Dash","Attack1","Attack2","Attack3","Attack4","SpinAttack","Slam","Sweep","Charge","Cast","Summon","Draw"]:
 			if animation.has_animation(exact):clips[exact.to_lower()]=exact
+		if not enemy and kind=="warrior" and clips.has("ultimate"):
+			clips["attack4"]=clips["ultimate"]
 		if file=="warrior":
 			for desired in {"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}:
 				var source={"idle":"Idle_Weapon","run":"Run_Weapon","attack":"Sword_Attack","hit":"RecieveHit","death":"Death"}[desired]
@@ -201,7 +206,7 @@ func _clear_flash():
 func clip_speed(next: String,duration: float=-1.0) -> float:
 	if not animation or not clips.has(next):return 1.0
 	if not fitted_timing and not enemy_asset and not (fitted_attack and next=="attack"):return 1.0
-	var run_targets={"warrior":0.82,"mage":0.72,"assassin":0.5,"tank":1.05,"commander":0.95,"grunt":1.0}
+	var run_targets={"warrior":0.72,"revenant":0.64,"mage":0.72,"assassin":0.5,"tank":1.05,"commander":0.95,"grunt":1.0}
 	var attack_targets={"assassin":0.3,"gunslinger":0.3}
 	var targets={"run":run_targets.get(actor_kind,0.65),"attack":attack_targets.get(actor_kind,0.45),"hit":0.22,"ultimate":0.9,"death":2.2}
 	var target=duration if duration>0 else targets.get(next,-1.0)
@@ -219,7 +224,7 @@ func play(next: String):
 	state=next
 	if animation and clips.has(next):
 		animation.speed_scale=1.0
-		animation.play(clips[next],0.08,clip_speed(next))
+		animation.play(clips[next],0.14,clip_speed(next))
 
 func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 	if dead:return false

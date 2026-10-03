@@ -12,6 +12,8 @@ func suite():
 	var tank=w.spawn_enemy("tank",Vector3(0,0,-1));tank.cooldown=0
 	check(tank.visual.enemy_asset and not tank.visual.procedural,"Dedicated tank model loads")
 	for clip in ["idle","run","attack","hit","death"]:check(tank.visual.clips.has(clip),"Tank clip: "+clip)
+	check(BWWorld.TANK_CONTACT<0.5,"Tank contact happens within half a second")
+	check(tank.data.attackCooldown<=1.2,"Tank has a shorter attack interval")
 	var hp=w.run.stats.hp
 	w._enemy_tick(tank,0.01)
 	check(tank.state=="tank_swing" and w.run.stats.hp==hp,"Tank winds up without instant damage")
@@ -19,7 +21,12 @@ func suite():
 	check(w.run.stats.hp==hp,"Damage waits until contact")
 	w._enemy_tick(tank,0.02)
 	check(w.run.stats.hp<hp,"Axe contact damages player in reach")
-	tank.visual.lock_time=0;tank.cooldown=0;w._enemy_tick(tank,0.01)
+	hp=w.run.stats.hp
+	w._enemy_tick(tank,0.05)
+	check(w.run.stats.hp==hp,"Contact resolves only once per swing")
+	for i in 90:w._enemy_tick(tank,0.01)
+	check(tank.state=="tank_swing","Tank starts its next swing without a long idle")
+	tank.visual.lock_time=0;tank.cooldown=0;tank.state="chase";w._enemy_tick(tank,0.01)
 	hp=w.run.stats.hp;w.player.position=Vector3(8,0,8)
 	w._enemy_tick(tank,BWWorld.TANK_CONTACT+0.01)
 	check(w.run.stats.hp==hp,"Leaving reach dodges committed attack")

@@ -210,3 +210,40 @@ Rebuild Mage and run combat regressions:
 blender -b -t 4 --python godot/tools/build_mixamo_mage.py
 godot --headless --path godot --script tests/combat_flow_test.gd
 ```
+
+## Combat feel update
+
+Revenant is a fifth playable class using its own vampire model, 65-bone Mixamo
+rig and a portrait baked from that model. Its two-hit claw chain fits the faster
+weapon cadence (the internal weapon ID remains sword for upgrade compatibility). Space / controller A
+casts Ember Dash: 0.16 seconds of movement at 18 m/s, damage immunity during the
+dash, 0.85-second cooldown, and attack recovery cancellation. The dash follows the
+last movement direction and is swept against arena obstacles. Q uses Whirl; E uses
+Mark of Ruin. Revenant shares the sword upgrade pool.
+
+Warrior now moves at 4.2 m/s with a 0.72-second run cycle, blends locomotion over
+0.14 seconds, and plants its feet until sword contact. Movement cancels the
+remaining recovery. Its fourth strike uses the ultimate ground-slam clip with
+contact at 0.45 seconds and no forward slide. Revenant strikes add a brief local impact pause.
+
+Reward/merchant screens use wrapping icon cards with rarity colors, rank previews,
+concise effects, and explicit purchase availability. Original audio is preserved;
+`python3 godot/tools/master_combat_audio.py` rebuilds 30 processed combat/UI samples
+in `assets/audio/polished`. The mixer prefers these samples, avoids immediate random
+variant repeats, compresses SFX, and limits the master bus. These are processed
+existing recordings, not newly recorded Foley.
+
+Additional verification: `godot --headless --path godot --script tests/revenant_test.gd`
+and `tests/warrior_movement_test.gd`. Use isolated user data for tests.
+
+Tank timing: attacks start 1.2 seconds apart when uninterrupted and in range;
+its swing plays over 1.1 seconds, with damage at 42% (0.462 seconds) during the
+downward sweep. Range and facing are checked at contact, and each swing damages
+only once. `tests/enemy_tank_test.gd` covers contact, repeat cadence and evasion.
+
+Revenant's concept is in `../art/revenant/concept/`; its original GLB and seven
+Mixamo FBX clips are in `../art/revenant/source/`. Rebuild the runtime model with
+`blender -b -t 4 --python godot/tools/build_mixamo_revenant.py`. The builder
+restores the original PBR materials, trims attack/dash clips, removes horizontal
+root travel and reduces only the runtime mesh. Clips: Idle, Run, Attack1, Attack2,
+Dash, Hit, Death. `tools/clip_sheet.tscn -- --revenant` renders animation QA.

@@ -14,6 +14,7 @@ const OUT = "res://../art/portraits/raw"
 # Each rig frames differently, so the camera and the turn are per class: yaw is the
 # three-quarter turn, lift/dolly frame the bust, tilt aims at the chest.
 const SHOTS = {
+	"revenant": {"yaw": 18.0, "lift": 1.20, "dolly": 2.16, "tilt": -4.0, "height": 1.85, "shift": 0.0},
 	"warrior": {"yaw": 24.0, "lift": 1.20, "dolly": 2.16, "tilt": -4.0, "height": 1.85, "shift": 0.02},
 	"gunslinger": {"yaw": -22.0, "lift": 1.20, "dolly": 2.20, "tilt": -4.0, "height": 1.85, "shift": 0.0},
 	"mage": {"yaw": 18.0, "lift": 1.22, "dolly": 2.18, "tilt": -5.0, "height": 1.85, "shift": -0.13},
@@ -24,6 +25,7 @@ func _ready():
 	BWData.load_catalogs()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	for id in SHOTS:
+		if "--revenant-only" in OS.get_cmdline_user_args() and id!="revenant":continue
 		await _bake(id, SHOTS[id])
 	print("BLOODWAKE_PORTRAITS_BAKED")
 	get_tree().quit()

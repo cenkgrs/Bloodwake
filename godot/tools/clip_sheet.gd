@@ -9,7 +9,7 @@ extends Node
 
 const SHOTS = 8
 const SIZE = Vector2i(300, 380)
-const CLIPS = ["Idle", "Attack", "Attack1", "Attack2", "Attack3", "Attack4", "SpinAttack", "SunderLeap"]
+const CLIPS = ["Idle", "Attack", "Attack1", "Attack2", "Attack3", "Attack4", "SpinAttack", "SunderLeap", "Run", "Dash", "Hit", "Death"]
 
 var out := ""
 
@@ -65,7 +65,8 @@ func _ready():
 	view.add_child(camera)
 	camera.look_at(Vector3(0, 0.95, 0))
 
-	var model = load("res://assets/models/warrior_player.glb").instantiate()
+	var kind="revenant" if "--revenant" in OS.get_cmdline_user_args() else "warrior"
+	var model = load("res://assets/models/%s_player.glb" % kind).instantiate()
 	view.add_child(model)
 	var player = _find(model, "AnimationPlayer") as AnimationPlayer
 

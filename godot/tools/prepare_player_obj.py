@@ -25,6 +25,7 @@ MODELS = ROOT / "godot/assets/models"
 # Which .glb holds each class's body, and which material is the body rather than
 # the weapon that was rigidly bound into the hand.
 RIGS = {
+    "revenant": {"source": ROOT / "art/revenant/source/revenant_original.glb", "body": None, "folder": "revenant"},
     "warrior": {"glb": "warrior_player.glb", "body": "Knight PBR", "folder": "warrior"},
     "mage": {"glb": "mage_player.glb", "body": None, "folder": "mage"},
     "assassin": {"glb": "assassin_player.glb", "body": None, "folder": "assassin"},
@@ -205,7 +206,7 @@ def preview(points, faces, path):
 
 def build(class_id):
     spec = RIGS[class_id]
-    meta, blob = read_glb(MODELS / spec["glb"])
+    meta, blob = read_glb(spec["source"] if "source" in spec else MODELS / spec["glb"])
     points, normals, uvs, faces = collect(meta, blob, spec["body"])
     assert len(faces), "no body geometry found for " + class_id
     points, factor = normalise(points)

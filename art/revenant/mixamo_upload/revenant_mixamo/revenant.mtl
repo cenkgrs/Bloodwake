@@ -1,0 +1,7 @@
+newmtl revenant
+Kd 1.000 1.000 1.000
+Ks 0.100 0.100 0.100
+Ns 20.0
+d 1.0
+illum 2
+map_Kd revenant_color.jpg
