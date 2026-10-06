@@ -46,8 +46,8 @@ func build_room(room_row: Dictionary, profile: String, seed_value: int = 0):
 	var light = room_row.get("light", {})
 	# Each room's light leans its own way, but only leans: fully saturated it drowned
 	# the stone in one colour and every room read as a tinted box.
-	zone = {"id": room_row.id, "name": room_row.name, "ambient": Color(light.get("ambient", "8fa2bb")).lerp(Color("a7a39c"), 0.45),
-		"fog": Color(light.get("fog", "1b232f")).lerp(Color("17171a"), 0.4), "energy": float(light.get("energy", 0.55)) + 0.1,
+	zone = {"id": room_row.id, "name": room_row.name, "ambient": Color(light.get("ambient", "8fa2bb")).lerp(Color("c4ad94"), 0.62),
+		"fog": Color(light.get("fog", "1b232f")).lerp(Color("17171a"), 0.4), "energy": 0.62,
 		"ground": Color(light.get("ground", "4f545c")), "garrison": {}}
 	markers = room_row.markers.duplicate(true)
 	if ResourceLoader.exists(String(room_row.get("scene", ""))):
@@ -260,26 +260,54 @@ func _grey_box():
 	for row in room.get("landmarks", []):_landmark(row)
 	_lanterns()
 
+# Past the walls the street falls away into the dark: the camera is held inside
+# the room, and whatever corner of the outside still shows is night, not void.
+const OUTSIDE_SHADER = """
+shader_type spatial;
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+uniform vec2 half_size;
+uniform float fade = 8.0;
+uniform vec3 night : source_color = vec3(0.02);
+varying vec3 world;
+void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+void fragment() {
+	vec2 beyond = max(abs(world.xz) - half_size, vec2(0.0));
+	float lit = 1.0 - smoothstep(0.0, fade, length(beyond));
+	ALBEDO = mix(night, texture(albedo_tex, world.xz / 2.6).rgb * 0.32, lit);
+	ROUGHNESS = 0.95;
+}
+"""
+
 func _floor():
 	var outer = MeshInstance3D.new();var plane = PlaneMesh.new()
 	plane.size = Vector2(half_x * 2.0 + 160.0, half_z * 2.0 + 160.0)
-	outer.mesh = plane;outer.material_override = _mat("street");outer.position.y = -0.03
+	outer.mesh = plane;outer.position.y = -0.03;outer.name = "Outside"
+	var street = ShaderMaterial.new();street.shader = Shader.new();street.shader.code = OUTSIDE_SHADER
+	var paving = _mat("cobble").albedo_texture
+	if paving != null:street.set_shader_parameter("albedo_tex", paving)
+	street.set_shader_parameter("half_size", Vector2(half_x + 9.0, half_z + 9.0))
+	street.set_shader_parameter("night", zone.fog.darkened(0.6))
+	outer.material_override = street
 	add_child(outer)
 	ground = MeshInstance3D.new();var slab = PlaneMesh.new()
 	slab.size = Vector2(half_x * 2.0 + WALL_THICK * 2.0, half_z * 2.0 + WALL_THICK * 2.0)
 	slab.subdivide_width = 8;slab.subdivide_depth = 8
 	ground.mesh = slab
-	var cobble = _mat("cobble").duplicate()
+	var paved = _mat("flagstone").duplicate()
 	# The room's ground colour shifts the stone, it does not replace it.
-	# Kept a step darker than the walls so telegraphs and bodies read on top of it.
-	if cobble.albedo_texture != null:cobble.albedo_color = Color(0.74, 0.71, 0.67).lerp(zone.ground.lightened(0.4), 0.3);cobble.normal_scale = 0.7
-	else:cobble.albedo_color = zone.ground
-	ground.material_override = cobble
+	if paved.albedo_texture != null:paved.albedo_color = Color(0.74, 0.69, 0.62).lerp(zone.ground.lightened(0.3), 0.2);paved.normal_scale = 0.8
+	else:paved.albedo_color = zone.ground
+	ground.material_override = paved
 	add_child(ground)
 
-# Walls run just outside the floor. The far sides (north, west) stand at full
-# height with the town behind them; the camera-side ones are kept low so they
-# never cover a fight. Each wall is cut where a door sits in it.
+# The edge of a room, built the way the environment boards draw it. The north,
+# west and east sides are the town itself - stone wall bays with buttresses,
+# lean-to sheds and timber houses whose fronts stand on the wall line - with more
+# roofs behind them. The south side faces the camera, so it stays a low parapet of
+# capped pillars and iron railings. Every side is cut where a door sits in it.
+const BUILT_HEIGHT = 3.4
+const FRONT_DEPTH = 4.0
+
 func _perimeter():
 	var room_doors = room.get("doors", {})
 	var openings = {"north": [], "south": [], "west": [], "east": []}
@@ -287,141 +315,294 @@ func _perimeter():
 		var spot = BWRooms.vec(room_doors[key].at)
 		openings[BWRooms.wall_side(spot, Vector2(half_x, half_z))].append(spot)
 	for side in openings:
-		var tall = side in ["north", "west"]
 		var along_x = side in ["north", "south"]
 		var reach = half_x if along_x else half_z
 		var cuts = []
 		for spot in openings[side]:
 			var centre = spot.x if along_x else spot.z
-			cuts.append([centre - BWRooms.DOOR_WIDTH * 0.5 - 0.8, centre + BWRooms.DOOR_WIDTH * 0.5 + 0.8])
+			cuts.append([centre - BWRooms.DOOR_WIDTH * 0.5 - 1.5, centre + BWRooms.DOOR_WIDTH * 0.5 + 1.5])
+		for row in room.get("landmarks", []):
+			if row.get("flush", "") == side:
+				var middle = BWRooms.vec(row.at).x if along_x else BWRooms.vec(row.at).z
+				cuts.append([middle - float(row.span) * 0.5, middle + float(row.span) * 0.5])
 		cuts.sort_custom(func(a, b): return a[0] < b[0])
-		var start = -reach - WALL_THICK
-		for cut in cuts + [[reach + WALL_THICK, reach + WALL_THICK]]:
-			if cut[0] - start > 0.05:_wall_run(side, start, cut[0], tall)
-			start = cut[1]
-		if tall:_facades(side, openings[side])
+		var start = -reach
+		for cut in cuts + [[reach, reach]]:
+			if cut[0] - start > 0.3:
+				if side == "south":_parapet(side, start, cut[0])
+				else:_frontage(side, start, cut[0])
+			start = maxf(start, cut[1])
+		if side != "south":_backdrop(side)
+		else:_street_layer()
+	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		var low = corner.y > 0
+		var tower = _box(Vector3(1.6, 1.8 if low else BUILT_HEIGHT + 1.2, 1.6), "stone_dark", Vector3(corner.x * (half_x + 0.8), (1.8 if low else BUILT_HEIGHT + 1.2) * 0.5, corner.y * (half_z + 0.8)))
+		add_child(tower)
+		tower.add_child(_box(Vector3(1.9, 0.3, 1.9), "stone", Vector3(0, tower.mesh.size.y * 0.5 + 0.15, 0)))
 	for key in room_doors:_door(key, room_doors[key])
+
+# A point on a side's wall line, `t` along it and `out` metres beyond it, and the
+# turn that makes a piece's local +Z face into the room from that side.
+func _side_point(side: String, t: float, out: float = 0.0) -> Vector3:
+	match side:
+		"north":return Vector3(t, 0, -half_z - out)
+		"south":return Vector3(t, 0, half_z + out)
+		"west":return Vector3(-half_x - out, 0, t)
+		_:return Vector3(half_x + out, 0, t)
+
+func _side_turn(side: String) -> float:
+	return {"north": 0.0, "south": PI, "west": PI * 0.5, "east": -PI * 0.5}[side]
+
+func _piece(side: String, t: float, name: String) -> Node3D:
+	var node = Node3D.new();node.name = name
+	node.position = _side_point(side, t);node.rotation.y = _side_turn(side)
+	add_child(node, true)
+	return node
+
+func _frontage(side: String, from: float, to: float):
+	var cursor = from
+	while to - cursor > 0.3:
+		var left = to - cursor
+		var roll = rng.randf()
+		var kind = "wall" if left < 3.6 or roll < 0.38 else ("shed" if roll < 0.7 else "house")
+		var width = left if kind == "wall" and left < 3.6 else clampf({"wall": rng.randf_range(3.5, 6.0), "shed": rng.randf_range(3.8, 5.2), "house": rng.randf_range(4.8, 6.4)}[kind], 1.0, left)
+		if left - width < 2.0:width = left
+		var node = _piece(side, cursor + width * 0.5, kind.capitalize())
+		if _kit_piece("house" if kind != "wall" else "wall_tall", Vector3.ZERO, Vector3(width, BUILT_HEIGHT if kind == "wall" else 6.5, FRONT_DEPTH if kind != "wall" else WALL_THICK), 0.0, node) == null:
+			match kind:
+				"wall":_wall_bay(node, width)
+				"shed":_shed(node, width)
+				_:_town_house(node, width)
+		cursor += width
+
+func _wall_bay(node: Node3D, width: float):
+	node.add_child(_box(Vector3(width, BUILT_HEIGHT, WALL_THICK), "stone", Vector3(0, BUILT_HEIGHT * 0.5, -WALL_THICK * 0.5)))
+	node.add_child(_box(Vector3(width + 0.1, 0.2, WALL_THICK + 0.25), "stone_dark", Vector3(0, BUILT_HEIGHT + 0.1, -WALL_THICK * 0.5)))
+	for hand in [-1.0, 1.0]:
+		var pier = _box(Vector3(0.8, BUILT_HEIGHT + 0.6, 1.2), "stone_dark", Vector3(hand * (width * 0.5 - 0.4), (BUILT_HEIGHT + 0.6) * 0.5, -0.6))
+		node.add_child(pier)
+		pier.add_child(_box(Vector3(1.0, 0.25, 1.4), "stone", Vector3(0, (BUILT_HEIGHT + 0.6) * 0.5 + 0.12, 0)))
+	if rng.randf() < 0.55:_banner(node, Vector3(rng.randf_range(-width * 0.25, width * 0.25), BUILT_HEIGHT - 0.3, 0.04), 2.2)
+	if rng.randf() < 0.5:
+		var lamp_x = rng.randf_range(-width * 0.3, width * 0.3)
+		node.add_child(_box(Vector3(0.08, 0.5, 0.35), "iron", Vector3(lamp_x, 2.4, 0.15)))
+		_lamp(node.position + node.basis * Vector3(lamp_x, 2.2, 0.35), 0.7, Color("ffb36b"), 4.5)
+
+# A timber lean-to against the town wall: plank walls, a roof running down
+# towards the courtyard, a lit window and a door. Low, so it never hides a fight.
+func _shed(node: Node3D, width: float):
+	var height = rng.randf_range(3.0, 3.8)
+	node.add_child(_box(Vector3(width, height, FRONT_DEPTH), "wood_dark", Vector3(0, height * 0.5, -FRONT_DEPTH * 0.5)))
+	node.add_child(_box(Vector3(width, 0.5, FRONT_DEPTH), "stone_dark", Vector3(0, 0.25, -FRONT_DEPTH * 0.5)))
+	var roof = _box(Vector3(width + 0.5, 0.18, FRONT_DEPTH + 0.9), "wood", Vector3(0, height + 0.55, -FRONT_DEPTH * 0.5 + 0.2))
+	roof.rotation.x = 0.3;node.add_child(roof)
+	for hand in [-1.0, 1.0]:
+		node.add_child(_box(Vector3(0.22, height + 0.3, 0.22), "wood", Vector3(hand * (width * 0.5 - 0.15), (height + 0.3) * 0.5, 0.12)))
+	node.add_child(_box(Vector3(1.0, 2.0, 0.08), "wood", Vector3(-width * 0.2, 1.0, 0.03)))
+	var lit = rng.randf() < 0.65
+	node.add_child(_box(Vector3(0.9, 0.7, 0.08), "wood_dark", Vector3(width * 0.22, height * 0.62, 0.03)))
+	node.add_child(_box(Vector3(0.7, 0.5, 0.09), "window" if lit else "iron", Vector3(width * 0.22, height * 0.62, 0.04)))
+	if rng.randf() < 0.5:
+		for step in 4:
+			node.add_child(_box(Vector3(0.9, 0.22, 0.4), "wood", Vector3(width * 0.5 - 0.5, 0.11 + step * 0.42, -FRONT_DEPTH + 0.4 + step * 0.45)))
+	if rng.randf() < 0.45:_banner(node, Vector3(width * 0.05, height - 0.2, 0.05), 1.8)
+
+# Stone ground storey, half-timbered above, a slate gable facing the court.
+func _town_house(node: Node3D, width: float):
+	var height = rng.randf_range(5.6, 7.0)
+	var plinth = minf(2.4, height * 0.4)
+	node.add_child(_box(Vector3(width, plinth, FRONT_DEPTH), "stone", Vector3(0, plinth * 0.5, -FRONT_DEPTH * 0.5)))
+	node.add_child(_box(Vector3(width + 0.3, height - plinth, FRONT_DEPTH + 0.3), "timber", Vector3(0, plinth + (height - plinth) * 0.5, -FRONT_DEPTH * 0.5)))
+	node.add_child(_box(Vector3(width + 0.45, 0.22, FRONT_DEPTH + 0.45), "wood_dark", Vector3(0, plinth, -FRONT_DEPTH * 0.5)))
+	var roof = MeshInstance3D.new();var prism = PrismMesh.new()
+	prism.size = Vector3(width + 0.8, rng.randf_range(2.2, 3.0), FRONT_DEPTH + 0.8)
+	roof.mesh = prism;roof.material_override = _mat("roof");roof.position = Vector3(0, height + prism.size.y * 0.5, -FRONT_DEPTH * 0.5)
+	node.add_child(roof)
+	if rng.randf() < 0.6:node.add_child(_box(Vector3(0.6, 1.6, 0.6), "stone_dark", Vector3(width * 0.25, height + prism.size.y * 0.6, -FRONT_DEPTH * 0.7)))
+	node.add_child(_box(Vector3(1.1, 2.0, 0.1), "wood_dark", Vector3(rng.randf_range(-width * 0.25, width * 0.25), 1.0, 0.03)))
+	for column in maxi(1, int(width / 2.0)):
+		var x = -width * 0.5 + 1.0 + column * 2.0
+		if x > width * 0.5 - 0.6:break
+		var level = plinth + (height - plinth) * 0.45
+		node.add_child(_box(Vector3(0.9, 1.1, 0.08), "wood_dark", Vector3(x, level, 0.17)))
+		node.add_child(_box(Vector3(0.62, 0.82, 0.09), "window" if rng.randf() < 0.6 else "iron", Vector3(x, level, 0.18)))
+	if rng.randf() < 0.4:_banner(node, Vector3(rng.randf_range(-width * 0.25, width * 0.25), plinth + 1.9, 0.2), 2.2)
+
+# The town around the room: rows of houses beyond the frontage on the north,
+# west and east, so that the edge of the view always lands on rooftops. Nothing
+# out here can be reached; the floor stops at the walls.
+func _backdrop(side: String):
+	var along_x = side in ["north", "south"]
+	var rows = 3 if side == "north" else 2
+	for row in rows:
+		var reach = (half_x if along_x else half_z) + 6.0 + row * 4.0
+		var cursor = -reach
+		var out = FRONT_DEPTH + 0.6 + row * 6.0
+		while cursor < reach:
+			var width = rng.randf_range(4.5, 7.5)
+			var node = Node3D.new();node.name = "Backdrop"
+			node.position = _side_point(side, cursor + width * 0.5, out + rng.randf_range(0.0, 1.2));node.rotation.y = _side_turn(side)
+			add_child(node, true)
+			var height = rng.randf_range(6.5, 9.0) + row * 1.2
+			node.add_child(_box(Vector3(width, height, 5.0), "timber" if rng.randf() < 0.6 else "stone_dark", Vector3(0, height * 0.5, -2.5)))
+			var roof = MeshInstance3D.new();var prism = PrismMesh.new();prism.size = Vector3(width + 0.6, rng.randf_range(2.4, 3.6), 5.6)
+			roof.mesh = prism;roof.material_override = _mat("roof");roof.position = Vector3(0, height + prism.size.y * 0.5, -2.5)
+			node.add_child(roof)
+			if rng.randf() < 0.55:node.add_child(_box(Vector3(0.6, 1.6, 0.6), "stone_dark", Vector3(rng.randf_range(-width * 0.3, width * 0.3), height + prism.size.y * 0.7, -3.0)))
+			for column in maxi(1, int(width / 2.2)):
+				if rng.randf() < 0.45:continue
+				node.add_child(_box(Vector3(0.6, 0.8, 0.08), "window", Vector3(-width * 0.5 + 1.1 + column * 2.2, height * rng.randf_range(0.45, 0.75), 0.03)))
+			cursor += width + rng.randf_range(0.0, 0.5)
+
+# South of the parapet, between the room and the camera, the town is a lit
+# street: lamps, carts, crates and a market stall, nothing tall enough to stand
+# in front of the fight. Past it the street fades into the dark.
+func _street_layer():
+	var reach = half_x + 7.0
+	var cursor = -reach
+	var ways = []
+	for key in room.get("doors", {}):
+		var door = BWRooms.vec(room.doors[key].at)
+		if BWRooms.wall_side(door, Vector2(half_x, half_z)) == "south":ways.append(door.x)
+	while cursor < reach:
+		cursor += rng.randf_range(2.5, 4.5)
+		# The way in stays an open street, steps clear of carts and stalls.
+		if ways.any(func(x): return absf(x - cursor) < BWRooms.DOOR_WIDTH * 0.5 + 2.6):continue
+		var spot = _side_point("south", cursor, rng.randf_range(1.6, 3.0))
+		var roll = rng.randf()
+		var node = Node3D.new();node.name = "Street";node.position = spot;node.rotation.y = rng.randf_range(-0.3, 0.3);add_child(node, true)
+		if roll < 0.3:
+			for piece in rng.randi_range(2, 4):
+				var crate = _box(Vector3(0.6, rng.randf_range(0.5, 0.9), 0.6), "crate", Vector3(piece * 0.65 - 0.9, 0, rng.randf_range(-0.2, 0.2)))
+				crate.position.y = crate.mesh.size.y * 0.5;node.add_child(crate)
+		elif roll < 0.5:
+			node.add_child(_box(Vector3(2.2, 0.45, 1.2), "wood", Vector3(0, 0.75, 0)))
+			for wheel_x in [-0.7, 0.7]:
+				var wheel = _disc(0.42, 0.1, "wood_dark", 0.0);wheel.rotation.z = PI * 0.5;wheel.position = Vector3(wheel_x, 0.42, 0.65);node.add_child(wheel)
+		elif roll < 0.65:
+			_stall(spot, Vector2(2.4, 1.6), 1.0)
+		elif roll < 0.85:
+			for barrel in rng.randi_range(2, 3):
+				var cask = _disc(0.3, 0.85, "wood", 0.43);cask.position.x = barrel * 0.7 - 0.7;node.add_child(cask)
+		else:
+			_lamp_post(spot, false)
+
+# The camera side: a parapet of capped stone pillars with low wall or iron
+# railing between them.
+func _parapet(side: String, from: float, to: float):
+	if not kit_files("wall_low").is_empty():
+		_wall_run(side, from, to, false)
+		return
+	var holder = Node3D.new();holder.name = "CamWall_" + side;add_child(holder, true)
+	camera_side.append(holder)
+	var bays = maxi(1, int(round((to - from) / 3.4)))
+	var step = (to - from) / bays
+	for i in bays + 1:
+		var spot = _side_point(side, from + i * step, 0.45)
+		holder.add_child(_box(Vector3(0.75, 1.2, 0.75), "stone_dark", spot + Vector3(0, 0.6, 0)))
+		holder.add_child(_box(Vector3(0.95, 0.16, 0.95), "stone", spot + Vector3(0, 1.28, 0)))
+		var finial = _disc(0.2, 0.32, "stone", 0.0);finial.position = spot + Vector3(0, 1.52, 0);holder.add_child(finial)
+	for i in bays:
+		var centre = _side_point(side, from + (i + 0.5) * step, 0.45)
+		var along = Vector3(1, 0, 0) if side in ["north", "south"] else Vector3(0, 0, 1)
+		var length = step - 0.75
+		if rng.randf() < 0.35:
+			for bar in int(length / 0.22):
+				var offset = -length * 0.5 + 0.11 + bar * 0.22
+				holder.add_child(_box(Vector3(0.05, 0.95, 0.05), "iron", centre + along * offset + Vector3(0, 0.48, 0)))
+			var rail = _box(Vector3(length, 0.06, 0.06) if along.x > 0 else Vector3(0.06, 0.06, length), "iron", centre + Vector3(0, 0.88, 0))
+			holder.add_child(rail)
+		else:
+			holder.add_child(_box(Vector3(length, 0.75, 0.6) if along.x > 0 else Vector3(0.6, 0.75, length), "stone", centre + Vector3(0, 0.38, 0)))
 
 func _wall_run(side: String, from: float, to: float, tall: bool):
 	var height = WALL_HEIGHT if tall else LOW_WALL
 	var length = to - from
-	var middle = (from + to) * 0.5
-	var size: Vector3
-	var at: Vector3
-	match side:
-		"north":size = Vector3(length, height, WALL_THICK);at = Vector3(middle, height * 0.5, -half_z - WALL_THICK * 0.5)
-		"south":size = Vector3(length, height, WALL_THICK);at = Vector3(middle, height * 0.5, half_z + WALL_THICK * 0.5)
-		"west":size = Vector3(WALL_THICK, height, length);at = Vector3(-half_x - WALL_THICK * 0.5, height * 0.5, middle)
-		_:size = Vector3(WALL_THICK, height, length);at = Vector3(half_x + WALL_THICK * 0.5, height * 0.5, middle)
 	var kind = "wall_tall" if tall else "wall_low"
-	if not kit_files(kind).is_empty():
-		# Modular 4 m pieces, stretched a little so a run closes exactly.
-		var pieces = maxi(1, ceili(length / 4.0))
-		var turn = {"north": 0.0, "south": PI, "west": PI * 0.5, "east": -PI * 0.5}[side]
-		var holder = Node3D.new();holder.name = ("Wall_" if tall else "CamWall_") + side;add_child(holder)
-		for i in pieces:
-			var t = from + (i + 0.5) * length / pieces
-			var spot = Vector3(t, 0, at.z) if side in ["north", "south"] else Vector3(at.x, 0, t)
-			_kit_piece(kind, spot, Vector3(length / pieces, height, WALL_THICK), turn, holder)
-		if not tall:camera_side.append(holder)
-		return
-	var wall = _box(size, "stone", at)
-	wall.name = ("Wall_" if tall else "CamWall_") + side
-	add_child(wall)
-	# A coping course along the top, so a wall reads as built rather than extruded.
-	var cap = Vector3(size.x + (0.2 if size.x > size.z else 0.25), 0.18, size.z + (0.25 if size.x > size.z else 0.2))
-	wall.add_child(_box(cap, "stone_dark", Vector3(0, height * 0.5 + 0.09, 0)))
-	if not tall:camera_side.append(wall)
+	var pieces = maxi(1, ceili(length / 4.0))
+	var holder = Node3D.new();holder.name = ("Wall_" if tall else "CamWall_") + side;add_child(holder, true)
+	for i in pieces:
+		var spot = _side_point(side, from + (i + 0.5) * length / pieces, WALL_THICK * 0.5)
+		_kit_piece(kind, spot, Vector3(length / pieces, height, WALL_THICK), _side_turn(side), holder)
+	if not tall:camera_side.append(holder)
 
-# The town behind the far walls: timber houses and their lit windows. All of it
-# stands outside the floor, so none of it needs collision.
-func _facades(side: String, door_spots: Array):
-	var along_x = side == "north"
-	var reach = half_x if along_x else half_z
-	var cursor = -reach - 3.0
-	while cursor < reach + 3.0:
-		var width = rng.randf_range(4.5, 7.0)
-		var centre = cursor + width * 0.5
-		cursor += width + rng.randf_range(0.3, 1.2)
-		var blocked = false
-		for spot in door_spots:
-			if absf(centre - (spot.x if along_x else spot.z)) < width * 0.5 + 3.8:blocked = true
-		if blocked:continue
-		var depth = rng.randf_range(3.5, 5.0)
-		var height = rng.randf_range(4.8, 7.2)
-		var house = Node3D.new();house.name = "House"
-		var back = depth * 0.5 + WALL_THICK + 0.2
-		house.position = Vector3(centre, 0, -half_z - back) if along_x else Vector3(-half_x - back, 0, centre)
-		if not along_x:house.rotation.y = PI * 0.5
-		add_child(house)
-		if _kit_piece("house", Vector3.ZERO, Vector3(width, height, depth), 0.0, house) != null:continue
-		# Stone ground storey, half-timbered above, slate on top: the town on the boards.
-		var plinth = minf(2.2, height * 0.38)
-		house.add_child(_box(Vector3(width, plinth, depth), "stone", Vector3(0, plinth * 0.5, 0)))
-		var upper = _box(Vector3(width + 0.3, height - plinth, depth + 0.3), "timber", Vector3(0, plinth + (height - plinth) * 0.5, 0))
-		house.add_child(upper)
-		house.add_child(_box(Vector3(width + 0.45, 0.22, depth + 0.45), "wood_dark", Vector3(0, plinth, 0)))
-		var roof = MeshInstance3D.new();var prism = PrismMesh.new()
-		prism.size = Vector3(width + 0.9, rng.randf_range(1.8, 2.8), depth + 0.9)
-		roof.mesh = prism;roof.material_override = _mat("roof");roof.position.y = height + prism.size.y * 0.5
-		house.add_child(roof)
-		if rng.randf() < 0.6:
-			var stack_x = rng.randf_range(-width * 0.3, width * 0.3)
-			house.add_child(_box(Vector3(0.7, 1.6, 0.7), "stone_dark", Vector3(stack_x, height + prism.size.y * 0.6, -depth * 0.15)))
-		var front = depth * 0.5 + 0.17
-		house.add_child(_box(Vector3(1.1, 1.9, 0.08), "wood_dark", Vector3(rng.randf_range(-width * 0.3, width * 0.3), 0.95, depth * 0.5 + 0.03)))
-		for column in maxi(1, int(width / 2.0)):
-			var x = -width * 0.5 + 1.0 + column * 2.0
-			if x > width * 0.5 - 0.6:break
-			for level in [plinth + (height - plinth) * 0.45]:
-				var lit = rng.randf() < 0.55
-				house.add_child(_box(Vector3(0.9, 1.1, 0.06), "wood_dark", Vector3(x, level, front)))
-				house.add_child(_box(Vector3(0.62, 0.82, 0.07), "window" if lit else "iron", Vector3(x, level, front + 0.01)))
-		if rng.randf() < 0.45:
-			house.add_child(_box(Vector3(1.0, 2.4, 0.06), "cloth", Vector3(rng.randf_range(-width * 0.3, width * 0.3), plinth + 1.6, front + 0.05)))
+# A cross on bordo cloth, the town's colours on every second pillar.
+func _banner(node: Node3D, at: Vector3, length: float):
+	var cloth = _box(Vector3(0.95, length, 0.05), "cloth", at - Vector3(0, length * 0.5, 0))
+	node.add_child(cloth)
+	cloth.add_child(_box(Vector3(0.1, length * 0.42, 0.02), "bone", Vector3(0, length * 0.12, 0.035)))
+	cloth.add_child(_box(Vector3(0.42, 0.1, 0.02), "bone", Vector3(0, length * 0.2, 0.035)))
+	node.add_child(_box(Vector3(1.15, 0.07, 0.07), "iron", at + Vector3(0, 0.03, 0)))
 
+# A gate as on the boards: two tall stone pillars carrying statues, banners on
+# their faces, and a pair of spear-topped iron leaves. On the camera side the
+# pillars are low and the way in is a short flight of steps up into the room.
 func _door(key: String, spec: Dictionary):
 	var spot = BWRooms.vec(spec.at)
 	var side = BWRooms.wall_side(spot, Vector2(half_x, half_z))
-	var tall = side in ["north", "west"]
+	var low = side == "south"
 	var grand = spec.get("grand", false)
 	var frame = Node3D.new();frame.name = key.capitalize() + "Door"
 	frame.position = Vector3(spot.x, 0, spot.z)
-	# Facing the room: north doors look south, and so on.
 	var inward = BWRooms.inward(side)
 	frame.rotation.y = atan2(inward.x, inward.z)
 	add_child(frame)
-	var post_height = (5.2 if grand else 4.2) if tall else 2.0
+	var post_height = 1.7 if low else (5.6 if grand else 4.6)
 	var half_gap = BWRooms.DOOR_WIDTH * 0.5
 	var frame_kind = "gate_frame_grand" if grand and not kit_files("gate_frame_grand").is_empty() else "gate_frame"
-	var kit_frame = _kit_piece(frame_kind, Vector3.ZERO, Vector3(BWRooms.DOOR_WIDTH + 1.8, post_height, 1.2), 0.0, frame) if tall else null
-	for hand in ([] if kit_frame != null else [-1.0, 1.0]):
-		var post = _box(Vector3(0.9, post_height, 1.2), "stone_dark", Vector3(hand * (half_gap + 0.45), post_height * 0.5, 0))
-		frame.add_child(post)
-		frame.add_child(_box(Vector3(1.1, 0.3, 1.4), "stone", Vector3(hand * (half_gap + 0.45), post_height + 0.15, 0)))
-	if tall and kit_frame == null:
-		frame.add_child(_box(Vector3(BWRooms.DOOR_WIDTH + 1.8, 0.7, 1.2), "stone_dark", Vector3(0, post_height - 0.35, 0)))
-		if grand:frame.add_child(_box(Vector3(BWRooms.DOOR_WIDTH, 1.2, 0.08), "cloth", Vector3(0, post_height - 1.4, 0.62)))
+	var kit_frame = _kit_piece(frame_kind, Vector3.ZERO, Vector3(BWRooms.DOOR_WIDTH + 3.0, post_height, 1.5), 0.0, frame) if not low else null
+	if kit_frame == null:
+		for hand in [-1.0, 1.0]:
+			var x = hand * (half_gap + 0.75)
+			var pillar = _box(Vector3(1.5, post_height, 1.5), "stone_dark", Vector3(x, post_height * 0.5, -0.4))
+			frame.add_child(pillar)
+			frame.add_child(_box(Vector3(1.8, 0.35, 1.8), "stone", Vector3(x, 0.18, -0.4)))
+			frame.add_child(_box(Vector3(1.75, 0.3, 1.75), "stone", Vector3(x, post_height + 0.15, -0.4)))
+			if low:
+				var finial = _disc(0.3, 0.5, "stone", post_height + 0.55);finial.position.x = x;finial.position.z = -0.4;frame.add_child(finial)
+			else:
+				_statue(frame, Vector3(x, post_height + 0.3, -0.4), 1.0 if not grand else 1.2)
+				_banner(frame, Vector3(x, post_height - 0.5, 0.36), 2.4)
+		if grand and not low:
+			frame.add_child(_box(Vector3(BWRooms.DOOR_WIDTH + 3.0, 0.9, 1.4), "stone_dark", Vector3(0, post_height - 0.45, -0.4)))
+			frame.add_child(_box(Vector3(BWRooms.DOOR_WIDTH, 1.1, 0.08), "cloth", Vector3(0, post_height - 1.5, 0.32)))
+	if low:
+		for step in 3:
+			frame.add_child(_box(Vector3(BWRooms.DOOR_WIDTH + 0.4, 0.2, 0.7), "stone", Vector3(0, -0.1 - step * 0.2, -0.6 - step * 0.7)))
+		for hand in [-1.0, 1.0]:_lamp_post(frame.position + frame.basis * Vector3(hand * (half_gap + 1.9), 0, 0.2), false)
 	var leaves = []
-	var leaf_height = minf(post_height - 0.8, 3.0) if tall else 1.8
+	var leaf_height = 1.3 if low else minf(post_height - 0.6, 3.6)
 	for hand in [-1.0, 1.0]:
 		var pivot = Node3D.new();pivot.name = "%sLeaf_%s" % [key.capitalize(), "L" if hand < 0 else "R"]
 		pivot.position = Vector3(hand * half_gap, 0, 0)
 		frame.add_child(pivot)
-		# One delivered leaf serves both sides: the right one is its mirror.
 		if _kit_piece("gate_leaf", Vector3(-hand * half_gap * 0.5, 0.05, 0), Vector3(half_gap, leaf_height, 0.15), 0.0, pivot, hand > 0) == null:
-			var leaf = _box(Vector3(half_gap, leaf_height, 0.12), "iron", Vector3(-hand * half_gap * 0.5, leaf_height * 0.5 + 0.05, 0))
-			pivot.add_child(leaf)
-			for bar in 4:
-				leaf.add_child(_box(Vector3(0.08, leaf_height * 0.9, 0.2), "iron", Vector3(-half_gap * 0.5 + 0.35 + bar * (half_gap - 0.7) / 3.0, 0, 0)))
-		# Swing away from the room so an opening door never sweeps the floor.
+			var leaf = Node3D.new();pivot.add_child(leaf)
+			for rail in [0.35, leaf_height - 0.35]:
+				leaf.add_child(_box(Vector3(half_gap, 0.08, 0.08), "iron", Vector3(-hand * half_gap * 0.5, rail, 0)))
+			var bars = int(half_gap / 0.24)
+			for bar in bars:
+				var bx = -hand * (0.12 + bar * 0.24)
+				leaf.add_child(_box(Vector3(0.05, leaf_height, 0.05), "iron", Vector3(bx, leaf_height * 0.5, 0)))
+				var tip = MeshInstance3D.new();var spike = PrismMesh.new();spike.size = Vector3(0.12, 0.22, 0.05)
+				tip.mesh = spike;tip.material_override = _mat("iron");tip.position = Vector3(bx, leaf_height + 0.11, 0);leaf.add_child(tip)
 		leaves.append({"pivot": pivot, "rest": 0.0, "sign": -hand})
 	var glow = _exit_glow() if key == "exit" else null
 	doors[key] = {"leaves": leaves, "open": false, "glow": glow}
 	set_door(key, false, false)
-	for hand in [-1.0, 1.0]:
-		var lamp_at = frame.position + frame.basis * Vector3(hand * (half_gap + 0.45), post_height + 0.55, 0.3)
-		_lamp(lamp_at, 0.9)
+	if not low:
+		for hand in [-1.0, 1.0]:_lamp(frame.position + frame.basis * Vector3(hand * (half_gap + 0.75), 2.6, 0.5), 0.9)
+
+# A cowled stone figure on a pedestal: the gate guardians and the kneeling dead
+# on the Black Bell's plinths.
+func _statue(parent: Node3D, at: Vector3, scale: float, kneeling: bool = false):
+	var figure = Node3D.new();figure.position = at;figure.scale = Vector3.ONE * scale;parent.add_child(figure)
+	figure.add_child(_box(Vector3(0.9, 0.35, 0.9), "stone", Vector3(0, 0.18, 0)))
+	var body = 0.75 if kneeling else 1.45
+	figure.add_child(_box(Vector3(0.62, body, 0.42), "stone_light", Vector3(0, 0.35 + body * 0.5, 0)))
+	figure.add_child(_box(Vector3(0.82, 0.3, 0.46), "stone_light", Vector3(0, 0.35 + body - 0.1, 0)))
+	figure.add_child(_box(Vector3(0.34, 0.4, 0.36), "stone_light", Vector3(0, 0.35 + body + 0.25, 0.02)))
+	figure.add_child(_box(Vector3(0.16, 0.7 if not kneeling else 0.4, 0.16), "stone_light", Vector3(0.25, 0.35 + body * 0.55, 0.26)))
 
 func _exit_glow() -> MeshInstance3D:
 	if not markers.has("ExitTrigger"):return null
@@ -460,10 +641,9 @@ func _layout(row: Dictionary):
 				add_child(_box(Vector3(0.7, 0.7, size.y * 0.6), "wood", trough_at))
 			rects.append(footprint.grow_individual(0.7, 0, 0.7, 0))
 		"plinth":
-			add_child(_box(Vector3(size.x, 0.6, size.y), "stone_dark", at + Vector3(0, 0.3, 0)))
-			add_child(_box(Vector3(size.x * 0.5, 0.45, size.y * 0.4), "stone", at + Vector3(0.15, 0.82, 0.1)))
-			var shard = _box(Vector3(0.3, 0.3, 0.5), "stone", at + Vector3(-0.6, 0.75, -0.3))
-			shard.rotation = Vector3(0.4, 0.6, 0.2);add_child(shard)
+			var base = _box(Vector3(size.x, 0.45, size.y), "stone_dark", at + Vector3(0, 0.22, 0))
+			base.rotation.y = PI * 0.25;add_child(base)
+			_statue(self, at + Vector3(0, 0.45, 0), 0.6, true)
 			rects.append(footprint)
 		"hearth":
 			add_child(_box(Vector3(size.x, height, size.y), "stone_dark", at + Vector3(0, height * 0.5, 0)))
@@ -471,19 +651,27 @@ func _layout(row: Dictionary):
 			_lamp(at + Vector3(0, height * 0.5, size.y * 0.5 + 0.8), 1.8, Color("ff8a45"), 8.0)
 			rects.append(footprint)
 		"well":_well(at, float(row.get("radius", 2.0)), height)
-		"ring":_ring(at, float(row.get("radius", 10.0)), 0.7)
+		"ring":_ring(at, float(row.get("radius", 10.0)), float(row.get("band", 0.3)))
 		"seal":
 			var radius = float(row.get("radius", 14.0))
-			_ring(at, radius, 0.6);_ring(at, radius * 0.62, 0.35);_ring(at, 1.6, 0.4)
-			for turn in 4:
-				var spoke = _box(Vector3(0.22, 0.012, radius * 2.0 - 1.0), "seal", at + Vector3(0, 0.014, 0))
-				spoke.rotation.y = turn * PI * 0.25;spoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				add_child(spoke)
+			_ring(at, radius, 0.35);_ring(at, radius * 0.66, 0.2);_ring(at, 1.2, 0.25)
+			# The compass rose of the boards: four long points, four short ones.
+			for turn in 8:
+				var length = radius * (0.95 if turn % 2 == 0 else 0.5)
+				var point = Node3D.new();point.position = at + Vector3(0, 0.012, 0);point.rotation.y = turn * PI * 0.25;add_child(point)
+				# A square turned 45 degrees inside a stretched holder is a diamond: one ray.
+				var squash = Node3D.new();squash.position = Vector3(0, 0, -length * 0.5);squash.scale = Vector3(0.16, 1.0, 1.0)
+				point.add_child(squash)
+				var blade = _box(Vector3(length * 0.707, 0.01, length * 0.707), "seal", Vector3.ZERO)
+				blade.rotation.y = PI * 0.25;blade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				squash.add_child(blade)
 
 # Crates, barrels and a cart packed into the footprint: low enough to see over,
 # solid enough to fight around.
 func _cargo(at: Vector3, size: Vector2, height: float):
 	var holder = Node3D.new();holder.name = "Cargo";holder.position = at;add_child(holder)
+	# The boards set every cargo island on a kerbed stone apron.
+	holder.add_child(_box(Vector3(size.x + 0.5, 0.06, size.y + 0.5), "stone_dark", Vector3(0, 0.03, 0)))
 	holder.add_child(_box(Vector3(size.x, 0.12, size.y), "wood_dark", Vector3(0, 0.06, 0)))
 	var cart = size.x >= 4.0 and rng.randf() < 0.7
 	var used_x = -size.x * 0.5 + 0.2
@@ -566,7 +754,19 @@ func _landmark(row: Dictionary):
 	var landmark_sizes = {"bell_tower": Vector3(11, 24, 7), "station_facade": Vector3(22, 11, 4), "wagon": Vector3(3.2, 3, 9), "crane": Vector3(3, 8, 7)}
 	if landmark_sizes.has(row.kind) and _kit_piece(row.kind, at, landmark_sizes[row.kind], float(row.get("turn", 0.0))) != null:return
 	var holder = Node3D.new();holder.name = String(row.kind).capitalize();holder.position = at;add_child(holder)
+	holder.rotation.y = float(row.get("turn", 0.0))
 	match row.kind:
+		"dead_tree":
+			holder.add_child(_disc(0.9, 0.3, "stone_dark", 0.15))
+			var trunk = _disc(0.28, 3.4, "wood_dark", 1.7);holder.add_child(trunk)
+			for i in 6:
+				var limb = _box(Vector3(0.12, 1.8 - i * 0.15, 0.12), "wood_dark", Vector3(0, 2.4 + i * 0.25, 0))
+				limb.rotation = Vector3(rng.randf_range(0.5, 1.1), i * 1.05, 0);limb.position += limb.basis.y * 0.8;holder.add_child(limb)
+			blockers.append({"pos": at, "radius": 0.7})
+		"sign":
+			holder.add_child(_box(Vector3(2.0, 2.4, 0.1), "wood_dark", Vector3(0, 2.6, 0.06)))
+			var text = Label3D.new();text.text = String(row.get("text", ""));text.font_size = 64;text.pixel_size = 0.0055
+			text.modulate = Color("d9cfb8");text.outline_size = 0;text.position = Vector3(0, 2.6, 0.13);holder.add_child(text)
 		"bell_tower":
 			holder.add_child(_box(Vector3(11, 9, 7), "stone", Vector3(0, 4.5, 0)))
 			holder.add_child(_box(Vector3(7, 9, 5), "stone_dark", Vector3(0, 13.5, 0)))
@@ -597,17 +797,59 @@ func _landmark(row: Dictionary):
 			var arm = _box(Vector3(0.4, 0.4, 6.0), "wood_dark", Vector3(0, 7.2, 2.2));arm.rotation.x = -0.25;holder.add_child(arm)
 			holder.add_child(_box(Vector3(2.4, 0.5, 2.4), "stone_dark", Vector3(0, 0.25, 0)))
 
-# Warm lamps on the far walls. Only the PC profile lights them; the flame quads
-# still read on mobile.
+# Iron lamp posts a step in from the walls, every seven metres or so, each with
+# its pool of amber light - most of the warmth on the boards comes from these.
 func _lanterns():
-	for side in ["north", "west"]:
-		var along_x = side == "north"
-		var reach = half_x if along_x else half_z
-		var count = maxi(2, int(reach * 2.0 / 11.0))
+	var keep_clear = []
+	for name in ["EntrySpawn", "RewardPoint", "BossSpawn", "EntranceDoor", "ExitDoor"]:
+		if markers.has(name):keep_clear.append(marker(name))
+	keep_clear.append_array(enemy_spawns())
+	for side in ["north", "west", "east", "south"]:
+		var along_x = side in ["north", "south"]
+		var reach = (half_x if along_x else half_z) - 1.5
+		var count = maxi(2, int(reach * 2.0 / 7.5) + 1)
 		for i in count:
-			var t = -reach + (i + 0.5) * reach * 2.0 / count
-			var spot = Vector3(t, WALL_HEIGHT + 0.45, -half_z - 0.1) if along_x else Vector3(-half_x - 0.1, WALL_HEIGHT + 0.45, t)
-			_lamp(spot, 0.75)
+			var t = -reach + i * reach * 2.0 / maxf(count - 1, 1)
+			var spot = _side_point(side, t, -0.9)
+			if _near(spot, keep_clear, 2.6) or in_rect(spot, 0.6):continue
+			_lamp_post(spot, true)
+		if side == "south":continue
+		# Crates and barrels stacked against the wall bases.
+		var t2 = -reach
+		while t2 < reach:
+			t2 += rng.randf_range(3.0, 6.0)
+			if rng.randf() < 0.5 or t2 > reach:continue
+			var spot = _side_point(side, t2, -0.55)
+			if _near(spot, keep_clear, 3.0) or in_rect(spot, 0.8):continue
+			var width = rng.randf_range(1.0, 1.6)
+			var holder = Node3D.new();holder.name = "Clutter";holder.position = spot;holder.rotation.y = _side_turn(side);add_child(holder, true)
+			for piece in int(width / 0.55):
+				var x = -width * 0.5 + 0.3 + piece * 0.55
+				if rng.randf() < 0.45:
+					var barrel = _disc(0.26, 0.8, "wood", 0.4);barrel.position.x = x;holder.add_child(barrel)
+				else:
+					var crate = _box(Vector3(0.52, rng.randf_range(0.5, 1.0), 0.6), "crate", Vector3(x, 0.0, 0.0))
+					crate.position.y = crate.mesh.size.y * 0.5;crate.rotation.y = rng.randf_range(-0.2, 0.2);holder.add_child(crate)
+			var size = Vector2(width, 0.7) if along_x else Vector2(0.7, width)
+			rects.append(Rect2(spot.x - size.x * 0.5, spot.z - size.y * 0.5, size.x, size.y))
+
+func _near(spot: Vector3, points: Array, gap: float) -> bool:
+	for point in points:
+		if Vector2(spot.x - point.x, spot.z - point.z).length() < gap:return true
+	return false
+
+func _lamp_post(spot: Vector3, solid: bool):
+	var post = Node3D.new();post.name = "LampPost";post.position = spot;add_child(post, true)
+	post.add_child(_disc(0.22, 0.3, "stone_dark", 0.15))
+	var pole = _disc(0.07, 3.0, "iron", 1.6);post.add_child(pole)
+	post.add_child(_box(Vector3(0.55, 0.06, 0.06), "iron", Vector3(0.22, 3.05, 0)))
+	post.add_child(_box(Vector3(0.26, 0.38, 0.26), "iron", Vector3(0.42, 2.82, 0)))
+	var flame = _box(Vector3(0.18, 0.26, 0.18), "flame", Vector3(0.42, 2.82, 0));flame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	post.add_child(flame)
+	if quality == "PC":
+		var lamp = OmniLight3D.new();lamp.light_color = Color("ffa654");lamp.light_energy = 2.2;lamp.omni_range = 7.5
+		lamp.omni_attenuation = 1.6;lamp.position = Vector3(0.42, 2.7, 0);post.add_child(lamp)
+	if solid:blockers.append({"pos": spot, "radius": 0.3})
 
 func _lamp(spot: Vector3, energy: float, color: Color = Color("ffb36b"), reach: float = 6.5):
 	var flame = _box(Vector3(0.18, 0.28, 0.18), "flame", spot)
@@ -675,7 +917,8 @@ func _disc(radius: float, height: float, material: String, y: float) -> MeshInst
 const SURFACES = {
 	"cobble": ["cobble", 2.6, Color(1, 1, 1)], "street": ["cobble", 2.6, Color(0.34, 0.33, 0.33)],
 	"stone": ["ashlar", 3.0, Color(1, 1, 1)], "stone_dark": ["ashlar", 3.0, Color(0.68, 0.68, 0.7)],
-	"seal": ["ashlar", 2.0, Color(1.55, 1.5, 1.42)],
+	"stone_light": ["ashlar", 1.5, Color(1.35, 1.32, 1.27)], "flagstone": ["flagstone", 2.4, Color(1, 1, 1)],
+	"seal": ["ashlar", 2.0, Color(1.12, 1.08, 1.02)],
 	"wood": ["wood", 2.0, Color(1, 1, 1)], "wood_dark": ["wood", 2.0, Color(0.55, 0.5, 0.48)],
 	"crate": ["crate", 1.2, Color(1, 1, 1)], "timber": ["timber", 3.2, Color(0.82, 0.8, 0.78)],
 	"roof": ["slate", 2.2, Color(1, 1, 1)], "iron": ["iron", 1.5, Color(1.8, 1.75, 1.7)],
@@ -715,6 +958,7 @@ static func _mat(id: String) -> StandardMaterial3D:
 		"seal":mat.albedo_color = Color("6a6762")
 		"water":mat.albedo_color = Color("16222b");mat.roughness = 0.15;mat.metallic = 0.3
 		"map":mat.albedo_color = Color("6f5d40")
+		"bone":mat.albedo_color = Color("c9bfa8")
 		"window", "flame", "ember":
 			mat.albedo_color = Color("ffb35c") if id != "ember" else Color("e0582a")
 			mat.emission_enabled = true;mat.emission = mat.albedo_color

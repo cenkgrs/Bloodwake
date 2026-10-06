@@ -165,7 +165,7 @@ func _unhandled_input(event):
 	if page!="playing" or not is_instance_valid(world):return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:world.camera.size=maxf(10,world.camera.size-1)
-		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:world.camera.size=minf(24,world.camera.size+1)
+		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:world.camera.size=minf(minf(24,world.max_camera_size()),world.camera.size+1)
 	if event.is_action_pressed("interact"):world.interact()
 	if event.is_action_pressed("ability"):world.ability()
 	if event.is_action_pressed("skill_1"):world.skill(0)
@@ -1137,10 +1137,16 @@ func _room_shots():
 		await get_tree().create_timer(0.3).timeout
 		await _capture("room_%s_top" % id)
 		var iso=Camera3D.new();world.add_child(iso);iso.projection=Camera3D.PROJECTION_ORTHOGONAL
-		iso.size=top.size*0.75;iso.position=BWWorld.CAMERA_OFFSET*4.0;iso.look_at(Vector3.ZERO);iso.current=true
+		iso.size=top.size*0.75;iso.position=world.camera_offset*4.0;iso.look_at(Vector3.ZERO);iso.current=true
 		await get_tree().create_timer(0.3).timeout
 		await _capture("room_%s_iso" % id)
 		top.queue_free();iso.queue_free();world.camera.current=true
+	# The corners, where the camera holds and the town beyond the walls shows.
+	start_run("warrior",true,false,"cursed_town");world.auto_fire=false;run.stats.maxHp=1e6;run.stats.hp=1e6;world.rest_time=999.0
+	for corner in [Vector2(-1,-1),Vector2(1,-1),Vector2(1,1)]:
+		world.player.position=world.arena.push_out(Vector3(corner.x*world.arena.half_x,0,corner.y*world.arena.half_z),0.42)
+		world.camera.position=world.camera_focus(world.player.position)+world.camera_offset
+		await get_tree().create_timer(0.4).timeout;await _capture("room_corner_%d_%d" % [corner.x,corner.y])
 	# The war table, as the player meets it.
 	enter_safehouse("warrior");await get_tree().create_timer(0.5).timeout
 	freeze();show_maps();await get_tree().create_timer(0.4).timeout;await _capture("war_table")
@@ -1171,7 +1177,7 @@ func _map_previews():
 		var lens=Camera3D.new();world.add_child(lens)
 		lens.projection=Camera3D.PROJECTION_ORTHOGONAL
 		lens.size=float(spec.get("size",maxf(room_row.half.x,room_row.half.y)*2.2))
-		lens.position=focus+BWWorld.CAMERA_OFFSET*4.0;lens.look_at(focus);lens.current=true
+		lens.position=focus+world.camera_offset*4.0;lens.look_at(focus);lens.current=true
 		await get_tree().create_timer(1.0).timeout
 		await RenderingServer.frame_post_draw
 		var shot=get_viewport().get_texture().get_image()

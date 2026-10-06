@@ -206,12 +206,30 @@ def cloth():
     save("cloth", col, weave * 0.3 + noise(12) * 0.4, 3.0)
 
 
+def flagstone():
+    """Large square-cut paving slabs in running bond: the courtyards on the boards."""
+    block, face, count = courses(4, 0.2, 0.36, 0.02)
+    grit = noise(46, 2.0)
+    wear = smooth(0.5, 0.85, noise(7))
+    height = face * (0.85 + 0.15 * grit) - wear * 0.04
+    # Variation lives in the slabs, not in broad blotches: a blotch the size of
+    # the tile repeats visibly across a courtyard.
+    shade = cell_values(block, count, 0.82, 1.06) * (0.95 + 0.06 * noise(30)) * (0.94 + 0.06 * grit)
+    col = tint([0.47, 0.43, 0.38], shade) * (0.42 + 0.58 * face[..., None])
+    grime = smooth(0.6, 0.9, noise(20)) * 0.06
+    col *= 1 - grime[..., None]
+    cracks = smooth(0.012, 0.0, np.abs(noise(20) - 0.5)) * smooth(0.6, 0.8, noise(6))
+    col *= 1 - cracks[..., None] * 0.45
+    save("flagstone", col, height - cracks * 0.3, 7.0)
+
+
 def crate():
     planks("crate", [0.42, 0.3, 0.2], widths=(0.24, 0.26), gap=0.01)
 
 
 if __name__ == "__main__":
     cobble()
+    flagstone()
     ashlar()
     planks("wood", [0.3, 0.22, 0.16])
     crate()

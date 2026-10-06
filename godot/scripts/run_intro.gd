@@ -120,16 +120,19 @@ func arrival(w: BWWorld) -> bool:
 		w.player.position=w.arena.push_out(entry.lerp(stop,clampf(elapsed/WALK_SECONDS,0,1)),0.42)
 		w.visual.tick(dt,walking,0.55)
 		var pullback=smoothstep(1.7,INTRO_SECONDS,elapsed)
-		w.camera.size=lerpf(7.2,BWWorld.CAMERA_SIZE,pullback)
-		w.camera.position=w.player.position+BWWorld.CAMERA_OFFSET+Vector3.UP*(1.0-pullback)
-		w.camera.look_at(w.player.position+Vector3.UP*(0.85*(1.0-pullback)))
+		w.camera.size=lerpf(7.2,minf(BWWorld.CAMERA_SIZE,w.max_camera_size()),pullback)
+		var focus=w.player.position.lerp(w.camera_focus(w.player.position),pullback)
+		w.camera.position=focus+w.camera_offset+Vector3.UP*(1.0-pullback)
+		w.camera.look_at(focus+Vector3.UP*(0.85*(1.0-pullback)))
 		curtain.modulate.a=1.0-smoothstep(0.0,0.65,elapsed)
 		var bars=1.0-smoothstep(2.8,INTRO_SECONDS,elapsed)
 		top_bar.modulate.a=bars;bottom_bar.modulate.a=bars;caption.modulate.a=bars
 		await get_tree().process_frame
 	if cancelled or not is_instance_valid(w):return false
-	w.camera.position=w.player.position+BWWorld.CAMERA_OFFSET
-	w.camera.look_at(w.player.position);w.camera.size=BWWorld.CAMERA_SIZE
+	w.camera.size=minf(BWWorld.CAMERA_SIZE,w.max_camera_size())
+	var rest=w.camera_focus(w.player.position)
+	w.camera.position=rest+w.camera_offset
+	w.camera.look_at(rest)
 	w.visual.tick(0,false);w.player_velocity=Vector3.ZERO
 	w.move_input=Vector2.ZERO;w.fire_input=false
 	# The walk in was the quiet; the doors shut half a second after control returns.

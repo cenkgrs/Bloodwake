@@ -54,6 +54,16 @@ interior, `light`, `doors.entrance/exit.at`, `markers`, `layout`, `landmarks`,
 `hosts`, `encounter {waves, perNight, cap, interval}` (a single `roster` also works). Coordinates are metres,
 room-local, origin at the centre of the floor, +x east, −z north.
 
+## Camera
+
+Rooms are seen square-on from the south at about 50 degrees, as on the
+environment boards (`BWWorld.ROOM_CAMERA_OFFSET`). The camera follows the player
+until the edge of the view would pass a wall, then holds; zooming out is capped
+at the widest view that still fits inside the room. Beyond the walls the street
+fades into the dark. The open-field tour keeps the old diagonal camera.
+
+Reference boards live in `art/environment/boards/`.
+
 ## Surfaces and the model kit
 
 Grey-box rooms are textured with tileable PBR surfaces from

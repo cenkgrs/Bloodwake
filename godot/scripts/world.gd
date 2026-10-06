@@ -18,6 +18,16 @@ var player: Node3D
 var visual: BWVisual
 const CAMERA_OFFSET = Vector3(12,14,16)
 const CAMERA_SIZE = 13.0
+# Rooms are seen the way the environment boards draw them: square on from the
+# south, low enough to read as isometric (35 degrees, the open field's pitch).
+# Square on, the view is a rectangle that can be held inside the room's bounds.
+const ROOM_CAMERA_OFFSET = Vector3(0,13.5,19.3)
+# How far past the floor the view may reach. Out there stands the town every
+# room is built inside - rows of houses, a lit street to the south - which the
+# player can see but never walk into.
+const VIEW_SLACK = Vector4(5.0,7.0,5.0,4.0)   # west, north, east, south
+var camera_offset = CAMERA_OFFSET
+var moon: DirectionalLight3D
 var camera: Camera3D
 var arena: BWArena
 var fx: BWFx
@@ -194,6 +204,7 @@ func _environment(staged: bool=false,open_field: bool=true):
 	environment=env
 	env_node.environment=env;add_child(env_node)
 	var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-55,-25,0);sun.light_color=Color("b4c7e0");sun.light_energy=1.15;sun.shadow_enabled=quality=="PC";sun.directional_shadow_max_distance=45;add_child(sun)
+	moon=sun
 	if not open_field:return
 	arena=BWArena.new();add_child(arena);arena.build(quality,rng.randi(),staged)
 	arena.prop_broken.connect(_prop_broken)
@@ -306,7 +317,8 @@ func _physics_process(dt: float):
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
 	if run.class_id=="gunslinger":visual.bloodhound_locomotion(measured_velocity.length(),measured_velocity,dt)
 	_apply_zone(arena.zone_at(player.position),1-exp(-dt*1.2))
-	var desired=player.position+CAMERA_OFFSET;camera.position=camera.position.lerp(desired,1-exp(-dt*10))
+	if not room.is_empty():camera.size=minf(camera.size,max_camera_size())
+	var desired=camera_focus(player.position)+camera_offset;camera.position=camera.position.lerp(desired,1-exp(-dt*10))
 	if shake>0:camera.position+=camera.basis.x*rng.randf_range(-shake,shake)+camera.basis.y*rng.randf_range(-shake,shake);shake=move_toward(shake,0,dt*2)
 	if combo_timer>0:combo_timer=maxf(0,combo_timer-dt)
 	if swing_gate>0:swing_gate=maxf(0,swing_gate-dt)
@@ -1237,6 +1249,8 @@ func enter_room(room_row: Dictionary):
 	arena.prop_broken.connect(_prop_broken)
 	for problem in arena.problems:push_warning("Room %s: %s" % [room_row.id,problem])
 	_apply_zone(arena.zone,1.0)
+	# A room is lit by its lamps; the sky only lends a cold edge to the stone.
+	if moon!=null:moon.light_energy=0.42;moon.light_color=Color("9fb2d6");moon.rotation_degrees=Vector3(-58,12,0)
 	_spawn_hosts()
 	spawned=0;spawn_cursor=0;spawn_timer=0.0;exit_used=false;reward={}
 	if is_fight():
@@ -1259,7 +1273,50 @@ func place_player(spot: Vector3,facing: Vector3):
 	player.position=arena.push_out(spot,0.42)
 	last_move=facing;aim=facing;player_velocity=Vector3.ZERO;move_input=Vector2.ZERO
 	visual.rotation.y=atan2(facing.x,facing.z)
-	camera.position=player.position+CAMERA_OFFSET;camera.look_at(player.position)
+	camera_offset=ROOM_CAMERA_OFFSET
+	camera.size=minf(camera.size,max_camera_size())
+	var focus=camera_focus(player.position)
+	camera.position=focus+camera_offset;camera.look_at(focus)
+
+# The ground the camera shows around its focus, as offsets: [min_x, max_x,
+# min_z, max_z]. Orthographic, so it is the same rectangle wherever it looks.
+func view_extent() -> Vector4:
+	var forward=-camera_offset.normalized()
+	var right=forward.cross(Vector3.UP).normalized()
+	var up=right.cross(forward)
+	var view=get_viewport().get_visible_rect().size if is_inside_tree() else Vector2(16,10)
+	var half_h=camera.size*0.5;var half_w=half_h*view.x/maxf(view.y,1.0)
+	var extent=Vector4(INF,-INF,INF,-INF)
+	for corner in [Vector2(-1,-1),Vector2(1,-1),Vector2(-1,1),Vector2(1,1)]:
+		var point=camera_offset+right*corner.x*half_w+up*corner.y*half_h
+		var ground=point+forward*(point.y/-forward.y)
+		extent=Vector4(minf(extent.x,ground.x),maxf(extent.y,ground.x),minf(extent.z,ground.z),maxf(extent.w,ground.z))
+	return extent
+
+# Where the camera looks: at the player, until the edge of the view would pass
+# the room's walls - then it stops and the player walks on towards the edge.
+func camera_focus(target: Vector3) -> Vector3:
+	if room.is_empty() or arena==null:return target
+	var extent=view_extent()
+	var lo=Vector2(-arena.half_x-VIEW_SLACK.x,-arena.half_z-VIEW_SLACK.y)
+	var hi=Vector2(arena.half_x+VIEW_SLACK.z,arena.half_z+VIEW_SLACK.w)
+	var focus=target
+	var x_range=Vector2(lo.x-extent.x,hi.x-extent.y)
+	var z_range=Vector2(lo.y-extent.z,hi.y-extent.w)
+	focus.x=clampf(target.x,x_range.x,x_range.y) if x_range.x<=x_range.y else (x_range.x+x_range.y)*0.5
+	focus.z=clampf(target.z,z_range.x,z_range.y) if z_range.x<=z_range.y else (z_range.x+z_range.y)*0.5
+	focus.y=0.0
+	return focus
+
+# The widest the camera may open in this room and still keep the street out.
+func max_camera_size() -> float:
+	if room.is_empty() or arena==null:return 24.0
+	var view=get_viewport().get_visible_rect().size if is_inside_tree() else Vector2(16,10)
+	var aspect=view.x/maxf(view.y,1.0)
+	var width=arena.half_x*2.0+VIEW_SLACK.x+VIEW_SLACK.z
+	var depth=arena.half_z*2.0+VIEW_SLACK.y+VIEW_SLACK.w
+	var pitch=asin(camera_offset.normalized().y)
+	return minf(width/aspect,depth*sin(pitch))
 
 func _clear_room():
 	for e in enemies:
