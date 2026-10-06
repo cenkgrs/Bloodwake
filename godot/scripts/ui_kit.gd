@@ -23,7 +23,14 @@ static var _title: Font
 static func title_font() -> Font:
 	if _title == null:
 		var direct = FontFile.new()
-		_title = direct if direct.load_dynamic_font("res://assets/art/title.ttf") == OK else load("res://assets/art/title.ttf")
+		if FileAccess.file_exists("res://assets/art/title.ttf") and direct.load_dynamic_font("res://assets/art/title.ttf")==OK:
+			_title=direct
+		else:
+			# Exports remap the TTF into an imported FontFile. Reconstruct the
+			# uncached face from its bytes; the raw editor path is not in the PCK.
+			var packed=load("res://assets/art/title.ttf") as FontFile
+			if packed!=null:direct.data=packed.data;_title=direct
+			else:_title=ThemeDB.fallback_font
 	return _title
 
 static func body_font() -> Font:
@@ -270,7 +277,7 @@ static func paint_diamond(canvas: CanvasItem, center: Vector2, radius: float, co
 		canvas.draw_polyline(points, color, width, true)
 
 static func reward_glyph(id: String) -> String:
-	var marks={"sharpened":"sword","rapid_fire_stat":"slashes","vitality":"heart","predator":"crosshair","vampirism":"drop","swift":"boot","platinum_armor":"shield","swift_boots":"boot","hunters_scope":"crosshair","vampiric_amulet":"drop","lucky_charm":"coin","guardian_angel":"wing","greatsword":"sword","storm_blade":"zigzag","shockwave":"impact","thunderquake":"impact","armor_piercer":"arrow","spellfire":"flame","hemorrhage":"drop"}
+	var marks={"sharpened":"sword","rapid_fire_stat":"slashes","vitality":"heart","predator":"crosshair","vampirism":"drop","swift":"boot","platinum_armor":"shield","swift_boots":"boot","hunters_scope":"crosshair","vampiric_amulet":"drop","lucky_charm":"coin","guardian_angel":"wing","bellbreaker_sigil":"impact","wardens_mantle":"shield","nightglass_lens":"crosshair","greatsword":"sword","storm_blade":"zigzag","shockwave":"impact","thunderquake":"impact","armor_piercer":"arrow","spellfire":"flame","hemorrhage":"drop"}
 	if marks.has(id):return marks[id]
 	if id.contains("rifle"):return "crosshair"
 	if id.contains("orb"):return "snowflake"

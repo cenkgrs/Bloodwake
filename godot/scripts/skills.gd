@@ -15,6 +15,8 @@ extends Node3D
 # world coordinates.
 
 var w: BWWorld
+var cast_active=false
+var blood_cast: Tween
 
 func bind(world: BWWorld):
 	w=world
@@ -23,7 +25,8 @@ func skill(index: int):
 	var ids=BWData.skills(w.run.class_id)
 	if index<0 or index>=ids.size():return
 	var id=ids[index]
-	if not w.running or w.run.stats.hp<=0 or w.airborne or not w.run.skill_ready(id):return
+	if not w.running or w.run.stats.hp<=0 or w.airborne or cast_active or not w.run.skill_ready(id):return
+	if w.run.class_id=="gunslinger" and w.visual.lock_time>0 and w.visual.state in ["bombthrow","ultimate"]:return
 	var data=BWData.entry("abilities",id)
 	if data.is_empty():return
 	if w.run.class_id=="gunslinger":w.aim=w.skill_aim()
@@ -38,37 +41,157 @@ func skill(index: int):
 		"ricochet":_cast_ricochet(data)
 		"powderCharge":_cast_powder_charge(data,target)
 		"markOfRuin":_cast_mark(data)
+		"bloodTeleport":_cast_blood_step(data,target)
 	w.changed.emit()
+
+func _begin_blood_cast():
+	if blood_cast!=null:blood_cast.kill()
+	cast_active=true
+	w.pending_attacks.clear();w.swing_gate=0.0;w.combo_timer=0.0;w.dash_time=0.0
+	w.visual.lock_time=0.0
+
+func _end_blood_cast():
+	if blood_cast!=null:blood_cast.kill();blood_cast=null
+	cast_active=false;w.airborne=false
+	if is_instance_valid(w.visual):w.visual.visible=true
+
+func _blood_cast_live() -> bool:
+	if not cast_active:return false
+	if not w.running or w.run.stats.hp<=0:
+		_end_blood_cast();return false
+	return true
+
+# Teleport may cross obstacles, but must land on free ground inside cast range.
+# Back off toward the caster rather than pushing an obstructed endpoint farther
+# away, which could put a blink outside the arena or beyond its range.
+func blood_step_destination(target: Vector3,reach: float) -> Vector3:
+	var start=w.player.position
+	var end=start+(target-start).limit_length(reach);end.y=0
+	end=w.arena.clamp_inside(end)
+	var steps=maxi(1,ceili(start.distance_to(end)/0.1))
+	for i in range(steps+1):
+		var point=end.lerp(start,float(i)/steps)
+		var clear=true
+		for block in w.arena.blockers:
+			if point.distance_to(block.pos)<block.radius+0.43:clear=false;break
+		if clear and not w.arena.in_rect(point,0.43):return point
+	return start
+
+# Both casts follow the markers authored into the Revenant clips (BWVisual.REVENANT_EVENTS):
+# the body vanishes, is moved while unseen, reappears and only then strikes.
+func _blood_times(clip: String,events: Array,fallback: Array) -> Array:
+	if not w.visual.clips.has(clip) or not String(w.visual.clips[clip]).begins_with("REV_"):return fallback
+	var times=[]
+	for event in events:times.append(BWVisual.revenant_time(clip,event))
+	return times
+
+func _cast_blood_step(data: Dictionary,target: Vector3):
+	_begin_blood_cast();w.airborne=true
+	var start=w.player.position
+	var landing=blood_step_destination(target,data.range*w.run.stats.attackRange*BWData.UNIT)
+	var direction=(landing-start).normalized()
+	if direction.length_squared()>0.01:w.visual.rotation.y=atan2(direction.x,direction.z)
+	var t=_blood_times("teleport",["hide","move","show","damage","recover"],[0.12,0.18,0.24,0.34,0.6])
+	w.visual.action("teleport",-1.0 if t[0]!=0.12 else 0.6)
+	w.fx.blood_gate(start,1.0);w.sound("skill_leap_launch")
+	var cast=create_tween();blood_cast=cast
+	cast.tween_interval(t[0])
+	cast.tween_callback(func():
+		if not _blood_cast_live():return
+		w.visual.visible=false;w.fx.blood_travel(start,landing))
+	cast.tween_interval(t[1]-t[0])
+	cast.tween_callback(func():
+		if not _blood_cast_live():return
+		w.player.position=landing)
+	cast.tween_interval(t[2]-t[1])
+	cast.tween_callback(func():
+		if not _blood_cast_live():return
+		w.visual.visible=true;w.fx.blood_gate(landing,1.1))
+	cast.tween_interval(t[3]-t[2])
+	cast.tween_callback(func():
+		if not _blood_cast_live():return
+		w.airborne=false
+		var radius=data.blastRadius*w.run.stats.attackRange*BWData.UNIT
+		_blood_damage(landing,radius,data.damage*w.run.stats.damage)
+		w.fx.blood_burst(landing,radius,1.5)
+		w.fx.revenant_claws(landing,direction,radius*0.65)
+		w.sound_at("skill_leap_land",landing,1.0);w.shake=maxf(w.shake,0.12))
+	# The cast (and its movement lock) ends where the recovery starts; steering
+	# may cut the remaining recovery short.
+	cast.tween_interval(t[4]-t[3]);cast.tween_callback(_end_blood_cast)
+
+func _cast_blood_burst(data: Dictionary):
+	_begin_blood_cast()
+	var t=_blood_times("ultimate",["telegraph","damage","dissipate"],[0.0,0.5,1.1])
+	w.visual.action("ultimate",-1.0 if t[1]!=0.5 else 1.1)
+	var origin=w.player.position
+	var radius=data.range*w.run.stats.attackRange*BWData.UNIT
+	w.sound("skill_meteor_cast")
+	var cast=create_tween();blood_cast=cast
+	cast.tween_interval(t[0])
+	cast.tween_callback(func():
+		if not _blood_cast_live():return
+		w.fx.blood_charge(origin,radius,t[1]-t[0]))
+	cast.tween_interval(t[1]-t[0])
+	cast.tween_callback(func():
+		if not _blood_cast_live():return
+		_blood_damage(origin,radius,data.damage*w.run.stats.damage)
+		w.fx.blood_burst(origin,radius,3.5)
+		w.sound_at("skill_meteor_blast",origin,1.5);w.shake=maxf(w.shake,0.22))
+	cast.tween_interval(t[2]-t[1]);cast.tween_callback(_end_blood_cast)
+
+func _blood_damage(origin: Vector3,radius: float,damage: float):
+	w.damage_area(origin,radius,damage)
+	for e in w.enemies.duplicate():
+		if e.node.position.distance_to(origin)>radius+e.radius:continue
+		var roll=w.run.damage_roll(damage)
+		w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
+		w.fx.revenant_impact(e.node.position+Vector3.UP*0.9)
+		if e.hp>0:w._stagger(e)
 
 # One round that refuses to stop: it redirects to the next body it has not touched.
 # Rewards picking a lane through a crowd rather than spraying at the w.nearest target.
 func _cast_ricochet(data: Dictionary):
-	var reach=data.range*w.run.stats.attackRange*BWData.UNIT
 	var heading=w.aim.normalized() if w.aim.length_squared()>0.01 else w.last_move
 	if heading.length_squared()<0.01:heading=Vector3.FORWARD
 	w.visual.rotation.y=atan2(heading.x,heading.z)
-	w.visual.action("attack",0.26);w.sound("shoot_rifle")
+	w.pending_attacks.clear()
+	w.visual.action("ricochet")
+	w.pending_attacks.append({"time":9.0/60.0,"id":"bh_ricochet","data":data,"direction":heading})
+
+func _release_ricochet(data: Dictionary,heading: Vector3):
+	var reach=data.range*w.run.stats.attackRange*BWData.UNIT
+	w.sound("shoot_rifle")
 	var accent=Color(data.get("accent","ffe9bd"))
 	var roll=w.run.damage_roll(data.damage*w.run.stats.damage)
-	var round_record=w._bullet(w.player.position,heading,data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,0,"rapid_rifle",0,0,roll.critical)
+	var origin=w.visual.bloodhound_socket("R")
+	var round_record=w._bullet(origin-Vector3.UP*0.8,heading,data.projectileSpeed*BWData.UNIT,roll.damage,reach,true,0,"rapid_rifle",0,0,roll.critical)
 	if round_record!=null:
+		round_record["body_capsule"]=true
 		round_record["bounces"]=int(data.get("bounces",3))
 		round_record["bounce_range"]=reach
-	w.fx.muzzle(w.player.position+Vector3.UP*0.8,heading,accent)
+	w.fx.muzzle(origin,heading,accent)
 	w.shake=maxf(w.shake,0.06)
 
 # A charge lobbed onto the ground: it telegraphs, then throws everything off it.
 
 func _cast_powder_charge(data: Dictionary,target: Vector3):
+	w.pending_attacks.clear()
+	w.visual.rotation.y=atan2(target.x-w.player.position.x,target.z-w.player.position.z)
+	w.visual.action("bombthrow" if w.visual.clips.has("bombthrow") else "attack")
+	w.pending_attacks.append({"time":19.0/60.0,"id":"bh_bomb","data":data,"target":target})
+
+func _release_powder_charge(data: Dictionary,target: Vector3):
+	w.bloodhound_event.emit("THROW_RELEASE")
 	var radius=data.blastRadius*w.run.stats.attackRange*BWData.UNIT
 	var tone=Color(data.get("tone","ff9a4d"));var accent=Color(data.get("accent","ffd08a"))
-	w.visual.rotation.y=atan2(target.x-w.player.position.x,target.z-w.player.position.z)
-	w.visual.action("attack",0.26);w.sound("shoot_shotgun")
-	var keg=w.fx.glow_sprite(tone,0.5,1.4);keg.position=w.player.position+Vector3.UP*0.9;add_child(keg)
+	w.sound("shoot_shotgun")
+	var keg=w.fx.glow_sprite(tone,0.5,1.4);add_child(keg)
+	var origin=w.visual.bloodhound_bomb_position();keg.position=origin
 	var fuse=0.45
 	w.fx.telegraph(target,radius,tone,fuse)
 	var lob=create_tween();lob.set_parallel(true)
-	lob.tween_property(keg,"position",target+Vector3.UP*0.25,fuse).set_trans(Tween.TRANS_SINE)
+	lob.tween_method(func(t: float):keg.position=origin.lerp(target+Vector3.UP*0.25,t)+Vector3.UP*sin(PI*t)*0.8,0.0,1.0,fuse)
 	lob.tween_property(keg,"scale",Vector3.ONE*1.5,fuse)
 	lob.chain().tween_callback(func():
 		if is_instance_valid(keg):keg.queue_free()
@@ -85,7 +208,7 @@ func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,acc
 		if e.hp<=0 or not is_instance_valid(e.node):continue
 		# shoved outward, clamped to the arena so nothing is pushed through a wall
 		var shove=e.node.position+offset.normalized()*1.5
-		shove.x=clampf(shove.x,-BWArena.EDGE,BWArena.EDGE);shove.z=clampf(shove.z,-BWArena.EDGE,BWArena.EDGE)
+		shove=w.arena.clamp_inside(shove)
 		create_tween().tween_property(e.node,"position",shove,0.18).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	w.fx.shockwave(position,radius,tone,0.4,0.0,2.2)
 	w.fx.shockwave(position,radius*1.15,accent,0.48,0.1,1.5)
@@ -176,7 +299,7 @@ func _cast_backstep_volley(data: Dictionary):
 	var tone=Color(data.get("tone","9d6bff"));var accent=Color(data.get("accent","d9c6ff"))
 	var start=w.player.position
 	var retreat=start-heading*(2.6*w.run.stats.attackRange)
-	retreat.x=clampf(retreat.x,-BWArena.EDGE,BWArena.EDGE);retreat.z=clampf(retreat.z,-BWArena.EDGE,BWArena.EDGE)
+	retreat=w.arena.clamp_inside(retreat)
 	create_tween().tween_property(w.player,"position",retreat,0.17).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	w.sound("skill_leap_launch")
 	w.fx.shockwave(start,1.9,tone,0.3,0.0,1.6)
@@ -270,8 +393,11 @@ func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color(
 	w.shake=maxf(w.shake,0.18)
 
 func ability():
-	if not w.running or w.run.ability_cd>0 or w.run.stats.hp<=0 or w.airborne:return
+	if not w.running or w.run.ability_cd>0 or w.run.stats.hp<=0 or w.airborne or cast_active:return
+	if w.run.class_id=="gunslinger" and w.visual.lock_time>0 and w.visual.state in ["bombthrow","ultimate"]:return
 	var data=BWData.entry("abilities",BWData.CLASSES[w.run.class_id].ability)
+	if data.behavior=="bloodBurst":
+		w.run.ability_cd=data.cooldown;_cast_blood_burst(data);w.changed.emit();return
 	if w.run.class_id=="gunslinger":
 		w.aim=w.skill_aim()
 		w.visual.rotation.y=atan2(w.aim.x,w.aim.z)
@@ -288,6 +414,14 @@ func ability():
 		w.sound("dagger_swing");w.changed.emit()
 		return
 	w.run.ability_cd=data.cooldown
+	if w.run.class_id=="gunslinger" and w.visual.clips.has("ultimate"):
+		w.pending_attacks.clear()
+		w.visual.action("ultimate")
+		for index in 9:
+			var frame=30+index*6
+			w.pending_attacks.append({"time":float(frame-1)/60.0,"id":"bh_ultimate","index":index,"data":data,"direction":w.aim.rotated(Vector3.UP,TAU*float(frame-30)/52.0)})
+		w.changed.emit()
+		return
 	if w.visual.fitted_timing and w.visual.clips.has("ultimate"):
 		w.pending_attacks.clear()
 		w.visual.action("ultimate",0.9)
@@ -296,6 +430,17 @@ func ability():
 	else:
 		_resolve_ability(data);w.visual.action("attack")
 	w.changed.emit()
+
+func _bloodhound_salvo(event: Dictionary):
+	w.bloodhound_event.emit("ULT_FIRE_%02d" % (event.index+1))
+	var data=event.data
+	var origin=w.visual.bloodhound_socket("R" if event.index%2==0 else "L")
+	var roll=w.run.damage_roll(data.damage*w.run.stats.damage*5.0/9.0)
+	var projectile=w._bullet(origin-Vector3.UP*0.8,event.direction,data.projectileSpeed*BWData.UNIT,roll.damage,data.range*w.run.stats.attackRange*BWData.UNIT,true,0,"rapid_rifle",0,0,roll.critical)
+	if projectile!=null:projectile["body_capsule"]=true
+	w.fx.muzzle(origin,event.direction,Color("ffc46a"))
+	w.sound("gun_pistol")
+	w.shake=maxf(w.shake,0.05)
 
 func _resolve_ability(data: Dictionary):
 	var range_value=data.range*w.run.stats.attackRange*BWData.UNIT
@@ -310,7 +455,7 @@ func _resolve_ability(data: Dictionary):
 			# A fast dash reads better than a blink and disorients less - cover the
 			# distance in a short tween instead of snapping w.player.position directly.
 			strike_position=w.player.position+w.aim*data.range*BWData.UNIT*0.5
-			strike_position.x=clampf(strike_position.x,-BWArena.EDGE,BWArena.EDGE);strike_position.z=clampf(strike_position.z,-BWArena.EDGE,BWArena.EDGE)
+			strike_position=w.arena.clamp_inside(strike_position)
 			create_tween().tween_property(w.player,"position",strike_position,0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			range_value=65*w.run.stats.attackRange*BWData.UNIT
 		w.damage_area(strike_position,range_value,data.damage*w.run.stats.damage)

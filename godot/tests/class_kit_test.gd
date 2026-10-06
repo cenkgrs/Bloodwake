@@ -30,7 +30,7 @@ func suite():
 	# Every class fields exactly two bound skills, and each one is a behaviour the
 	# kit actually dispatches - a typo in a catalog behaviour would otherwise cast
 	# nothing at all and still spend the cooldown.
-	var behaviours=["meteor","voidLeap","whirl","backstepVolley","ricochet","powderCharge","markOfRuin"]
+	var behaviours=["meteor","voidLeap","whirl","backstepVolley","ricochet","powderCharge","markOfRuin","bloodTeleport"]
 	for id in BWData.CLASSES:
 		for skill_id in BWData.skills(id):
 			var row=BWData.entry("abilities",skill_id)
@@ -92,6 +92,8 @@ func suite():
 	var second=dummy(world,shot_heading*3.4+shot_heading.rotated(Vector3.UP,PI/2)*1.6)
 	var distraction=dummy(world,-shot_heading*1.5)
 	world.skill(0)
+	check(world.bullets.is_empty(),"Ricochet waits for first recoil")
+	world._pending_attacks(0.151)
 	check(world.bullets.size()==1,"Ricochet Round fires a single round")
 	check(world.bullets[0].direction.is_equal_approx(shot_heading),"Q reads live aim instead of stale movement or nearest enemy")
 	world.enemies.erase(distraction);distraction.node.queue_free()
@@ -106,8 +108,8 @@ func suite():
 	world.bullets.clear()
 	world.aim=-shot_heading;world.last_move=-shot_heading
 	world.ability()
-	check(world.bullets.size()==5,"Fan Shot fires five rounds")
-	check(world.bullets[2].direction.is_equal_approx(shot_heading),"Ultimate reads live aim instead of last movement")
+	check(world.pending_attacks.size()==9,"BloodWake schedules nine radial salvos")
+	check(world.pending_attacks[0].direction.is_equal_approx(shot_heading),"Ultimate reads live aim instead of last movement")
 	world.touch_aim=Vector2.ZERO
 	var cursor=root.get_mouse_position()
 	var cursor_hit=Plane(Vector3.UP,0).intersects_ray(world.camera.project_ray_origin(cursor),world.camera.project_ray_normal(cursor))
@@ -116,13 +118,14 @@ func suite():
 		var cursor_heading=(cursor_hit-world.player.position).normalized()
 		world.aim=-cursor_heading;world.last_move=-cursor_heading
 		for b in world.bullets.duplicate():b.node.queue_free()
-		world.bullets.clear();run.ability_cd=0
+		world.bullets.clear();run.ability_cd=0;world.visual.lock_time=0
 		world.ability()
-		check(world.bullets[2].direction.is_equal_approx(cursor_heading),"Ultimate follows mouse without holding fire")
+		check(world.pending_attacks[0].direction.is_equal_approx(cursor_heading),"Ultimate follows mouse without holding fire")
 		for b in world.bullets.duplicate():b.node.queue_free()
-		world.bullets.clear();run.skill_cd.ricochet_round=0
+		world.bullets.clear();run.skill_cd.ricochet_round=0;world.visual.lock_time=0
 		world.aim=-cursor_heading
 		world.skill(0)
+		world._pending_attacks(0.151)
 		check(world.bullets[0].direction.is_equal_approx(cursor_heading),"Q follows mouse without holding fire")
 
 	# --- Gunslinger E: Powder Charge. Telegraphs, then detonates: damage must not

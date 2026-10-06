@@ -70,7 +70,21 @@ const PROPS = {
 var quality = "PC"
 var rng = RandomNumberGenerator.new()
 var blockers: Array = []      # [{pos:Vector3, radius:float}]
+var rects: Array = []         # [Rect2] on the ground plane (x, z): walls, cargo, troughs
 var breakables: Array = []    # [{node, pos, radius, hp, kind}]
+# The walkable floor is a box about the origin. The open field is square; a room
+# is whatever its data says, and bodies stop `margin` short of its walls.
+var half_x = HALF
+var half_z = HALF
+var margin = HALF - EDGE
+# Where bodies are trying to get to - the player. Only a room with box obstacles
+# uses it, to route a chaser around a cargo island rather than into it.
+var goal = Vector3.ZERO
+var nav_cell = 1.0
+var nav_size = Vector2i.ZERO
+var nav_solid = PackedByteArray()
+var nav_cost = PackedInt32Array()
+var nav_goal = Vector2i(-1, -1)
 var stone: StandardMaterial3D
 var ground: MeshInstance3D
 
@@ -331,14 +345,48 @@ func push_out(spot: Vector3, radius: float) -> Vector3:
 				away = Vector3(1, 0, 0)
 				gap = 0.001
 			moved += away / gap * (want - gap)
-	moved.x = clampf(moved.x, -EDGE, EDGE)
-	moved.z = clampf(moved.z, -EDGE, EDGE)
-	return moved
+	for box in rects:
+		moved = _out_of_rect(moved, box, radius)
+	return clamp_inside(moved)
+
+# Inside the walls, whatever shape the floor is. y is left alone.
+func clamp_inside(spot: Vector3) -> Vector3:
+	spot.x = clampf(spot.x, -(half_x - margin), half_x - margin)
+	spot.z = clampf(spot.z, -(half_z - margin), half_z - margin)
+	return spot
+
+func in_rect(spot: Vector3, radius: float = 0.0) -> bool:
+	for box in rects:
+		if box.grow(radius).has_point(Vector2(spot.x, spot.z)):
+			return true
+	return false
+
+# Out to the nearest face. A body already inside is sent out the short way, so a
+# knockback into a cart cannot pop it out on the far side.
+func _out_of_rect(spot: Vector3, box: Rect2, radius: float) -> Vector3:
+	var p = Vector2(spot.x, spot.z)
+	var near = Vector2(clampf(p.x, box.position.x, box.end.x), clampf(p.y, box.position.y, box.end.y))
+	var gap = p.distance_to(near)
+	if gap >= radius and not box.has_point(p):
+		return spot
+	if gap > 0.001:
+		p = near + (p - near) / gap * radius
+	else:
+		var exits = [p.x - box.position.x, box.end.x - p.x, p.y - box.position.y, box.end.y - p.y]
+		var side = exits.find(exits.min())
+		match side:
+			0: p.x = box.position.x - radius
+			1: p.x = box.end.x + radius
+			2: p.y = box.position.y - radius
+			_: p.y = box.end.y + radius
+	return Vector3(p.x, spot.y, p.y)
 
 # Enemies walk straight at the player, so a blocker in the way would have them
 # grinding into it. This nudges them around the obstacle instead: not pathfinding,
 # just enough steering to clear a pillar.
 func steer(from: Vector3, direction: Vector3, radius: float) -> Vector3:
+	if not rects.is_empty():
+		direction = _route(from, direction, radius)
 	for block in blockers:
 		var offset = Vector3(block.pos.x - from.x, 0.0, block.pos.z - from.z)
 		var distance = offset.length()
@@ -355,6 +403,128 @@ func steer(from: Vector3, direction: Vector3, radius: float) -> Vector3:
 		var urgency = clampf(1.0 - (distance - want) / 5.0, 0.0, 1.0)
 		direction = (direction + side * (1.0 if lateral >= 0.0 else -1.0) * urgency * 1.4).normalized()
 	return direction
+
+# Box obstacles are long enough that sliding off them is not enough: a body on the
+# far side of a cargo island would press into it for the rest of the fight. When
+# the straight line to the player is cut, a body follows the flow field instead -
+# one breadth-first fill from the player's cell, redone only when that cell changes.
+func _route(from: Vector3, direction: Vector3, radius: float) -> Vector3:
+	var to_goal = Vector3(goal.x - from.x, 0.0, goal.z - from.z)
+	if to_goal.length() < 1.0 or direction.dot(to_goal.normalized()) < 0.35:
+		return _slide(from, direction, radius)
+	if not segment_blocked(from, goal, radius):
+		return _slide(from, direction, radius)
+	var flow = flow_direction(from)
+	return flow if flow != Vector3.ZERO else _slide(from, direction, radius)
+
+# Sideways along a face when it is right in front: the box version of the pillar
+# nudge below, for whatever the flow field does not cover.
+func _slide(from: Vector3, direction: Vector3, radius: float) -> Vector3:
+	for box in rects:
+		var near = Vector2(clampf(from.x, box.position.x, box.end.x), clampf(from.z, box.position.y, box.end.y))
+		var offset = Vector3(near.x - from.x, 0.0, near.y - from.z)
+		var distance = offset.length()
+		if distance > radius + 1.2 or distance < 0.001:
+			continue
+		var into = offset / distance
+		var push = direction.dot(into)
+		if push <= 0.0:
+			continue
+		direction = (direction - into * push).normalized()
+	return direction
+
+func segment_blocked(from: Vector3, to: Vector3, radius: float) -> bool:
+	for box in rects:
+		var grown = box.grow(radius)
+		var volume = AABB(Vector3(grown.position.x, -1.0, grown.position.y), Vector3(grown.size.x, 2.0, grown.size.y))
+		if volume.intersects_segment(Vector3(from.x, 0.0, from.z), Vector3(to.x, 0.0, to.z)):
+			return true
+	return false
+
+func build_nav(cell: float = 1.0):
+	nav_cell = cell
+	nav_size = Vector2i(ceili(half_x * 2.0 / cell), ceili(half_z * 2.0 / cell))
+	nav_solid.resize(nav_size.x * nav_size.y)
+	nav_cost.resize(nav_size.x * nav_size.y)
+	for y in nav_size.y:
+		for x in nav_size.x:
+			var centre = nav_point(Vector2i(x, y))
+			var solid = in_rect(centre, 0.45)
+			if not solid:
+				for block in blockers:
+					if centre.distance_to(block.pos) < block.radius + 0.45:
+						solid = true
+						break
+			nav_solid[y * nav_size.x + x] = 1 if solid else 0
+	nav_goal = Vector2i(-1, -1)
+
+func nav_cell_of(spot: Vector3) -> Vector2i:
+	return Vector2i(clampi(int((spot.x + half_x) / nav_cell), 0, maxi(nav_size.x - 1, 0)), clampi(int((spot.z + half_z) / nav_cell), 0, maxi(nav_size.y - 1, 0)))
+
+func nav_point(cell: Vector2i) -> Vector3:
+	return Vector3(-half_x + (cell.x + 0.5) * nav_cell, 0.0, -half_z + (cell.y + 0.5) * nav_cell)
+
+# Step counts from `origin` to every open cell; -1 where it cannot be reached.
+func nav_fill(origin: Vector3) -> PackedInt32Array:
+	var cost = PackedInt32Array()
+	cost.resize(nav_size.x * nav_size.y)
+	cost.fill(-1)
+	if nav_size.x == 0:
+		return cost
+	var start = nav_cell_of(origin)
+	var queue = [start]
+	cost[start.y * nav_size.x + start.x] = 0
+	var head = 0
+	while head < queue.size():
+		var cell: Vector2i = queue[head]
+		head += 1
+		var here = cost[cell.y * nav_size.x + cell.x]
+		for step in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var next = cell + step
+			if next.x < 0 or next.y < 0 or next.x >= nav_size.x or next.y >= nav_size.y:
+				continue
+			var index = next.y * nav_size.x + next.x
+			if nav_solid[index] == 1 or cost[index] >= 0:
+				continue
+			cost[index] = here + 1
+			queue.append(next)
+	return cost
+
+func reachable(from: Vector3, to: Vector3) -> bool:
+	if nav_size.x == 0:
+		return true
+	var cell = nav_cell_of(to)
+	return nav_fill(from)[cell.y * nav_size.x + cell.x] >= 0
+
+func flow_direction(from: Vector3) -> Vector3:
+	if nav_size.x == 0:
+		return Vector3.ZERO
+	var target = nav_cell_of(goal)
+	if target != nav_goal:
+		nav_goal = target
+		nav_cost = nav_fill(goal)
+	var cell = nav_cell_of(from)
+	var best = Vector2i(-1, -1)
+	var best_cost = nav_cost[cell.y * nav_size.x + cell.x]
+	if best_cost < 0:
+		best_cost = 1 << 30
+	for step in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]:
+		var next = cell + step
+		if next.x < 0 or next.y < 0 or next.x >= nav_size.x or next.y >= nav_size.y:
+			continue
+		var value = nav_cost[next.y * nav_size.x + next.x]
+		if value < 0:
+			continue
+		# No corner cutting: a diagonal needs both of its sides open.
+		if step.x != 0 and step.y != 0 and (nav_solid[cell.y * nav_size.x + next.x] == 1 or nav_solid[next.y * nav_size.x + cell.x] == 1):
+			continue
+		if value < best_cost:
+			best_cost = value
+			best = next
+	if best.x < 0:
+		return Vector3.ZERO
+	var way = nav_point(best) - Vector3(from.x, 0.0, from.z)
+	return way.normalized() if way.length() > 0.01 else Vector3.ZERO
 
 # Anything breakable inside the radius takes the hit. Returns what broke so the
 # caller can pay out drops without this file knowing what a pickup is.

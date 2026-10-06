@@ -58,13 +58,21 @@ func close_screen(id: String) -> bool:
 		caption.modulate.a=curtain.modulate.a;progress.modulate.a=curtain.modulate.a
 	return true
 
-func prepare(id: String) -> bool:
+# Everything the first seconds of the hunt touch. A map only needs its first
+# room's scene, when one has been delivered; the open field needs its props.
+func prepare(id: String,map_id: String="") -> bool:
 	var paths: Array[String]=["res://assets/art/arena.png"]
 	var player_file=BWVisual.player_model(id)
 	var models=BWVisual.ENEMY_MODELS.duplicate();models.append(player_file)
 	for file in models:paths.append("res://assets/models/%s.glb" % file)
-	for spec in BWArena.PROPS.values():
-		if not String(spec.mesh).is_empty() and not paths.has(spec.mesh):paths.append(spec.mesh)
+	var map_row=BWRooms.map(map_id) if not map_id.is_empty() else {}
+	if map_row.is_empty():
+		for spec in BWArena.PROPS.values():
+			if not String(spec.mesh).is_empty() and not paths.has(spec.mesh):paths.append(spec.mesh)
+	else:
+		var plan=BWRooms.night_plan(map_row)
+		var first=BWRooms.room(plan[0]) if not plan.is_empty() else {}
+		if ResourceLoader.exists(String(first.get("scene",""))):paths.append(first.scene)
 	for index in paths.size():
 		if cancelled:return false
 		var path=paths[index]
@@ -86,13 +94,20 @@ func prepare(id: String) -> bool:
 
 func arrival(w: BWWorld) -> bool:
 	progress.hide();detail.hide()
-	caption.text="THE COURTYARD"
+	var room_mode=not w.room.is_empty()
+	caption.text=w.room.name if room_mode else "THE COURTYARD"
 	caption.anchor_top=0.88;caption.anchor_bottom=0.88
 	caption.offset_top=10;caption.offset_bottom=62
 	caption.add_theme_font_size_override("font_size",26)
-	# The courtyard's central clearing holds the whole entrance path.
+	# The courtyard's central clearing holds the whole entrance path. A room is
+	# entered for real: through its entrance and up to its EntrySpawn.
 	var heading=w.screen_direction(Vector2.UP).normalized()
 	var entry=-heading*3.2
+	var stop=Vector3.ZERO
+	if room_mode:
+		stop=w.arena.marker("EntrySpawn")
+		entry=w.arena.clamp_inside(w.arena.marker("EntranceDoor",stop))
+		heading=(stop-entry).normalized() if stop.distance_to(entry)>0.1 else Vector3.FORWARD
 	w.player.position=entry;w.last_move=heading;w.aim=heading
 	w.visual.rotation.y=atan2(heading.x,heading.z)
 	w.set_physics_process(false)
@@ -102,7 +117,7 @@ func arrival(w: BWWorld) -> bool:
 		var dt=get_process_delta_time()
 		elapsed+=dt
 		var walking=elapsed<WALK_SECONDS
-		w.player.position=w.arena.push_out(entry.lerp(Vector3.ZERO,clampf(elapsed/WALK_SECONDS,0,1)),0.42)
+		w.player.position=w.arena.push_out(entry.lerp(stop,clampf(elapsed/WALK_SECONDS,0,1)),0.42)
 		w.visual.tick(dt,walking,0.55)
 		var pullback=smoothstep(1.7,INTRO_SECONDS,elapsed)
 		w.camera.size=lerpf(7.2,BWWorld.CAMERA_SIZE,pullback)
@@ -117,6 +132,8 @@ func arrival(w: BWWorld) -> bool:
 	w.camera.look_at(w.player.position);w.camera.size=BWWorld.CAMERA_SIZE
 	w.visual.tick(0,false);w.player_velocity=Vector3.ZERO
 	w.move_input=Vector2.ZERO;w.fire_input=false
-	w.spawn_timer=0.8
+	# The walk in was the quiet; the doors shut half a second after control returns.
+	if room_mode:w.rest_time=0.5
+	else:w.spawn_timer=0.8
 	w.set_physics_process(true)
 	return true

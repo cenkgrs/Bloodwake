@@ -4,7 +4,7 @@ extends RefCounted
 # Distances and speeds in legacy catalogs use pixels. 50 px = one metre.
 const UNIT = 0.02
 const CLASSES = {
- "revenant": {"blurb":"Cut, dash, turn, strike. A relentless duelist whose Ember Dash cancels recovery and opens the next attack.", "name":"Revenant", "tag":"DUELIST / DASH COMBAT", "weapon":"sword", "ability":"ember_dash", "color":"ef9c55", "stats":{"maxHp":95.0,"moveSpeed":300.0,"damage":1.4,"attackSpeed":1.65,"criticalChance":0.15}, "skills":["whirl","mark_of_ruin"]},
+ "revenant": {"blurb":"A patient predator. Vanishes into blood mist, tears through the landing point, then unleashes Blood Burst on the surrounding pack.", "name":"Revenant", "tag":"BLOOD / TELEPORT", "weapon":"sword", "ability":"blood_burst", "color":"d8243e", "stats":{"maxHp":95.0,"moveSpeed":300.0,"damage":1.4,"attackSpeed":1.65,"criticalChance":0.15}, "skills":["blood_step","mark_of_ruin"]},
 	"warrior": {"blurb":"Heavy plate and a heavier blade. Walks into the press on purpose, and is still standing when it clears.", "name":"Warrior", "tag":"MELEE / DURABLE", "weapon":"sword", "ability":"war_cry", "color":"d56558", "stats":{"damage":3, "maxHp":130.0,"moveSpeed":210.0,"armor":0.2}, "skills":["sunder_leap","whirl"]},
 	"gunslinger": {"blurb":"Powder, iron and a debt paid in blood. Answers every wave with more rounds than it sent.", "name":"Bloodbound", "tag":"RANGED / RELENTLESS", "weapon":"rapid_rifle", "ability":"fan_shot", "color":"d7ae64", "stats":{"maxHp":90.0,"moveSpeed":250.0,"attackSpeed":0.85}, "skills":["ricochet_round","powder_charge"]},
 	"mage": {"blurb":"Borrowed cold and falling stone. Holds ground it never has to stand on.", "name":"Mage", "tag":"ARCANE / AREA CONTROL", "weapon":"magic_orb", "ability":"frost_nova", "skills":["arcane_meteor","void_leap"], "color":"9b83de", "stats":{"maxHp":85.0,"moveSpeed":215.0,"damage":1.5}},
@@ -57,9 +57,11 @@ static func enemy_height(id: String, elite: bool=false) -> float:
 	var height=3.5 if id=="boss" else 2.3 if id=="tank" else 2.225 if id=="commander" else 2.15 if id=="grunt" else 1.95 if id=="mage" else 1.7
 	return height*(1.12 if elite else 1.0)
 
-static func enemy_power(wave: int, id: String) -> Dictionary:
+# night > 0 is the room flow: the boss steps up once per night survived. Without
+# it the open-field tour keeps its boss every tenth wave.
+static func enemy_power(wave: int, id: String, night: int=0) -> Dictionary:
 	if id=="boss":
-		var tier=maxf(0.0,floorf(wave/10.0)-1.0)
+		var tier=float(night-1) if night>0 else maxf(0.0,floorf(wave/10.0)-1.0)
 		return {"health":1.0+0.65*tier+0.2*tier*tier,"damage":1.0+0.25*tier}
 	var rules=wave_rules(maxi(wave,1))
 	return {"health":rules.multiplier,"damage":rules.damage_multiplier}
@@ -69,10 +71,11 @@ static func effects(id: String) -> Array:
 	"sharpened":[["damage",0.10]],"rapid_fire_stat":[["attackSpeed",0.12]],"vitality":[["maxHp",20],["hp",20]],"predator":[["criticalChance",0.05]],"vampirism":[["lifesteal",0.02]],"swift":[["moveSpeed",1.08,"mul"]],
 	"platinum_armor":[["armor",0.10],["maxHp",20],["hp",20]],"swift_boots":[["moveSpeed",1.15,"mul"],["dodgeChance",0.10]],"hunters_scope":[["attackRange",0.20],["criticalChance",0.05]],"vampiric_amulet":[["lifesteal",0.03],["regenPerSecond",2]],"lucky_charm":[["bonusGoldPerKill",3],["xpMultiplier",0.20]],"guardian_angel":[["hasSecondWind",true,"set"]],
 	"bloodplate":[["maxHp",22],["hp",22],["armor",0.04]],"shadow_cloak":[["moveSpeed",18],["dodgeChance",0.04]],"storm_robe":[["damage",0.07],["attackRange",0.07]],"iron_greaves":[["armor",0.03],["maxHp",10],["hp",10]],"hunter_boots":[["moveSpeed",22],["pickupRadius",25]],"arcane_steps":[["moveSpeed",12],["attackSpeed",0.06]],"ember_sigil":[["damage",0.10]],"leech_pendant":[["lifesteal",0.025]],"scholar_rune":[["xpMultiplier",0.12]],
+	"bellbreaker_sigil":[["damage",0.18],["criticalDamage",0.25]],"wardens_mantle":[["maxHp",40],["hp",40],["armor",0.08]],"nightglass_lens":[["attackSpeed",0.15],["criticalChance",0.06]],
 	"might":[["damage",0.02]],"precision":[["criticalChance",0.01]],"fury":[["attackSpeed",0.02]],"execution":[["criticalDamage",0.03]],"reach":[["attackRange",0.02]],"vigor":[["maxHp",4],["hp",4]],"plate":[["armor",0.005]],"renewal":[["regenPerSecond",0.15]],"drain":[["lifesteal",0.003]],"stride":[["moveSpeed",3]],"reflex":[["dodgeChance",0.005]],"magnet":[["pickupRadius",5]],"insight":[["xpMultiplier",0.02]],"scavenger":[["bonusGoldPerKill",1]]}
 	return table.get(id, [])
 
-static func apply_stats(stats_block: Dictionary, id: String, level: int = 1):
+static func apply_stats(stats_block: Dictionary, id: String, level: float = 1.0):
 	for effect in effects(id):
 		var mode = effect[2] if effect.size()>2 else "add"
 		match mode:

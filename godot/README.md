@@ -17,10 +17,11 @@ godot --path godot
 
 - WASD / arrows: move; mouse wheel: zoom.
 - Left mouse: aim and fire; Tab: toggle automatic fire (initially on).
-- Space / E / right mouse: class ability.
+- Space: class ultimate. Q / E: first / second class skill.
+- F: talk to the safehouse hosts and the Night Merchant, claim the reward pedestal.
 - Escape: pause; F11: fullscreen; F3: playtest tools in debug builds.
 - Controller: left stick move, right stick aim, RT fire, A ability,
-  Y automatic fire, Start pause. Menus also accept standard UI navigation.
+  Y automatic fire, RB interact, Start pause. Menus also accept standard UI navigation.
 - Mobile: floating left joystick and right ability button. Choose the Mobile
   quality profile in Settings to disable shadows/MSAA and reduce effects.
 
@@ -29,14 +30,16 @@ godot --path godot
 | System | Source |
 | --- | --- |
 | Catalogs, class stats, scaling and effect definitions | `data/catalogs.json`, `scripts/data.gd` |
-| Districts, props, garrison weights and blocking | `scripts/arena.gd` |
+| Room pool and maps (routes), see `docs/rooms.md` | `data/rooms.json`, `data/maps.json`, `scripts/rooms.gd` |
+| Rooms: grey box or delivered scene, markers, doors, validation | `scripts/room_arena.gd` |
+| Open-field districts, props, blocking, box obstacles, flow-field nav | `scripts/arena.gd` |
 | Class skills and ultimates | `scripts/skills.gd` |
 | Transient combat effects | `scripts/fx.gd` |
 | Weapons, upgrades, inventory, XP and damage stats | `scripts/run_state.gd` |
 | Persistence, skill tree, equipment and three loadouts | `scripts/meta.gd` |
-| 3D movement, aiming, weapons, enemies, bosses, waves | `scripts/world.gd` |
+| 3D movement, aiming, weapons, enemies, bosses, waves, room flow | `scripts/world.gd` |
 | Model loading, bounds, skeletal clips and blending | `scripts/visual.gd` |
-| Menus, HUD, shop, rewards, pause, settings | `scripts/main.gd` |
+| Menus, safehouse, map table, HUD, merchant, rewards, pause, settings | `scripts/main.gd` |
 | Touch input | `scripts/touch_controls.gd` |
 
 `data/catalogs.json` holds 7 weapons, 12 abilities, 8 enemy types, 22 upgrades,
@@ -61,8 +64,13 @@ the ground with a visible fuse that can be walked out of or broken before it goe
 off. Runes are the `hazards` list in `world.gd`; `BWWorld.damage_area` is the one
 call that covers props and runes together.
 
-Bloodbound uses the user's rigged GLB with idle/run/attack/hit/death clips, normalized
-from `art/bloodbound/source/bloodbound_game.glb`. Its internal class ID is still
+Bloodbound loads the seven `BH_*` clips from
+`art/bloodbound/bloodhound_delivery/Bloodhound_GameReady_Godot.glb`, copied to
+`assets/models/bloodbound.glb`. `BWVisual` maps these names explicitly: FiveShot
+is the attack, BombThrow plays for powder charge, and BloodWake plays for Space.
+Automatic fire cannot interrupt the throw or ultimate clip. Projectile/damage
+behaviour remains the existing class kit; Blender event markers are not yet
+runtime gameplay callbacks. Its internal class ID is still
 `gunslinger`. All facings are 3D rotations. The playable Warrior uses the supplied Tripo knight and greatsword with five
 Mixamo two-handed clips (Idle, Run, Attack, Hit, Death), built as
 `assets/models/warrior_player.glb`. The sword is rigidly skinned to the right hand;
@@ -141,6 +149,7 @@ godot --headless --path godot --script tests/wave_field_test.gd
 godot --headless --path godot --script tests/skirmish_test.gd
 godot --headless --path godot --script tests/enemy_asset_test.gd
 godot --headless --path godot --script tests/altar_props_test.gd
+godot --headless --path godot --script tests/room_flow_test.gd
 godot --headless --path godot -- --smoke
 godot --path godot -- --qa
 ```
@@ -213,13 +222,18 @@ godot --headless --path godot --script tests/combat_flow_test.gd
 
 ## Combat feel update
 
-Revenant is a fifth playable class using its own vampire model, 65-bone Mixamo
-rig and a portrait baked from that model. Its two-hit claw chain fits the faster
-weapon cadence (the internal weapon ID remains sword for upgrade compatibility). Space / controller A
-casts Ember Dash: 0.16 seconds of movement at 18 m/s, damage immunity during the
-dash, 0.85-second cooldown, and attack recovery cancellation. The dash follows the
-last movement direction and is swept against arena obstacles. Q uses Whirl; E uses
-Mark of Ruin. Revenant shares the sword upgrade pool.
+Revenant is a fifth playable class using its own vampire model (Tripo source, 1.9 m,
+77-bone rig with coat, hair and blood-claw chains). Its three-hit claw combo keeps sword upgrades: a right-hand horizontal sweep, a left-hand
+rising rake out of a crouch, and a right-hand overhead slam with a long lunge (the slam adds
+a ground ring and heavier shake). Q casts Blood Step: the body vanishes at 0.25 s, is moved at 0.317 s, reappears
+at 0.35 s and claws a 2.2 m area at 0.417 s (6 s cooldown). Space / controller A casts
+Blood Burst: telegraph at 0.30 s, one radial 3.6 m explosion at 0.983 s, movement freed at
+1.4 s (10 s cooldown). E keeps Mark of Ruin. These times are the clip markers
+(`BWVisual.REVENANT_EVENTS`). Both casts gate movement/weapons and cancel delayed damage if
+the player dies. Light hits are upper-body additive (`scripts/revenant_layers.gd`): the
+legs keep running. Swings taken on the move borrow the run cycle for the legs. The run
+(`REV_AgileRun_InPlace`, 36-frame bounding stride, 1.8 m steps at 6 m/s) plays at ground speed over model scale, so
+planted feet do not slide.
 
 Warrior now moves at 4.2 m/s with a 0.72-second run cycle, blends locomotion over
 0.14 seconds, and plants its feet until sword contact. Movement cancels the
@@ -241,9 +255,10 @@ its swing plays over 1.1 seconds, with damage at 42% (0.462 seconds) during the
 downward sweep. Range and facing are checked at contact, and each swing damages
 only once. `tests/enemy_tank_test.gd` covers contact, repeat cadence and evasion.
 
-Revenant's concept is in `../art/revenant/concept/`; its original GLB and seven
-Mixamo FBX clips are in `../art/revenant/source/`. Rebuild the runtime model with
-`blender -b -t 4 --python godot/tools/build_mixamo_revenant.py`. The builder
-restores the original PBR materials, trims attack/dash clips, removes horizontal
-root travel and reduces only the runtime mesh. Clips: Idle, Run, Attack1, Attack2,
-Dash, Hit, Death. `tools/clip_sheet.tscn -- --revenant` renders animation QA.
+Revenant's model, rig, REV_* clips, markers and preview videos come from
+`../art/revenant-astra-ready/deliverables/` (see its `REPORT.md` and `animation_events.json`).
+Clips: REV_Idle, REV_AgileRun_InPlace (game) / REV_AgileMove_InPlace (2.45 m/s spec gait),
+REV_ClawAttack_1/2/3 (right sweep / left rising rake / right slam, contact frames 11/12/19), REV_HitLight_Front/Left/Right (+ _Additive),
+REV_Death, REV_TeleportAttack, REV_BloodBurst. `tests/revenant_animation_test.gd` measures
+loop closure, foot slip at run speed and ready-pose recovery inside the engine;
+`tools/revenant_game_capture.gd -- close|game` records the class through the real world loop.

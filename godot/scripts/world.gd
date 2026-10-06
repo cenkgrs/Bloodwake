@@ -4,6 +4,13 @@ extends Node3D
 signal wave_cleared
 signal run_ended
 signal changed
+# Room flow. room_cleared fires once the encounter is spent; exit_reached once the
+# player steps into an open exit; interact_requested when they use a host or the
+# reward pedestal.
+signal room_cleared
+signal exit_reached
+signal interact_requested(role: String)
+signal wave_advanced(index: int,total: int)
 
 var run: BWRun
 var audio: BWAudio
@@ -53,6 +60,29 @@ var bullet_mesh: SphereMesh
 var bullet_material: StandardMaterial3D
 var rng = RandomNumberGenerator.new()
 const ARENA_HALF = BWArena.HALF
+# The active room, when the run is walking a map. Empty for the open-field tour
+# the combat suites and tools still use.
+var room: Dictionary = {}
+# entry -> active -> cleared for a fight; hub for a room with no encounter.
+var room_state = ""
+var encounter: Array = []          # the wave being fought
+var encounter_waves: Array = []
+var wave_index = 0
+var spawn_cursor = 0
+var exit_used = false
+# What the pedestal holds once the room is clear: {kind, name, verb, required}.
+var reward: Dictionary = {}
+var hosts: Array = []
+# Seconds of quiet after stepping into a fight room, before the doors shut.
+const ENTRY_GUARD = 1.5
+const INTERACT_RANGE = 2.4
+# The breath between one wave dying and the next clawing up out of the ground.
+const WAVE_GAP = 1.6
+# A room's enemies are not walked in from off screen: they rise out of the
+# street inside a column of smoke, out of reach of their own AI until they stand.
+const RISE_DELAY = 0.35
+const RISE_TIME = 0.9
+const RISE_DEPTH = 2.3
 # How far out a body appears: outside the view the camera gives, close enough
 # that it is on the player within a couple of seconds.
 const SPAWN_RING = 9.6
@@ -125,12 +155,12 @@ const SPIN_RADIUS = 1.9
 const SPIN_DAMAGE = 2.2
 const ENEMY_COLORS = {"grunt":"8b6256","archer":"9a789e","tank":"65463f","assassin":"667482","healer":"72b78e","commander":"c4a75e","mage":"8f6fc4","boss":"8a3440"}
 
-func start(state: BWRun,profile: String="PC",mixer: BWAudio=null,staged: bool=false):
+func start(state: BWRun,profile: String="PC",mixer: BWAudio=null,staged: bool=false,room_row: Dictionary={}):
 	run=state;quality=profile;audio=mixer;rng.randomize()
 	BWVisual.warm_enemy_models()
 	fx=BWFx.new();add_child(fx);fx.configure(quality)
 	skills=BWSkills.new();add_child(skills);skills.bind(self)
-	_environment(staged)
+	_environment(staged,room_row.is_empty())
 	player=Node3D.new();player.name="Player";add_child(player)
 	# Enemies read as 1.7-3.5 m (tanks/bosses run bigger on purpose); the player
 	# was left at the 1.8 m rig default and looked undersized next to them.
@@ -146,8 +176,9 @@ func start(state: BWRun,profile: String="PC",mixer: BWAudio=null,staged: bool=fa
 	flash_layer.add_child(flash_rect)
 	bullet_mesh=SphereMesh.new();bullet_mesh.radius=0.07;bullet_mesh.height=0.14;bullet_mesh.radial_segments=8;bullet_mesh.rings=4
 	bullet_material=StandardMaterial3D.new();bullet_material.albedo_color=Color("ffd99a");bullet_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	if not room_row.is_empty():enter_room(room_row)
 
-func _environment(staged: bool=false):
+func _environment(staged: bool=false,open_field: bool=true):
 	var env_node=WorldEnvironment.new();var env=Environment.new()
 	env.background_mode=Environment.BG_COLOR;env.background_color=Color("121923")
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;env.ambient_light_color=Color("a6bad0");env.ambient_light_energy=0.55
@@ -163,6 +194,7 @@ func _environment(staged: bool=false):
 	environment=env
 	env_node.environment=env;add_child(env_node)
 	var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-55,-25,0);sun.light_color=Color("b4c7e0");sun.light_energy=1.15;sun.shadow_enabled=quality=="PC";sun.directional_shadow_max_distance=45;add_child(sun)
+	if not open_field:return
 	arena=BWArena.new();add_child(arena);arena.build(quality,rng.randi(),staged)
 	arena.prop_broken.connect(_prop_broken)
 	_apply_zone(arena.zone_at(Vector3.ZERO),1.0)
@@ -224,11 +256,16 @@ func _physics_process(dt: float):
 	var input=Input.get_vector("move_left","move_right","move_up","move_down")+move_input
 	input=input.limit_length()
 	var movement=screen_direction(input)
+	if skills.cast_active:movement=Vector3.ZERO
+	var bloodhound_committed=run.class_id=="gunslinger" and visual.lock_time>0 and visual.state in ["attack","ricochet","bombthrow","ultimate","hit"]
+	if bloodhound_committed and visual.state in ["bombthrow","ultimate","hit"]:movement=Vector3.ZERO
 	# Sword swings commit to their forward step until contact; steering can
 	# cancel recovery once the strike is finished.
 	if run.class_id=="warrior" and visual.state.begins_with("attack") and visual.lock_time>0:
 		if not pending_attacks.is_empty():movement=Vector3.ZERO
 		elif movement.length_squared()>0.001:visual.lock_time=0
+	# Revenant cast recoveries (teleport finish, Blood Burst kneel) yield to steering.
+	if run.class_id=="revenant" and not skills.cast_active and visual.state in ["teleport","ultimate"] and visual.lock_time>0 and movement.length_squared()>0.001:visual.lock_time=0
 	var previous_player_position=player.position
 	# A leap owns the body until it lands; steering mid-flight would fight its tween.
 	if airborne:movement=Vector3.ZERO
@@ -265,8 +302,9 @@ func _physics_process(dt: float):
 		if attack.id in run.weapons and run.weapons[attack.id].data.get("behavior","")=="melee":
 			facing=attack.direction
 			break
-	if facing.length_squared()>0.01:visual.rotation.y=lerp_angle(visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*16))
+	if facing.length_squared()>0.01 and not skills.cast_active and not bloodhound_committed:visual.rotation.y=lerp_angle(visual.rotation.y,atan2(facing.x,facing.z),minf(1,dt*16))
 	visual.tick(dt,movement.length_squared()>0.001,run.stats.moveSpeed/BWData.stats(run.class_id).moveSpeed)
+	if run.class_id=="gunslinger":visual.bloodhound_locomotion(measured_velocity.length(),measured_velocity,dt)
 	_apply_zone(arena.zone_at(player.position),1-exp(-dt*1.2))
 	var desired=player.position+CAMERA_OFFSET;camera.position=camera.position.lerp(desired,1-exp(-dt*10))
 	if shake>0:camera.position+=camera.basis.x*rng.randf_range(-shake,shake)+camera.basis.y*rng.randf_range(-shake,shake);shake=move_toward(shake,0,dt*2)
@@ -274,16 +312,21 @@ func _physics_process(dt: float):
 	if swing_gate>0:swing_gate=maxf(0,swing_gate-dt)
 	if hit_flash>0 or flash_rect.color.a>0:hit_flash=maxf(0,hit_flash-dt*1.9);flash_rect.color.a=hit_flash
 	_pending_attacks(dt)
-	if not airborne and dash_time<=0:_weapons(dt)
+	if not airborne and dash_time<=0 and not skills.cast_active and combat_enabled():_weapons(dt)
+	arena.goal=player.position
+	for host in hosts:if is_instance_valid(host.visual):host.visual.tick(dt,false)
 	for enemy in enemies.duplicate():
 		if is_instance_valid(enemy.node):_enemy_tick(enemy,dt)
 	_projectiles(dt)
 	_hazards(dt)
 	if run.stats.hp>0:_pickups(dt)
 	if run.stats.hp<=0:
+		if skills.cast_active:skills._end_blood_cast()
 		running=false;pending_attacks.clear();visual.action("death");sound("player_death")
+		if run.class_id=="revenant":fx.revenant_death(player.position)
 		if audio!=null:audio.music("")
 		run_ended.emit()
+	elif not room.is_empty():_room_tick()
 	elif rest_time<=0:_spawn_tick(dt)
 
 func _spawn_tick(dt: float):
@@ -396,7 +439,7 @@ func _draw_from(pool: Dictionary) -> String:
 
 func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.0):
 	var data=BWData.entry("enemies",id)
-	var power=BWData.enemy_power(run.wave,id)
+	var power=BWData.enemy_power(run.wave,id,run.night if not room.is_empty() else 0)
 	if multiplier>=0:power={"health":multiplier,"damage":multiplier}
 	var actor=Node3D.new();add_child(actor);actor.position=pos
 	var art=BWVisual.new();actor.add_child(art)
@@ -414,6 +457,9 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.
 
 func _enemy_tick(e: Dictionary,dt: float):
 	if e.hp<=0:return
+	if e.get("rising",0.0)>0.0:
+		_rise_tick(e,dt)
+		return
 	e.visual.set_level_scale(BWData.actor_growth(run.level))
 	var node=e.node;var data=e.data
 	e.aura=maxf(0,e.aura-dt);e.slow=maxf(0,e.slow-dt)
@@ -602,12 +648,13 @@ func _enemy_tick(e: Dictionary,dt: float):
 func nearest(origin: Vector3,range_value: float,excluded: Array=[]):
 	var best=null;var best_distance=range_value*range_value
 	for e in enemies:
-		if e.hp<=0 or excluded.has(e):continue
+		if e.hp<=0 or excluded.has(e) or e.get("rising",0.0)>0.0:continue
 		var distance=origin.distance_squared_to(e.node.position)
 		if distance<=best_distance:best=e;best_distance=distance
 	return best
 
 func _weapons(dt: float):
+	if skills.cast_active:return
 	for id in run.weapons:
 		var slot=run.weapons[id];slot.cooldown-=dt
 		if slot.cooldown>0:continue
@@ -623,6 +670,17 @@ func _weapons(dt: float):
 		if primary and visual.fitted_timing and (swing_gate>0 if data.get("behavior","")=="melee" else visual.lock_time>0):continue
 		var direction=aim if manual else (target.node.position-player.position).normalized()
 		var cooldown=1.0/(data.attacksPerSecond*run.stats.attackSpeed*slot.speed)
+		if primary and run.class_id=="gunslinger":
+			if visual.lock_time>0:continue
+			var duration=visual.clip_length("attack")
+			if visual.action("attack"):
+				visual.rotation.y=atan2(direction.x,direction.z)
+				# Five trigger events, six barrels (the final event fires both).
+				# Preserve sustained DPS instead of multiplying it by six.
+				for index in 5:
+					pending_attacks.append({"time":float([10,14,18,22,26][index]-1)/60.0,"id":"bh_shot","weapon":id,"direction":direction,"index":index,"damage_scale":duration/cooldown/6.0})
+				slot.cooldown=duration
+			continue
 		var melee=data.get("behavior","")=="melee"
 		# Holding the heavy modifier spends the swing on the spin instead of the chain.
 		if primary and melee and has_heavy() and Input.is_action_pressed("heavy") and Input.is_action_pressed("fire"):
@@ -635,7 +693,7 @@ func _weapons(dt: float):
 			visual.rotation.y=atan2(direction.x,direction.z)
 			slot.cooldown=cooldown*SPIN_COOLDOWN
 			continue
-		var chain=["attack1","attack2"] if run.class_id=="revenant" else COMBO
+		var chain=(["attack1","attack2","attack3"] if visual.clips.has("attack3") else ["attack1","attack2"]) if run.class_id=="revenant" else COMBO
 		var next_step=0 if combo_timer<=0 or combo_step>=chain.size()-1 else combo_step+1
 		# The swing is heard while the blade is still moving; impacts land later from
 		# _damage_enemy, so a connecting hit reads as whoosh-then-bite rather than one blip.
@@ -651,7 +709,13 @@ func _weapons(dt: float):
 				# swing into 0.45 s is what made the chain read as fast-forward.
 				var authored=visual.clip_length(clip)
 				if authored>0.0:duration=authored/(combo_pace*clampf(run.stats.attackSpeed,0.8,2.5))
-				if run.class_id=="revenant":duration=minf(duration,cooldown*0.95)
+				if run.class_id=="revenant":
+					# The former combo multiplier + cooldown cap compressed a full
+					# body lunge into ~0.3s. Keep its recovery readable; the normal
+					# cancel window still allows the next claw at weapon cadence.
+					var tempo=run.stats.attackSpeed/BWData.CLASSES.revenant.stats.attackSpeed*slot.speed
+					var lunge=0.58 if not String(visual.clips.get(clip,"")).begins_with("REV_") else 1.0
+					duration=authored*lunge/sqrt(maxf(0.5,tempo))
 				if run.class_id=="warrior" and clip=="attack4":duration=0.9
 				# That pace exists to keep the seams of a chain readable. A rig with no
 				# chain has no seams to protect, and one long clip then sets the whole
@@ -665,7 +729,9 @@ func _weapons(dt: float):
 				visual.action(clip,duration)
 			else:visual.action(clip,duration)
 			var contact=0.5 if run.class_id=="warrior" and clip=="attack4" else IMPACT.get(clip,0.32)
-			if run.class_id=="revenant":contact=0.34 if clip=="attack1" else 0.46
+			if run.class_id=="revenant":
+				contact=0.38 if clip=="attack1" else 0.42
+				if String(visual.clips.get(clip,"")).begins_with("REV_"):contact=BWVisual.revenant_time(clip,"damage")/visual.clip_length(clip)
 			pending_attacks.append({"time":duration*(0.55 if id=="magic_orb" else contact),"id":id,"direction":direction,"finisher":melee and run.class_id!="revenant" and combo_step==COMBO.size()-1})
 			if melee and run.class_id=="warrior" and clip!="attack4":
 				var strike=pending_attacks.back()
@@ -686,10 +752,14 @@ func _weapons(dt: float):
 func _pending_attacks(dt: float):
 	for attack in pending_attacks.duplicate():
 		attack.time-=dt
-		if attack.time<=0:
+		if attack.time<=0.000001:
 			pending_attacks.erase(attack)
 			if run.stats.hp<=0:continue
-			if attack.id=="ultimate":skills._resolve_ability(attack.data)
+			if attack.id=="bh_shot":_bloodhound_shot(attack)
+			elif attack.id=="bh_ricochet":skills._release_ricochet(attack.data,attack.direction)
+			elif attack.id=="bh_bomb":skills._release_powder_charge(attack.data,attack.target)
+			elif attack.id=="bh_ultimate":skills._bloodhound_salvo(attack)
+			elif attack.id=="ultimate":skills._resolve_ability(attack.data)
 			elif attack.get("spin",false):_resolve_spin(attack.id,attack.direction)
 			else:
 				_resolve_weapon(attack.id,attack.direction)
@@ -697,10 +767,17 @@ func _pending_attacks(dt: float):
 					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
 					skills._ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
 
-func _resolve_weapon(id: String,direction: Vector3):
+signal bloodhound_event(label: String)
+
+func _bloodhound_shot(event: Dictionary):
+	bloodhound_event.emit("FIRE_%02d" % (event.index+1))
+	var sides=["R","L"] if event.index==4 else ["R" if event.index%2==0 else "L"]
+	for side in sides:_resolve_weapon(event.weapon,event.direction,event.damage_scale,side)
+
+func _resolve_weapon(id: String,direction: Vector3,damage_scale: float=1.0,weapon_hand: String=""):
 	var slot=run.weapons[id];var data=slot.data
 	var range_value=data.range*run.stats.attackRange*slot.range*BWData.UNIT
-	var base=data.damage*run.stats.damage*slot.damage
+	var base=data.damage*run.stats.damage*slot.damage*damage_scale
 	var behavior=data.get("behavior","singleProjectile")
 	match behavior:
 		"melee":
@@ -718,12 +795,15 @@ func _resolve_weapon(id: String,direction: Vector3):
 					_stagger(e)
 					if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 			damage_area(player.position,radius,base)
+			# Revenant's third link is the overhead slam: it lands with a ground ring.
+			var slam=run.class_id=="revenant" and combo_step==2 and visual.clips.has("attack3")
 			if run.class_id=="revenant":
-				for offset in [-0.18,0.0,0.18]:fx.slash(player.position+Vector3.UP*offset,direction,radius,Color("d65075"))
+				fx.revenant_claws(player.position,direction,radius,combo_step%2==1,wide or slam)
+				for enemy in hit:fx.revenant_impact(enemy.node.position+Vector3.UP*0.9)
 			else:fx.blade_arc(player.position,direction,radius,360.0 if wide else MELEE_ARC)
 			# A connecting swing is felt in the camera as well as on the body it hit.
 			if not hit.is_empty():
-				shake=maxf(shake,0.10 if run.class_id=="revenant" else 0.075)
+				shake=maxf(shake,0.16 if slam else 0.10 if run.class_id=="revenant" else 0.075)
 				impact_pause=0.035 if run.class_id=="revenant" else 0.0
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
 		"chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
@@ -734,6 +814,7 @@ func _resolve_weapon(id: String,direction: Vector3):
 				var roll=run.damage_roll(base)
 				var origin=player.position
 				var shot_direction=direction.rotated(Vector3.UP,angle)
+				if not weapon_hand.is_empty():origin=visual.bloodhound_socket(weapon_hand)-Vector3.UP*0.8
 				if id=="magic_orb" and is_instance_valid(visual.hand_magic):
 					var hand=visual.magic_palm_position()
 					var target=nearest(player.position,range_value)
@@ -743,7 +824,8 @@ func _resolve_weapon(id: String,direction: Vector3):
 					# Cancel _bullet’s standard height offset to spawn at the live palm.
 					origin=hand-Vector3.UP*0.8
 				if i==0:fx.muzzle(origin+Vector3.UP*0.8,shot_direction,Color("8db8f4") if id=="magic_orb" else Color("ffce7a"))
-				_bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
+				var projectile=_bullet(origin,shot_direction,data.projectileSpeed*BWData.UNIT,roll.damage,range_value,true,int(data.get("pierceCount",0)+slot.pierce),id,slot.burn,0.35 if behavior=="piercing" and slot.burn<=0 else 0.0,roll.critical)
+				if projectile!=null and not weapon_hand.is_empty():projectile["body_capsule"]=true
 	# Melee already played its swing as the animation started; everything else
 	# reports here, as the projectile leaves.
 	if behavior!="melee":sound(WEAPON_SHOT.get(id,"gun_pistol"))
@@ -823,7 +905,7 @@ func ground_target(reach: float) -> Vector3:
 		if hit!=null:point=hit
 	var offset=point-player.position;offset.y=0
 	point=player.position+offset.limit_length(reach)
-	point.x=clampf(point.x,-BWArena.EDGE,BWArena.EDGE);point.z=clampf(point.z,-BWArena.EDGE,BWArena.EDGE)
+	point=arena.clamp_inside(point)
 	point.y=0
 	return point
 
@@ -859,7 +941,7 @@ func _stagger(e: Dictionary,force: float=1.0):
 # reach, jittered along the depth axis so two of them do not share one spot.
 func _flank_post(e: Dictionary,standoff: float) -> Vector3:
 	var post=player.position+screen_direction(Vector2(e.hunt_side*standoff,(e.hunt_depth-0.5)*3.6))
-	post.x=clampf(post.x,-BWArena.EDGE,BWArena.EDGE);post.z=clampf(post.z,-BWArena.EDGE,BWArena.EDGE)
+	post=arena.clamp_inside(post)
 	return arena.push_out(Vector3(post.x,0,post.z),e.radius)
 
 # Movement towards that post. Closer than it wants to be, it hurries out: a caster
@@ -968,7 +1050,7 @@ func clear_hazards():
 func _nearest_unhit(origin: Vector3,reach: float,hit_ids: Array):
 	var best=null;var best_distance=reach*reach
 	for e in enemies:
-		if e.hp<=0 or hit_ids.has(e.node.get_instance_id()):continue
+		if e.hp<=0 or hit_ids.has(e.node.get_instance_id()) or e.get("rising",0.0)>0.0:continue
 		var distance=origin.distance_squared_to(e.node.position)
 		if distance<=best_distance:best=e;best_distance=distance
 	return best
@@ -988,10 +1070,10 @@ func _nearest_unhit(origin: Vector3,reach: float,hit_ids: Array):
 
 # The input layer and the suites talk to the world, not to the kit behind it.
 func skill(index: int):
-	skills.skill(index)
+	if combat_enabled():skills.skill(index)
 
 func ability():
-	skills.ability()
+	if combat_enabled():skills.ability()
 
 func _bullet(origin: Vector3,direction: Vector3,speed: float,damage: float,distance: float,friendly: bool,pierce: int,weapon: String,burn: float,slow: float,critical: bool):
 	if bullets.size()>=384:return
@@ -1046,6 +1128,11 @@ func _projectiles(dt: float):
 			if target.hp<=0 or b.hit.has(target.node.get_instance_id()):continue
 			var p=target.node.position+Vector3.UP*0.8
 			var closest=Geometry3D.get_closest_point_to_segment(p,previous,b.node.position)
+			if b.get("body_capsule",false):
+				# Authored chest-height muzzles must hit the body, not pass above
+				# the legacy fixed-height sphere used by floor-level projectiles.
+				var pair=Geometry3D.get_closest_points_between_segments(previous,b.node.position,target.node.position+Vector3.UP*0.3,target.node.position+Vector3.UP*1.65)
+				closest=pair[0];p=pair[1]
 			if p.distance_to(closest)<=target.radius+b.radius:
 				b.hit.append(target.node.get_instance_id())
 				if b.friendly:
@@ -1070,6 +1157,8 @@ func _projectiles(dt: float):
 
 func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: bool=true,impact: String=""):
 	if e.hp<=0:return
+	# Still coming up out of the ground: nothing to hit yet.
+	if e.get("rising",0.0)>0.0 and damage<1e8:return
 	if e.get("marked",false):damage*=1.35+0.1*mark_chain
 	var actual=minf(e.hp,damage);e.hp-=damage
 	if run.stats.hp>0:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
@@ -1107,6 +1196,7 @@ func _hurt_player(damage: float):
 	if visual.fitted_timing and visual.state=="attack":pending_attacks.clear()
 	fx.damage_text(player.position,actual,Color("ff8678"));visual.action("hit");shake=clampf(actual/100,0.04,0.18);sound("player_hit")
 	hit_flash=clampf(actual/90,0.12,0.38);fx.spark(player.position+Vector3.UP*1.0,Color("ff8678"),8)
+	if run.class_id=="revenant":fx.revenant_impact(player.position+Vector3.UP*1.15)
 	changed.emit()
 
 func _drop(pos: Vector3,kind: String,amount: int):
@@ -1125,6 +1215,208 @@ func _pickups(dt: float):
 			else:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+p.amount);sound("pickup_health")
 			p.node.queue_free();pickups.erase(p);changed.emit()
 
+# ------------------------------------------------------------------ room flow
+
+# Weapons and skills are for rooms with a fight in them; the safehouse and the
+# merchant are walked, not fought in.
+func combat_enabled() -> bool:
+	return room.is_empty() or room.type in ["combat","boss"]
+
+func is_fight() -> bool:
+	return not room.is_empty() and room.type in ["combat","boss"]
+
+# Swaps the active room in place. The run - health, build, gold, progress - lives
+# on `run` and is untouched; everything that belonged to the old room is freed.
+func enter_room(room_row: Dictionary):
+	_clear_room()
+	if arena!=null:
+		remove_child(arena);arena.queue_free()
+	room=room_row
+	arena=BWRoomArena.new();arena.name="Room_"+room_row.id;add_child(arena)
+	arena.build_room(room_row,quality,rng.randi())
+	arena.prop_broken.connect(_prop_broken)
+	for problem in arena.problems:push_warning("Room %s: %s" % [room_row.id,problem])
+	_apply_zone(arena.zone,1.0)
+	_spawn_hosts()
+	spawned=0;spawn_cursor=0;spawn_timer=0.0;exit_used=false;reward={}
+	if is_fight():
+		run.fights+=1;run.wave=run.fights
+		encounter_waves=BWRooms.waves(room_row,run.night);wave_index=0
+		encounter=encounter_waves[0] if not encounter_waves.is_empty() else []
+		room_state="entry";rest_time=ENTRY_GUARD
+	else:
+		encounter=[];encounter_waves=[];wave_index=0;room_state="hub";rest_time=0.0
+	# The player has just come through the entrance, so it stands open behind them
+	# until the fight begins. There is no going back, so a room with nothing to
+	# fight shuts it at once and simply leaves the way on open.
+	arena.set_door("entrance",is_fight(),false)
+	arena.set_door("exit",room_state=="hub",false)
+	var inward=BWRooms.inward(arena.side_of("EntranceDoor")) if arena.markers.has("EntranceDoor") else Vector3.BACK
+	place_player(arena.marker("EntrySpawn"),inward)
+	changed.emit()
+
+func place_player(spot: Vector3,facing: Vector3):
+	player.position=arena.push_out(spot,0.42)
+	last_move=facing;aim=facing;player_velocity=Vector3.ZERO;move_input=Vector2.ZERO
+	visual.rotation.y=atan2(facing.x,facing.z)
+	camera.position=player.position+CAMERA_OFFSET;camera.look_at(player.position)
+
+func _clear_room():
+	for e in enemies:
+		if e.id=="boss":BWBoss.clear_warning(e)
+		if is_instance_valid(e.node):e.node.queue_free()
+	enemies.clear()
+	for b in bullets:if is_instance_valid(b.node):b.node.queue_free()
+	bullets.clear()
+	for p in pickups:if is_instance_valid(p.node):p.node.queue_free()
+	pickups.clear()
+	clear_hazards();pending_attacks.clear()
+	if skills!=null and skills.cast_active:skills._end_blood_cast()
+	dash_time=0.0;airborne=false;impact_pause=0.0;shake=0.0;hit_flash=0.0;mark_chain=0
+	if is_instance_valid(flash_rect):flash_rect.color.a=0.0
+	if fx!=null:
+		for node in fx.get_children():node.queue_free()
+	for host in hosts:if is_instance_valid(host.node):host.node.queue_free()
+	hosts.clear()
+
+# The people of a room: the safehouse's quartermaster and sage, the merchant.
+# The war table is a host too, with no body.
+func _spawn_hosts():
+	for row in room.get("hosts",[]):
+		var host={"role":String(row.role),"name":String(row.get("name","")),"verb":String(row.get("verb","TALK")),"pos":BWRooms.vec(row.at),"node":null,"visual":null}
+		var node=Node3D.new();node.name="Host_"+host.role;node.position=host.pos;add_child(node);host.node=node
+		if row.has("model"):
+			var art=BWVisual.new();node.add_child(art)
+			art.configure(String(row.model),true,Color(row.get("tint","ffffff")),2.0)
+			host.visual=art
+		var tag=Label3D.new();tag.text=host.name;tag.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+		tag.font_size=44;tag.pixel_size=0.006;tag.outline_size=10;tag.modulate=BWKit.GOLD
+		tag.position.y=2.6 if row.has("model") else 1.7;tag.no_depth_test=true
+		node.add_child(tag)
+		hosts.append(host)
+
+func _room_tick():
+	match room_state:
+		"entry":
+			if rest_time<=0.0:_begin_encounter()
+		"active":_encounter_tick()
+		_:_exit_check()
+
+func _begin_encounter():
+	room_state="active";spawn_timer=0.3
+	arena.set_door("entrance",false)
+	sound("wave_start");changed.emit()
+
+# The room is clear only when its last wave has been fielded and nothing that
+# fought in it - adds a boss called in included - is still standing.
+func encounter_spent() -> bool:
+	return wave_index>=encounter_waves.size()-1 and spawned>=encounter.size() and enemies.is_empty()
+
+# Bodies still to come: the rest of this wave, the waves after it, and the living.
+func enemies_left() -> int:
+	var left=encounter.size()-spawned+enemies.size()
+	for i in range(wave_index+1,encounter_waves.size()):left+=encounter_waves[i].size()
+	return left
+
+func _encounter_tick():
+	var dt=get_physics_process_delta_time()
+	if spawned>=encounter.size():
+		if not enemies.is_empty():return
+		if wave_index<encounter_waves.size()-1:
+			wave_index+=1;encounter=encounter_waves[wave_index];spawned=0;spawn_timer=WAVE_GAP
+			wave_advanced.emit(wave_index,encounter_waves.size());changed.emit()
+		else:_room_clear()
+		return
+	spawn_timer-=dt
+	var spec=room.get("encounter",{})
+	if spawn_timer>0 or enemies.size()>=int(spec.get("cap",BWData.ENCOUNTER_CAP)):return
+	spawn_timer=float(spec.get("interval",0.55))
+	var id: String=encounter[spawned]
+	var rules=BWData.wave_rules(run.wave)
+	_rise(spawn_enemy(id,_room_spawn_point(id),id!="boss" and rng.randf()<rules.elite))
+	spawned+=1
+
+func _rise(e: Dictionary):
+	e.rising=RISE_DELAY+RISE_TIME;e.rise_base=e.node.position.y
+	e.node.position.y=e.rise_base-RISE_DEPTH;e.node.visible=false
+	fx.spawn_smoke(Vector3(e.node.position.x,0.0,e.node.position.z),RISE_DELAY+RISE_TIME,e.id=="boss" or e.elite)
+
+# Up out of the street. Until it stands, a rising body neither moves nor attacks.
+func _rise_tick(e: Dictionary,dt: float):
+	e.rising=maxf(0.0,e.rising-dt)
+	var t=clampf(1.0-e.rising/RISE_TIME,0.0,1.0)
+	e.node.visible=e.rising<RISE_TIME
+	e.node.position.y=e.rise_base-RISE_DEPTH*pow(1.0-t,3.0)
+	e.visual.tick(dt,false)
+
+func _room_spawn_point(id: String) -> Vector3:
+	if id=="boss":return arena.marker("BossSpawn",arena.marker("BossArenaCenter"))
+	var spots: Array=arena.enemy_spawns()
+	if spots.is_empty():return _spawn_point()
+	# Next marker in turn, passing over any the player is standing on.
+	for attempt in spots.size():
+		var spot: Vector3=spots[(spawn_cursor+attempt)%spots.size()]
+		if spot.distance_to(player.position)>=6.0:
+			spawn_cursor=(spawn_cursor+attempt+1)%spots.size()
+			return arena.push_out(spot+Vector3(rng.randf_range(-0.8,0.8),0,rng.randf_range(-0.8,0.8)),0.6)
+	var far: Vector3=spots[0]
+	for spot in spots:
+		if spot.distance_to(player.position)>far.distance_to(player.position):far=spot
+	return arena.push_out(far,0.6)
+
+func _room_clear():
+	room_state="cleared"
+	for pickup in pickups.duplicate():
+		if pickup.kind=="xp":
+			run.add_xp(pickup.amount);pickup.node.queue_free();pickups.erase(pickup)
+	pending_attacks.clear();clear_hazards()
+	run.rooms_cleared+=1
+	room_cleared.emit();changed.emit()
+
+# Something to take at the pedestal. A required reward keeps the exit shut until
+# it has been taken.
+func offer_reward(offer: Dictionary):
+	reward=offer.duplicate()
+	arena.set_reward("ready" if not reward.is_empty() else "none")
+	if reward.is_empty() or not reward.get("required",false):open_exit()
+	changed.emit()
+
+func take_reward():
+	var required=reward.get("required",false)
+	reward={};arena.set_reward("taken")
+	if required:open_exit()
+	changed.emit()
+
+func open_exit():
+	if room_state in ["cleared","hub"] and not arena.door_open("exit"):
+		arena.set_door("exit",true);sound("wave_clear")
+
+func exit_ready() -> bool:
+	return room_state in ["cleared","hub"] and arena.door_open("exit") and not exit_used
+
+func _exit_check():
+	if exit_ready() and arena.in_exit(player.position):
+		exit_used=true;exit_reached.emit()
+
+# Who or what is within reach to talk to or take from, nearest first.
+func interaction() -> Dictionary:
+	if room.is_empty() or not running:return {}
+	var best={};var best_gap=INTERACT_RANGE
+	for host in hosts:
+		var gap=Vector2(host.pos.x-player.position.x,host.pos.z-player.position.z).length()
+		if gap<best_gap:best=host;best_gap=gap
+	if not reward.is_empty() and arena.markers.has("RewardPoint"):
+		var spot=arena.marker("RewardPoint")
+		var gap=Vector2(spot.x-player.position.x,spot.z-player.position.z).length()
+		if gap<best_gap:best={"role":"reward","name":reward.get("name","REWARD"),"verb":reward.get("verb","CLAIM"),"pos":spot}
+	return best
+
+func interact() -> bool:
+	var spot=interaction()
+	if spot.is_empty():return false
+	interact_requested.emit(spot.role)
+	return true
+
 func next_wave():
 	for b in bullets:b.node.queue_free()
 	bullets.clear();clear_hazards();run.wave+=1;spawned=0;spawn_timer=0;rest_time=4;running=true
@@ -1132,7 +1424,9 @@ func next_wave():
 	sound("wave_start");wave_music();changed.emit()
 
 func wave_music():
-	if audio!=null:audio.music("boss" if run.wave%10==0 else "combat")
+	if audio==null:return
+	if not room.is_empty():audio.music("boss" if room.type=="boss" else "combat" if room.type=="combat" else "menu")
+	else:audio.music("boss" if run.wave%10==0 else "combat")
 
 
 

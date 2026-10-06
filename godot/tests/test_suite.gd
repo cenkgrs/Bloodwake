@@ -8,7 +8,7 @@ func _initialize():
 	call_deferred("suite")
 func suite():
 	BWData.load_catalogs()
-	for pair in [["weapons",7],["abilities",13],["enemies",8],["upgrades",22],["items",11],["equipment",9],["skills",15]]:check(BWData.rows(pair[0]).size()==pair[1],"catalog count: "+pair[0])
+	for pair in [["weapons",7],["abilities",15],["enemies",8],["upgrades",22],["items",14],["equipment",9],["skills",15]]:check(BWData.rows(pair[0]).size()==pair[1],"catalog count: "+pair[0])
 	# Only the mage carries extra skills; every ability a class references must exist.
 	for id in BWData.CLASSES:
 		check(BWData.skills(id).size()==2,"class skill count: "+id)
@@ -67,7 +67,8 @@ func suite():
 	for id in BWData.CLASSES:
 		scene.start_run(id);await process_frame
 		check(scene.world.visual!=null,"class visual "+id)
-		if id=="gunslinger":check(scene.world.visual.clips.size()==5,"five real skeletal clips")
+		if id=="gunslinger":
+			for clip in ["idle","run","attack","hit","death","bombthrow","ultimate"]:check(scene.world.visual.clips.has(clip),"Bloodhound clip "+clip)
 		if id=="warrior":
 			var visual=scene.world.visual
 			# The rig gained the melee chain and the spin after this suite was written,

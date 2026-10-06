@@ -1,0 +1,24 @@
+{
+  "_doc": "Delivered models for the room grey box, by piece. A piece whose files exist replaces its primitive in every room; until then the textured grey box is used. fit: footprint scales uniformly into the piece's width/depth; stretch scales each axis to the exact box (walls, gates). Models face Blender -Y (Godot +Z), origin at the centre of the base. See docs/room_kit_prompts.md.",
+  "pieces": {
+    "wall_tall": {"fit": "stretch", "files": ["res://assets/rooms/kit/wall_tall_4m.glb"]},
+    "wall_low": {"fit": "stretch", "files": ["res://assets/rooms/kit/wall_low_4m.glb"]},
+    "gate_frame": {"fit": "stretch", "files": ["res://assets/rooms/kit/gate_frame.glb"]},
+    "gate_frame_grand": {"fit": "stretch", "files": ["res://assets/rooms/kit/gate_frame_grand.glb"]},
+    "gate_leaf": {"fit": "stretch", "files": ["res://assets/rooms/kit/gate_leaf.glb"]},
+    "house": {"fit": "footprint", "files": ["res://assets/rooms/kit/house_a.glb", "res://assets/rooms/kit/house_b.glb", "res://assets/rooms/kit/house_c.glb"]},
+    "cargo": {"fit": "footprint", "files": ["res://assets/rooms/kit/cargo_island_a.glb", "res://assets/rooms/kit/cargo_island_b.glb"]},
+    "stall": {"fit": "footprint", "files": ["res://assets/rooms/kit/market_stall.glb"]},
+    "well": {"fit": "footprint", "files": ["res://assets/rooms/kit/well.glb"]},
+    "trough": {"fit": "footprint", "files": ["res://assets/rooms/kit/trough.glb"]},
+    "divider": {"fit": "stretch", "files": ["res://assets/rooms/kit/stable_divider.glb"]},
+    "plinth": {"fit": "footprint", "files": ["res://assets/rooms/kit/broken_plinth.glb"]},
+    "hearth": {"fit": "footprint", "files": ["res://assets/rooms/kit/hearth.glb"]},
+    "war_table": {"fit": "footprint", "files": ["res://assets/rooms/kit/war_table.glb"]},
+    "reward_pedestal": {"fit": "footprint", "files": ["res://assets/rooms/kit/reward_pedestal.glb"]},
+    "bell_tower": {"fit": "footprint", "files": ["res://assets/rooms/kit/bell_tower.glb"]},
+    "station_facade": {"fit": "footprint", "files": ["res://assets/rooms/kit/station_facade.glb"]},
+    "wagon": {"fit": "footprint", "files": ["res://assets/rooms/kit/rail_wagon.glb"]},
+    "crane": {"fit": "footprint", "files": ["res://assets/rooms/kit/cargo_crane.glb"]}
+  }
+}

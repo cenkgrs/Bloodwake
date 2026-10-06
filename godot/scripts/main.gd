@@ -31,9 +31,20 @@ var menu_art: BWVisual
 var cfg=ConfigFile.new()
 var smoke_mode=false
 var transition_serial=0
+var map_pick="cursed_town"
+var map_index=0
+var swipe_from=-1.0
+# Where BACK goes from builds, the skill tree and the map table: the safehouse
+# when they were opened from it, the title menu otherwise.
+var back_target: Callable
+var merchant_key=""
+var prompt: Button
+var toast: Label
+var curtain: ColorRect
 const RunIntro = preload("res://scripts/run_intro.gd")
 var run_intro: Control
 const WAVE_TRANSITION_SECONDS=2.0
+const ROOM_FADE_SECONDS=0.35
 const DEATH_ANIMATION_SECONDS=2.0
 const DEATH_TRANSITION_SECONDS=2.7
 const GOLD=BWKit.GOLD
@@ -59,6 +70,10 @@ func _ready():
 		_menu_shots()
 	elif "--arena" in OS.get_cmdline_user_args():
 		_arena_shots()
+	elif "--rooms" in OS.get_cmdline_user_args():
+		_room_shots()
+	elif "--map-previews" in OS.get_cmdline_user_args():
+		_map_previews()
 
 func _theme() -> Theme:
 	var theme=Theme.new();theme.default_font_size=16;theme.default_font=BWKit.body_font()
@@ -77,7 +92,7 @@ func _theme() -> Theme:
 func _inputs():
 	# E used to be a second binding for the ulti; it drives the class's second skill
 	# now, and W stays on movement.
-	var keys={"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_up":[KEY_W,KEY_UP],"move_down":[KEY_S,KEY_DOWN],"ability":[KEY_SPACE],"skill_1":[KEY_Q],"skill_2":[KEY_E],"heavy":[KEY_SHIFT],"pause":[KEY_ESCAPE],"auto_fire":[KEY_TAB],"fullscreen":[KEY_F11],"debug":[KEY_F3]}
+	var keys={"move_left":[KEY_A,KEY_LEFT],"move_right":[KEY_D,KEY_RIGHT],"move_up":[KEY_W,KEY_UP],"move_down":[KEY_S,KEY_DOWN],"ability":[KEY_SPACE],"skill_1":[KEY_Q],"skill_2":[KEY_E],"heavy":[KEY_SHIFT],"pause":[KEY_ESCAPE],"auto_fire":[KEY_TAB],"fullscreen":[KEY_F11],"debug":[KEY_F3],"interact":[KEY_F]}
 	for action in keys:
 		if not InputMap.has_action(action):InputMap.add_action(action)
 		for key in keys[action]:
@@ -91,7 +106,7 @@ func _inputs():
 		var event=InputEventMouseButton.new();event.button_index=spec[1];InputMap.action_add_event(spec[0],event)
 	for spec in [["move_left",JOY_AXIS_LEFT_X,-1],["move_right",JOY_AXIS_LEFT_X,1],["move_up",JOY_AXIS_LEFT_Y,-1],["move_down",JOY_AXIS_LEFT_Y,1],["aim_left",JOY_AXIS_RIGHT_X,-1],["aim_right",JOY_AXIS_RIGHT_X,1],["aim_up",JOY_AXIS_RIGHT_Y,-1],["aim_down",JOY_AXIS_RIGHT_Y,1],["fire",JOY_AXIS_TRIGGER_RIGHT,1]]:
 		var event=InputEventJoypadMotion.new();event.axis=spec[1];event.axis_value=spec[2];InputMap.action_add_event(spec[0],event)
-	for spec in [["ability",JOY_BUTTON_A],["skill_1",JOY_BUTTON_X],["skill_2",JOY_BUTTON_B],["heavy",JOY_BUTTON_LEFT_SHOULDER],["pause",JOY_BUTTON_START],["auto_fire",JOY_BUTTON_Y]]:
+	for spec in [["ability",JOY_BUTTON_A],["skill_1",JOY_BUTTON_X],["skill_2",JOY_BUTTON_B],["heavy",JOY_BUTTON_LEFT_SHOULDER],["pause",JOY_BUTTON_START],["auto_fire",JOY_BUTTON_Y],["interact",JOY_BUTTON_RIGHT_SHOULDER]]:
 		var event=InputEventJoypadButton.new();event.button_index=spec[1];InputMap.action_add_event(spec[0],event)
 
 func _menu_backdrop():
@@ -105,11 +120,19 @@ func _process(dt):
 	if is_instance_valid(menu_art):menu_art.rotation.y+=dt*0.12;menu_art.tick(dt,false)
 	if is_instance_valid(world) and page=="playing":
 		if is_instance_valid(touch):world.move_input=touch.movement;world.fire_input=touch.firing
+		_prompt_update()
+		if in_safehouse():
+			hud_label.text="THE SAFEHOUSE     ·     %s\n%d BLOOD ESSENCE" % [BWData.CLASSES[run.class_id].name.to_upper(),meta.essence]
+			skill_label.text="WASD  ·  MOVE\nF  ·  TALK";boss_label.text=""
+			return
 		hp_bar.max_value=run.stats.maxHp;hp_bar.value=run.stats.hp
 		xp_bar.max_value=run.xp_needed();xp_bar.value=run.xp
 		xp_bar.tooltip_text="Wave level earned · saving up to half of the next XP bar" if run.level_awarded_wave==run.wave else "XP to next level"
-		hud_label.text="WAVE %02d     ·     LV %d\n%d / %d HP     ·     %d GOLD     ·     %d KILLS" % [run.wave,run.level,ceili(run.stats.hp),int(run.stats.maxHp),run.gold,run.kills]
-		var lines=["%s  ·  %s" % [BWData.entry("abilities",BWData.CLASSES[run.class_id].ability).name,"READY [SPACE / RMB]" if run.ability_cd<=0 else "%.1fs" % run.ability_cd]]
+		if room_mode():
+			hud_label.text="NIGHT %d     ·     ROOM %d / %d     ·     LV %d\n%d / %d HP     ·     %d GOLD     ·     %d KILLS" % [run.night,run.room_index+1,run.plan.size(),run.level,ceili(run.stats.hp),int(run.stats.maxHp),run.gold,run.kills]
+		else:
+			hud_label.text="WAVE %02d     ·     LV %d\n%d / %d HP     ·     %d GOLD     ·     %d KILLS" % [run.wave,run.level,ceili(run.stats.hp),int(run.stats.maxHp),run.gold,run.kills]
+		var lines=["%s  ·  %s" % [BWData.entry("abilities",BWData.CLASSES[run.class_id].ability).name,"READY [SPACE]" if run.ability_cd<=0 else "%.1fs" % run.ability_cd]]
 		var keys=["Q","E"]
 		for i in BWData.skills(run.class_id).size():
 			var id=BWData.skills(run.class_id)[i];var cd=run.skill_cd.get(id,0.0)
@@ -121,6 +144,9 @@ func _process(dt):
 		for enemy in world.enemies:
 			if enemy.id=="boss":
 				boss_label.text="THE BLOOD WARDEN   ·   %d / %d" % [ceili(enemy.hp),int(enemy.maxHp)]
+		if room_mode():
+			if boss_label.text.is_empty():boss_label.text=_room_hint()
+			return
 		var hint=world.zone_hint()
 		if not hint.is_empty() and boss_label.text.is_empty():boss_label.text=hint
 		if world.rest_time>0:boss_label.text="THE NEXT WAVE ARRIVES IN %.0f" % ceil(world.rest_time)
@@ -131,11 +157,16 @@ func _unhandled_input(event):
 	if event.is_action_pressed("pause"):
 		if page=="playing":show_pause()
 		elif page=="pause":resume()
-		elif page in ["classes","skills","armory","builds","settings"]:show_menu()
+		elif page in ["skills","armory","builds","maps"]:_back()
+	if page=="maps":
+		if event.is_action_pressed("ui_left") or event.is_action_pressed("move_left"):_map_step(-1)
+		elif event.is_action_pressed("ui_right") or event.is_action_pressed("move_right"):_map_step(1)
+		elif page in ["classes","settings"]:show_menu()
 	if page!="playing" or not is_instance_valid(world):return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:world.camera.size=maxf(10,world.camera.size-1)
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:world.camera.size=minf(24,world.camera.size+1)
+	if event.is_action_pressed("interact"):world.interact()
 	if event.is_action_pressed("ability"):world.ability()
 	if event.is_action_pressed("skill_1"):world.skill(0)
 	if event.is_action_pressed("skill_2"):world.skill(1)
@@ -221,7 +252,8 @@ func panel_page(heading: String,subtext: String="") -> VBoxContainer:
 func show_menu():
 	transition_serial+=1
 	if is_instance_valid(run_intro):run_intro.cancelled=true;run_intro.hide()
-	page="menu"
+	page="menu";back_target=Callable()
+	if is_instance_valid(curtain):curtain.modulate.a=0.0
 	audio.duck(0.0);audio.music("menu")
 	if is_instance_valid(world):world.queue_free();world=null
 	if is_instance_valid(hud):hud.queue_free()
@@ -240,7 +272,8 @@ func show_menu():
 	# The row is the whole menu: one plate per destination, in the order a night is run.
 	var row=HBoxContainer.new();row.alignment=BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation",16);column.add_child(row)
-	for spec in [["PLAY","sword",show_classes],["BUILDS","helm",show_builds],["SKILL TREE","tree",show_skills],["ARMORY","anvil",show_armory],["SETTINGS","cog",show_settings],["EXIT","gate",_quit]]:
+	# Builds, the skill tree and the armory are kept by the people of the safehouse.
+	for spec in [["PLAY","sword",show_classes],["SETTINGS","cog",show_settings],["EXIT","gate",_quit]]:
 		var tile=BWUI.Tile.new(spec[0],spec[1]);row.add_child(tile)
 		tile.pressed.connect(spec[2]);tile.pressed.connect(func():audio.ui("ui_click"))
 		tile.mouse_entered.connect(func():audio.ui("ui_select"))
@@ -279,7 +312,7 @@ func show_classes():
 	var actions=HBoxContainer.new();actions.alignment=BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation",18);column.add_child(actions)
 	banner(actions,"BACK",show_menu,190)
-	banner(actions,"SELECT CLASS",func():begin_run(class_pick),320)
+	banner(actions,"SELECT CLASS",func():enter_safehouse(class_pick),320)
 
 # Left of the split: who this class is, and its numbers as bars so the four can be
 # compared without reading a single figure.
@@ -344,49 +377,297 @@ func _framed(parent: Node,minimum: Vector2,expand: bool) -> VBoxContainer:
 	var column=VBoxContainer.new();column.add_theme_constant_override("separation",8);margin.add_child(column)
 	return column
 
-func begin_run(id: String):
+func begin_run(id: String,map_id: String=""):
 	if page in ["loading","arrival"]:return
+	if map_id.is_empty():map_id=map_pick
 	transition_serial+=1
 	var serial=transition_serial
 	page="loading"
 	if is_instance_valid(world):world.running=false
 	if is_instance_valid(hud):hud.hide()
 	var intro=RunIntro.new();run_intro=intro;root.add_child(intro)
-	if not await intro.close_screen(id) or not await intro.prepare(id):
+	if not await intro.close_screen(id) or not await intro.prepare(id,map_id):
 		var failed=not intro.cancelled
 		intro.queue_free()
 		if failed:
 			show_classes()
 			audio.play("ui_error")
-			label(content,"The courtyard could not be loaded. Please try again.",18)
+			label(content,"The hunt could not be loaded. Please try again.",18)
 		return
 	if serial!=transition_serial:intro.queue_free();return
-	start_run(id,false,true)
+	start_run(id,false,true,map_id)
 	serial=transition_serial
-	# Keep the curtain above the newly created HUD and warm each district across frames.
+	# Keep the curtain above the newly created HUD.
 	root.move_child(intro,-1)
-	for index in BWArena.ZONES.size():
-		world.arena.build_zone(BWArena.ZONES[index])
-		intro.progress.value=80.0+20.0*float(index+1)/BWArena.ZONES.size()
+	if not room_mode():
+		for index in BWArena.ZONES.size():
+			world.arena.build_zone(BWArena.ZONES[index])
+			intro.progress.value=80.0+20.0*float(index+1)/BWArena.ZONES.size()
+			await get_tree().process_frame
+			if serial!=transition_serial or intro.cancelled:intro.queue_free();return
+	else:
+		intro.progress.value=100.0
 		await get_tree().process_frame
 		if serial!=transition_serial or intro.cancelled:intro.queue_free();return
 	page="arrival"
 	if not await intro.arrival(world):intro.queue_free();return
 	if serial!=transition_serial:intro.queue_free();return
 	page="playing";world.running=true;hud.show()
-	audio.duck(0.0);world.wave_music();audio.play("wave_start")
+	audio.duck(0.0);world.wave_music()
+	if not room_mode():audio.play("wave_start")
 	intro.queue_free()
 
-# Immediate entry remains available to tools and isolated combat tests.
-func start_run(id: String,launch: bool=true,staged: bool=false):
+# Immediate entry remains available to tools and isolated combat tests. Without a
+# map it is the open-field tour; with one it is the room flow from the map's start.
+func start_run(id: String,launch: bool=true,staged: bool=false,map_id: String=""):
 	transition_serial+=1
 	if is_instance_valid(backdrop):backdrop.queue_free();backdrop=null;menu_art=null
 	if is_instance_valid(world):world.queue_free()
-	run=BWRun.new(id,meta);world=BWWorld.new();world.running=launch;add_child(world);world.start(run,quality,audio,staged)
+	run=BWRun.new(id,meta);world=BWWorld.new();world.running=launch;add_child(world)
+	var first={}
+	if not map_id.is_empty():
+		var map_row=BWRooms.map(map_id)
+		if map_row.is_empty():push_error("Unknown map: "+map_id)
+		else:
+			var order=RandomNumberGenerator.new();order.randomize()
+			run.map_id=map_id;run.plan=BWRooms.night_plan(map_row,order)
+			first=BWRooms.room(run.room_id())
+	world.start(run,quality,audio,staged,first)
 	world.wave_cleared.connect(_wave_complete);world.run_ended.connect(_death_transition)
+	world.room_cleared.connect(_room_cleared);world.exit_reached.connect(_leave_room);world.interact_requested.connect(_interact)
+	world.wave_advanced.connect(func(index,total):_toast("WAVE %d / %d" % [index+1,total],"They rise from the street");audio.play("wave_start"))
 	if launch:audio.duck(0.0);world.wave_music()
 	else:audio.duck(-7.0)
 	page="playing" if launch else "loading";clear_page();_hud();hud.visible=launch
+
+func room_mode() -> bool:
+	return run!=null and not run.map_id.is_empty() and is_instance_valid(world) and not world.room.is_empty()
+
+func in_safehouse() -> bool:
+	return is_instance_valid(world) and world.room.get("type","")=="safehouse"
+
+# ------------------------------------------------------------------ safehouse
+
+# Where a hunt starts and where it ends. The chosen class walks the hall; the
+# quartermaster keeps the builds, the blood sage keeps the oath, and the war table
+# is how the player leaves for a map.
+func enter_safehouse(id: String):
+	var hall=BWRooms.safehouse()
+	if hall.is_empty():
+		push_error("No safehouse room in data/rooms.json");show_menu();return
+	transition_serial+=1
+	if is_instance_valid(run_intro):run_intro.cancelled=true;run_intro.queue_free()
+	if is_instance_valid(backdrop):backdrop.queue_free();backdrop=null;menu_art=null
+	if is_instance_valid(world):world.queue_free();world=null
+	class_pick=id;back_target=Callable()
+	run=BWRun.new(id,meta)
+	world=BWWorld.new();add_child(world);world.start(run,quality,audio,false,hall)
+	world.interact_requested.connect(_interact)
+	page="playing";clear_page();_hud();hud.visible=true
+	audio.duck(0.0);audio.music("menu")
+	_fade(0.0,1.0)
+
+func _return_to_safehouse():
+	if not in_safehouse():return
+	# Builds and the oath may have changed; the hall shows the class as it now stands.
+	run=BWRun.new(run.class_id,meta);world.run=run
+	resume()
+
+func _back():
+	if back_target.is_valid() and in_safehouse():back_target.call()
+	else:show_menu()
+
+func _interact(role: String):
+	if page!="playing":return
+	match role:
+		"builds":back_target=_return_to_safehouse;freeze();show_builds()
+		"skills":back_target=_return_to_safehouse;freeze();show_skills()
+		"maps":back_target=_return_to_safehouse;freeze();show_maps()
+		"merchant":freeze();_open_merchant()
+		"reward":_claim_reward()
+
+# The war table: one map at a time, filling the middle of the screen as a picture
+# of its finest place with its name beneath. Arrows, A/D or a swipe across the
+# picture move between maps.
+func show_maps(slide: int=0):
+	page="maps"
+	var maps=BWRooms.map_list()
+	if maps.is_empty():_back();return
+	map_index=wrapi(map_index,0,maps.size())
+	var map_row: Dictionary=maps[map_index]
+	clear_page();_scrim(content,0.93)
+	var margin=MarginContainer.new();margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["left","right"]:margin.add_theme_constant_override("margin_"+side,48)
+	margin.add_theme_constant_override("margin_top",22);margin.add_theme_constant_override("margin_bottom",22)
+	content.add_child(margin)
+	var column=VBoxContainer.new();column.add_theme_constant_override("separation",10);margin.add_child(column)
+	column.add_child(BWUI.Heading.new("THE WAR TABLE",30))
+	var row=HBoxContainer.new();row.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	row.add_theme_constant_override("separation",18);row.alignment=BoxContainer.ALIGNMENT_CENTER;column.add_child(row)
+	var several=maps.size()>1
+	var left=CenterContainer.new();row.add_child(left)
+	banner(left,"<",func():_map_step(-1),70,not several)
+	# The card: the picture, framed, with the map's name under it.
+	var card=VBoxContainer.new();card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	card.size_flags_vertical=Control.SIZE_EXPAND_FILL;card.add_theme_constant_override("separation",8);row.add_child(card)
+	var picture=Control.new();picture.size_flags_vertical=Control.SIZE_EXPAND_FILL;picture.clip_contents=true
+	picture.custom_minimum_size=Vector2(0,300);picture.mouse_filter=Control.MOUSE_FILTER_STOP;card.add_child(picture)
+	# The frame paints its own panel, so it goes under the picture, not over it.
+	var frame=BWUI.Frame.new();frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);frame.mouse_filter=Control.MOUSE_FILTER_IGNORE;picture.add_child(frame)
+	var image=TextureRect.new();image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	image.offset_left=3;image.offset_top=3;image.offset_right=-3;image.offset_bottom=-3
+	image.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;image.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	image.texture=_map_preview(map_row);image.mouse_filter=Control.MOUSE_FILTER_IGNORE;picture.add_child(image)
+	var shade=ColorRect.new();shade.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE);shade.offset_top=-120
+	shade.color=Color(0.02,0.015,0.02,0.6);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;picture.add_child(shade)
+	var caption=VBoxContainer.new();caption.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	caption.offset_top=-104;caption.offset_bottom=-14;caption.offset_left=24;caption.offset_right=-24
+	caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;picture.add_child(caption)
+	var name_line=BWUI.Heading.new(String(map_row.name),40);name_line.rules=false;name_line.tracking=6.0
+	name_line.custom_minimum_size.y=48;name_line.mouse_filter=Control.MOUSE_FILTER_IGNORE;caption.add_child(name_line)
+	var blurb=body(caption,String(map_row.get("blurb","")),14,BWKit.INK);blurb.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	picture.gui_input.connect(_map_swipe)
+	var names=[]
+	for id in BWRooms.night_plan(map_row):
+		var room_row=BWRooms.room(id)
+		if not room_row.is_empty() and room_row.type!="merchant":names.append(room_row.name)
+	body(card,"  →  ".join(names),12,BWKit.MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	var fights=map_row.route.size() if map_row.has("route") else int(map_row.draw.get("count",0))
+	body(card,"%d ROOMS, THEN THE BOSS  ·  THE NIGHT MERCHANT BEYOND IT  ·  EVERY NIGHT AFTER IS HARDER, AND RICHER" % fights,11,BWKit.DIM).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	var right=CenterContainer.new();row.add_child(right)
+	banner(right,">",func():_map_step(1),70,not several)
+	# Where in the table the player is: one pip per map.
+	var pips=HBoxContainer.new();pips.alignment=BoxContainer.ALIGNMENT_CENTER;pips.add_theme_constant_override("separation",10);column.add_child(pips)
+	for i in maps.size():
+		var pip=ColorRect.new();pip.custom_minimum_size=Vector2(28 if i==map_index else 10,6)
+		pip.color=BWKit.GOLD if i==map_index else Color(BWKit.IRON,0.9);pips.add_child(pip)
+	body(column,"%d / %d     ·     A / D  ·  ← →  ·  SWIPE" % [map_index+1,maps.size()],11,BWKit.DIM).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	var actions=HBoxContainer.new();actions.alignment=BoxContainer.ALIGNMENT_CENTER;actions.add_theme_constant_override("separation",18);column.add_child(actions)
+	banner(actions,"BACK",_back,190)
+	banner(actions,"BEGIN THE HUNT",func():map_pick=map_row.id;back_target=Callable();begin_run(run.class_id,map_row.id),320)
+	if slide!=0:
+		await get_tree().process_frame
+		if not is_instance_valid(image):return
+		image.modulate.a=0.0
+		var tween=image.create_tween().set_parallel(true)
+		tween.tween_property(image,"position:x",3.0,0.28).from(slide*90.0+3.0).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(image,"modulate:a",1.0,0.22)
+
+func _map_step(direction: int):
+	if page!="maps" or BWRooms.map_list().size()<2:return
+	map_index+=direction;audio.ui("ui_select");show_maps(direction)
+
+# A drag across the picture of more than 80 px turns the table that way.
+func _map_swipe(event: InputEvent):
+	if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT:
+		if event.pressed:swipe_from=event.position.x
+		elif swipe_from>=0.0:
+			var travel=event.position.x-swipe_from;swipe_from=-1.0
+			if absf(travel)>80.0:_map_step(-1 if travel>0 else 1)
+	elif event is InputEventScreenTouch:
+		if event.pressed:swipe_from=event.position.x
+		elif swipe_from>=0.0:
+			var travel=event.position.x-swipe_from;swipe_from=-1.0
+			if absf(travel)>80.0:_map_step(-1 if travel>0 else 1)
+
+# The map's picture: its delivered preview if there is one, else a plate in the
+# town's colours so the card never stands empty.
+func _map_preview(map_row: Dictionary) -> Texture2D:
+	var path=String(map_row.get("preview",""))
+	if ResourceLoader.exists(path):
+		var texture=load(path)
+		if texture is Texture2D:return texture
+	var ramp=Gradient.new();ramp.set_color(0,Color("3a1c1e"));ramp.set_color(1,Color("0c0a0e"))
+	var plate=GradientTexture2D.new();plate.gradient=ramp;plate.fill_from=Vector2(0.5,0.0);plate.fill_to=Vector2(0.5,1.0)
+	plate.width=640;plate.height=360
+	return plate
+
+# ------------------------------------------------------------------ rooms
+
+func _room_cleared():
+	if not room_mode():return
+	audio.play("wave_clear")
+	if world.room.type=="boss" and not run.claimed.has(run.room_key()):
+		world.offer_reward({"kind":"spoils","name":"BOSS SPOILS","verb":"CLAIM","required":true})
+		_toast("THE BELL FALLS SILENT","Claim the spoils to open the gate")
+	elif run.pending_levels>0:
+		world.offer_reward({"kind":"levels","name":"BLOOD SHRINE","verb":"CLAIM %d LEVEL CHOICE%s" % [run.pending_levels,"S" if run.pending_levels>1 else ""],"required":false})
+		_toast("ROOM CLEARED","A blood shrine has woken  ·  the way on is open")
+	else:
+		world.offer_reward({})
+		_toast("ROOM CLEARED","The way on is open")
+
+func _claim_reward():
+	if world.reward.is_empty():return
+	freeze();refreshes=0
+	boss_reward=world.reward.kind=="spoils"
+	_next_pick()
+
+# Every pick the pedestal held has been made: mark it taken so it cannot be
+# claimed twice, and put the player back in the room.
+func _reward_done():
+	if world.reward.get("kind","")=="spoils":run.claim()
+	world.take_reward()
+	resume()
+
+func _room_hint() -> String:
+	match world.room_state:
+		"entry":return world.room.name
+		"active":
+			var waves="   ·   WAVE %d / %d" % [world.wave_index+1,world.encounter_waves.size()] if world.encounter_waves.size()>1 else ""
+			return "%s%s   ·   %d REMAIN" % [world.room.name,waves,world.enemies_left()]
+		"cleared":
+			if world.reward.get("required",false):return "CLAIM THE SPOILS TO OPEN THE GATE"
+			if not world.reward.is_empty():return "A BLOOD SHRINE WAITS   ·   THE WAY ON IS OPEN"
+			return "THE WAY ON IS OPEN"
+	if world.room.type=="merchant":return "THE NIGHT MERCHANT IS TRADING   ·   THE ROAD ON IS OPEN"
+	return world.room.name
+
+# Through the exit and into the next room of the plan. The run carries over
+# untouched; past the merchant the plan wraps into the next night.
+func _leave_room():
+	if not room_mode() or page!="playing":return
+	var serial=transition_serial;var leaving=world
+	page="room_transition";world.running=false
+	await _fade(1.0)
+	if serial!=transition_serial or world!=leaving:return
+	var night=run.night
+	var next=run.advance_room()
+	var map_row=BWRooms.map(run.map_id)
+	if run.night!=night and map_row.has("draw"):
+		var order=RandomNumberGenerator.new();order.randomize()
+		run.plan=BWRooms.night_plan(map_row,order);next=run.room_id()
+	var row=BWRooms.room(next)
+	if row.is_empty():
+		push_error("Route names a room the pool does not hold: "+next)
+		_award();enter_safehouse(run.class_id);return
+	world.enter_room(row)
+	world.running=true;page="playing";hud.visible=true;clear_page()
+	world.wave_music()
+	if run.night!=night:_toast("NIGHT %d" % run.night,"The town wakes angrier  ·  the merchant will stock finer goods")
+	else:_toast(row.name,"")
+	await _fade(0.0)
+
+func _fade(target: float,from: float=-1.0):
+	if not is_instance_valid(curtain):
+		curtain=ColorRect.new();curtain.color=Color("080b12");curtain.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		curtain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);curtain.modulate.a=0.0;root.add_child(curtain)
+	root.move_child(curtain,-1)
+	if from>=0.0:curtain.modulate.a=from
+	var tween=create_tween();tween.tween_property(curtain,"modulate:a",target,ROOM_FADE_SECONDS)
+	await tween.finished
+
+func _toast(heading: String,detail: String):
+	if not is_instance_valid(toast):return
+	toast.text=heading if detail.is_empty() else heading+"\n"+detail
+	toast.modulate.a=1.0
+	var tween=toast.create_tween();tween.tween_interval(2.0);tween.tween_property(toast,"modulate:a",0.0,0.6)
+
+func _prompt_update():
+	if not is_instance_valid(prompt):return
+	var spot=world.interaction()
+	prompt.visible=not spot.is_empty()
+	if prompt.visible:prompt.text="[F]   %s   ·   %s" % [spot.verb,spot.name]
 
 func _hud():
 	if is_instance_valid(hud):hud.queue_free()
@@ -399,6 +680,17 @@ func _hud():
 	skill_label=Label.new();skill_label.position=Vector2(24,185);skill_label.add_theme_font_size_override("font_size",14);hud.add_child(skill_label)
 	boss_label=Label.new();boss_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE);boss_label.offset_top=12;boss_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;boss_label.add_theme_color_override("font_color",Color("dc8271"));hud.add_child(boss_label)
 	var pause=Button.new();pause.text="II";pause.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);pause.position=Vector2(-76,24);pause.size=Vector2(50,48);pause.pressed.connect(show_pause);hud.add_child(pause)
+	prompt=Button.new();prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	prompt.offset_left=-260;prompt.offset_right=260;prompt.offset_top=-118;prompt.offset_bottom=-70
+	prompt.add_theme_color_override("font_color",GOLD);prompt.visible=false;prompt.focus_mode=Control.FOCUS_NONE
+	prompt.pressed.connect(func():if is_instance_valid(world):world.interact())
+	hud.add_child(prompt)
+	toast=Label.new();toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	toast.offset_left=-420;toast.offset_right=420;toast.offset_top=64;toast.offset_bottom=150
+	toast.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;toast.add_theme_font_override("font",BWKit.title_font())
+	toast.add_theme_font_size_override("font_size",30);toast.add_theme_color_override("font_color",GOLD)
+	toast.mouse_filter=Control.MOUSE_FILTER_IGNORE;toast.modulate.a=0.0;hud.add_child(toast)
+	if in_safehouse():hp_bar.visible=false;xp_bar.visible=false
 	touch=BWTouch.new();hud.add_child(touch);touch.enabled=mobile_controls;touch.visible=mobile_controls;touch.ability_pressed.connect(world.ability)
 	touch.auto_fire_toggled.connect(func():world.auto_fire=touch.auto_fire_on)
 
@@ -414,10 +706,18 @@ func resume():
 
 func show_pause():
 	if page!="playing":return
-	freeze();page="pause";var column=panel_page("THE NIGHT WAITS","Wave %d · %d kills" % [run.wave,run.kills])
+	freeze();page="pause"
+	if in_safehouse():
+		var hall=panel_page("THE SAFEHOUSE","Nothing hunts you here.")
+		button(hall,"RESUME",resume)
+		button(hall,"CHANGE CLASS",show_classes)
+		button(hall,"RETURN TO TITLE",show_menu)
+		return
+	var column=panel_page("THE NIGHT WAITS",("Night %d · %s · %d kills" % [run.night,world.room.name,run.kills]) if room_mode() else ("Wave %d · %d kills" % [run.wave,run.kills]))
 	button(column,"RESUME",resume)
+	if room_mode():button(column,"ABANDON THE HUNT (RETURN TO SAFEHOUSE)",func():_award();enter_safehouse(run.class_id))
 	button(column,"RETURN TO MENU (END RUN)",func():_award();show_menu())
-	label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / A — Class ultimate\nHold right click + left click — Spin attack (warrior)\nQ / X — First class skill (aimed at the cursor)\nE / B — Second class skill (aimed at the cursor)\nTab / Y — Toggle automatic fire\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
+	label(column,"WASD / LEFT STICK — Move\nLeft click / RT — Aim and fire\nSpace / A — Class ultimate\nHold right click + left click — Spin attack (warrior)\nQ / X — First class skill (aimed at the cursor)\nE / B — Second class skill (aimed at the cursor)\nTab / Y — Toggle automatic fire\nF / RB — Talk, claim, trade\nEscape / Start — Pause\nMouse wheel — Zoom\nF11 — Fullscreen",18,MUTED)
 
 func _transition_screen(heading: String,subtitle: String,color: Color):
 	clear_page()
@@ -467,12 +767,19 @@ func _next_pick():
 		_upgrades()
 	elif boss_reward:
 		choices=run.offers("upgrades",true);choosing_boss=true
-		if choices.is_empty():boss_reward=false;_shop(true);return
+		if choices.is_empty():boss_reward=false;_after_picks();return
 		_upgrades()
+	else:_after_picks()
+
+# The open-field tour goes on to the merchant after every wave. In a map the
+# merchant has a room of its own after the boss, so picks hand back to the room.
+func _after_picks():
+	if room_mode():_reward_done()
 	else:_shop(true)
 
 func _upgrades():
-	page="upgrades";var column=panel_page("BOSS SPOILS" if choosing_boss else "GROW STRONGER","Wave %d cleared · %d pending level choices" % [run.wave,run.pending_levels])
+	var where=("Night %d · %s" % [run.night,world.room.name]) if room_mode() else ("Wave %d cleared" % run.wave)
+	page="upgrades";var column=panel_page("BOSS SPOILS" if choosing_boss else "GROW STRONGER","%s · %d pending level choices" % [where,run.pending_levels])
 	var cards=HFlowContainer.new();cards.add_theme_constant_override("h_separation",18);cards.add_theme_constant_override("v_separation",18);column.add_child(cards)
 	for row in choices:
 		var box=_reward_card(cards,row,false)
@@ -485,6 +792,7 @@ func _upgrades():
 	button(column,"REROLL (FREE)",func():rerolls+=1;choices=run.offers("upgrades");_upgrades(),choosing_boss or rerolls>=1)
 
 func _shop(new_offers: bool=false):
+	if room_mode():_merchant();return
 	if new_offers:shop_offers=run.offers("items")
 	page="shop";var column=panel_page("THE NIGHT MERCHANT","%d gold · %d / 8 items · Wave %d survived" % [run.gold,run.items.size(),run.wave])
 	var cards=HFlowContainer.new();cards.add_theme_constant_override("h_separation",18);cards.add_theme_constant_override("v_separation",18);column.add_child(cards)
@@ -498,6 +806,36 @@ func _shop(new_offers: bool=false):
 	button(column,"REFRESH — 20 GOLD (%d / 3)" % refreshes,func():run.gold-=20;refreshes+=1;_shop(true),refreshes>=3 or run.gold<20)
 	button(column,"ENTER WAVE %d" % (run.wave+1),func():world.next_wave();resume())
 
+# The merchant's stock is drawn once per visit, at the grade of the night: night
+# one sells the catalogue as written, every later night sells it stronger and adds
+# goods that only appear after dark has fallen twice.
+func _open_merchant():
+	if merchant_key!=run.room_key():
+		merchant_key=run.room_key();shop_offers=run.merchant_offers();refreshes=0
+	_merchant()
+
+func _merchant():
+	page="shop"
+	var grade=run.merchant_grade()
+	var stock="night %d stock  ·  effects x%.1f" % [run.night,grade] if grade>1.0 else "night %d stock" % run.night
+	var column=panel_page("THE NIGHT MERCHANT","%d gold · %d / 8 items · %s · goods last for this run only" % [run.gold,run.items.size(),stock])
+	var cards=HFlowContainer.new();cards.add_theme_constant_override("h_separation",18);cards.add_theme_constant_override("v_separation",18);column.add_child(cards)
+	for offer in shop_offers:
+		var shown=offer.duplicate()
+		var label_name=BWRun.grade_name(offer.grade)
+		if offer.get("temper",false):shown.name="TEMPER  ·  "+offer.name
+		elif not label_name.is_empty():shown.name=label_name+"  "+offer.name
+		if offer.grade>1.0:shown.description=offer.description+"   (x%.1f)" % offer.grade
+		var box=_reward_card(cards,shown,true)
+		var full=run.items.size()>=8 and not offer.get("temper",false)
+		var caption="INVENTORY FULL" if full else ("NEED %d GOLD" % (offer.cost-run.gold) if run.gold<offer.cost else "%s  ·  %d GOLD" % ["TEMPER" if offer.get("temper",false) else "BUY",offer.cost])
+		button(box,caption,func():
+			if run.buy_offer(offer):audio.play("purchase");shop_offers.erase(offer);_merchant(),full or run.gold<offer.cost)
+	if shop_offers.is_empty():label(column,"The stall is bare for this build.",18,MUTED)
+	var price=int(round(20*grade))
+	button(column,"NEW STOCK — %d GOLD (%d / 3)" % [price,refreshes],func():run.gold-=price;refreshes+=1;shop_offers=run.merchant_offers();_merchant(),refreshes>=3 or run.gold<price)
+	button(column,"LEAVE THE STALL",resume)
+
 func _award():
 	if run!=null and not run.awarded:run.awarded=true;return meta.award(run.wave,run.kills)
 	return 0
@@ -506,6 +844,12 @@ func show_game_over():
 	if run==null:return
 	var reward=_award();freeze();page="gameover"
 	var column=panel_page("YOUR OATH ENDURES","The night claimed you. Your strength remains.")
+	if room_mode():
+		title(column,"NIGHT %d   ·   %s   ·   %d KILLS" % [run.night,world.room.name,run.kills],30)
+		label(column,"+%d ESSENCE   /   %d TOTAL" % [reward,meta.essence],24,GOLD)
+		button(column,"RETURN TO THE SAFEHOUSE",func():enter_safehouse(run.class_id))
+		button(column,"TITLE SCREEN",show_menu)
+		return
 	title(column,"WAVE %d   ·   %d KILLS" % [run.wave,run.kills],30)
 	label(column,"+%d ESSENCE   /   %d TOTAL" % [reward,meta.essence],24,GOLD)
 	button(column,"TRY AGAIN",func():begin_run(run.class_id))
@@ -526,7 +870,7 @@ func show_skills():
 	_skill_tree(view)
 	_oath_panel(view)
 	_node_panel(view)
-	var back=banner(content,"BACK",show_menu,200)
+	var back=banner(content,"BACK",_back,200)
 	back.position=Vector2(view.x-248,view.y-84)
 	back.size=Vector2(200,46)
 
@@ -657,10 +1001,10 @@ func show_armory():
 		for item in BWData.rows("equipment"):
 			if item.slot!=slot:continue
 			button(column,"%s · %s · %s" % [item.name,item.description,"OWNED" if meta.owned.has(item.id) else "%d ESSENCE" % item.cost],func():meta.buy_equipment(item.id);show_armory(),meta.owned.has(item.id) or meta.essence<item.cost)
-	button(column,"EDIT LOADOUTS",show_builds);button(column,"BACK",show_menu)
+	button(column,"EDIT LOADOUTS",show_builds);button(column,"BACK",_back)
 
 func show_builds():
-	page="builds";var column=panel_page("YOUR BUILDS","Selected equipment applies when the next run begins.")
+	page="builds";var column=panel_page("THE QUARTERMASTER","%d Essence · Selected equipment applies when the next hunt begins." % meta.essence)
 	var row=HBoxContainer.new();column.add_child(row)
 	for i in 3:button(row,"BUILD %d%s" % [i+1," · ACTIVE" if meta.active==i else ""],func():meta.active=i;meta.save();show_builds())
 	for slot in ["armor","boots","charm"]:
@@ -670,7 +1014,8 @@ func show_builds():
 		for id in meta.owned:
 			var item=BWData.entry("equipment",id)
 			if item.slot==slot:button(column,item.name+" — "+item.description,func():meta.equip(slot,id);show_builds(),current==id)
-	button(column,"BACK",show_menu)
+	button(column,"VISIT THE ARMORY",show_armory)
+	button(column,"BACK",_back)
 
 func show_settings():
 	page="settings";var column=panel_page("SETTINGS","Graphics changes apply to the next run.")
@@ -710,6 +1055,10 @@ func show_debug():
 	button(column,"HEAL",func():run.stats.hp=run.stats.maxHp;resume())
 	button(column,"GRANT 500 GOLD",func():run.gold+=500;resume())
 	button(column,"GAIN 5 LEVEL CHOICES",func():run.pending_levels+=5;boss_reward=false;_next_pick())
+	if room_mode() and world.is_fight():
+		button(column,"CLEAR THIS ROOM",func():
+			for enemy in world.enemies.duplicate():world._damage_enemy(enemy,1e9,false,false)
+			world.spawned=world.encounter.size();world.rest_time=0.0;world.room_state="active";resume())
 	for wave in [1,5,6,10,20]:button(column,"START WAVE %d" % wave,func():
 		for enemy in world.enemies:enemy.node.queue_free()
 		world.enemies.clear();run.wave=wave;world.spawned=0;world.spawn_timer=0;world.running=true;run.stats.hp=run.stats.maxHp;resume())
@@ -768,6 +1117,71 @@ func _arena_shots():
 		await _capture("zone_"+zone.id)
 	print("BLOODWAKE_ARENA_SHOTS_DONE")
 	_quit()
+
+# Every room of the pool from the play camera and from overhead, plus the
+# safehouse. The grey box is judged by eye here before any model is delivered.
+func _room_shots():
+	await get_tree().create_timer(0.5).timeout
+	enter_safehouse("warrior");await get_tree().create_timer(0.8).timeout
+	await _capture("room_town_safehouse_play")
+	var ids=BWRooms.rooms.keys().filter(func(id):return BWRooms.rooms[id].type!="safehouse")
+	start_run("warrior",true,false,"cursed_town")
+	world.auto_fire=false;run.stats.maxHp=1e6;run.stats.hp=1e6
+	for id in ids:
+		world.enter_room(BWRooms.room(id));world.rest_time=999.0
+		await get_tree().create_timer(0.6).timeout
+		await _capture("room_%s_play" % id)
+		var top=Camera3D.new();world.add_child(top);top.projection=Camera3D.PROJECTION_ORTHOGONAL
+		top.size=maxf(world.room.half.x*2.0,world.room.half.y*2.0*1.6)+6.0
+		top.position=Vector3(0,60,0.01);top.look_at(Vector3.ZERO,Vector3.FORWARD);top.current=true
+		await get_tree().create_timer(0.3).timeout
+		await _capture("room_%s_top" % id)
+		var iso=Camera3D.new();world.add_child(iso);iso.projection=Camera3D.PROJECTION_ORTHOGONAL
+		iso.size=top.size*0.75;iso.position=BWWorld.CAMERA_OFFSET*4.0;iso.look_at(Vector3.ZERO);iso.current=true
+		await get_tree().create_timer(0.3).timeout
+		await _capture("room_%s_iso" % id)
+		top.queue_free();iso.queue_free();world.camera.current=true
+	# The war table, as the player meets it.
+	enter_safehouse("warrior");await get_tree().create_timer(0.5).timeout
+	freeze();show_maps();await get_tree().create_timer(0.4).timeout;await _capture("war_table")
+	start_run("warrior",true,false,"cursed_town");world.auto_fire=false;run.stats.maxHp=1e6;run.stats.hp=1e6
+	# A wave rising out of the street, caught part-way and once it stands.
+	world.enter_room(BWRooms.room("town_gateyard_01"));world.rest_time=0.0
+	world.player.position=Vector3(0,0,2);await get_tree().create_timer(0.3).timeout
+	world.wave_index=world.encounter_waves.size()-1
+	for i in 4:world.spawn_timer=0.0;world._encounter_tick()
+	await get_tree().create_timer(0.75).timeout;await _capture("room_rise_mid")
+	await get_tree().create_timer(0.9).timeout;await _capture("room_rise_end")
+	print("BLOODWAKE_ROOM_SHOTS_DONE ",ProjectSettings.globalize_path("user://"))
+	_quit()
+
+# Renders each map's war-table picture from its previewRoom, through the same
+# isometric camera and light the player plays under, into the map's preview path.
+func _map_previews():
+	DisplayServer.window_set_size(Vector2i(1600,900))
+	await get_tree().create_timer(0.6).timeout
+	for map_row in BWRooms.map_list():
+		var path=String(map_row.get("preview",""))
+		var room_row=BWRooms.room(String(map_row.get("previewRoom",map_row.get("boss",""))))
+		if path.is_empty() or room_row.is_empty():continue
+		start_run("warrior",true,false,map_row.id)
+		world.enter_room(room_row);world.running=false;hud.visible=false;world.player.visible=false
+		var spec=map_row.get("previewCamera",{})
+		var focus=_spec_point(spec.get("look",[0,0,0]))
+		var lens=Camera3D.new();world.add_child(lens)
+		lens.projection=Camera3D.PROJECTION_ORTHOGONAL
+		lens.size=float(spec.get("size",maxf(room_row.half.x,room_row.half.y)*2.2))
+		lens.position=focus+BWWorld.CAMERA_OFFSET*4.0;lens.look_at(focus);lens.current=true
+		await get_tree().create_timer(1.0).timeout
+		await RenderingServer.frame_post_draw
+		var shot=get_viewport().get_texture().get_image()
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
+		shot.save_png(ProjectSettings.globalize_path(path))
+		print("BLOODWAKE_MAP_PREVIEW ",map_row.id," -> ",path)
+	_quit()
+
+static func _spec_point(value) -> Vector3:
+	return Vector3(float(value[0]),float(value[1]),float(value[2])) if value is Array and value.size()>=3 else Vector3.ZERO
 
 func _capture(filename: String):
 	await RenderingServer.frame_post_draw

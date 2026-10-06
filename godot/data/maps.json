@@ -1,0 +1,17 @@
+{
+  "_doc": "Maps are routes through the room pool. route lists the ordinary rooms of one night in order; its length is how many rooms are fought before the boss, independent of how many rooms the pool holds. Instead of route, a map may give draw: {\"region\": ..., \"count\": n} to pick n combat rooms of that region at random. After the boss the run passes through interlude (the merchant) and starts the next, harder night on the same route. preview is the image the war table shows for the map; godot --path godot -- --map-previews renders it from previewRoom through the game's isometric camera; previewCamera gives its focus point (look, metres, room-local) and orthographic size.",
+  "maps": [
+    {
+      "id": "cursed_town",
+      "name": "THE CURSED TOWN",
+      "region": "cursed_town",
+      "blurb": "A border town that never buried its dead. Five streets to the Black Bell, and the bell remembers everything.",
+      "route": ["town_gateyard_01", "town_cargo_02", "town_well_03", "town_stables_04", "town_station_05"],
+      "boss": "town_boss_blackbell_01",
+      "interlude": "town_night_market",
+      "preview": "res://assets/ui/maps/cursed_town.png",
+      "previewRoom": "town_boss_blackbell_01",
+      "previewCamera": {"look": [0, 5, -10], "size": 48}
+    }
+  ]
+}

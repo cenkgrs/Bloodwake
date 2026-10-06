@@ -65,6 +65,7 @@ func suite():
 	scene.start_run("mage");await process_frame;world=scene.world;run=scene.run;visual=world.visual;world.running=false
 	check(visual.clips.size()==6 and visual.clips.has("ultimate"),"Mage has six authored clips")
 	check(is_instance_valid(visual.hand_magic) and visual.hand_bone>=0,"Mage magic is attached to a real hand")
+	check(String(visual.hand_skeleton.get_bone_name(visual.hand_bone)).ends_with("RightHand"),"Held orb and projectile use the Mage's right casting hand")
 	check(not visual.procedural,"Mage uses the supplied model")
 	var before=visual.hand_magic.global_position
 	visual.animation.play(visual.clips.attack);visual.animation.seek(0.5,true);await process_frame
@@ -137,12 +138,10 @@ func suite():
 	scene.start_run("warrior");await process_frame;scene._wave_complete();scene.show_menu()
 	await create_timer(2.15).timeout;check(scene.page=="menu","stale transition cannot reopen reward menu")
 	scene.start_run("gunslinger");await process_frame
-	# Only the shot clip is fitted. The Bloodbound keeps bloodbound.glb - there is no
-	# gunslinger_player rig - so it stays out of fitted_timing, and its locomotion
-	# clips keep their authored speed; normalising those sent the run cycle to 1.9x.
+	# Bloodhound now uses authored five-shot events, not the generic fitted attack.
 	var bloodbound=scene.world.visual
 	check(not bloodbound.fitted_timing and bloodbound.fitted_attack,"Bloodbound fits only its shot clip")
-	check(bloodbound.clip_speed("run")==1.0 and bloodbound.clip_speed("attack")>1.0,"Bloodbound run stays native while the shot clip shortens")
+	check(bloodbound.clip_speed("run")==1.0 and bloodbound.clip_speed("attack")==1.0,"Bloodhound combat clip retains authored timing")
 	scene.start_run("assassin");await process_frame;world=scene.world;run=scene.run;visual=world.visual;world.running=true;world.auto_fire=false
 	check(visual.clips.size()==5 and visual.clips.has("ultimate") and not visual.clips.has("hit"),"Assassin has five authored clips and no hit reaction (none was supplied)")
 	world.aim=Vector3.FORWARD

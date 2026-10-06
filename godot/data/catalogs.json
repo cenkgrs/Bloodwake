@@ -216,6 +216,31 @@
 	  "range": 145,
 	  "damage": 0,
 	  "behavior": "dash"
+	},
+	{
+	  "id": "blood_step",
+	  "name": "Blood Step",
+	  "behavior": "bloodTeleport",
+	  "icon": "daggers",
+	  "damage": 32,
+	  "cooldown": 6,
+	  "range": 300,
+	  "blastRadius": 110,
+	  "tone": "d61936",
+	  "accent": "ff4156",
+	  "description": "Vanish into blood mist, reappear at the aimed point and tear through nearby enemies."
+	},
+	{
+	  "id": "blood_burst",
+	  "name": "Blood Burst",
+	  "behavior": "bloodBurst",
+	  "icon": "flame",
+	  "damage": 60,
+	  "cooldown": 10,
+	  "range": 180,
+	  "tone": "d61936",
+	  "accent": "ff4156",
+	  "description": "Gather blood for a moment, then erupt in a circle of crimson blades."
 	}
   ],
   "enemies": [
@@ -682,6 +707,33 @@
 	  "category": "weapon",
 	  "apply": "_daggerSteel",
 	  "isAvailable": "_ownsDaggers"
+	},
+	{
+	  "id": "bellbreaker_sigil",
+	  "name": "Bellbreaker Sigil",
+	  "description": "+18% Damage, +25% Critical Damage",
+	  "rarity": "epic",
+	  "cost": 60,
+	  "category": "relic",
+	  "minNight": 2
+	},
+	{
+	  "id": "wardens_mantle",
+	  "name": "Warden's Mantle",
+	  "description": "+40 Max HP, +8% Armor",
+	  "rarity": "epic",
+	  "cost": 60,
+	  "category": "gear",
+	  "minNight": 2
+	},
+	{
+	  "id": "nightglass_lens",
+	  "name": "Nightglass Lens",
+	  "description": "+15% Attack Speed, +6% Critical Chance",
+	  "rarity": "legendary",
+	  "cost": 80,
+	  "category": "relic",
+	  "minNight": 2
 	}
   ],
   "equipment": [

@@ -11,4 +11,10 @@ func capture():
 	for i in 8:await process_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://../art/revenant/preview/game.png")
+	w.visual.animation.play("Attack1",0.0)
+	w.visual.animation.seek(w.visual.clip_length("attack1")*0.38,true);w.visual.animation.pause()
+	var direction=Vector3.FORWARD.rotated(Vector3.UP,0.45)*-1
+	w.fx.revenant_claws(w.player.position,direction,BWData.entry("weapons","sword").range*BWData.UNIT)
+	await create_timer(0.09).timeout;await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png("res://../art/revenant/preview/attack.png")
 	scene.queue_free();await process_frame;quit()

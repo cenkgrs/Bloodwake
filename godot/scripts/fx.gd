@@ -13,6 +13,11 @@ const SURFACE_SHADER = preload("res://shaders/combat_surface.gdshader")
 const FLAME_SHADER = preload("res://shaders/arcane_flame.gdshader")
 const TRAIL_SHADER = preload("res://shaders/arcane_trail.gdshader")
 const CORE_SHADER = preload("res://shaders/arcane_core.gdshader")
+const CLAW_SHADER = preload("res://shaders/revenant_claws.gdshader")
+const BLOOD_SHADER = preload("res://shaders/revenant_blood.gdshader")
+
+var claw_scene: PackedScene
+var blood_scene: PackedScene
 
 var quality = "PC"
 var rng = RandomNumberGenerator.new()
@@ -167,6 +172,115 @@ func slash(origin: Vector3,direction: Vector3,radius: float,color: Color):
 	var tween=pivot.create_tween()
 	tween.tween_property(pivot,"rotation:y",pivot.rotation.y-0.9,0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
+# UV ribbons authored in Blender. One shared mesh, two short-lived materials per
+# swing; forward is +Z. The energy deliberately extends beyond physical melee
+# reach; this is cosmetic and does not change the damage query.
+func revenant_claws(origin: Vector3,direction: Vector3,radius: float,backhand: bool=false,wide: bool=false) -> Node3D:
+	if claw_scene==null and ResourceLoader.exists("res://assets/vfx/revenant_claws.glb"):
+		claw_scene=load("res://assets/vfx/revenant_claws.glb")
+	if claw_scene==null:
+		slash(origin,direction,radius,Color("e51d35"));return null
+	var root=claw_scene.instantiate() as Node3D
+	root.name="RevenantClaws";root.position=origin+Vector3.UP*0.15;add_child(root)
+	root.rotation.y=atan2(direction.x,direction.z)
+	root.scale=Vector3(radius*2.0,2.8,radius*2.0)
+	var materials=[]
+	for node in root.find_children("*","MeshInstance3D",true,false):
+		var mist=String(node.name).contains("Wisps")
+		if mist and quality!="PC":node.hide();continue
+		var mat=ShaderMaterial.new();mat.shader=CLAW_SHADER
+		mat.set_shader_parameter("wisps",mist);mat.set_shader_parameter("reverse_sweep",backhand)
+		node.material_override=mat;node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		materials.append(mat)
+	var tween=root.create_tween()
+	tween.tween_method(func(p: float):
+		for mat in materials:mat.set_shader_parameter("progress",p)
+	,0.0,1.0,0.42)
+	tween.tween_callback(root.queue_free)
+	if wide:shockwave(origin,radius,Color("bb1028"),0.3)
+	return root
+
+func revenant_impact(pos: Vector3):
+	var tone=Color("ef1931")
+	spark(pos,tone,12 if quality=="PC" else 5)
+	var flare=glow_sprite(tone,0.38,1.4);flare.position=pos;add_child(flare)
+	var tween=flare.create_tween();tween.set_parallel(true)
+	tween.tween_property(flare,"scale",Vector3.ONE*1.7,0.16)
+	tween.tween_property(flare.material_override,"albedo_color",Color.BLACK,0.16)
+	tween.chain().tween_callback(flare.queue_free)
+	flash_light(pos,tone,0.65,1.8,0.12)
+	var stain=MeshInstance3D.new();stain.name="RevenantBlood"
+	var plane=PlaneMesh.new();plane.size=Vector2.ONE*0.85;stain.mesh=plane
+	stain.position=Vector3(pos.x,0.025,pos.z);stain.rotation.y=rng.randf_range(0,TAU)
+	stain.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var ink=ShaderMaterial.new();ink.shader=BLOOD_SHADER;stain.material_override=ink;add_child(stain)
+	var dry=stain.create_tween()
+	dry.tween_method(func(p: float):ink.set_shader_parameter("progress",p),0.0,1.0,1.4)
+	dry.tween_callback(stain.queue_free)
+
+func _blood_fountain(pos: Vector3,radius: float,height: float,life: float):
+	if blood_scene==null and ResourceLoader.exists("res://assets/vfx/revenant_burst.glb"):
+		blood_scene=load("res://assets/vfx/revenant_burst.glb")
+	if blood_scene==null:return
+	var root=blood_scene.instantiate() as Node3D;root.name="BloodFountain"
+	root.position=pos;root.scale=Vector3(radius,height,radius);add_child(root)
+	var materials=[]
+	for node in root.find_children("*","MeshInstance3D",true,false):
+		var mist=String(node.name).contains("Veil")
+		if mist and quality!="PC":node.hide();continue
+		var mat=ShaderMaterial.new();mat.shader=preload("res://shaders/revenant_burst.gdshader");mat.set_shader_parameter("wisps",mist)
+		node.material_override=mat;node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;materials.append(mat)
+	var tween=root.create_tween()
+	tween.tween_method(func(p: float):
+		for mat in materials:mat.set_shader_parameter("progress",p)
+	,0.0,1.0,life)
+	tween.tween_callback(root.queue_free)
+
+func blood_gate(pos: Vector3,radius: float):
+	surface(pos+Vector3.UP*0.045,radius,Color("d91b37"),0.38,3,1.2)
+	_blood_fountain(pos,radius,1.5,0.45)
+	flash_light(pos,Color("c80e2e"),0.6,2.0,0.16)
+
+func blood_travel(start: Vector3,end: Vector3):
+	var delta=end-start
+	if delta.length()<0.1:return
+	var root=flat_sprite(Color("ae102d"),0.9,delta.length(),1.0)
+	root.name="BloodTeleportTrail";root.position=(start+end)*0.5+Vector3.UP*0.5
+	add_child(root);aim_along(root,delta)
+	var mat=root.get_child(0).material_override
+	var tween=root.create_tween();tween.tween_property(mat,"albedo_color",Color.BLACK,0.32);tween.tween_callback(root.queue_free)
+	for i in (5 if quality=="PC" else 2):
+		var point=start.lerp(end,float(i+1)/6.0)+Vector3.UP*0.7
+		spark(point,Color("b30b28"),3)
+
+func blood_charge(pos: Vector3,radius: float,life: float):
+	surface(pos+Vector3.UP*0.05,radius,Color("9c0b28"),life,3,0.7)
+	for i in (8 if quality=="PC" else 4):
+		var angle=TAU*i/8.0
+		var mote=glow_sprite(Color("df1334"),0.17,1.3)
+		mote.position=pos+Vector3(cos(angle)*radius,0.15,sin(angle)*radius);add_child(mote)
+		var pull=mote.create_tween();pull.tween_property(mote,"position",pos+Vector3.UP,life).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		pull.tween_callback(mote.queue_free)
+
+func blood_burst(pos: Vector3,radius: float,height: float=3.5):
+	_blood_fountain(pos,radius,height,0.85)
+	surface(pos+Vector3.UP*0.04,radius,Color("b30c2c"),0.9,3,0.6)
+	shockwave(pos,radius,Color("e5233c"),0.5,0.0,0.65)
+	var pool=MeshInstance3D.new();pool.name="BloodPool"
+	var plane=PlaneMesh.new();plane.size=Vector2.ONE*radius*2;pool.mesh=plane
+	pool.position=pos+Vector3.UP*0.025;pool.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;add_child(pool)
+	var stain=ShaderMaterial.new();stain.shader=BLOOD_SHADER;pool.material_override=stain
+	var dry=pool.create_tween();dry.tween_method(func(p: float):stain.set_shader_parameter("progress",p),0.0,1.0,1.6);dry.tween_callback(pool.queue_free)
+	burst_ring(pos,radius,Color("d71435"),32 if quality=="PC" else 12,5.5,0.7)
+	flash_light(pos,Color("d71435"),0.9,radius,0.25)
+
+func revenant_death(pos: Vector3):
+	# Lands with the body: REV_Death reaches the floor at frame 52.
+	var delay=create_tween();delay.tween_interval(BWVisual.revenant_time("death","ground"))
+	delay.tween_callback(func():
+		_blood_fountain(pos,1.5,2.1,1.15)
+		burst_ring(pos,1.0,Color("9c1027"),28 if quality=="PC" else 10,2.5,1.0))
+
 # The sector uses the same radius and angle as melee hit detection.
 func blade_arc(origin: Vector3,direction: Vector3,radius: float,degrees: float) -> Node3D:
 	var root=Node3D.new();root.name="BladeArc";root.position=origin+Vector3.UP*0.09;add_child(root)
@@ -308,6 +422,49 @@ func impact(pos: Vector3,weapon: String,friendly: bool):
 	if magic:
 		surface(Vector3(pos.x,0.08,pos.z),0.9,tone,0.4,3,1.1)
 		shockwave(Vector3(pos.x,0,pos.z),0.9,tone,0.3)
+
+# Where a room's enemy claws up out of the street: a scorched patch, a column of
+# soot rolling upwards, and embers. Lasts as long as the rise it covers.
+func spawn_smoke(pos: Vector3,life: float=1.25,heavy: bool=false):
+	var holder=Node3D.new();holder.name="SpawnSmoke";holder.position=pos;add_child(holder)
+	var scorch=flat_sprite(Color(1,1,1),2.6 if heavy else 1.9,2.6 if heavy else 1.9,1.0)
+	var mark: StandardMaterial3D=scorch.get_child(0).material_override
+	mark.blend_mode=BaseMaterial3D.BLEND_MODE_MIX;mark.albedo_color=Color(0.03,0.02,0.025,0.0)
+	scorch.position.y=0.03;holder.add_child(scorch)
+	var fade=holder.create_tween()
+	fade.tween_property(mark,"albedo_color:a",0.85,0.25)
+	fade.tween_interval(life);fade.tween_property(mark,"albedo_color:a",0.0,0.8)
+	var smoke=CPUParticles3D.new()
+	smoke.amount=(56 if heavy else 38) if quality=="PC" else 16
+	smoke.lifetime=1.8;smoke.one_shot=true;smoke.explosiveness=0.25;smoke.local_coords=false
+	smoke.emission_shape=CPUParticles3D.EMISSION_SHAPE_SPHERE;smoke.emission_sphere_radius=0.55 if heavy else 0.4
+	smoke.direction=Vector3.UP;smoke.spread=18;smoke.initial_velocity_min=1.0;smoke.initial_velocity_max=2.4
+	smoke.gravity=Vector3(0,0.5,0);smoke.damping_min=0.6;smoke.damping_max=1.2
+	smoke.angle_min=0;smoke.angle_max=360;smoke.scale_amount_min=1.1;smoke.scale_amount_max=2.0
+	var grow=Curve.new();grow.add_point(Vector2(0,0.35));grow.add_point(Vector2(1,1.0))
+	var growth=CurveTexture.new();growth.curve=grow;smoke.scale_amount_curve=growth
+	var ramp=Gradient.new()
+	# Lighter than the street it rises from, with a blood tint at its root, or the
+	# column vanishes against dark cobbles.
+	ramp.set_color(0,Color(0.42,0.16,0.16,0.0));ramp.set_color(1,Color(0.2,0.19,0.2,0.0))
+	ramp.add_point(0.1,Color(0.4,0.2,0.2,0.8));ramp.add_point(0.45,Color(0.3,0.28,0.3,0.6))
+	smoke.color_ramp=ramp
+	var puff=QuadMesh.new();puff.size=Vector2(1.3,1.3)
+	var mat=StandardMaterial3D.new();mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;mat.vertex_color_use_as_albedo=true
+	mat.billboard_mode=BaseMaterial3D.BILLBOARD_PARTICLES;mat.albedo_texture=glow_texture
+	puff.material=mat;smoke.mesh=puff
+	smoke.position.y=0.2;holder.add_child(smoke);smoke.emitting=true
+	var embers=CPUParticles3D.new();embers.amount=16 if quality=="PC" else 6;embers.lifetime=0.9;embers.one_shot=true
+	embers.explosiveness=0.4;embers.emission_shape=CPUParticles3D.EMISSION_SHAPE_RING
+	embers.emission_ring_axis=Vector3.UP;embers.emission_ring_radius=0.7;embers.emission_ring_inner_radius=0.3;embers.emission_ring_height=0.05
+	embers.direction=Vector3.UP;embers.spread=20;embers.initial_velocity_min=1.0;embers.initial_velocity_max=2.4
+	embers.gravity=Vector3(0,-0.8,0);embers.scale_amount_min=0.6;embers.scale_amount_max=1.2
+	var ember=SphereMesh.new();ember.radius=0.025;ember.height=0.05;ember.radial_segments=4;ember.rings=2
+	var hot=StandardMaterial3D.new();hot.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;hot.albedo_color=Color("ff6a3a")
+	ember.material=hot;embers.mesh=ember;holder.add_child(embers);embers.emitting=true
+	flash_light(pos,Color("ff5a3a"),0.9 if heavy else 0.5,4.0,life)
+	get_tree().create_timer(life+2.0).timeout.connect(holder.queue_free)
 
 func spark(pos: Vector3,color: Color,amount: int=8):
 	if quality!="PC" and rng.randf()>0.45:return
