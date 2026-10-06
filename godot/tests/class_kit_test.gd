@@ -75,7 +75,9 @@ func suite():
 	var beside=dummy(world,heading.cross(Vector3.UP).normalized()*radius*0.5)
 	var clear_of_it=dummy(world,heading*radius*3.0)
 	world.skill(1)
-	var whirl_clip="whirl" if world.visual.clips.has("whirl") else "attack"
+	var whirl_clip="whirl" if world.visual.clips.has("whirl") else ("spinattack" if world.visual.clips.has("spinattack") else "attack")
+	check(world.visual.state==whirl_clip,"Whirl plays the turning clip, not the overhead swing: "+world.visual.state)
+	check(whirl_clip!="attack","The warrior rig carries a spin for the whirl to use")
 	await create_timer(world.visual.clip_length(whirl_clip)+0.25).timeout
 	check(behind.hp<2000,"Whirl catches what is behind the fighter")
 	check(beside.hp<2000,"Whirl catches what is beside the fighter")

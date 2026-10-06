@@ -259,10 +259,12 @@ const WHIRL_SWEEPS = 3
 func _cast_whirl(data: Dictionary):
 	var radius=data.blastRadius*w.run.stats.attackRange*BWData.UNIT
 	var tone=Color(data.get("tone","ffd08a"));var accent=Color(data.get("accent","ff9a4d"))
-	# The authored whirl once the rig carries it, the plain swing until then, so the
-	# cast still reads as an attack instead of standing the body still.
-	var clip="whirl" if w.visual.clips.has("whirl") else "attack"
-	var length=maxf(w.visual.clip_length(clip),0.3)
+	# A whirl has to turn the body. The rig has no clip of that name, and falling
+	# back to the plain swing played a single overhead cut on the spot while the
+	# rings spun round it, so the authored spin is the fallback, at the heavy
+	# attack's pace; the plain swing is left only for a rig with neither.
+	var clip="whirl" if w.visual.clips.has("whirl") else ("spinattack" if w.visual.clips.has("spinattack") else "attack")
+	var length=maxf(w.visual.clip_length(clip)/(BWWorld.spin_pace if clip=="spinattack" else 1.0),0.3)
 	w.visual.action(clip,length);w.sound("sword_swing")
 	var share=data.damage*w.run.stats.damage/float(WHIRL_SWEEPS)
 	var tween=create_tween()
