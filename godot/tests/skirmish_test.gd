@@ -38,14 +38,8 @@ func suite():
 	var cut=0
 	for e in front:
 		if e.hp<before[e.node.get_instance_id()]:cut+=1
-	check(cut==BWWorld.MELEE_TARGETS,"a swing cuts the nearest few, not everything in reach: "+str(cut))
+	check(cut==front.size(),"a swing cuts every body in front of it, with no cap: "+str(cut))
 	check(behind.hp==before[behind.node.get_instance_id()],"a swing does not reach round behind the player")
-	# The bodies it did cut are the nearest ones.
-	var nearest_hit=true
-	for e in front:
-		var struck=e.hp<before[e.node.get_instance_id()]
-		if struck and e.node.position.length()>1.21:nearest_hit=false
-	check(nearest_hit,"the cap takes the nearest bodies")
 
 	# --- The shockwave swing is the stated exception: full circle, more bodies.
 	clear_enemies(world)
@@ -57,7 +51,7 @@ func suite():
 	var wide=0
 	for e in ring:
 		if e.hp<e.maxHp:wide+=1
-	check(wide>BWWorld.MELEE_TARGETS,"the shockwave swing still clears a crowd: "+str(wide))
+	check(wide==ring.size(),"the shockwave swing clears the full circle: "+str(wide))
 	slot.shockwave=0.0;slot.swings=0
 
 	# --- A hit lands on the body: it is shoved back and taken off its feet. A tank,
@@ -90,6 +84,18 @@ func suite():
 	drawn.hp=1e6;drawn.maxHp=1e6;drawn.state="draw";drawn.timer=0.2
 	world._stagger(drawn)
 	check(drawn.state=="chase","a hit breaks an archer's draw")
+
+	# --- A bullet stops a body too, but a volley only nudges it back.
+	clear_enemies(world)
+	var shot=world.spawn_enemy("grunt",Vector3.FORWARD*3.0)
+	shot.hp=1e6;shot.maxHp=1e6;shot.cooldown=0.0
+	for i in 6:world._bullet(Vector3.ZERO,Vector3.FORWARD,30.0,5.0,8.0,true,0,"pistol",0,0,false)
+	for i in 30:world._projectiles(1.0/60)
+	check(shot.hp<shot.maxHp,"the volley connected")
+	check(shot.stagger>=0.4,"a bullet staggers the body: "+str(shot.stagger))
+	check(shot.node.position.length()<3.0+BWWorld.KNOCKBACK*2.0,"six bullets nudge rather than throw: "+str(shot.node.position.length()))
+	for b in world.bullets:b.node.queue_free()
+	world.bullets.clear()
 
 	# --- Nothing fights from inside the player.
 	clear_enemies(world)

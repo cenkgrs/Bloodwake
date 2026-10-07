@@ -206,6 +206,7 @@ func _powder_blast(position: Vector3,radius: float,damage: float,tone: Color,acc
 		var roll=w.run.damage_roll(damage)
 		w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
 		if e.hp<=0 or not is_instance_valid(e.node):continue
+		w._stagger(e,1.5,0.0)
 		# shoved outward, clamped to the arena so nothing is pushed through a wall
 		var shove=e.node.position+offset.normalized()*1.5
 		shove=w.arena.clamp_inside(shove)
@@ -286,6 +287,7 @@ func _whirl_sweep(radius: float,share: float,tone: Color,accent: Color):
 		if origin.distance_to(e.node.position)>radius+e.radius:continue
 		var roll=w.run.damage_roll(share)
 		w._damage_enemy(e,roll.damage,roll.critical,true,"ability");hit.append(e)
+		if e.hp>0:w._stagger(e,1.5)
 	w.damage_area(origin,radius,share)
 	for turn in 3:
 		w.fx.slash(origin,heading.rotated(Vector3.UP,TAU*turn/3.0),radius,accent)
@@ -345,6 +347,7 @@ func _meteor_blast(position: Vector3,radius: float,damage: float):
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
+			if e.hp>0:w._stagger(e,1.5)
 	w.fx.arcane_blast(position,radius,Color("19cbff"),Color("2448df"))
 	w.fx.spark(position+Vector3.UP*0.4,Color("91ebff"),18)
 	w.shake=maxf(w.shake,0.14)
@@ -382,7 +385,7 @@ func _leap_land(position: Vector3,radius: float,damage: float,tone: Color=Color(
 	for e in w.enemies.duplicate():
 		if e.node.position.distance_to(position)<=radius+e.radius:
 			var roll=w.run.damage_roll(damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
-			if e.hp>0:e.slow=2;e.slow_amount=0.3
+			if e.hp>0:e.slow=2;e.slow_amount=0.3;w._stagger(e,1.5)
 	if w.run.class_id=="warrior":
 		w.fx.ground_impact(position,radius)
 	else:
@@ -464,6 +467,7 @@ func _resolve_ability(data: Dictionary):
 		for e in w.enemies.duplicate():
 			if e.node.position.distance_to(strike_position)<=range_value+e.radius:
 				var roll=w.run.damage_roll(data.damage*w.run.stats.damage);w._damage_enemy(e,roll.damage,roll.critical,true,"ability")
+				if e.hp>0:w._stagger(e,1.5)
 				if e.hp>0 and data.id=="frost_nova":e.slow=3;e.slow_amount=0.45
 		_ability_effect(data.id,strike_position,range_value)
 	w.sound("ulti_"+data.id)

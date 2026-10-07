@@ -247,12 +247,16 @@ func hit_react(direction: Vector3,strength: float=1.0):
 	action("hit")
 
 # A staggered enemy is taken out of whatever it was doing: the hit clip cuts the
-# swing and runs for the whole stagger. A fresh blow restarts it.
+# swing at its own brisk pace, then the body holds that recoil for the rest of the
+# stagger rather than a slow-motion flinch. A fresh blow restarts it.
+const STAGGER_CLIP = 0.45
 func stagger(duration: float):
 	if dead or not clips.has("hit"):return
 	var again=state=="hit"
 	hit_clip_time=duration;lock_time=0.0
-	if action("hit",duration) and again and animation:animation.seek(0.0,true)
+	if action("hit",minf(duration,STAGGER_CLIP)):
+		if again and animation:animation.seek(0.0,true)
+		lock_time=maxf(lock_time,duration)
 
 func flash(duration: float=0.11):
 	if dead:return

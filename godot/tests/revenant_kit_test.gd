@@ -73,6 +73,29 @@ func suite():
 	w.running=true;var cancelled_origin=w.player.position
 	await create_timer(.4).timeout
 	check(w.player.position==cancelled_origin,"Cancelled transit never resumes its old teleport")
+	# The claw cut reaches as far as its marks are drawn, across their fan.
+	for e in w.enemies.duplicate():e.node.queue_free()
+	w.enemies.clear();w.player.position=Vector3.ZERO;w.combo_step=0;w.running=false
+	var blade=w.run.weapons[BWData.CLASSES.revenant.weapon]
+	var base_reach=blade.data.range*w.run.stats.attackRange*blade.range*BWData.UNIT
+	var forward=Vector3(1,0,0)
+	var marked=dummy(w,forward*base_reach*1.6)
+	var flank=dummy(w,forward.rotated(Vector3.UP,deg_to_rad(58))*base_reach*1.5)
+	var beyond=dummy(w,forward*base_reach*2.6)
+	var rear=dummy(w,-forward*base_reach*1.5)
+	w._resolve_weapon(BWData.CLASSES.revenant.weapon,forward)
+	check(marked.hp<1000,"A body under the claw marks is cut")
+	check(flank.hp<1000,"The cut covers the claws' fan, not a narrow blade arc")
+	check(beyond.hp==1000,"Nothing past the marks is cut")
+	check(rear.hp==1000,"Nothing behind the swing is cut")
+	# Every body under the marks is cut, however many there are.
+	for e in w.enemies.duplicate():e.node.queue_free()
+	w.enemies.clear();w.player.position=Vector3.ZERO;w.combo_step=0
+	var pack=[]
+	for angle in [-50,-25,0,25,50]:
+		for d in [0.9,1.6]:pack.append(dummy(w,forward.rotated(Vector3.UP,deg_to_rad(angle))*base_reach*d))
+	w._resolve_weapon(BWData.CLASSES.revenant.weapon,forward)
+	check(pack.all(func(e):return e.hp<1000),"The claws cut every body they cross: "+str(pack.filter(func(e):return e.hp<1000).size())+"/"+str(pack.size()))
 	w.visual.action("death");w.visual._process(2.6)
 	check(not w.visual.death_materials.is_empty(),"Death installs the blood dissolve on the body")
 	check(w.visual.death_materials[0].get_shader_parameter("progress")==1.0,"Death fully dissolves the body")

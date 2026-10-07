@@ -56,6 +56,10 @@ var impact_pause = 0.0
 var enemy_serial = 0
 var quality = "PC"
 var elapsed = 0.0
+# Per weapon: when its last blow landed, its recent gaps, and the longest of them.
+var hit_clock = {}
+var hit_gaps = {}
+var hit_cadence = {}
 var rest_time = 0.0
 var hit_flash = 0.0
 var flash_rect: ColorRect
@@ -112,19 +116,44 @@ const CLOSE_RUSH = 1.15
 # still a press, but every member of it is a separate thing you can see and hit.
 const PERSONAL_SPACE = 0.62
 # A swing is one blade travelling through one arc, so only what is in front of it
-# is cut, and only the nearest few. Landing on everything within reach is what made
-# a hit on six bodies feel like a hit on none. The shockwave upgrade is the stated
-# exception: that swing is bought to clear a crowd, so it keeps the full circle.
+# is cut - but everything the blade crosses is cut, with no cap on how many. The
+# shockwave upgrade is the stated exception to the arc: it keeps the full circle.
 const MELEE_ARC = 105.0
-const MELEE_TARGETS = 3
-const SHOCKWAVE_TARGETS = 6
+const MELEE_BODY_ALLOWANCE = 0.45
+# Revenant's claw marks are drawn from 1.3x to 2x the weapon range on a ~124 degree
+# fan, so a cut sized to the plain blade landed only inside the inner edge of what
+# the player saw. Its swing reaches as far as the marks do, across their full fan.
+const REVENANT_CLAW_REACH = 1.8
+const REVENANT_CLAW_ARC = 125.0
+# The warrior's greatsword tip reaches 2.0-2.2 m from the body at contact on every
+# link, sweeping ~150 degrees across the front, against a 1.17 m catalogue reach:
+# the outer half of the blade passed through bodies without cutting them.
+const WARRIOR_BLADE_REACH = 1.7
+const WARRIOR_BLADE_ARC = 150.0
+# What each class's basic swing actually covers, as reach multiplier and arc.
+const SWING_SHAPE = {"revenant":[REVENANT_CLAW_REACH,REVENANT_CLAW_ARC],"warrior":[WARRIOR_BLADE_REACH,WARRIOR_BLADE_ARC]}
 # What a landed hit does to the body that took it, beyond the number: it is stopped
 # for a beat and shoved back. Armour and elites resist both. The beat is long enough
 # for the hit clip to read, and on recovery the body still owes a short breath
 # before it may swing, so a chain on one enemy is not answered mid-combo.
 const STAGGER_TIME = 0.45
 const STAGGER_RECOVER = 0.3
+# A slow weapon has to hold the body until its next blow lands, or the enemy wakes in
+# the gap and answers every swing. A chain is uneven - the warrior's runs 0.5, 0.6,
+# then 0.9 s into its finisher and back - so the stagger stretches to the longest of
+# the weapon's recent gaps, not the last one, up to a cap.
+const STAGGER_HOLD_MAX = 1.1
+const FINISHER_STAGGER = 1.5
+# Hits closer together than this are one blow (a volley, one swing on many bodies).
+const HIT_VOLLEY = 0.2
+# Beyond this gap the player has stopped attacking: it is not a cadence.
+const HIT_PAUSE = 1.6
+# How many recent gaps the cadence remembers: one full chain and a little more.
+const HIT_MEMORY = 5
 const KNOCKBACK = 0.24
+# A bullet stops a body as surely as a blade, but a volley lands five or six of
+# them at once: each only nudges, or one burst would throw the target off-screen.
+const BULLET_KNOCK = 0.25
 # Where missile troops stand: off to the player's left or right, far enough out to
 # read as the edge of the arena. Posts use the camera’s ground-plane basis so they stay
 # screen-horizontal with the diagonal view and expose the attack wind-up.
@@ -138,6 +167,9 @@ const COMMANDER_CAST_TIME = 1.1
 const COMMANDER_RELEASE = 0.55
 const DRAW_TIME = 0.4
 const CAST_TIME = 0.55
+# After each cast a mage moves to a new angle round the player, for at most this long.
+const MAGE_RELOCATE_TIME = 1.6
+const MAGE_RELOCATE_MIN = 4.0
 # Runes a mage may have standing at once. A wave of mages must not carpet the floor.
 const HAZARD_LIMIT = 6
 const ARMORED = ["tank","boss"]
@@ -570,10 +602,12 @@ func _enemy_tick(e: Dictionary,dt: float):
 		"mage":
 			e.timer-=dt
 			move=_mage_step(e,dt,distance)
+			e.rune_cd=maxf(0.0,e.get("rune_cd",0.0)-dt)
 			if e.state=="cast":
 				move=Vector3.ZERO
 				if e.timer<=0:
 					e.state="chase"
+					_mage_relocate(e)
 					if e.cast_kind=="rune":
 						_plant_rune(e)
 					else:
@@ -581,14 +615,17 @@ func _enemy_tick(e: Dictionary,dt: float):
 						sound_at("orb_cast",node.position,-4.0)
 			elif e.cooldown<=0 and distance<=range_value:
 				# Every other cast is a rune instead of a bolt, so a mage is a thing to
-				# close on rather than a turret to trade with. At the rune limit it
-				# spends the cast on a bolt instead of stacking the floor.
+				# close on rather than a turret to trade with. At the rune limit, or
+				# while its last rune is still recharging, it spends the cast on a bolt.
 				e.pattern_index+=1
-				e.cast_kind="rune" if e.pattern_index%2==0 and hazards.size()<HAZARD_LIMIT else "bolt"
+				e.cast_kind="rune" if e.pattern_index%2==0 and hazards.size()<HAZARD_LIMIT and e.get("rune_cd",0.0)<=0 else "bolt"
 				e.state="cast";e.timer=CAST_TIME
 				move=Vector3.ZERO
 				e.visual.action("cast" if e.cast_kind=="rune" else "attack",0.9)
-				e.cooldown=float(data.get("runeCooldown",6.5)) if e.cast_kind=="rune" else data.attackCooldown
+				# The rune's long recharge is its own: the mage keeps casting bolts in the
+				# meantime rather than standing idle for the whole of it.
+				e.cooldown=data.attackCooldown
+				if e.cast_kind=="rune":e.rune_cd=float(data.get("runeCooldown",6.5))
 				fx.spark(node.position+Vector3.UP*1.2,Color("c07bff"),6)
 		"tank":
 			if e.state=="tank_swing":
@@ -674,6 +711,12 @@ func _weapons(dt: float):
 		var slot=run.weapons[id];slot.cooldown-=dt
 		if slot.cooldown>0:continue
 		var data=slot.data;var range_value=data.range*run.stats.attackRange*slot.range*BWData.UNIT
+		# Auto-fire looks as far as the swing actually cuts.
+		if data.get("behavior","")=="melee":range_value*=SWING_SHAPE.get(run.class_id,[1.0])[0]
+		# A blade cuts a body whose edge is in reach; nearest() measures to its centre.
+		# Without the allowance a body shoved back by the last blow sat inside the cut
+		# but outside the search, and auto-fire waited for it to walk back and swing.
+		if data.get("behavior","")=="melee":range_value+=MELEE_BODY_ALLOWANCE
 		var target=nearest(player.position,range_value)
 		var manual=Input.is_action_pressed("fire")
 		# Holding the touch trigger aims at the nearest enemy the way auto-fire does;
@@ -777,7 +820,9 @@ func _pending_attacks(dt: float):
 			elif attack.id=="ultimate":skills._resolve_ability(attack.data)
 			elif attack.get("spin",false):_resolve_spin(attack.id,attack.direction)
 			else:
-				_resolve_weapon(attack.id,attack.direction)
+				# The finisher holds its target longer: it ends the chain, and the
+				# warrior's recovery from it is the longest gap before the next blow.
+				_resolve_weapon(attack.id,attack.direction,1.0,"",FINISHER_STAGGER if attack.get("finisher",false) else 1.0)
 				if attack.get("finisher",false):
 					var finisher=BWData.entry("abilities",BWData.CLASSES[run.class_id].ability)
 					skills._ability_effect(finisher.id,player.position,finisher.range*run.stats.attackRange*BWData.UNIT*0.5)
@@ -789,7 +834,7 @@ func _bloodhound_shot(event: Dictionary):
 	var sides=["R","L"] if event.index==4 else ["R" if event.index%2==0 else "L"]
 	for side in sides:_resolve_weapon(event.weapon,event.direction,event.damage_scale,side)
 
-func _resolve_weapon(id: String,direction: Vector3,damage_scale: float=1.0,weapon_hand: String=""):
+func _resolve_weapon(id: String,direction: Vector3,damage_scale: float=1.0,weapon_hand: String="",stagger_force: float=1.0):
 	var slot=run.weapons[id];var data=slot.data
 	var range_value=data.range*run.stats.attackRange*slot.range*BWData.UNIT
 	var base=data.damage*run.stats.damage*slot.damage*damage_scale
@@ -798,24 +843,28 @@ func _resolve_weapon(id: String,direction: Vector3,damage_scale: float=1.0,weapo
 		"melee":
 			slot.swings+=1
 			# The shockwave upgrade turns every third swing into the crowd answer: full
-			# circle, more bodies. Every other swing is a blade with a front and a limit.
+			# circle. Every other swing is a blade with a front.
 			var wide=slot.shockwave>0 and slot.swings%3==0
 			var radius=range_value+(slot.shockwave*BWData.UNIT if wide else 0.0)
 			var hit=[]
 			var blade="dagger" if id=="daggers" or run.class_id=="revenant" else "sword"
-			for entry in _reachable(direction,radius,wide,SHOCKWAVE_TARGETS if wide else MELEE_TARGETS):
-				var e=entry.enemy
+			var shape=SWING_SHAPE.get(run.class_id,[1.0,MELEE_ARC])
+			var reach=radius*shape[0]
+			var struck=_reachable(direction,reach,wide,shape[1])
+			# Clock the blow before it staggers anyone, so this gap already counts.
+			if not struck.is_empty():_note_hit(id)
+			for e in struck:
 				var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
 				if e.hp>0:
-					_stagger(e)
+					_stagger(e,stagger_force,1.0,id)
 					if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
-			damage_area(player.position,radius,base)
+			damage_area(player.position,reach,base)
 			# Revenant's third link is the overhead slam: it lands with a ground ring.
 			var slam=run.class_id=="revenant" and combo_step==2 and visual.clips.has("attack3")
 			if run.class_id=="revenant":
 				fx.revenant_claws(player.position,direction,radius,combo_step%2==1,wide or slam)
 				for enemy in hit:fx.revenant_impact(enemy.node.position+Vector3.UP*0.9)
-			else:fx.blade_arc(player.position,direction,radius,360.0 if wide else MELEE_ARC)
+			else:fx.blade_arc(player.position,direction,reach,360.0 if wide else shape[1])
 			# A connecting swing is felt in the camera as well as on the body it hit.
 			if not hit.is_empty():
 				shake=maxf(shake,0.16 if slam else 0.10 if run.class_id=="revenant" else 0.075)
@@ -870,7 +919,7 @@ func _resolve_spin(id: String,direction: Vector3):
 			var roll=run.damage_roll(base)
 			_damage_enemy(e,roll.damage,roll.critical,true,"sword");hit.append(e)
 			if e.hp>0:
-				_stagger(e,1.5)
+				_stagger(e,1.5,1.0,id)
 				if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
 	damage_area(player.position,radius,base)
 	fx.blade_arc(player.position,direction,radius,360.0)
@@ -885,7 +934,7 @@ func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 		# The arc earths itself on whatever it passes through.
 		damage_area(end,1.0,base)
 		var roll=run.damage_roll(base);_damage_enemy(next,roll.damage,roll.critical,true,"chain")
-		if next.hp>0:next.burn=2;next.burn_dps=4
+		if next.hp>0:next.burn=2;next.burn_dps=4;_stagger(next,1.0,0.0)
 		hit.append(next);origin=end
 
 # Project screen controls onto the ground without changing analog input length.
@@ -925,11 +974,11 @@ func ground_target(reach: float) -> Vector3:
 	return point
 
 # Which bodies one swing may actually cut: inside the blade's reach, in front of it
-# unless the swing is the wide one, nearest first, and never more than the cap.
-# Returned as records so the caller can damage them while enemies is being mutated.
-func _reachable(direction: Vector3,radius: float,wide: bool,limit: int) -> Array:
+# unless the swing is the wide one - every one of them. Returned as a copy so the
+# caller can damage them while enemies is being mutated.
+func _reachable(direction: Vector3,radius: float,wide: bool,arc: float=MELEE_ARC) -> Array:
 	var found=[]
-	var threshold=cos(deg_to_rad(MELEE_ARC*0.5))
+	var threshold=cos(deg_to_rad(arc*0.5))
 	for e in enemies:
 		if e.hp<=0:continue
 		var offset=e.node.position-player.position;offset.y=0
@@ -938,16 +987,16 @@ func _reachable(direction: Vector3,radius: float,wide: bool,limit: int) -> Array
 		# A body already against the player is cut whichever way the blade points -
 		# there is no front to be outside of at that distance.
 		if not wide and gap>0.5 and direction.dot(offset.normalized())<threshold:continue
-		found.append({"enemy":e,"gap":gap})
-	found.sort_custom(func(a,b):return a.gap<b.gap)
-	return found.slice(0,limit)
+		found.append(e)
+	return found
 
 # A hit has to land on the body, not only on its health bar. The blow stops it for a
 # beat and shoves it back, which is what makes one enemy at a time readable.
-func _stagger(e: Dictionary,force: float=1.0):
+func _stagger(e: Dictionary,force: float=1.0,knock: float=1.0,source: String=""):
 	if e.id=="boss":return
 	var resist=0.5 if e.id in ARMORED or e.elite else 1.0
-	e.stagger=maxf(e.stagger,STAGGER_TIME*resist*force)
+	var hold=clampf(hit_cadence.get(source,0.0),STAGGER_TIME,STAGGER_HOLD_MAX)
+	e.stagger=maxf(e.stagger,hold*resist*force)
 	e.cooldown=maxf(e.cooldown,STAGGER_RECOVER*resist)
 	# A committed tank swing or rally rides through the blow; the stagger waits for it.
 	# Anything else being wound up - a draw, a cast, a heal - is lost to the hit.
@@ -956,7 +1005,17 @@ func _stagger(e: Dictionary,force: float=1.0):
 		e.visual.stagger(e.stagger)
 	var away=e.node.position-player.position;away.y=0
 	if away.length()<=0.01:return
-	e.node.position=arena.push_out(e.node.position+away.normalized()*KNOCKBACK*resist*force,e.radius*0.8)
+	e.node.position=arena.push_out(e.node.position+away.normalized()*KNOCKBACK*resist*force*knock,e.radius*0.8)
+
+func _note_hit(source: String):
+	var gap=elapsed-float(hit_clock.get(source,-INF))
+	if gap<HIT_VOLLEY:return
+	hit_clock[source]=elapsed
+	if gap>=HIT_PAUSE:return
+	var gaps: Array=hit_gaps.get(source,[])
+	gaps.append(gap)
+	if gaps.size()>HIT_MEMORY:gaps.pop_front()
+	hit_gaps[source]=gaps;hit_cadence[source]=gaps.max()
 
 # A missile trooper's standing post: off to the player's left or right at its own
 # reach, jittered along the depth axis so two of them do not share one spot.
@@ -988,9 +1047,22 @@ func _mage_step(e: Dictionary,dt: float,distance: float) -> Vector3:
 		e.step_left=0.95;e.step_cooldown=4.5;e.hunt_side*=-1.0
 	if e.step_left>0:
 		var offset: Vector3=e.step_target-e.node.position;offset.y=0
-		if offset.length()>0.2:return arena.steer(e.node.position,offset.normalized(),e.radius)*speed*0.8
+		if offset.length()>0.2:return arena.steer(e.node.position,offset.normalized(),e.radius)*speed*(1.0 if e.get("relocating",false) else 0.8)
 		e.step_left=0.0
+	e.relocating=false
 	return Vector3.ZERO
+
+# Having cast, a mage does not stand on the spot it was seen casting from: it moves
+# round the player at its casting distance to a fresh angle, then plants again.
+func _mage_relocate(e: Dictionary):
+	var offset: Vector3=e.node.position-player.position;offset.y=0
+	if offset.length()<0.1:offset=Vector3.BACK
+	var keep=clampf(offset.length(),MAGE_RELOCATE_MIN,e.data.preferredRange*BWData.UNIT)
+	var swing=deg_to_rad(rng.randf_range(30.0,55.0))*e.hunt_side
+	e.hunt_side*=-1.0
+	var spot=player.position+offset.normalized().rotated(Vector3.UP,swing)*keep
+	e.step_target=arena.push_out(arena.clamp_inside(spot),e.radius)
+	e.step_left=MAGE_RELOCATE_TIME;e.relocating=true
 
 # A mage builds as well as casts. The rune is planted where the player is standing,
 # burns a visible fuse, and then goes off - so the ground becomes something to read
@@ -999,7 +1071,7 @@ func _mage_step(e: Dictionary,dt: float,distance: float) -> Vector3:
 func _plant_rune(e: Dictionary):
 	var spot=arena.push_out(player.position+Vector3(rng.randf_range(-0.5,0.5),0,rng.randf_range(-0.5,0.5)),0.6)
 	var radius=float(e.data.get("runeRadius",150))*BWData.UNIT
-	var fuse=float(e.data.get("runeFuse",2.3))
+	var fuse=float(e.data.get("runeFuse",1.4))
 	var tone=Color("df45bc")
 	# A primitive stand-in, the way every prop starts: one mesh with a known
 	# footprint, so a built model replaces it by loading a scene here.
@@ -1159,6 +1231,8 @@ func _projectiles(dt: float):
 				if b.friendly:
 					_damage_enemy(target,b.damage,b.critical)
 					if target.hp>0:
+						_note_hit(b.weapon)
+						_stagger(target,1.0,BULLET_KNOCK,b.weapon)
 						if b.burn>0:target.burn=3;target.burn_dps=b.burn
 						if b.slow>0:target.slow=2;target.slow_amount=b.slow
 				else:_hurt_player(b.damage)
