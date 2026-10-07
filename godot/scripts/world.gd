@@ -119,8 +119,11 @@ const MELEE_ARC = 105.0
 const MELEE_TARGETS = 3
 const SHOCKWAVE_TARGETS = 6
 # What a landed hit does to the body that took it, beyond the number: it is stopped
-# for a beat and shoved back. Armour and elites resist both.
-const STAGGER_TIME = 0.15
+# for a beat and shoved back. Armour and elites resist both. The beat is long enough
+# for the hit clip to read, and on recovery the body still owes a short breath
+# before it may swing, so a chain on one enemy is not answered mid-combo.
+const STAGGER_TIME = 0.45
+const STAGGER_RECOVER = 0.3
 const KNOCKBACK = 0.24
 # Where missile troops stand: off to the player's left or right, far enough out to
 # read as the edge of the arena. Posts use the camera’s ground-plane basis so they stay
@@ -945,6 +948,12 @@ func _stagger(e: Dictionary,force: float=1.0):
 	if e.id=="boss":return
 	var resist=0.5 if e.id in ARMORED or e.elite else 1.0
 	e.stagger=maxf(e.stagger,STAGGER_TIME*resist*force)
+	e.cooldown=maxf(e.cooldown,STAGGER_RECOVER*resist)
+	# A committed tank swing or rally rides through the blow; the stagger waits for it.
+	# Anything else being wound up - a draw, a cast, a heal - is lost to the hit.
+	if e.state not in ["tank_swing","rally"]:
+		if e.state in ["draw","cast","heal"]:e.state="chase";e.erase("heal_target")
+		e.visual.stagger(e.stagger)
 	var away=e.node.position-player.position;away.y=0
 	if away.length()<=0.01:return
 	e.node.position=arena.push_out(e.node.position+away.normalized()*KNOCKBACK*resist*force,e.radius*0.8)

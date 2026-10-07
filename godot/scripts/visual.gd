@@ -246,6 +246,14 @@ func hit_react(direction: Vector3,strength: float=1.0):
 	hit_clip_time=0.45
 	action("hit")
 
+# A staggered enemy is taken out of whatever it was doing: the hit clip cuts the
+# swing and runs for the whole stagger. A fresh blow restarts it.
+func stagger(duration: float):
+	if dead or not clips.has("hit"):return
+	var again=state=="hit"
+	hit_clip_time=duration;lock_time=0.0
+	if action("hit",duration) and again and animation:animation.seek(0.0,true)
+
 func flash(duration: float=0.11):
 	if dead:return
 	if not flash_ready:_build_flash_surfaces()

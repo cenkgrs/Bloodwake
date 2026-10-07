@@ -72,8 +72,24 @@ func suite():
 	var held=struck.node.position
 	world._enemy_tick(struck,0.05)
 	check(struck.node.position.is_equal_approx(held),"a staggered body does not advance")
+	check(struck.visual.state=="hit","the body plays its hit clip: "+struck.visual.state)
 	for i in 10:world._enemy_tick(struck,0.05)
 	check(struck.stagger==0.0,"the stagger runs out")
+
+	# --- A staggered body cannot answer the combo: it does not swing the moment it
+	# recovers, and a wind-up it was holding is lost to the hit.
+	clear_enemies(world)
+	var grunt=world.spawn_enemy("grunt",Vector3.FORWARD*1.1)
+	grunt.hp=1e6;grunt.maxHp=1e6;grunt.cooldown=0.0
+	var before_hp=world.run.stats.hp
+	world._resolve_weapon("sword",Vector3.FORWARD)
+	check(grunt.stagger>=0.4,"a grunt is staggered for a readable beat: "+str(grunt.stagger))
+	for i in 9:world._enemy_tick(grunt,0.05)
+	check(world.run.stats.hp==before_hp,"it does not strike while staggered or the instant it recovers")
+	var drawn=world.spawn_enemy("archer",Vector3.FORWARD*1.1)
+	drawn.hp=1e6;drawn.maxHp=1e6;drawn.state="draw";drawn.timer=0.2
+	world._stagger(drawn)
+	check(drawn.state=="chase","a hit breaks an archer's draw")
 
 	# --- Nothing fights from inside the player.
 	clear_enemies(world)
