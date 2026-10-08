@@ -383,6 +383,10 @@ class ClassCard extends Control:
 		text = label
 		plate = texture
 		glyph_name = mark
+		# Portraits are dense painted key art shown far below source resolution.
+		# Mipmapped anisotropic sampling preserves the brushwork when the whole UI
+		# is scaled again for smaller windows.
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		custom_minimum_size = box
 		mouse_filter = Control.MOUSE_FILTER_STOP
 		focus_mode = Control.FOCUS_ALL
