@@ -18,10 +18,9 @@ var player: Node3D
 var visual: BWVisual
 const CAMERA_OFFSET = Vector3(12,14,16)
 const CAMERA_SIZE = 13.0
-# Rooms are seen the way the environment boards draw them: square on from the
-# south, low enough to read as isometric (35 degrees, the open field's pitch).
-# Square on, the view is a rectangle that can be held inside the room's bounds.
-const ROOM_CAMERA_OFFSET = Vector3(0,13.5,19.3)
+# Keep rooms on the original diagonal isometric axis. The previous south-facing
+# offset flattened their depth and made the map read like a frontal diorama.
+const ROOM_CAMERA_OFFSET = Vector3(12,14,16)
 # How far past the floor the view may reach. Out there stands the town every
 # room is built inside - rows of houses, a lit street to the south - which the
 # player can see but never walk into.

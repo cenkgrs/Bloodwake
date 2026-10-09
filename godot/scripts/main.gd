@@ -196,7 +196,8 @@ func _spacer(parent: Node,height: float):
 	var node=Control.new();node.custom_minimum_size.y=height;node.mouse_filter=Control.MOUSE_FILTER_IGNORE;parent.add_child(node)
 
 func banner(parent: Node,text: String,callback: Callable,width: float=220.0,disabled: bool=false) -> BWUI.Banner:
-	var node=BWUI.Banner.new(text,Vector2(width,46))
+	var node=BWUI.Banner.new(text,Vector2(width,64))
+	node.font_size=20;node.tracking=4.0
 	node.muted=disabled
 	parent.add_child(node)
 	if not disabled:
@@ -304,34 +305,40 @@ func show_classes():
 		card.chosen.connect(func():class_pick=id;audio.ui("ui_click");show_classes())
 		card.mouse_entered.connect(func():audio.ui("ui_select"))
 	var detail=HBoxContainer.new();detail.add_theme_constant_override("separation",16)
-	detail.custom_minimum_size.y=318;detail.size_flags_vertical=Control.SIZE_SHRINK_CENTER;column.add_child(detail)
+	detail.custom_minimum_size.y=390;detail.size_flags_vertical=Control.SIZE_SHRINK_CENTER;column.add_child(detail)
 	_class_dossier(detail,class_pick)
 	_class_kit(detail,class_pick)
 	var slack=Control.new();slack.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	slack.mouse_filter=Control.MOUSE_FILTER_IGNORE;column.add_child(slack)
 	var actions=HBoxContainer.new();actions.alignment=BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation",18);column.add_child(actions)
-	banner(actions,"BACK",show_menu,190)
-	banner(actions,"SELECT CLASS",func():enter_safehouse(class_pick),320)
+	banner(actions,"BACK",show_menu,240)
+	banner(actions,"SELECT CLASS",func():enter_safehouse(class_pick),360)
 
 # Left of the split: who this class is, and its numbers as bars so the four can be
 # compared without reading a single figure.
 func _class_dossier(parent: Node,id: String):
 	var data=BWData.CLASSES[id]
 	var shell=_framed(parent,Vector2(430,0),false)
+	shell.add_theme_constant_override("separation",5)
 	var head=HBoxContainer.new();head.add_theme_constant_override("separation",12);shell.add_child(head)
-	var mark=BWUI.Emblem.new(CLASS_MARKS.get(id,"rune"),40,BWKit.EMBER);head.add_child(mark)
+	var class_art_path="res://assets/ui/class_screen/classes/%s.png" % id
+	if ResourceLoader.exists(class_art_path):
+		head.add_child(BWUI.AbilityMedallion.new(load(class_art_path),92,BWKit.EMBER))
+	else:
+		head.add_child(BWUI.Emblem.new(CLASS_MARKS.get(id,"rune"),78,BWKit.EMBER))
 	var titles=VBoxContainer.new();titles.add_theme_constant_override("separation",0)
-	titles.size_flags_vertical=Control.SIZE_SHRINK_CENTER;head.add_child(titles)
+	titles.size_flags_horizontal=Control.SIZE_EXPAND_FILL;titles.size_flags_vertical=Control.SIZE_SHRINK_CENTER;head.add_child(titles)
 	var name_line=BWUI.Heading.new(data.name.to_upper(),28);name_line.rules=false;name_line.align_left=true
 	name_line.tracking=4.0;name_line.custom_minimum_size.y=34;titles.add_child(name_line)
 	body(titles,data.tag,11,BWKit.EMBER,false)
-	body(shell,data.get("blurb",""),14,BWKit.MUTED)
+	body(titles,data.get("blurb",""),14,Color(BWKit.INK,0.78))
 	shell.add_child(BWUI.Rule.new(16))
 	var stats=BWData.stats(id);meta.apply_to(stats)
 	for spec in [["DAMAGE","sword",stats.damage/3.6],["ATTACK SPEED","slashes",stats.attackSpeed/1.6],["SPEED","boot",stats.moveSpeed/380.0],["ARMOR","shield",stats.armor/0.45],["HEALTH","heart",stats.maxHp/170.0]]:
 		shell.add_child(BWUI.Meter.new(spec[0],spec[1],spec[2],BWKit.EMBER))
-	body(shell,"WEAPON   ·   %s" % ("BLOOD CLAWS" if id=="revenant" else BWData.entry("weapons",data.weapon).get("name","").to_upper()),11,BWKit.DIM,false)
+	var weapon=body(shell,"WEAPON   ·   %s" % ("BLOOD CLAWS" if id=="revenant" else BWData.entry("weapons",data.weapon).get("name","").to_upper()),12,BWKit.MUTED,false)
+	weapon.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 
 # Right of the split: the full kit, laid out the way it is bound on the keyboard.
 func _class_kit(parent: Node,id: String):
@@ -356,12 +363,18 @@ func _kit_slot(parent: Node,key: String,ability: Dictionary):
 	box.size_flags_vertical=Control.SIZE_SHRINK_CENTER
 	box.add_theme_constant_override("separation",6);parent.add_child(box)
 	var cap=CenterContainer.new();cap.add_child(BWUI.KeyCap.new(key));box.add_child(cap)
-	var badge=CenterContainer.new();badge.add_child(BWUI.Emblem.new(BWKit.ABILITY_GLYPHS.get(ability.id,"rune"),56,BWKit.EMBER));box.add_child(badge)
-	var name_line=BWUI.Heading.new(ability.name.to_upper(),15);name_line.rules=false;name_line.tracking=2.0
-	name_line.custom_minimum_size.y=22;box.add_child(name_line)
-	var blurb=body(box,ability.get("description",""),11,BWKit.MUTED)
+	var badge=CenterContainer.new()
+	var art_path="res://assets/ui/class_screen/abilities/%s.png" % ability.id
+	if ResourceLoader.exists(art_path):
+		badge.add_child(BWUI.AbilityMedallion.new(load(art_path),128,BWKit.EMBER))
+	else:
+		badge.add_child(BWUI.Emblem.new(BWKit.ABILITY_GLYPHS.get(ability.id,"rune"),72,BWKit.EMBER))
+	box.add_child(badge)
+	var name_line=BWUI.Heading.new(ability.name.to_upper(),17);name_line.rules=false;name_line.tracking=2.0
+	name_line.custom_minimum_size.y=24;box.add_child(name_line)
+	var blurb=body(box,ability.get("description",""),13,Color(BWKit.INK,0.76))
 	blurb.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	body(box,"%s SECOND COOLDOWN" % str(ability.get("cooldown",0)),10,BWKit.DIM,false).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	body(box,"%s SECOND COOLDOWN" % str(ability.get("cooldown",0)),11,BWKit.MUTED,false).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 
 # A drawn frame with a column inside it. Drawn rather than styleboxed so the corner
 # ticks land on the panel edge whatever the panel ends up measuring.
@@ -372,9 +385,10 @@ func _framed(parent: Node,minimum: Vector2,expand: bool) -> VBoxContainer:
 	parent.add_child(holder)
 	var frame=BWUI.Frame.new();frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);holder.add_child(frame)
 	var margin=MarginContainer.new();margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left","right","top","bottom"]:margin.add_theme_constant_override("margin_"+side,20)
+	margin.add_theme_constant_override("margin_left",38);margin.add_theme_constant_override("margin_right",38)
+	margin.add_theme_constant_override("margin_top",30);margin.add_theme_constant_override("margin_bottom",30)
 	holder.add_child(margin)
-	var column=VBoxContainer.new();column.add_theme_constant_override("separation",8);margin.add_child(column)
+	var column=VBoxContainer.new();column.add_theme_constant_override("separation",4);margin.add_child(column)
 	return column
 
 func begin_run(id: String,map_id: String=""):

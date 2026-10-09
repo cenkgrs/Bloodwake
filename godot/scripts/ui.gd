@@ -14,6 +14,11 @@ const IRON = BWKit.IRON
 const VOID = BWKit.VOID
 const PANEL = BWKit.PANEL
 
+const CLASS_BUTTON_FRAME = preload("res://assets/ui/class_screen/button_frame_v2.png")
+const CLASS_PANEL_FRAME = preload("res://assets/ui/class_screen/panel_frame.png")
+const CLASS_STAT_CRYSTAL = preload("res://assets/ui/class_screen/stat_crystal.png")
+const CLASS_MEDALLION_FRAME = preload("res://assets/ui/class_screen/medallion_frame.png")
+
 # ------------------------------------------------------------------- components
 
 # The pointed banner the mockups use for every committing action.
@@ -34,6 +39,7 @@ class Banner extends Control:
 		custom_minimum_size = minimum
 		mouse_filter = Control.MOUSE_FILTER_STOP
 		focus_mode = Control.FOCUS_ALL
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		mouse_entered.connect(func(): hovered = true; queue_redraw())
 		mouse_exited.connect(func(): hovered = false; held = false; queue_redraw())
 
@@ -53,26 +59,28 @@ class Banner extends Control:
 		return PackedVector2Array([Vector2(0, h * 0.5), Vector2(notch, 0), Vector2(w - notch, 0),
 			Vector2(w, h * 0.5), Vector2(w - notch, h), Vector2(notch, h)])
 
+	func _draw_frame(tint: Color):
+		# Preserve the illustrated end caps and stretch only the quiet leather centre.
+		# Scaling the complete bitmap was what made the small button version look soft.
+		var source_size = CLASS_BUTTON_FRAME.get_size()
+		var source_cap = 190.0
+		var target_cap = minf(size.y * 0.92, size.x * 0.24)
+		var middle_width = maxf(1.0, size.x - target_cap * 2.0)
+		draw_texture_rect_region(CLASS_BUTTON_FRAME, Rect2(0, 0, target_cap, size.y), Rect2(0, 0, source_cap, source_size.y), tint)
+		draw_texture_rect_region(CLASS_BUTTON_FRAME, Rect2(target_cap, 0, middle_width, size.y), Rect2(source_cap, 0, source_size.x - source_cap * 2.0, source_size.y), tint)
+		draw_texture_rect_region(CLASS_BUTTON_FRAME, Rect2(size.x - target_cap, 0, target_cap, size.y), Rect2(source_size.x - source_cap, 0, source_cap, source_size.y), tint)
+
 	func _draw():
 		var shape = _shape()
 		var lit = hovered or has_focus()
-		var base = Color(0.10, 0.045, 0.05, 0.92) if not muted else Color(0.07, 0.055, 0.055, 0.85)
+		var tint = Color(0.66, 0.66, 0.66, 0.92) if muted else Color.WHITE
 		if held:
-			base = Color(0.20, 0.06, 0.07, 0.95)
+			tint = Color(1.0, 0.72, 0.72, 1.0)
 		elif lit and not muted:
-			base = Color(0.17, 0.05, 0.06, 0.95)
-		draw_colored_polygon(shape, base)
-		var edge = accent if lit else Color(accent, 0.55)
-		if muted:
-			edge = Color(BWKit.IRON, 0.9) if not lit else Color(BWKit.GOLD, 0.7)
-		var outline = shape.duplicate()
-		outline.append(shape[0])
-		draw_polyline(outline, edge, 1.0, true)
-		# A second keyline hugging the lower half reads as the bevel in the mockups.
-		draw_polyline(PackedVector2Array([Vector2(size.y * 0.5 + 3, size.y - 3), Vector2(size.x - size.y * 0.5 - 3, size.y - 3)]), Color(edge, edge.a * 0.5), 1.0, true)
-		if ornaments:
-			for x in [-1.0, size.x + 1.0]:
-				BWKit.paint_diamond(self, Vector2(x, size.y * 0.5), 5.0, Color(edge, 0.8))
+			tint = Color(1.16, 1.04, 1.04, 1.0)
+		_draw_frame(tint)
+		if lit and not muted:
+			draw_colored_polygon(shape, Color(accent, 0.08))
 		var font = BWKit.title_font()
 		var width = BWKit.tracked_width(font, text, font_size, tracking)
 		var baseline = size.y * 0.5 + font.get_ascent(font_size) * 0.5 - 1.0
@@ -103,6 +111,26 @@ class Emblem extends Control:
 		var pad = minf(size.x, size.y) * inset
 		BWKit.draw_glyph(self, glyph_name, rect.grow(-pad), accent, stroke)
 
+# Painted ability art presented inside the same forged medallion on every class.
+class AbilityMedallion extends Control:
+	var artwork: Texture2D
+	var accent = BWKit.EMBER
+
+	func _init(texture: Texture2D, box: float = 96.0, color: Color = BWKit.EMBER):
+		artwork = texture
+		accent = color
+		custom_minimum_size = Vector2(box, box)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# These are authored at 256 px and shown near 96 px; direct linear sampling
+		# keeps the painted rune edges crisper than the viewport's mip level.
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+
+	func _draw():
+		var rect = Rect2(Vector2.ZERO, size)
+		if artwork:
+			draw_texture_rect(artwork, rect.grow(-7.0), false, Color.WHITE)
+		draw_texture_rect(CLASS_MEDALLION_FRAME, rect, false, Color.WHITE)
+
 # A framed surface other controls sit inside. Drawn rather than styleboxed so the
 # corner ticks line up with the panel edge at any size.
 class Frame extends Control:
@@ -112,9 +140,23 @@ class Frame extends Control:
 
 	func _init():
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
 	func _draw():
-		BWKit.paint_frame(self, Rect2(Vector2.ZERO, size), fill, border, tick)
+		# Nine-slice the painted frame so wide kit panels retain the same sharp,
+		# undistorted corners as the narrower dossier panel.
+		var source_size = CLASS_PANEL_FRAME.get_size()
+		var source_corner = Vector2(112, 104)
+		var target_corner = Vector2(minf(54.0, size.x * 0.18), minf(52.0, size.y * 0.24))
+		var sx = [0.0, source_corner.x, source_size.x - source_corner.x, source_size.x]
+		var sy = [0.0, source_corner.y, source_size.y - source_corner.y, source_size.y]
+		var dx = [0.0, target_corner.x, size.x - target_corner.x, size.x]
+		var dy = [0.0, target_corner.y, size.y - target_corner.y, size.y]
+		for y in 3:
+			for x in 3:
+				var source = Rect2(sx[x], sy[y], sx[x + 1] - sx[x], sy[y + 1] - sy[y])
+				var destination = Rect2(dx[x], dy[y], dx[x + 1] - dx[x], dy[y + 1] - dy[y])
+				draw_texture_rect_region(CLASS_PANEL_FRAME, destination, source, Color.WHITE)
 
 # The rule with a centred diamond that separates the mockups' headings.
 class Rule extends Control:
@@ -169,17 +211,22 @@ class Meter extends Control:
 		accent = color
 		custom_minimum_size = Vector2(0, 20)
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
 	func _draw():
 		var font = BWKit.body_font()
 		BWKit.draw_glyph(self, glyph_name, Rect2(0, size.y * 0.5 - 7, 14, 14), Color(BWKit.MUTED, 0.9), 1.3)
-		BWKit.draw_tracked(self, font, label, Vector2(22, size.y * 0.5 + font.get_ascent(11) * 0.5 - 1), 11, BWKit.MUTED, 1.2)
-		var track = Rect2(128, size.y * 0.5 - 4, maxf(40.0, size.x - 128), 8)
+		BWKit.draw_tracked(self, font, label, Vector2(22, size.y * 0.5 + font.get_ascent(12) * 0.5 - 1), 12, Color(BWKit.INK, 0.78), 1.2)
+		var track = Rect2(128, size.y * 0.5 - 6, maxf(40.0, size.x - 128), 12)
+		draw_texture_rect(CLASS_STAT_CRYSTAL, track, false, Color(0.18, 0.15, 0.15, 0.78))
+		var filled = track.size.x * ratio
+		if filled > 0.0:
+			var source = Rect2(0, 0, CLASS_STAT_CRYSTAL.get_width() * ratio, CLASS_STAT_CRYSTAL.get_height())
+			draw_texture_rect_region(CLASS_STAT_CRYSTAL, Rect2(track.position, Vector2(filled, track.size.y)), source, Color(accent, 1.0))
 		var step = track.size.x / float(pips)
-		var lit = int(round(ratio * pips))
-		for i in pips:
-			var cell = Rect2(track.position + Vector2(step * i + 1, 0), Vector2(step - 2, track.size.y))
-			draw_rect(cell, Color(accent, 0.92) if i < lit else Color(0.14, 0.10, 0.10, 0.9), true)
+		for i in range(1, pips):
+			var x = track.position.x + step * i
+			draw_line(Vector2(x, track.position.y + 2), Vector2(x, track.end.y - 2), Color(0.04, 0.02, 0.025, 0.6), 1.0, true)
 
 # One node of the radial skill tree.
 class SkillNode extends Control:

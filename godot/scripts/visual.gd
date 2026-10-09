@@ -37,7 +37,7 @@ var revenant_layers: SkeletonModifier3D
 
 # Revenant event frames, authored at 60 fps (frame 1 = 0 s). The marker names in
 # art/revenant-astra-ready/deliverables/animation_events.json are the source.
-const REVENANT_CLIPS={"idle":"REV_Idle","run":"REV_AgileRun_InPlace","walk":"REV_AgileMove_InPlace","hit":"REV_HitLight_Front",
+const REVENANT_CLIPS={"idle":"REV_AssassinIdle","run":"REV_AssassinRun","walk":"REV_AssassinRun","hit":"REV_HitLight_Front",
 	"death":"REV_Death","attack":"REV_ClawAttack_1","attack1":"REV_ClawAttack_1","attack2":"REV_ClawAttack_2","attack3":"REV_ClawAttack_3",
 	"teleport":"REV_TeleportAttack","ultimate":"REV_BloodBurst"}
 # Claw combo: right-hand horizontal sweep, left-hand rising rake, right-hand overhead slam.
@@ -47,6 +47,9 @@ const REVENANT_EVENTS={"attack1":{"damage":11},"attack2":{"damage":12},"attack3"
 	"death":{"impact":5,"ground":52}}
 # The run cycle is authored at the class's base pace: 1.2 m per step at 6 m/s.
 const REVENANT_RUN_SPEED=6.0
+# Keep traversal controlled by the actor's movement stats, but give the
+# Assassin-derived cycle a heavier Revenant cadence.
+const REVENANT_LOCOMOTION_RATE=0.85
 
 static func revenant_time(clip: String,event: String) -> float:
 	return float(REVENANT_EVENTS[clip][event]-1)/60.0
@@ -126,7 +129,7 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 				if animation.has_animation(source):clips[desired]=source
 		for clip in clips:
 			var anim=animation.get_animation(clips[clip])
-			anim.loop_mode=Animation.LOOP_LINEAR if clip in ["idle","run"] else Animation.LOOP_NONE
+			anim.loop_mode=Animation.LOOP_LINEAR if clip in ["idle","run","walk"] else Animation.LOOP_NONE
 		if clips.has("idle"):animation.play(clips.idle);animation.advance(0)
 	var bounds=_bounds(model)
 	if fitted_timing or enemy_asset or (kind=="gunslinger" and not enemy):
@@ -369,7 +372,7 @@ func tick(delta: float,moving: bool,movement_rate: float=1.0):
 # Feet stay planted: the run plays at ground speed over the authored stride (which
 # grows with the model). Swings taken on the move borrow the run for the legs.
 func _revenant_tick(delta: float,moving: bool,movement_rate: float):
-	var rate=movement_rate/maxf(0.01,model.scale.x)
+	var rate=movement_rate*REVENANT_LOCOMOTION_RATE if clips.get("run","")=="REV_AssassinRun" else movement_rate/maxf(0.01,model.scale.x)
 	if state=="run" and animation:
 		animation.speed_scale=rate
 		revenant_layers.run_phase=animation.current_animation_position

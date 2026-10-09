@@ -67,6 +67,20 @@ func suite():
 	for id in BWData.CLASSES:
 		scene.start_run(id);await process_frame
 		check(scene.world.visual!=null,"class visual "+id)
+		if id=="revenant":
+			check(scene.world.visual.clips.get("idle","")=="REV_AssassinIdle","Revenant uses Assassin idle retarget")
+			check(scene.world.visual.clips.get("run","")=="REV_AssassinRun","Revenant uses Assassin run retarget")
+			var revenant_run=scene.world.visual.animation.get_animation("REV_AssassinRun")
+			check(revenant_run.loop_mode==Animation.LOOP_LINEAR,"Revenant Assassin run remains looped through walk alias")
+			var grounded_pelvis=true
+			for track in revenant_run.get_track_count():
+				if revenant_run.track_get_type(track)!=Animation.TYPE_POSITION_3D:continue
+				if String(revenant_run.track_get_path(track)).get_slice(":",1)!="pelvis":continue
+				for key in revenant_run.track_get_key_count(track):
+					if (revenant_run.track_get_key_value(track,key) as Vector3).y>1.0:grounded_pelvis=false
+			check(grounded_pelvis,"Revenant Assassin run keeps target pelvis grounded")
+			scene.world.visual.tick(0.0,true,1.0)
+			check(is_equal_approx(scene.world.visual.animation.speed_scale,BWVisual.REVENANT_LOCOMOTION_RATE),"Revenant locomotion cadence is slowed independently of travel speed")
 		if id=="gunslinger":
 			for clip in ["idle","run","attack","hit","death","bombthrow","ultimate"]:check(scene.world.visual.clips.has(clip),"Bloodhound clip "+clip)
 		if id=="warrior":
