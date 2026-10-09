@@ -313,7 +313,7 @@ func show_classes():
 	var actions=HBoxContainer.new();actions.alignment=BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation",18);column.add_child(actions)
 	banner(actions,"BACK",show_menu,240)
-	banner(actions,"SELECT CLASS",func():enter_safehouse(class_pick),360)
+	banner(actions,"SELECT CLASS",func():select_class(class_pick),360)
 
 # Left of the split: who this class is, and its numbers as bars so the four can be
 # compared without reading a single figure.
@@ -431,6 +431,30 @@ func begin_run(id: String,map_id: String=""):
 	if not room_mode():audio.play("wave_start")
 	intro.queue_free()
 
+func select_class(id: String):
+	if page in ["loading","arrival"]:return
+	transition_serial+=1
+	var serial=transition_serial
+	page="loading"
+	if is_instance_valid(hud):hud.hide()
+	var intro=RunIntro.new();run_intro=intro;root.add_child(intro)
+	var ready=await intro.close_screen(id)
+	if ready:ready=await intro.prepare_safehouse(id)
+	if ready:ready=await intro.wait_for_cinematic()
+	if not ready or serial!=transition_serial:
+		var failed=not intro.cancelled and serial==transition_serial
+		intro.queue_free()
+		if failed:
+			show_classes();audio.play("ui_error")
+			label(content,"The safehouse could not be loaded. Please try again.",18)
+		return
+	enter_safehouse(id,true)
+	root.move_child(intro,-1)
+	await get_tree().process_frame
+	await intro.dismiss()
+	intro.queue_free()
+	if run_intro==intro:run_intro=null
+
 # Immediate entry remains available to tools and isolated combat tests. Without a
 # map it is the open-field tour; with one it is the room flow from the map's start.
 func start_run(id: String,launch: bool=true,staged: bool=false,map_id: String=""):
@@ -465,12 +489,12 @@ func in_safehouse() -> bool:
 # Where a hunt starts and where it ends. The chosen class walks the hall; the
 # quartermaster keeps the builds, the blood sage keeps the oath, and the war table
 # is how the player leaves for a map.
-func enter_safehouse(id: String):
+func enter_safehouse(id: String,keep_intro: bool=false):
 	var hall=BWRooms.safehouse()
 	if hall.is_empty():
 		push_error("No safehouse room in data/rooms.json");show_menu();return
 	transition_serial+=1
-	if is_instance_valid(run_intro):run_intro.cancelled=true;run_intro.queue_free()
+	if is_instance_valid(run_intro) and not keep_intro:run_intro.cancelled=true;run_intro.queue_free()
 	if is_instance_valid(backdrop):backdrop.queue_free();backdrop=null;menu_art=null
 	if is_instance_valid(world):world.queue_free();world=null
 	class_pick=id;back_target=Callable()

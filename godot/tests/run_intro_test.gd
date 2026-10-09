@@ -40,6 +40,16 @@ func suite():
 		await create_timer(1.0).timeout
 		check(not scene.world.enemies.is_empty(),"First wave starts after control returns")
 		scene.show_menu();await process_frame
+	# Class confirmation owns its own short cinematic and only reveals the
+	# safehouse after the selected model has finished loading.
+	scene.show_classes();await process_frame
+	scene.select_class("revenant")
+	check(scene.page=="loading" and is_instance_valid(scene.run_intro),"Class confirmation opens its loading cinematic")
+	var safehouse_deadline=Time.get_ticks_msec()+20000
+	while scene.page=="loading" and Time.get_ticks_msec()<safehouse_deadline:await process_frame
+	check(scene.page=="playing" and scene.in_safehouse(),"Class cinematic hands control to the safehouse")
+	check(scene.run.class_id=="revenant" and scene.world.visual.actor_kind=="revenant","Class cinematic preserves the selected hero")
+	scene.show_menu();await process_frame
 	# Leaving either asynchronous phase must never revive a cancelled run.
 	scene.begin_run("warrior");scene.show_menu()
 	await create_timer(0.5).timeout
