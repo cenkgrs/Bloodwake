@@ -23,6 +23,7 @@ const BANK := {
 	"sword_hit_flesh":  {"files":["sword_hit_flesh_1","sword_hit_flesh_2","sword_hit_flesh_3"],"db":-4.0,"pitch":[0.93,1.07],"voices":3,"gap":0.02},
 	"sword_hit_armor":  {"files":["sword_hit_armor_1","sword_hit_armor_2","sword_hit_armor_3"],"db":-5.0,"pitch":[0.94,1.06],"voices":3,"gap":0.02},
 	"dagger_swing":     {"files":["dagger_swing_a","dagger_swing_b","dagger_swing_c"],"db":-4.0,"pitch":[0.95,1.08],"voices":3,"gap":0.0},
+	"revenant_swing":   {"files":["revenant_basic_attack_a","revenant_basic_attack_b","revenant_basic_attack_c"],"db":-3.0,"pitch":[0.98,1.02],"voices":3,"gap":0.0},
 	"dagger_hit":       {"files":["dagger_hit_1","dagger_hit_2","dagger_hit_3"],"db":-6.0,"pitch":[0.93,1.09],"voices":3,"gap":0.02},
 	"gun_rifle":        {"files":["gun_rifle_1","gun_rifle_2","gun_rifle_3"],"db":-5.0,"pitch":[0.94,1.07],"voices":4,"gap":0.0},
 	"gun_pistol":       {"files":["gun_pistol_1","gun_pistol_2"],"db":-5.0,"pitch":[0.95,1.05],"voices":3,"gap":0.0},
@@ -169,6 +170,13 @@ func play_at(event: String, position: Vector3, db_offset: float = 0.0, variant: 
 	player.pitch_scale = config.pitch
 	player.play()
 	_track(event, player)
+
+func has_sample(event: String) -> bool:
+	var entry=BANK.get(event)
+	if entry==null:return false
+	for name in entry.files:
+		if streams.get(name)!=null:return true
+	return false
 
 func ui(event: String):
 	var config = _take(event, -1)

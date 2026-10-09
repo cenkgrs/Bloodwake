@@ -218,6 +218,43 @@ func revenant_impact(pos: Vector3):
 	dry.tween_method(func(p: float):ink.set_shader_parameter("progress",p),0.0,1.0,1.4)
 	dry.tween_callback(stain.queue_free)
 
+# Blood leaves the body on the far side of the blow, drops to the floor, then
+# remains as several small stains before drying away. The travel arc makes the
+# direction readable instead of spawning a pool directly under the target.
+func blood_splatter(pos: Vector3,direction: Vector3):
+	var heading=direction;heading.y=0.0
+	if heading.length_squared()<0.001:heading=Vector3.FORWARD.rotated(Vector3.UP,rng.randf_range(0.0,TAU))
+	heading=heading.normalized()
+	var side=heading.cross(Vector3.UP).normalized()
+	var count=5 if quality=="PC" else 3
+	for i in count:
+		var end=pos+heading*rng.randf_range(0.48,1.25)+side*rng.randf_range(-0.5,0.5)
+		end.y=0.024
+		var start=pos+Vector3.UP*rng.randf_range(0.65,1.1)+side*rng.randf_range(-0.12,0.12)
+		var drop=MeshInstance3D.new();drop.name="BloodDrop"
+		var drop_mesh=SphereMesh.new();drop_mesh.radius=0.025;drop_mesh.height=0.07;drop_mesh.radial_segments=6;drop_mesh.rings=3;drop.mesh=drop_mesh
+		var drop_material=StandardMaterial3D.new();drop_material.albedo_color=Color("6e0712");drop_material.roughness=0.75
+		drop.material_override=drop_material;drop.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;drop.position=start;add_child(drop)
+		var duration=rng.randf_range(0.17,0.28)
+		var arc_height=rng.randf_range(0.12,0.38)
+		var flight=drop.create_tween()
+		flight.tween_method(func(p: float):
+			drop.position=start.lerp(end,p)+Vector3.UP*sin(p*PI)*arc_height
+		,0.0,1.0,duration).set_trans(Tween.TRANS_LINEAR)
+		flight.tween_callback(func():
+			_blood_stain(end,rng.randf_range(0.12,0.3),4.0+rng.randf_range(0.0,2.0))
+			drop.queue_free())
+
+func _blood_stain(pos: Vector3,size: float,hold: float):
+	var stain=MeshInstance3D.new();stain.name="BloodStain"
+	var plane=PlaneMesh.new();plane.size=Vector2.ONE*size;stain.mesh=plane
+	stain.position=pos;stain.rotation.y=rng.randf_range(0.0,TAU)
+	stain.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var ink=ShaderMaterial.new();ink.shader=BLOOD_SHADER;stain.material_override=ink;add_child(stain)
+	var dry=stain.create_tween();dry.tween_interval(hold)
+	dry.tween_method(func(p: float):ink.set_shader_parameter("progress",p),0.0,1.0,1.25)
+	dry.tween_callback(stain.queue_free)
+
 func _blood_fountain(pos: Vector3,radius: float,height: float,life: float):
 	if blood_scene==null and ResourceLoader.exists("res://assets/vfx/revenant_burst.glb"):
 		blood_scene=load("res://assets/vfx/revenant_burst.glb")

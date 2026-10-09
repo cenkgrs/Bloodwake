@@ -174,6 +174,13 @@ const HAZARD_LIMIT = 6
 const ARMORED = ["tank","boss"]
 const WEAPON_SHOT = {"rapid_rifle":"gun_rifle","basic_pistol":"gun_pistol","shotgun":"gun_shotgun","magic_orb":"orb_cast","lightning":"lightning_cast"}
 const HURT_FLASH_COLOR = Color("ff3b30")
+# A landed blow briefly holds the simulation on its contact pose. This is short
+# enough to read as weight instead of slowdown, and only direct hits trigger it
+# (damage-over-time calls _damage_enemy with effects disabled).
+const HIT_STOP = 0.050
+const CRITICAL_HIT_STOP = 0.075
+const ENEMY_HEALTH_RED = Color("7f0d1c")
+const ENEMY_HEALTH_MISSING = Color("4b4d52")
 # The melee chain, one clip per link. Attack1-3 are cut from a single Mixamo
 # performance so the seams share a pose; Attack4 is its own swing and ends the run.
 const COMBO = ["attack1","attack2","attack3","attack4"]
@@ -493,7 +500,8 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.
 	art.configure(id,true,color,BWData.enemy_height(id,elite))
 	art.set_level_scale(BWData.actor_growth(run.level))
 	var max_hp=data.maxHp*power.health*(2.5 if elite else 1)
-	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"damage":data.damage*power.damage*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0,"stagger":0.0,"cast_kind":""}
+	var health_bar=_enemy_health_bar(actor,BWData.enemy_height(id,elite))
+	var enemy={"id":id,"data":data,"node":actor,"visual":art,"hp":max_hp,"maxHp":max_hp,"health_bar":health_bar.root,"health_fill":health_bar.fill,"health_gradient":health_bar.gradient,"damage":data.damage*power.damage*(1.4 if elite else 1),"speed":data.moveSpeed*(1.15 if elite else 1),"radius":data.radius*BWData.UNIT*(1.35 if elite else 1),"elite":elite,"cooldown":2.5 if id=="boss" else rng.randf()*0.7,"state":"chase","timer":0.0,"pattern_index":0,"aura":0.0,"slow":0.0,"slow_amount":0.0,"burn":0.0,"burn_dps":0.0,"bleed":0.0,"bleed_dps":0.0,"status_tick":0.0,"stagger":0.0,"cast_kind":""}
 	enemy.hunt_role=enemy_serial%3
 	enemy.hunt_side=-1.0 if enemy_serial%2==0 else 1.0
 	enemy.hunt_depth=(enemy_serial%5)/4.0
@@ -501,8 +509,46 @@ func spawn_enemy(id: String,pos: Vector3,elite: bool=false,multiplier: float=-1.
 	enemies.append(enemy)
 	return enemy
 
+# A tiny world-space bar stays attached to the actor. Both colours live in one
+# texture on one quad, so billboard rotation can never split them into two bars.
+func _enemy_health_bar(actor: Node3D,height: float) -> Dictionary:
+	var root=Node3D.new();root.name="HealthBar";root.position=Vector3(0,height+0.28,0);actor.add_child(root)
+	root.set_meta("actor_height",height)
+	var gradient=Gradient.new();gradient.interpolation_mode=Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	gradient.offsets=PackedFloat32Array([0.0,1.0]);gradient.colors=PackedColorArray([ENEMY_HEALTH_RED,ENEMY_HEALTH_RED])
+	var texture=GradientTexture1D.new();texture.width=128;texture.gradient=gradient
+	var fill=MeshInstance3D.new();fill.name="Health"
+	var fill_mesh=QuadMesh.new();fill_mesh.size=Vector2(0.88,0.075);fill.mesh=fill_mesh
+	fill.material_override=_health_bar_material(texture);root.add_child(fill)
+	return {"root":root,"fill":fill,"gradient":gradient}
+
+func _health_bar_material(texture: Texture2D) -> StandardMaterial3D:
+	var material=StandardMaterial3D.new();material.albedo_texture=texture
+	material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.billboard_mode=BaseMaterial3D.BILLBOARD_ENABLED;material.billboard_keep_scale=true
+	material.no_depth_test=true
+	return material
+
+func _update_enemy_health_bar(e: Dictionary):
+	var fill=e.get("health_fill") as MeshInstance3D
+	if not is_instance_valid(fill):return
+	var root=e.get("health_bar") as Node3D
+	if is_instance_valid(root):root.position.y=float(root.get_meta("actor_height",1.7))*BWData.actor_growth(run.level)+0.28
+	var ratio=clampf(float(e.hp)/maxf(float(e.maxHp),0.001),0.0,1.0)
+	if is_equal_approx(ratio,float(fill.get_meta("health_ratio",-1.0))):return
+	fill.set_meta("health_ratio",ratio)
+	var gradient=e.get("health_gradient") as Gradient
+	if gradient==null:return
+	if ratio>=0.999:
+		gradient.offsets=PackedFloat32Array([0.0,1.0]);gradient.colors=PackedColorArray([ENEMY_HEALTH_RED,ENEMY_HEALTH_RED])
+	elif ratio<=0.001:
+		gradient.offsets=PackedFloat32Array([0.0,1.0]);gradient.colors=PackedColorArray([ENEMY_HEALTH_MISSING,ENEMY_HEALTH_MISSING])
+	else:
+		gradient.offsets=PackedFloat32Array([0.0,ratio,1.0]);gradient.colors=PackedColorArray([ENEMY_HEALTH_RED,ENEMY_HEALTH_MISSING,ENEMY_HEALTH_MISSING])
+
 func _enemy_tick(e: Dictionary,dt: float):
 	if e.hp<=0:return
+	_update_enemy_health_bar(e)
 	if e.get("rising",0.0)>0.0:
 		_rise_tick(e,dt)
 		return
@@ -853,7 +899,7 @@ func _resolve_weapon(id: String,direction: Vector3,damage_scale: float=1.0,weapo
 			# Clock the blow before it staggers anyone, so this gap already counts.
 			if not struck.is_empty():_note_hit(id)
 			for e in struck:
-				var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade);hit.append(e)
+				var roll=run.damage_roll(base);_damage_enemy(e,roll.damage,roll.critical,true,blade,direction);hit.append(e)
 				if e.hp>0:
 					_stagger(e,stagger_force,1.0,id)
 					if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
@@ -867,7 +913,6 @@ func _resolve_weapon(id: String,direction: Vector3,damage_scale: float=1.0,weapo
 			# A connecting swing is felt in the camera as well as on the body it hit.
 			if not hit.is_empty():
 				shake=maxf(shake,0.16 if slam else 0.10 if run.class_id=="revenant" else 0.075)
-				impact_pause=0.035 if run.class_id=="revenant" else 0.0
 			if not hit.is_empty() and slot.chain>0:_chain(hit[0].node.position,base*0.5,int(slot.chain),2.4,hit)
 		"chain":_chain(player.position,base,int(data.get("chainCount",0)+slot.chain+1),range_value,[])
 		_:
@@ -916,7 +961,7 @@ func _resolve_spin(id: String,direction: Vector3):
 	for e in enemies.duplicate():
 		if e.node.position.distance_to(player.position)<=radius+e.radius:
 			var roll=run.damage_roll(base)
-			_damage_enemy(e,roll.damage,roll.critical,true,"sword");hit.append(e)
+			_damage_enemy(e,roll.damage,roll.critical,true,"sword",(e.node.position-player.position).normalized());hit.append(e)
 			if e.hp>0:
 				_stagger(e,1.5,1.0,id)
 				if slot.bleed>0:e.bleed=3;e.bleed_dps=slot.bleed
@@ -932,7 +977,8 @@ func _chain(origin: Vector3,base: float,count: int,radius: float,hit: Array):
 		var end=next.node.position;fx.beam(origin+Vector3.UP,end+Vector3.UP,Color("a5cfff"))
 		# The arc earths itself on whatever it passes through.
 		damage_area(end,1.0,base)
-		var roll=run.damage_roll(base);_damage_enemy(next,roll.damage,roll.critical,true,"chain")
+		var hit_direction=(end-origin).normalized()
+		var roll=run.damage_roll(base);_damage_enemy(next,roll.damage,roll.critical,true,"chain",hit_direction)
 		if next.hp>0:next.burn=2;next.burn_dps=4;_stagger(next,1.0,0.0)
 		hit.append(next);origin=end
 
@@ -1228,7 +1274,7 @@ func _projectiles(dt: float):
 			if p.distance_to(closest)<=target.radius+b.radius:
 				b.hit.append(target.node.get_instance_id())
 				if b.friendly:
-					_damage_enemy(target,b.damage,b.critical)
+					_damage_enemy(target,b.damage,b.critical,true,"",b.direction)
 					if target.hp>0:
 						_note_hit(b.weapon)
 						_stagger(target,1.0,BULLET_KNOCK,b.weapon)
@@ -1249,14 +1295,19 @@ func _projectiles(dt: float):
 				if b.pierce<0:b.remaining=-1;break
 		if b.remaining<=0:b.node.queue_free();bullets.erase(b)
 
-func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: bool=true,impact: String=""):
+func _damage_enemy(e: Dictionary,damage: float,critical: bool=false,effects: bool=true,impact: String="",hit_direction: Vector3=Vector3.ZERO):
 	if e.hp<=0:return
 	# Still coming up out of the ground: nothing to hit yet.
 	if e.get("rising",0.0)>0.0 and damage<1e8:return
 	if e.get("marked",false):damage*=1.35+0.1*mark_chain
 	var actual=minf(e.hp,damage);e.hp-=damage
+	_update_enemy_health_bar(e)
+	if e.hp<=0 and is_instance_valid(e.get("health_bar")):e.health_bar.hide()
 	if run.stats.hp>0:run.stats.hp=minf(run.stats.maxHp,run.stats.hp+actual*run.stats.lifesteal)
 	if effects:
+		impact_pause=maxf(impact_pause,CRITICAL_HIT_STOP if critical else HIT_STOP)
+		if hit_direction.length_squared()<0.001:hit_direction=e.node.position-player.position
+		fx.blood_splatter(e.node.position,hit_direction)
 		fx.damage_text(e.node.position,damage,Color("ffe4a8") if critical else Color("d9dce2"))
 		_impact_sound(e,impact,critical)
 		e.visual.flash(0.14 if critical else 0.1)
@@ -1584,7 +1635,9 @@ func sound_at(event: String,position: Vector3,db_offset: float=0.0):
 	if audio!=null:audio.play_at(event,position,db_offset)
 
 func _swing(weapon: String,step: int):
-	sound("dagger_swing" if weapon=="daggers" or run.class_id=="revenant" else "sword_swing",0.0,step)
+	if run.class_id=="revenant" and audio!=null and audio.has_sample("revenant_swing"):
+		audio.play("revenant_swing",0.0,step)
+	else:sound("dagger_swing" if weapon=="daggers" or run.class_id=="revenant" else "sword_swing",0.0,step)
 
 func _impact_sound(e: Dictionary,impact: String,critical: bool):
 	if audio==null:return
