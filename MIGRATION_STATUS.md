@@ -1,5 +1,8 @@
 # Bloodwake — devir notu (24 Eylül 2026)
 
+> Güncel Unity aktarım devri (13 Ekim 2026): [unity/README.md](unity/README.md).
+> Aşağıdaki notlar tarihsel Godot çalışmalarıdır; güncel Unity kapsamı değildir.
+
 Proje tamamen `godot/` içindeki Godot 4.6.3 standard/GDScript projesi.
 Hedef önce PC, sonra ölçülerek optimize edilecek mobil sürüm. Flutter/Flame
 prototipi silindi; geçmişi git'te duruyor. Yeni bilgisayarda `godot/project.godot`

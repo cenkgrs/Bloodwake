@@ -1,0 +1,102 @@
+[gd_resource type="AnimationNodeBlendTree" format=3]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_6a3te"]
+animation = &"BH_FiveShot"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_7q3cy"]
+animation = &"BH_BombThrow"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_w8peq"]
+animation = &"BH_Death"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_cko3e"]
+animation = &"BH_GetHit"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_f7ki2"]
+animation = &"BH_Ricochet"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_a7vqh"]
+animation = &"BH_Ultimate_BloodWake"
+
+[sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_5edc0"]
+xfade_time = 0.075
+allow_transition_to_self = true
+input_0/name = "attack"
+input_0/auto_advance = false
+input_0/break_loop_at_end = false
+input_0/reset = true
+input_1/name = "bombthrow"
+input_1/auto_advance = false
+input_1/break_loop_at_end = false
+input_1/reset = true
+input_2/name = "death"
+input_2/auto_advance = false
+input_2/break_loop_at_end = false
+input_2/reset = true
+input_3/name = "hit"
+input_3/auto_advance = false
+input_3/break_loop_at_end = false
+input_3/reset = true
+input_4/name = "ricochet"
+input_4/auto_advance = false
+input_4/break_loop_at_end = false
+input_4/reset = true
+input_5/name = "ultimate"
+input_5/auto_advance = false
+input_5/break_loop_at_end = false
+input_5/reset = true
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_entxh"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_8kjvk"]
+animation = &"BH_Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_mj15c"]
+animation = &"BH_Walk_InPlace"
+
+[sub_resource type="AnimationNodeBlendSpace1D" id="AnimationNodeBlendSpace1D_47g3h"]
+blend_point_0/node = SubResource("AnimationNodeAnimation_8kjvk")
+blend_point_0/pos = 0.0
+blend_point_1/node = SubResource("AnimationNodeAnimation_mj15c")
+blend_point_1/pos = 1.0
+min_space = 0.0
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_ca33l"]
+
+[sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_lw5ae"]
+xfade_time = 0.1
+allow_transition_to_self = true
+input_0/name = "locomotion"
+input_0/auto_advance = false
+input_0/break_loop_at_end = false
+input_0/reset = true
+input_1/name = "action"
+input_1/auto_advance = false
+input_1/break_loop_at_end = false
+input_1/reset = true
+
+[resource]
+graph_offset = Vector2(-20, -40)
+nodes/locomotion/node = SubResource("AnimationNodeBlendSpace1D_47g3h")
+nodes/locomotion/position = Vector2(40, 20)
+nodes/locomotion_speed/node = SubResource("AnimationNodeTimeScale_ca33l")
+nodes/locomotion_speed/position = Vector2(300, 20)
+nodes/actions/node = SubResource("AnimationNodeTransition_5edc0")
+nodes/actions/position = Vector2(300, 220)
+nodes/action_attack/node = SubResource("AnimationNodeAnimation_6a3te")
+nodes/action_attack/position = Vector2(40, 180)
+nodes/action_bombthrow/node = SubResource("AnimationNodeAnimation_7q3cy")
+nodes/action_bombthrow/position = Vector2(40, 250)
+nodes/action_death/node = SubResource("AnimationNodeAnimation_w8peq")
+nodes/action_death/position = Vector2(40, 320)
+nodes/action_hit/node = SubResource("AnimationNodeAnimation_cko3e")
+nodes/action_hit/position = Vector2(40, 390)
+nodes/action_ricochet/node = SubResource("AnimationNodeAnimation_f7ki2")
+nodes/action_ricochet/position = Vector2(40, 460)
+nodes/action_ultimate/node = SubResource("AnimationNodeAnimation_a7vqh")
+nodes/action_ultimate/position = Vector2(40, 530)
+nodes/mode/node = SubResource("AnimationNodeTransition_lw5ae")
+nodes/mode/position = Vector2(570, 100)
+nodes/global_speed/node = SubResource("AnimationNodeTimeScale_entxh")
+nodes/global_speed/position = Vector2(780, 100)
+node_connections = [&"output", 0, &"global_speed", &"locomotion_speed", 0, &"locomotion", &"actions", 0, &"action_attack", &"actions", 1, &"action_bombthrow", &"actions", 2, &"action_death", &"actions", 3, &"action_hit", &"actions", 4, &"action_ricochet", &"actions", 5, &"action_ultimate", &"mode", 0, &"locomotion_speed", &"mode", 1, &"actions", &"global_speed", 0, &"mode"]

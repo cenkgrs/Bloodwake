@@ -1,4 +1,14 @@
 # Miscellaneous
+# Unity migration (keep Assets, Packages and ProjectSettings tracked).
+/unity/Library/
+/unity/Temp/
+/unity/Obj/
+/unity/Logs/
+/unity/UserSettings/
+/unity/Builds/
+/unity/*.csproj
+/unity/*.sln
+/unity/*.slnx
 *.class
 *.log
 *.pyc

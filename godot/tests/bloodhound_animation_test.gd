@@ -5,6 +5,9 @@ func check(ok: bool,message: String):
 func _initialize():call_deferred("suite")
 func suite():
 	var actor=BWVisual.new();root.add_child(actor);actor.configure("gunslinger")
+	# Source-clip seam/contact checks drive AnimationPlayer manually. AnimationTree
+	# owns playback in game, so pause it during these authored-data assertions.
+	actor.animation_tree.active=false
 	var expected={"idle":"BH_Idle","run":"BH_Walk_InPlace","attack":"BH_FiveShot","hit":"BH_GetHit","death":"BH_Death","bombthrow":"BH_BombThrow","ultimate":"BH_Ultimate_BloodWake"}
 	for key in expected:
 		check(actor.clips.get(key,"")==expected[key],"Runtime clip mapping: "+key)
@@ -42,13 +45,14 @@ func suite():
 	check(first_foot.distance_to(skeleton.get_bone_global_pose(foot).origin)>0.08,"Moving attack actually moves feet")
 	check(upper.is_equal_approx(skeleton.get_bone_global_pose(spine)),"Leg blend preserves upper-body aim pose")
 	actor.bloodhound_stride.speed=0
+	actor.animation_tree.active=true
 	actor.action("bombthrow")
-	check(actor.animation.current_animation=="BH_BombThrow","Bomb clip starts")
+	check(actor.state=="bombthrow" and actor.animation_tree.get("parameters/actions/transition_request")=="bombthrow","Bomb clip starts through AnimationTree")
 	check(not actor.action("attack"),"Auto-fire cannot interrupt throw")
 	actor.lock_time=0;actor.action("ultimate")
-	check(actor.animation.current_animation=="BH_Ultimate_BloodWake","Ultimate clip starts")
+	check(actor.state=="ultimate" and actor.animation_tree.get("parameters/actions/transition_request")=="ultimate","Ultimate clip starts through AnimationTree")
 	check(not actor.action("attack"),"Auto-fire cannot interrupt ultimate")
 	actor.action("death")
-	check(actor.animation.current_animation=="BH_Death","Death can interrupt ultimate")
+	check(actor.state=="death" and actor.animation_tree.get("parameters/actions/transition_request")=="death","Death can interrupt ultimate through AnimationTree")
 	actor.queue_free();await process_frame
 	print("BLOODHOUND_ANIMATION_TEST failures=",failures);quit(1 if failures else 0)

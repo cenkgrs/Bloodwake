@@ -1,0 +1,979 @@
+{
+  "audio": {
+    "boss_death": {
+      "db": 1.0,
+      "files": [
+        "boss_death"
+      ],
+      "gap": 0.5,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "boss_phase": {
+      "db": -1.0,
+      "files": [
+        "boss_phase"
+      ],
+      "gap": 0.3,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "dagger_hit": {
+      "db": -6.0,
+      "files": [
+        "dagger_hit_1",
+        "dagger_hit_2",
+        "dagger_hit_3"
+      ],
+      "gap": 0.02,
+      "pitch": [
+        0.93,
+        1.09
+      ],
+      "voices": 3
+    },
+    "dagger_swing": {
+      "db": -4.0,
+      "files": [
+        "dagger_swing_a",
+        "dagger_swing_b",
+        "dagger_swing_c"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.95,
+        1.08
+      ],
+      "voices": 3
+    },
+    "enemy_death": {
+      "db": -5.0,
+      "files": [
+        "enemy_death_1",
+        "enemy_death_2",
+        "enemy_death_3"
+      ],
+      "gap": 0.04,
+      "pitch": [
+        0.92,
+        1.08
+      ],
+      "voices": 4
+    },
+    "gun_pistol": {
+      "db": -5.0,
+      "files": [
+        "gun_pistol_1",
+        "gun_pistol_2"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "voices": 3
+    },
+    "gun_rifle": {
+      "db": -5.0,
+      "files": [
+        "gun_rifle_1",
+        "gun_rifle_2",
+        "gun_rifle_3"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.94,
+        1.07
+      ],
+      "voices": 4
+    },
+    "gun_shotgun": {
+      "db": -4.0,
+      "files": [
+        "gun_shotgun_1",
+        "gun_shotgun_2"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "voices": 2
+    },
+    "hit_heavy": {
+      "db": -6.0,
+      "files": [
+        "hit_heavy_1",
+        "hit_heavy_2",
+        "hit_heavy_3"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.92,
+        1.08
+      ],
+      "voices": 3
+    },
+    "hit_light": {
+      "db": -9.0,
+      "files": [
+        "hit_light_1",
+        "hit_light_2",
+        "hit_light_3",
+        "hit_light_4"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.9,
+        1.1
+      ],
+      "voices": 3
+    },
+    "level_up": {
+      "db": -3.0,
+      "files": [
+        "level_up"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "lightning_cast": {
+      "db": -4.0,
+      "files": [
+        "lightning_cast"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.95,
+        1.06
+      ],
+      "voices": 2
+    },
+    "lightning_chain": {
+      "db": -7.0,
+      "files": [
+        "lightning_chain_1",
+        "lightning_chain_2",
+        "lightning_chain_3"
+      ],
+      "gap": 0.02,
+      "pitch": [
+        0.92,
+        1.1
+      ],
+      "voices": 3
+    },
+    "orb_cast": {
+      "db": -4.0,
+      "files": [
+        "orb_cast_1",
+        "orb_cast_2",
+        "orb_cast_3"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 3
+    },
+    "orb_impact": {
+      "db": -6.0,
+      "files": [
+        "orb_impact_1",
+        "orb_impact_2",
+        "orb_impact_3"
+      ],
+      "gap": 0.02,
+      "pitch": [
+        0.92,
+        1.08
+      ],
+      "voices": 3
+    },
+    "pickup_health": {
+      "db": -8.0,
+      "files": [
+        "pickup_health"
+      ],
+      "gap": 0.05,
+      "pitch": [
+        0.95,
+        1.08
+      ],
+      "voices": 2
+    },
+    "player_death": {
+      "db": 1.0,
+      "files": [
+        "player_death"
+      ],
+      "gap": 0.5,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "player_hit": {
+      "db": -3.0,
+      "files": [
+        "player_hit_1",
+        "player_hit_2",
+        "player_hit_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "purchase": {
+      "db": -4.0,
+      "files": [
+        "purchase"
+      ],
+      "gap": 0.05,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "revenant_swing": {
+      "db": 3.0,
+      "files": [
+        "revenant_basic_attack_a",
+        "revenant_basic_attack_b",
+        "revenant_basic_attack_c"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 3
+    },
+    "skill_leap_land": {
+      "db": -1.0,
+      "files": [
+        "skill_leap_land"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "skill_leap_launch": {
+      "db": -5.0,
+      "files": [
+        "skill_leap_launch"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.98,
+        1.03
+      ],
+      "voices": 1
+    },
+    "skill_meteor_blast": {
+      "db": -1.0,
+      "files": [
+        "skill_meteor_blast"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.97,
+        1.03
+      ],
+      "voices": 2
+    },
+    "skill_meteor_cast": {
+      "db": -4.0,
+      "files": [
+        "skill_meteor_cast"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.97,
+        1.04
+      ],
+      "voices": 2
+    },
+    "sword_hit_armor": {
+      "db": -5.0,
+      "files": [
+        "sword_hit_armor_1",
+        "sword_hit_armor_2",
+        "sword_hit_armor_3"
+      ],
+      "gap": 0.02,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 3
+    },
+    "sword_hit_flesh": {
+      "db": -4.0,
+      "files": [
+        "sword_hit_flesh_1",
+        "sword_hit_flesh_2",
+        "sword_hit_flesh_3"
+      ],
+      "gap": 0.02,
+      "pitch": [
+        0.93,
+        1.07
+      ],
+      "voices": 3
+    },
+    "sword_swing": {
+      "db": -3.0,
+      "files": [
+        "sword_swing_a",
+        "sword_swing_b",
+        "sword_swing_c"
+      ],
+      "gap": 0.0,
+      "pitch": [
+        0.96,
+        1.05
+      ],
+      "voices": 3
+    },
+    "ui_click": {
+      "db": -6.0,
+      "files": [
+        "ui_click"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 2
+    },
+    "ui_error": {
+      "db": -6.0,
+      "files": [
+        "ui_error"
+      ],
+      "gap": 0.05,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "ui_select": {
+      "db": -6.0,
+      "files": [
+        "ui_select"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 2
+    },
+    "ulti_fan_shot": {
+      "db": -1.0,
+      "files": [
+        "ulti_fan_shot"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "voices": 1
+    },
+    "ulti_frost_nova": {
+      "db": -1.0,
+      "files": [
+        "ulti_frost_nova"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "voices": 1
+    },
+    "ulti_shadow_strike": {
+      "db": -1.0,
+      "files": [
+        "ulti_shadow_strike"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "voices": 1
+    },
+    "ulti_war_cry": {
+      "db": 0.0,
+      "files": [
+        "ulti_war_cry"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "voices": 1
+    },
+    "upgrade_pick": {
+      "db": -4.0,
+      "files": [
+        "upgrade_pick"
+      ],
+      "gap": 0.05,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "wave_clear": {
+      "db": -2.0,
+      "files": [
+        "wave_clear"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "wave_start": {
+      "db": -3.0,
+      "files": [
+        "wave_start"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "voices": 1
+    }
+  },
+  "boss": {
+    "attack": {
+      "arc": 70.0,
+      "color": "(1.0, 0.7098, 0.3608, 1.0)",
+      "contact": 0.4,
+      "damage": 1.0,
+      "radius": 2.8,
+      "recovery": 0.42,
+      "windup": 0.38
+    },
+    "cast": {
+      "color": "(0.8627, 0.5137, 1.0, 1.0)",
+      "contact": 0.5,
+      "damage": 0.7,
+      "radius": 14.0,
+      "recovery": 0.65,
+      "windup": 1.0
+    },
+    "charge": {
+      "color": "(1.0, 0.8, 0.4, 1.0)",
+      "contact": 0.38,
+      "damage": 1.35,
+      "radius": 8.0,
+      "recovery": 0.6,
+      "width": 2.0,
+      "windup": 0.9
+    },
+    "slam": {
+      "arc": 360.0,
+      "color": "(1.0, 0.3333, 0.2784, 1.0)",
+      "contact": 0.62,
+      "damage": 2.0,
+      "radius": 4.2,
+      "recovery": 0.9,
+      "windup": 1.25
+    },
+    "summon": {
+      "arc": 360.0,
+      "color": "(0.5529, 0.9333, 0.6196, 1.0)",
+      "contact": 0.45,
+      "damage": 0.0,
+      "radius": 3.0,
+      "recovery": 0.8,
+      "windup": 1.5
+    },
+    "sweep": {
+      "arc": 270.0,
+      "color": "(1.0, 0.5294, 0.3333, 1.0)",
+      "contact": 0.62,
+      "damage": 1.2,
+      "radius": 3.8,
+      "recovery": 0.65,
+      "windup": 0.8
+    }
+  },
+  "classes": {
+    "assassin": {
+      "ability": "shadow_strike",
+      "blurb": "Fast, brittle, and always behind you. Every cut is meant to be the last one.",
+      "color": "63bd9f",
+      "name": "Assassin",
+      "skills": [
+        "phantom_volley",
+        "mark_of_ruin"
+      ],
+      "stats": {
+        "criticalChance": 0.8,
+        "criticalDamage": 2.8,
+        "dodgeChance": 0.3,
+        "maxHp": 80.0,
+        "moveSpeed": 350.0
+      },
+      "tag": "MOBILE / CRITICAL",
+      "weapon": "daggers"
+    },
+    "gunslinger": {
+      "ability": "fan_shot",
+      "blurb": "Powder, iron and a debt paid in blood. Answers every wave with more rounds than it sent.",
+      "color": "d7ae64",
+      "name": "Bloodbound",
+      "skills": [
+        "ricochet_round",
+        "powder_charge"
+      ],
+      "stats": {
+        "attackSpeed": 0.85,
+        "maxHp": 90.0,
+        "moveSpeed": 250.0
+      },
+      "tag": "RANGED / RELENTLESS",
+      "weapon": "rapid_rifle"
+    },
+    "mage": {
+      "ability": "frost_nova",
+      "blurb": "Borrowed cold and falling stone. Holds ground it never has to stand on.",
+      "color": "9b83de",
+      "name": "Mage",
+      "skills": [
+        "arcane_meteor",
+        "void_leap"
+      ],
+      "stats": {
+        "damage": 1.5,
+        "maxHp": 85.0,
+        "moveSpeed": 215.0
+      },
+      "tag": "ARCANE / AREA CONTROL",
+      "weapon": "magic_orb"
+    },
+    "revenant": {
+      "ability": "blood_burst",
+      "blurb": "A patient predator. Vanishes into blood mist, tears through the landing point, then unleashes Blood Burst on the surrounding pack.",
+      "color": "d8243e",
+      "name": "Revenant",
+      "skills": [
+        "blood_step",
+        "mark_of_ruin"
+      ],
+      "stats": {
+        "attackSpeed": 1.65,
+        "criticalChance": 0.15,
+        "damage": 1.4,
+        "maxHp": 95.0,
+        "moveSpeed": 300.0
+      },
+      "tag": "BLOOD / TELEPORT",
+      "weapon": "sword"
+    },
+    "warrior": {
+      "ability": "war_cry",
+      "blurb": "Heavy plate and a heavier blade. Walks into the press on purpose, and is still standing when it clears.",
+      "color": "d56558",
+      "name": "Warrior",
+      "skills": [
+        "sunder_leap",
+        "whirl"
+      ],
+      "stats": {
+        "armor": 0.2,
+        "damage": 3,
+        "maxHp": 130.0,
+        "moveSpeed": 210.0
+      },
+      "tag": "MELEE / DURABLE",
+      "weapon": "sword"
+    }
+  },
+  "defaults": {
+    "armor": 0.0,
+    "attackRange": 1.0,
+    "attackSpeed": 1.0,
+    "bonusGoldPerKill": 0,
+    "criticalChance": 0.05,
+    "criticalDamage": 1.5,
+    "damage": 1.0,
+    "dodgeChance": 0.0,
+    "hasSecondWind": false,
+    "hp": 100.0,
+    "lifesteal": 0.0,
+    "maxHp": 100.0,
+    "moveSpeed": 220.0,
+    "pickupRadius": 80.0,
+    "regenPerSecond": 0.0,
+    "xpMultiplier": 1.0
+  },
+  "effects": {
+    "arcane_steps": [
+      [
+        "moveSpeed",
+        12
+      ],
+      [
+        "attackSpeed",
+        0.06
+      ]
+    ],
+    "armor_piercer": [],
+    "bellbreaker_sigil": [
+      [
+        "damage",
+        0.18
+      ],
+      [
+        "criticalDamage",
+        0.25
+      ]
+    ],
+    "bloodplate": [
+      [
+        "maxHp",
+        22
+      ],
+      [
+        "hp",
+        22
+      ],
+      [
+        "armor",
+        0.04
+      ]
+    ],
+    "dagger_edge": [],
+    "dagger_reach": [],
+    "dagger_steel": [],
+    "dagger_tempo": [],
+    "drain": [
+      [
+        "lifesteal",
+        0.003
+      ]
+    ],
+    "ember_sigil": [
+      [
+        "damage",
+        0.1
+      ]
+    ],
+    "execution": [
+      [
+        "criticalDamage",
+        0.03
+      ]
+    ],
+    "fury": [
+      [
+        "attackSpeed",
+        0.02
+      ]
+    ],
+    "gold_sword": [],
+    "greatsword": [],
+    "guardian_angel": [
+      [
+        "hasSecondWind",
+        true,
+        "set"
+      ]
+    ],
+    "hemorrhage": [],
+    "hunter_boots": [
+      [
+        "moveSpeed",
+        22
+      ],
+      [
+        "pickupRadius",
+        25
+      ]
+    ],
+    "hunters_scope": [
+      [
+        "attackRange",
+        0.2
+      ],
+      [
+        "criticalChance",
+        0.05
+      ]
+    ],
+    "insight": [
+      [
+        "xpMultiplier",
+        0.02
+      ]
+    ],
+    "iron_greaves": [
+      [
+        "armor",
+        0.03
+      ],
+      [
+        "maxHp",
+        10
+      ],
+      [
+        "hp",
+        10
+      ]
+    ],
+    "last_stand": [],
+    "leech_pendant": [
+      [
+        "lifesteal",
+        0.025
+      ]
+    ],
+    "lucky_charm": [
+      [
+        "bonusGoldPerKill",
+        3
+      ],
+      [
+        "xpMultiplier",
+        0.2
+      ]
+    ],
+    "magnet": [
+      [
+        "pickupRadius",
+        5
+      ]
+    ],
+    "might": [
+      [
+        "damage",
+        0.02
+      ]
+    ],
+    "nightglass_lens": [
+      [
+        "attackSpeed",
+        0.15
+      ],
+      [
+        "criticalChance",
+        0.06
+      ]
+    ],
+    "orb_focus": [],
+    "orb_pierce": [],
+    "orb_power": [],
+    "orb_range": [],
+    "plate": [
+      [
+        "armor",
+        0.005
+      ]
+    ],
+    "platinum_armor": [
+      [
+        "armor",
+        0.1
+      ],
+      [
+        "maxHp",
+        20
+      ],
+      [
+        "hp",
+        20
+      ]
+    ],
+    "precision": [
+      [
+        "criticalChance",
+        0.01
+      ]
+    ],
+    "predator": [
+      [
+        "criticalChance",
+        0.05
+      ]
+    ],
+    "rapid_fire_stat": [
+      [
+        "attackSpeed",
+        0.12
+      ]
+    ],
+    "reach": [
+      [
+        "attackRange",
+        0.02
+      ]
+    ],
+    "reflex": [
+      [
+        "dodgeChance",
+        0.005
+      ]
+    ],
+    "renewal": [
+      [
+        "regenPerSecond",
+        0.15
+      ]
+    ],
+    "rifle_caliber": [],
+    "rifle_mechanism": [],
+    "rifle_range": [],
+    "rifle_tempo": [],
+    "scavenger": [
+      [
+        "bonusGoldPerKill",
+        1
+      ]
+    ],
+    "scholar_rune": [
+      [
+        "xpMultiplier",
+        0.12
+      ]
+    ],
+    "shadow_cloak": [
+      [
+        "moveSpeed",
+        18
+      ],
+      [
+        "dodgeChance",
+        0.04
+      ]
+    ],
+    "sharpened": [
+      [
+        "damage",
+        0.1
+      ]
+    ],
+    "shockwave": [],
+    "spellfire": [],
+    "storm_blade": [],
+    "storm_robe": [
+      [
+        "damage",
+        0.07
+      ],
+      [
+        "attackRange",
+        0.07
+      ]
+    ],
+    "stride": [
+      [
+        "moveSpeed",
+        3
+      ]
+    ],
+    "swift": [
+      [
+        "moveSpeed",
+        1.08,
+        "mul"
+      ]
+    ],
+    "swift_boots": [
+      [
+        "moveSpeed",
+        1.15,
+        "mul"
+      ],
+      [
+        "dodgeChance",
+        0.1
+      ]
+    ],
+    "thunder_core": [],
+    "thunderquake": [],
+    "vampiric_amulet": [
+      [
+        "lifesteal",
+        0.03
+      ],
+      [
+        "regenPerSecond",
+        2
+      ]
+    ],
+    "vampirism": [
+      [
+        "lifesteal",
+        0.02
+      ]
+    ],
+    "vigor": [
+      [
+        "maxHp",
+        4
+      ],
+      [
+        "hp",
+        4
+      ]
+    ],
+    "vitality": [
+      [
+        "maxHp",
+        20
+      ],
+      [
+        "hp",
+        20
+      ]
+    ],
+    "wardens_mantle": [
+      [
+        "maxHp",
+        40
+      ],
+      [
+        "hp",
+        40
+      ],
+      [
+        "armor",
+        0.08
+      ]
+    ]
+  }
+}

@@ -348,7 +348,12 @@ func _physics_process(dt: float):
 		var hit=plane.intersects_ray(camera.project_ray_origin(mouse),camera.project_ray_normal(mouse))
 		if hit!=null and player.position.distance_squared_to(hit)>0.01:aim=(hit-player.position).normalized()
 	elif movement.length_squared()>0.001:aim=last_move
+	var directional_melee=run.class_id in ["warrior","revenant"]
 	var facing=aim if Input.is_action_pressed("fire") or aim_stick.length_squared()>0.04 or touch_aim.length_squared()>0.04 else last_move
+	# Warrior and Revenant basic attacks do not turn toward the mouse. While moving
+	# they follow locomotion; at rest they preserve the direction the body already faces.
+	if directional_melee and Input.is_action_pressed("fire"):
+		facing=last_move if movement.length_squared()>0.001 else player_facing_direction()
 	# Keep the body aligned with the committed blade until contact resolves.
 	for attack in pending_attacks:
 		if attack.id in run.weapons and run.weapons[attack.id].data.get("behavior","")=="melee":
@@ -771,7 +776,9 @@ func _weapons(dt: float):
 		var primary=id==BWData.CLASSES[run.class_id].weapon
 		# The chain is gated by its cancel window; everything else waits out its clip.
 		if primary and visual.fitted_timing and (swing_gate>0 if data.get("behavior","")=="melee" else visual.lock_time>0):continue
-		var direction=aim if manual else (target.node.position-player.position).normalized()
+		var melee=data.get("behavior","")=="melee"
+		var directional_basic=manual and melee and run.class_id in ["warrior","revenant"]
+		var direction=player_facing_direction() if directional_basic else aim if manual else (target.node.position-player.position).normalized()
 		var cooldown=1.0/(data.attacksPerSecond*run.stats.attackSpeed*slot.speed)
 		if primary and run.class_id=="gunslinger":
 			if visual.lock_time>0:continue
@@ -784,7 +791,6 @@ func _weapons(dt: float):
 					pending_attacks.append({"time":float([10,14,18,22,26][index]-1)/60.0,"id":"bh_shot","weapon":id,"direction":direction,"index":index,"damage_scale":duration/cooldown/6.0})
 				slot.cooldown=duration
 			continue
-		var melee=data.get("behavior","")=="melee"
 		# Holding the heavy modifier spends the swing on the spin instead of the chain.
 		if primary and melee and has_heavy() and Input.is_action_pressed("heavy") and Input.is_action_pressed("fire"):
 			combo_step=0;combo_timer=0.0
@@ -987,6 +993,10 @@ func screen_direction(input: Vector2) -> Vector3:
 	var right=camera.basis.x;right.y=0
 	var down=camera.basis.z;down.y=0
 	return right.normalized()*input.x+down.normalized()*input.y
+
+func player_facing_direction() -> Vector3:
+	if not is_instance_valid(visual):return last_move.normalized()
+	return Vector3(sin(visual.rotation.y),0.0,cos(visual.rotation.y)).normalized()
 
 func skill_aim() -> Vector3:
 	if touch_aim.length_squared()>0.04:return screen_direction(touch_aim).normalized()

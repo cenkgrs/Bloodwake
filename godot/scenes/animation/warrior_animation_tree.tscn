@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/warrior_v2_player.glb" id="1_model"]
+[ext_resource type="AnimationNodeBlendTree" path="res://assets/animation_trees/warrior.tres" id="2_tree"]
+
+[node name="WarriorAnimation" type="Node3D"]
+
+[node name="warrior_player" parent="." instance=ExtResource("1_model")]
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = ExtResource("2_tree")
+anim_player = NodePath("../warrior_player/AnimationPlayer")
+active = true

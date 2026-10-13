@@ -28,6 +28,9 @@ func suite():
 	var actor=BWVisual.new();root.add_child(actor);actor.configure("revenant")
 	var skeleton=actor._find_skeleton(actor.model)
 	var anim=actor.animation
+	# This suite samples source clips frame-by-frame. The live game keeps the
+	# AnimationTree active; disable it only while inspecting the imported library.
+	actor.animation_tree.active=false
 	for key in ["idle","run","death","attack1","attack2","attack3","teleport","ultimate","hit"]:
 		check(actor.clips.has(key) and String(actor.clips[key]).begins_with("REV_"),"Revenant clip mapped: "+key)
 	check(actor.revenant_layers!=null and actor.revenant_layers.hits.size()==3,"Three additive light hits are loaded")

@@ -16,12 +16,14 @@ func suite():
 	check(BWData.CLASSES.revenant.ability=="blood_burst","Ultimate is Blood Burst")
 	w.arena.blockers.clear();w.move_input=Vector2.ZERO
 	w.pending_attacks.clear();w.swing_gate=0;w.visual.lock_time=0;w.combo_timer=0
+	w.aim=Vector3.LEFT;w.visual.rotation.y=atan2(Vector3.RIGHT.x,Vector3.RIGHT.z)
 	for step in 4:
 		w.run.weapons.sword.cooldown=0;w.swing_gate=0;w.visual.lock_time=0
 		Input.action_press("fire");w._weapons(0);Input.action_release("fire")
 		check(w.visual.state==["attack1","attack2","attack3"][step%3],"Right-left-right claw chain loops correctly")
 		check(w.visual.lock_time>=0.45,"Base lunge is not crushed into a 300 ms clip")
 		check(w.pending_attacks.size()==1 and not w.pending_attacks[0].finisher,"Claw hit is queued without Warrior ultimate")
+		if step==0 and not w.pending_attacks.is_empty():check(w.pending_attacks[0].direction.is_equal_approx(Vector3.RIGHT),"Claw attacks in body-facing direction instead of mouse aim")
 		if w.pending_attacks.size()==1:
 			var clip=["attack1","attack2","attack3"][step%3]
 			var contact=BWVisual.revenant_time(clip,"damage")/w.visual.clip_length(clip)

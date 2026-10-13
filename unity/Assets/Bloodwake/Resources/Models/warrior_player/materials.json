@@ -1,0 +1,46 @@
+{
+  "Greatsword PBR": {
+    "color": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "alpha": 1,
+    "metallic": 1,
+    "roughness": 1,
+    "albedo": "SourceImage_1.jpg",
+    "tiling": [
+      1,
+      1
+    ],
+    "offset": [
+      0,
+      0
+    ],
+    "normal": "SourceImage_0.png",
+    "metallicRoughness": "SourceImage_2.png"
+  },
+  "Knight PBR": {
+    "color": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "alpha": 1,
+    "metallic": 1,
+    "roughness": 1,
+    "albedo": "SourceImage_4.jpg",
+    "tiling": [
+      1,
+      1
+    ],
+    "offset": [
+      0,
+      0
+    ],
+    "normal": "SourceImage_3.png",
+    "metallicRoughness": "SourceImage_5.png"
+  }
+}

@@ -4,6 +4,13 @@ extends Node3D
 const FLASH_ENERGY = 0.4
 
 var animation: AnimationPlayer
+var animation_tree: AnimationTree
+var animation_tree_root: AnimationNodeBlendTree
+var animation_tree_actions = {}
+var animation_state_time = 0.0
+var animation_state_speed = 1.0
+var locomotion_blend = 0.0
+var locomotion_target = 0.0
 var clips = {}
 var state = ""
 var lock_time = 0.0
@@ -34,6 +41,9 @@ var bloodhound_grenade: MeshInstance3D
 var bloodhound_skeleton: Skeleton3D
 var bloodhound_stride: SkeletonModifier3D
 var revenant_layers: SkeletonModifier3D
+
+const TREE_CLASSES = ["warrior", "revenant", "gunslinger", "mage", "assassin"]
+const TREE_DIRECTORY = "res://assets/animation_trees"
 
 # Revenant event frames, authored at 60 fps (frame 1 = 0 s). The marker names in
 # art/revenant-astra-ready/deliverables/animation_events.json are the source.
@@ -73,7 +83,7 @@ static func warm_enemy_models():
 		if ResourceLoader.exists("res://assets/models/%s.glb" % file):model_scene(file)
 
 static func player_model(kind: String) -> String:
-	return {"gunslinger":"bloodhound_player","revenant":"revenant_player"}.get(kind,kind+"_player")
+	return {"gunslinger":"bloodhound_player","revenant":"revenant_player","warrior":"warrior_v2_player"}.get(kind,kind+"_player")
 
 func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, height: float = 1.8):
 	var file = {"gunslinger":"bloodhound_player","warrior":"warrior","assassin":"assassin"}.get(kind,"warrior")
@@ -130,7 +140,8 @@ func configure(kind: String, enemy: bool = false, tint: Color = Color.WHITE, hei
 		for clip in clips:
 			var anim=animation.get_animation(clips[clip])
 			anim.loop_mode=Animation.LOOP_LINEAR if clip in ["idle","run","walk"] else Animation.LOOP_NONE
-		if clips.has("idle"):animation.play(clips.idle);animation.advance(0)
+		if not enemy and kind in TREE_CLASSES:_setup_animation_tree(kind)
+		elif clips.has("idle"):animation.play(clips.idle);animation.advance(0)
 	var bounds=_bounds(model)
 	if fitted_timing or enemy_asset or (kind=="gunslinger" and not enemy):
 		# This rig is authored at 1.8 m. Its unskinned mesh AABB is in bind space.
@@ -195,6 +206,88 @@ func _find_animation(node: Node) -> AnimationPlayer:
 		var found=_find_animation(child)
 		if found:return found
 	return null
+
+# Every playable class is driven by an editor-visible AnimationTree resource.
+# The imported AnimationPlayer remains the animation library and timing source;
+# gameplay never has to address imported clip names directly.
+func _setup_animation_tree(kind: String):
+	if animation==null:return
+	var path="%s/%s.tres" % [TREE_DIRECTORY,kind]
+	if ResourceLoader.exists(path):
+		animation_tree_root=(load(path) as AnimationNodeBlendTree).duplicate(true)
+	else:
+		animation_tree_root=build_animation_tree()
+	animation_tree_actions.clear()
+	for logical in clips:
+		var node_name=action_node_name(logical)
+		if animation_tree_root.has_node(node_name):animation_tree_actions[logical]=node_name
+	animation_tree=AnimationTree.new();animation_tree.name="AnimationTree"
+	add_child(animation_tree)
+	animation_tree.anim_player=animation_tree.get_path_to(animation)
+	animation_tree.tree_root=animation_tree_root
+	animation_tree.active=true
+	animation_tree.set("parameters/locomotion/blend_position",0.0)
+	animation_tree.set("parameters/locomotion_speed/scale",1.0)
+	animation_tree.set("parameters/global_speed/scale",1.0)
+	animation_tree.set("parameters/mode/transition_request","locomotion")
+	animation.advance(0.0)
+
+func build_animation_tree() -> AnimationNodeBlendTree:
+	var root=AnimationNodeBlendTree.new()
+	var locomotion=AnimationNodeBlendSpace1D.new()
+	locomotion.min_space=0.0;locomotion.max_space=1.0
+	var idle=AnimationNodeAnimation.new();idle.animation=clips.get("idle","")
+	var run=AnimationNodeAnimation.new();run.animation=clips.get("run",clips.get("idle",""))
+	locomotion.add_blend_point(idle,0.0);locomotion.add_blend_point(run,1.0)
+	root.add_node("locomotion",locomotion,Vector2(40,20))
+	var locomotion_speed=AnimationNodeTimeScale.new()
+	root.add_node("locomotion_speed",locomotion_speed,Vector2(300,20))
+	root.connect_node("locomotion_speed",0,"locomotion")
+	var actions=AnimationNodeTransition.new()
+	var action_keys=[]
+	for logical in clips:
+		if logical not in ["idle","run","walk"]:action_keys.append(logical)
+	action_keys.sort();actions.input_count=maxi(1,action_keys.size())
+	actions.xfade_time=0.075;actions.allow_transition_to_self=true
+	root.add_node("actions",actions,Vector2(300,220))
+	for index in action_keys.size():
+		var logical=String(action_keys[index]);actions.set_input_name(index,logical)
+		var clip=AnimationNodeAnimation.new();clip.animation=clips[logical]
+		var node_name=action_node_name(logical)
+		root.add_node(node_name,clip,Vector2(40,180+index*70))
+		root.connect_node("actions",index,node_name)
+	var mode=AnimationNodeTransition.new();mode.input_count=2
+	mode.set_input_name(0,"locomotion");mode.set_input_name(1,"action")
+	mode.xfade_time=0.10;mode.allow_transition_to_self=true
+	root.add_node("mode",mode,Vector2(570,100))
+	root.connect_node("mode",0,"locomotion_speed")
+	root.connect_node("mode",1,"actions")
+	var global_speed=AnimationNodeTimeScale.new()
+	root.add_node("global_speed",global_speed,Vector2(780,100))
+	root.connect_node("global_speed",0,"mode")
+	root.connect_node("output",0,"global_speed")
+	root.graph_offset=Vector2(-20,-40)
+	return root
+
+static func action_node_name(logical: String) -> String:
+	return "action_"+logical.to_lower().replace(" ","_").replace("/","_")
+
+func _tree_play(next: String,speed: float=1.0,restart: bool=false) -> bool:
+	if animation_tree==null:return false
+	animation_state_speed=speed;animation.speed_scale=speed
+	animation_tree.set("parameters/global_speed/scale",speed)
+	if next in ["idle","run","walk"]:
+		locomotion_target=1.0 if next in ["run","walk"] else 0.0
+		animation_tree.set("parameters/mode/transition_request","locomotion")
+	else:
+		if not animation_tree_actions.has(next):return false
+		animation_tree.set("parameters/actions/transition_request",next)
+		animation_tree.set("parameters/mode/transition_request","action")
+	animation_state_time=0.0 if restart or next!=state else animation_state_time
+	return true
+
+func animation_position() -> float:
+	return animation_state_time if animation_tree!=null else (animation.current_animation_position if animation else 0.0)
 
 func _bounds(node: Node3D) -> AABB:
 	var bounds=AABB();var first=true
@@ -298,6 +391,9 @@ func clip_length(name: String) -> float:
 func play(next: String):
 	if dead and next!="death":return
 	if next==state:return
+	if _tree_play(next,clip_speed(next),true):
+		state=next
+		return
 	state=next
 	if animation and clips.has(next):
 		animation.speed_scale=1.0
@@ -330,6 +426,11 @@ func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 		if actor_kind=="revenant":_start_blood_death()
 	if animation and clips.has(next):
 		var speed=clip_speed(next,duration)
+		if animation_tree!=null:
+			_tree_play(next,-speed if reverse else speed,true)
+			lock_time=animation.get_animation(clips[next]).length/speed
+			state=next
+			return true
 		animation.speed_scale=1.0
 		# Cancelling one link into the next needs a longer crossfade than a cold start:
 		# the outgoing clip is stopped mid-recovery, so 0.05 s snapped.
@@ -349,6 +450,11 @@ func action(next: String,duration: float=-1.0,reverse: bool=false) -> bool:
 
 func tick(delta: float,moving: bool,movement_rate: float=1.0):
 	elapsed+=delta;lock_time=maxf(0,lock_time-delta)
+	if animation_tree!=null:
+		animation_state_time+=delta*absf(animation.speed_scale)
+		locomotion_blend=move_toward(locomotion_blend,locomotion_target,delta*7.5)
+		animation_tree.set("parameters/locomotion/blend_position",locomotion_blend)
+		animation_tree.set("parameters/global_speed/scale",animation.speed_scale)
 	hit_clip_time=maxf(0,hit_clip_time-delta)
 	if flash_time>0:
 		flash_time=maxf(0,flash_time-delta)
@@ -359,10 +465,12 @@ func tick(delta: float,moving: bool,movement_rate: float=1.0):
 	if (procedural or animation==null) and not dead:
 		model.position.y=sin(elapsed*(10 if moving else 2))*0.035
 	if not dead and lock_time<=0:play("run" if moving else "idle")
-	if fitted_timing and animation and state=="run":animation.speed_scale=clampf(movement_rate,0.5,2.5)
+	if fitted_timing and animation and state=="run":
+		animation.speed_scale=clampf(movement_rate,0.5,2.5)
+		if animation_tree!=null:animation_tree.set("parameters/global_speed/scale",clip_speed("run")*animation.speed_scale)
 	if revenant_layers!=null:_revenant_tick(delta,moving,movement_rate)
 	if is_instance_valid(bloodhound_grenade):
-		var time=animation.current_animation_position if animation and animation.is_playing() else -1.0
+		var time=animation_position() if animation else -1.0
 		bloodhound_grenade.visible=not dead and state=="bombthrow" and time>=7.0/60 and time<19.0/60
 		if bloodhound_grenade.visible:
 			var bone=bloodhound_skeleton.find_bone("Hand.L")
@@ -375,7 +483,7 @@ func _revenant_tick(delta: float,moving: bool,movement_rate: float):
 	var rate=movement_rate*REVENANT_LOCOMOTION_RATE if clips.get("run","")=="REV_AssassinRun" else movement_rate/maxf(0.01,model.scale.x)
 	if state=="run" and animation:
 		animation.speed_scale=rate
-		revenant_layers.run_phase=animation.current_animation_position
+		revenant_layers.run_phase=animation_position()
 	elif moving and revenant_layers.run!=null:
 		revenant_layers.run_phase=fposmod(revenant_layers.run_phase+delta*rate,revenant_layers.run.length)
 	var layered=moving and not dead and (state.begins_with("attack") or state=="hit") and lock_time>0
@@ -394,7 +502,7 @@ func bloodhound_locomotion(speed: float,velocity: Vector3=Vector3.ZERO,delta: fl
 		var heading=atan2(local.x,local.z) if local.length_squared()>0.0001 else 0.0
 		var backwards=absf(heading)>PI*0.5
 		bloodhound_stride.heading=wrapf(heading+PI,-PI,PI) if backwards else heading
-		if state=="run":bloodhound_stride.phase=animation.current_animation_position
+		if state=="run":bloodhound_stride.phase=animation_position()
 		else:bloodhound_stride.phase=fposmod(bloodhound_stride.phase+delta*rate*(-1.0 if backwards else 1.0),clip_length("run"))
 
 func bloodhound_socket(side: String) -> Vector3:

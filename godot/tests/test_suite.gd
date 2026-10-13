@@ -67,6 +67,9 @@ func suite():
 	for id in BWData.CLASSES:
 		scene.start_run(id);await process_frame
 		check(scene.world.visual!=null,"class visual "+id)
+		check(scene.world.visual.animation_tree!=null and scene.world.visual.animation_tree.active,"AnimationTree drives "+id)
+		check(scene.world.visual.animation_tree_root.has_node("locomotion") and scene.world.visual.animation_tree_root.has_node("actions") and scene.world.visual.animation_tree_root.has_node("mode"),"Editable animation graph is complete: "+id)
+		check(ResourceLoader.exists("res://assets/animation_trees/%s.tres" % id),"Class AnimationTree resource exists: "+id)
 		if id=="revenant":
 			check(scene.world.visual.clips.get("idle","")=="REV_AssassinIdle","Revenant uses Assassin idle retarget")
 			check(scene.world.visual.clips.get("run","")=="REV_AssassinRun","Revenant uses Assassin run retarget")
