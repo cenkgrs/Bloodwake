@@ -13,6 +13,15 @@ const POOL_WORLD = 20
 const WORLD_UNIT_SIZE = 28.0
 const WORLD_MAX_DISTANCE = 60.0
 
+# These newly supplied samples are explicit dependencies instead of only
+# dynamically assembled paths. That makes Godot import them before BWAudio is
+# read and guarantees that exports include them in the PCK.
+const REVENANT_SWINGS := {
+	"revenant_basic_attack_a":preload("res://assets/audio/polished/revenant_basic_attack_a.wav"),
+	"revenant_basic_attack_b":preload("res://assets/audio/polished/revenant_basic_attack_b.wav"),
+	"revenant_basic_attack_c":preload("res://assets/audio/polished/revenant_basic_attack_c.wav"),
+}
+
 # files: variations picked at random (or by index for combo steps)
 # db: trim relative to the normalised sample
 # pitch: randomised range - what stops a repeated sample reading as a machine gun
@@ -78,6 +87,7 @@ func _ready():
 	rng.randomize()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_buses()
+	for name in REVENANT_SWINGS:streams[name]=REVENANT_SWINGS[name]
 	for event in BANK:
 		for name in BANK[event].files:
 			if not streams.has(name):
@@ -170,13 +180,6 @@ func play_at(event: String, position: Vector3, db_offset: float = 0.0, variant: 
 	player.pitch_scale = config.pitch
 	player.play()
 	_track(event, player)
-
-func has_sample(event: String) -> bool:
-	var entry=BANK.get(event)
-	if entry==null:return false
-	for name in entry.files:
-		if streams.get(name)!=null:return true
-	return false
 
 func ui(event: String):
 	var config = _take(event, -1)

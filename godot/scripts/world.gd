@@ -1635,9 +1635,8 @@ func sound_at(event: String,position: Vector3,db_offset: float=0.0):
 	if audio!=null:audio.play_at(event,position,db_offset)
 
 func _swing(weapon: String,step: int):
-	if run.class_id=="revenant" and audio!=null and audio.has_sample("revenant_swing"):
-		audio.play("revenant_swing",0.0,step)
-	else:sound("dagger_swing" if weapon=="daggers" or run.class_id=="revenant" else "sword_swing",0.0,step)
+	if run.class_id=="revenant":sound("revenant_swing",0.0,step)
+	else:sound("dagger_swing" if weapon=="daggers" else "sword_swing",0.0,step)
 
 func _impact_sound(e: Dictionary,impact: String,critical: bool):
 	if audio==null:return
