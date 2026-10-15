@@ -1,0 +1,318 @@
+{
+ "fps": 60,
+ "event_time_formula": "(frame - 1) / 60.0",
+ "actions": {
+  "REV_AgileMove_InPlace": {
+   "start": 1,
+   "end": 24,
+   "loop": true,
+   "events": {},
+   "speed_mps": 2.45
+  },
+  "REV_AgileMove_RootMotion": {
+   "start": 1,
+   "end": 24,
+   "loop": false,
+   "events": {},
+   "speed_mps": 2.45,
+   "diagnostic_only": true
+  },
+  "REV_AgileRun_InPlace": {
+   "start": 1,
+   "end": 36,
+   "loop": true,
+   "events": {},
+   "speed_mps": 6.0
+  },
+  "REV_BloodBurst": {
+   "start": 1,
+   "end": 120,
+   "loop": false,
+   "events": {
+    "ULT_TELEGRAPH_START": 19,
+    "ULT_GATHER": 20,
+    "ULT_COMPRESS": 43,
+    "ULT_DAMAGE": 60,
+    "ULT_RING_MAX": 71,
+    "ULT_DISSIPATE": 85,
+    "ULT_RECOVER": 101,
+    "ULT_END": 113
+   }
+  },
+  "REV_ClawAttack_1": {
+   "start": 1,
+   "end": 30,
+   "loop": false,
+   "events": {
+    "DAMAGE": 11
+   }
+  },
+  "REV_ClawAttack_2": {
+   "start": 1,
+   "end": 32,
+   "loop": false,
+   "events": {
+    "DAMAGE": 12
+   }
+  },
+  "REV_ClawAttack_3": {
+   "start": 1,
+   "end": 42,
+   "loop": false,
+   "events": {
+    "DAMAGE": 19
+   }
+  },
+  "REV_Death": {
+   "start": 1,
+   "end": 72,
+   "loop": false,
+   "events": {
+    "DEATH_IMPACT": 5,
+    "CLAW_FADE": 12,
+    "DEATH_KNEE": 24,
+    "DEATH_HAND": 38,
+    "DEATH_GROUND": 52
+   }
+  },
+  "REV_HitLight_Front": {
+   "start": 1,
+   "end": 12,
+   "loop": false,
+   "events": {
+    "HIT_IMPACT": 3
+   }
+  },
+  "REV_HitLight_Front_Additive": {
+   "start": 1,
+   "end": 12,
+   "loop": false,
+   "events": {
+    "HIT_IMPACT": 3
+   },
+   "additive_upper_body": true,
+   "bones": [
+    "spine_01",
+    "spine_02",
+    "spine_03",
+    "neck_01",
+    "head",
+    "clavicle_l",
+    "clavicle_r",
+    "upperarm_l",
+    "lowerarm_l",
+    "hand_l",
+    "upperarm_r",
+    "lowerarm_r",
+    "hand_r",
+    "blood_claw",
+    "armor_l",
+    "armor_r",
+    "thumb_01_l",
+    "thumb_01_r",
+    "thumb_02_l",
+    "thumb_02_r",
+    "thumb_03_l",
+    "thumb_03_r",
+    "index_01_l",
+    "index_01_r",
+    "index_02_l",
+    "index_02_r",
+    "index_03_l",
+    "index_03_r",
+    "middle_01_l",
+    "middle_01_r",
+    "middle_02_l",
+    "middle_02_r",
+    "middle_03_l",
+    "middle_03_r",
+    "ring_01_l",
+    "ring_01_r",
+    "ring_02_l",
+    "ring_02_r",
+    "ring_03_l",
+    "ring_03_r",
+    "pinky_01_l",
+    "pinky_01_r",
+    "pinky_02_l",
+    "pinky_02_r",
+    "pinky_03_l",
+    "pinky_03_r",
+    "hair_l_1",
+    "hair_l_2",
+    "hair_c_1",
+    "hair_c_2",
+    "hair_r_1",
+    "hair_r_2"
+   ]
+  },
+  "REV_HitLight_Left": {
+   "start": 1,
+   "end": 12,
+   "loop": false,
+   "events": {
+    "HIT_IMPACT": 3
+   }
+  },
+  "REV_HitLight_Left_Additive": {
+   "start": 1,
+   "end": 12,
+   "loop": false,
+   "events": {
+    "HIT_IMPACT": 3
+   },
+   "additive_upper_body": true,
+   "bones": [
+    "spine_01",
+    "spine_02",
+    "spine_03",
+    "neck_01",
+    "head",
+    "clavicle_l",
+    "clavicle_r",
+    "upperarm_l",
+    "lowerarm_l",
+    "hand_l",
+    "upperarm_r",
+    "lowerarm_r",
+    "hand_r",
+    "blood_claw",
+    "armor_l",
+    "armor_r",
+    "thumb_01_l",
+    "thumb_01_r",
+    "thumb_02_l",
+    "thumb_02_r",
+    "thumb_03_l",
+    "thumb_03_r",
+    "index_01_l",
+    "index_01_r",
+    "index_02_l",
+    "index_02_r",
+    "index_03_l",
+    "index_03_r",
+    "middle_01_l",
+    "middle_01_r",
+    "middle_02_l",
+    "middle_02_r",
+    "middle_03_l",
+    "middle_03_r",
+    "ring_01_l",
+    "ring_01_r",
+    "ring_02_l",
+    "ring_02_r",
+    "ring_03_l",
+    "ring_03_r",
+    "pinky_01_l",
+    "pinky_01_r",
+    "pinky_02_l",
+    "pinky_02_r",
+    "pinky_03_l",
+    "pinky_03_r",
+    "hair_l_1",
+    "hair_l_2",
+    "hair_c_1",
+    "hair_c_2",
+    "hair_r_1",
+    "hair_r_2"
+   ]
+  },
+  "REV_HitLight_Right": {
+   "start": 1,
+   "end": 12,
+   "loop": false,
+   "events": {
+    "HIT_IMPACT": 3
+   }
+  },
+  "REV_HitLight_Right_Additive": {
+   "start": 1,
+   "end": 12,
+   "loop": false,
+   "events": {
+    "HIT_IMPACT": 3
+   },
+   "additive_upper_body": true,
+   "bones": [
+    "spine_01",
+    "spine_02",
+    "spine_03",
+    "neck_01",
+    "head",
+    "clavicle_l",
+    "clavicle_r",
+    "upperarm_l",
+    "lowerarm_l",
+    "hand_l",
+    "upperarm_r",
+    "lowerarm_r",
+    "hand_r",
+    "blood_claw",
+    "armor_l",
+    "armor_r",
+    "thumb_01_l",
+    "thumb_01_r",
+    "thumb_02_l",
+    "thumb_02_r",
+    "thumb_03_l",
+    "thumb_03_r",
+    "index_01_l",
+    "index_01_r",
+    "index_02_l",
+    "index_02_r",
+    "index_03_l",
+    "index_03_r",
+    "middle_01_l",
+    "middle_01_r",
+    "middle_02_l",
+    "middle_02_r",
+    "middle_03_l",
+    "middle_03_r",
+    "ring_01_l",
+    "ring_01_r",
+    "ring_02_l",
+    "ring_02_r",
+    "ring_03_l",
+    "ring_03_r",
+    "pinky_01_l",
+    "pinky_01_r",
+    "pinky_02_l",
+    "pinky_02_r",
+    "pinky_03_l",
+    "pinky_03_r",
+    "hair_l_1",
+    "hair_l_2",
+    "hair_c_1",
+    "hair_c_2",
+    "hair_r_1",
+    "hair_r_2"
+   ]
+  },
+  "REV_Idle": {
+   "start": 1,
+   "end": 90,
+   "loop": true,
+   "events": {}
+  },
+  "REV_TeleportAttack": {
+   "start": 1,
+   "end": 42,
+   "loop": false,
+   "events": {
+    "CLAW_LINE": 7,
+    "TELEPORT_HIDE": 16,
+    "TELEPORT_MOVE": 20,
+    "TELEPORT_SHOW": 22,
+    "DAMAGE": 26,
+    "RECOVER": 35
+   }
+  }
+ },
+ "notes": {
+  "loops": "Looping actions carry a closure key one frame after the cycle (frame cycle+1 == frame 1).",
+  "REV_AgileMove_InPlace": "Spec gait, 2.45 m/s. Play at actual_speed / 2.45 to keep zero foot slip.",
+  "REV_AgileRun_InPlace": "Bloodwake gameplay gait, 6.0 m/s (class base speed 300 * 0.02).",
+  "teleport": "In place. Game hides the body at TELEPORT_HIDE, moves it at TELEPORT_MOVE, shows it at TELEPORT_SHOW, resolves damage at DAMAGE.",
+  "hits": "Use *_Additive on the upper-body bones on top of whatever the legs are playing."
+ }
+}

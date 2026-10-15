@@ -11,6 +11,7 @@ namespace Bloodwake
   }
   JToken NearbyHost()=> (room["hosts"]??new JArray()).Where(h=>Vector3.Distance(Player.transform.position,Point(h["at"]))<2.4f).OrderBy(h=>Vector3.Distance(Player.transform.position,Point(h["at"]))).FirstOrDefault();
   bool RewardReady=>roomClear&&(Run.PendingLevels>0||room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex));
+  internal bool ExitOpen=>Run!=null&&room!=null&&roomClear&&room["doors"]?["exit"]!=null&&!(room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex));
   void CheckRoomExit()
   {
    if(!roomClear||room["doors"]?["exit"]==null)return;bool locked=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);

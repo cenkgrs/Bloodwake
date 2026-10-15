@@ -1,0 +1,37 @@
+[
+  {
+    "id": "gate",
+    "source": "ornate+iron+gate+3d+model.zip",
+    "sha256": "5b1001f04e001ecf174ae106886e67d2482a157e2c5ed5faf94ca9558c1b9fd0"
+  },
+  {
+    "id": "brazier",
+    "source": "medieval+cage+prop+3d+model.zip",
+    "sha256": "d987f293601540d87756b6587303491ab0243af0ae6ce8f36a361a1aca34054f"
+  },
+  {
+    "id": "wall",
+    "source": "stone+wall+3d+model.zip",
+    "sha256": "0788fbb927a9e8b0f13b1e46f61af14a5d5586060082e72fa72e378b764e9acb"
+  },
+  {
+    "id": "crate",
+    "source": "weathered+wooden+crate+3d+model.zip",
+    "sha256": "2621ae14d640fe00663127deec8d88943613b10506c5e8a5097ba34279c1794f"
+  },
+  {
+    "id": "barrel",
+    "source": "barrel+3d+model.zip",
+    "sha256": "68426fef28cc6eef8e9cadcec84932878c9ce91549a9643aab912e34232bca04"
+  },
+  {
+    "id": "lantern",
+    "source": "antique+lantern+3d+model.zip",
+    "sha256": "b4461c49e88871857e8cde5da72d47af53d179b09298e36ba07afc45a64e7ce8"
+  },
+  {
+    "id": "cloth",
+    "source": "draped+table+3d+model.zip",
+    "sha256": "25ed0a3592f6e9d7c45d8f32314981bc4c5ef436e362c0179a1190f0e98aff54"
+  }
+]

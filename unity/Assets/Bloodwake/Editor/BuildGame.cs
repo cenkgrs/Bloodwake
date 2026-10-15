@@ -28,6 +28,7 @@ namespace Bloodwake.Editor
     SourceMaterials.Apply(instance,path);
     PrefabUtility.SaveAsPrefabAsset(instance,root+"Actors/"+name+".prefab");UnityEngine.Object.DestroyImmediate(instance);
    }
+   RevenantVfxImport.Build();
    BuildRooms();
    var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,Application.isBatchMode?NewSceneMode.Single:NewSceneMode.Additive);
    UnityEngine.SceneManagement.SceneManager.SetActiveScene(scene);new GameObject("Bloodwake").AddComponent<BloodwakeGame>();

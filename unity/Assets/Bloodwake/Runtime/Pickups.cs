@@ -16,8 +16,7 @@ namespace Bloodwake
   }
   void Blood(Vector3 position)
   {
-   Vector3 away=(position-Player.transform.position).normalized;
-   for(int i=0;i<5;i++){var go=GameObject.CreatePrimitive(PrimitiveType.Sphere);Destroy(go.GetComponent<Collider>());go.name="Blood drop";go.transform.SetParent(roomRoot);go.transform.position=position+away*Random.Range(.2f,.8f)+new Vector3(Random.Range(-.3f,.3f),.025f,Random.Range(-.3f,.3f));float size=Random.Range(.09f,.25f);go.transform.localScale=new Vector3(size,.012f,size*1.3f);go.GetComponent<Renderer>().sharedMaterial=Effects.Mat(new Color(.22f,.012f,.018f));Destroy(go,12);}
+   RevFx.Splatter(position,position-Player.transform.position);
   }
  }
 }

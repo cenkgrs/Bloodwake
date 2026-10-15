@@ -2,8 +2,9 @@
 
 ## Unity migration — in progress
 
-**Evde devam / güncel devir (13 Ekim 2026): [unity/README.md](unity/README.md).**
-Kurulum, doğrulanmış durum, eksik VFX/oynanış listesi ve yeni sohbet promptu orada.
+**Güncel devir (15 Ekim 2026): [unity/HANDOFF_STATUS.md](unity/HANDOFF_STATUS.md).**
+Kurulum, doğrulanmış durum, kalan görsel/oynanış işleri ve diğer bilgisayarda
+devam adımları burada. Ayrıntılı teknik günlük: [unity/README.md](unity/README.md).
 
 `unity/` is the new Unity 6000.3.25f1 URP project. The existing playable
 Godot game remains intact below; this is not yet a completed game port.
@@ -12,7 +13,8 @@ The gameplay entry point is `Assets/Bloodwake/Scenes/Bloodwake.unity`.
 `WarriorReview.unity` is an old model review, not the migrated game.
 Rebuild imported assets with **Bloodwake > Build Imported Game**. The export
 scripts preserve the production rigs; Warrior uses the previous
-`warrior_player` source (the version before the replacement knight). Keep the Godot editor open as the visual reference.
+`warrior_player` source (the version before the replacement knight). Use Godot for animation, VFX behavior and existing menus; the user-supplied
+ArtDirection images define the overall visual target.
 
 Implemented: five player classes, enemy actors, eight room prefabs, source PBR
 textures, world-projected room UVs, collision data, camera bounds, menus,

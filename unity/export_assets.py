@@ -29,3 +29,6 @@ for category in ['audio','ui','textures','fonts','vfx','art']:
   if not source.is_file() or source.suffix.lower() not in ['.wav','.ogg','.mp3','.png','.jpg','.jpeg','.ttf','.otf']:continue
   dest=OUT/category/source.relative_to(ROOT/'godot/assets'/category);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,dest)
 print('UNITY_ASSET_EXPORT_COMPLETE',json.dumps(report),flush=True)
+
+from export_vfx import export as export_vfx
+export_vfx()

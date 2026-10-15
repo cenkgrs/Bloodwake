@@ -7,7 +7,7 @@ namespace Bloodwake
  {
   void EnterRoom(string id)
   {
-   StopAllCoroutines();foreach(Transform child in actorRoot)if(child!=Player.transform)Destroy(child.gameObject);Enemies.Clear();pickups.Clear();if(roomRoot)Destroy(roomRoot.gameObject);
+   StopAllCoroutines();Player.CancelAction();revenantFx=null;foreach(Transform child in actorRoot)if(child!=Player.transform)Destroy(child.gameObject);Enemies.Clear();pickups.Clear();if(roomRoot)Destroy(roomRoot.gameObject);
    roomRoot=new GameObject(id).transform;blockers.Clear();room=(JObject)GameData.Rooms["rooms"].First(r=>r.S("id")==id);half=new Vector2((float)room["size"][0],(float)room["size"][1])*.5f;
    ColorUtility.TryParseHtmlString("#"+room["light"].S("ground","43434a"),out var ground);
    Box("Courtyard",new Vector3(0,-.15f,0),new Vector3(half.x*2,.3f,half.y*2),ground,false);
@@ -20,7 +20,11 @@ namespace Bloodwake
    if(authored){foreach(var r in roomRoot.GetComponentsInChildren<Renderer>())r.enabled=false;var environment=Instantiate(authored,roomRoot);environment.name="Imported town geometry";
     var metadata=Resources.Load<TextAsset>("Rooms/"+id+"/collision");if(metadata){var data=JObject.Parse(metadata.text);blockers.Clear();foreach(var r in data["rects"]){float x=(float)r[0],z=(float)r[1],w=(float)r[2],h=(float)r[3];blockers.Add(new Bounds(new Vector3(-x-w/2,1,z+h/2),new Vector3(w,2,h)));}foreach(var c in data["circles"]){float radius=(float)c[2];blockers.Add(new Bounds(new Vector3(-(float)c[0],1,(float)c[1]),new Vector3(radius*2,2,radius*2)));}var hidden=data["hidden"].Values<string>().ToHashSet();foreach(var t in environment.GetComponentsInChildren<Transform>())if(hidden.Contains(t.name))t.gameObject.SetActive(false);}
    }
-   SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;
+   EnvironmentDressing.Apply(roomRoot,half,room["layout"]);
+   EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);
+   roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
+   roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
+   SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);RevFx.HandMagic(Player);
    float maxSize=Mathf.Min((half.x*2+10)/Cam.aspect,(half.y*2+11)*cameraOffset.normalized.y)/2;Cam.orthographicSize=Mathf.Min(PlayerPrefs.GetFloat("zoom",6.5f),maxSize);PositionCamera(true);
    roomClear=room.S("type")=="merchant"||room.S("type")=="safehouse";waves=room["encounter"]?["waves"] as JArray;
    if(room.S("type")=="boss")waves=new JArray{new JArray("boss")};

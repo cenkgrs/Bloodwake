@@ -9,7 +9,7 @@ namespace Bloodwake
 {
  public sealed partial class BloodwakeGame
  {
-  RectTransform uiRoot,page;string drawnScreen;Font titleFont,bodyFont;Text healthLabel,runLabel,promptLabel;Image healthFill;
+  RectTransform uiRoot,page;string drawnScreen,drawnClass;Font titleFont,bodyFont;Text healthLabel,runLabel,promptLabel;Image healthFill;
   readonly Color ink=new Color(.91f,.87f,.82f),gold=new Color(.84f,.68f,.39f),panel=new Color(.055f,.042f,.044f,.96f),blood=new Color(.42f,.025f,.05f);
   void EnsureUI()
   {
@@ -39,13 +39,19 @@ namespace Bloodwake
   }
   void LateUpdate()
   {
-   EnsureUI();if(drawnScreen!=Screen){if(page)Destroy(page.gameObject);page=Rect(uiRoot,"Screen "+Screen,0,0,1600,900);drawnScreen=Screen;DrawScreen();}
-   if(Screen=="playing"&&Run!=null){healthLabel.text=$"{Run.Stats.N("hp"):0} / {Run.Stats.N("maxHp"):0}";healthFill.rectTransform.sizeDelta=new Vector2(320*Mathf.Clamp01(Run.Stats.N("hp")/Run.Stats.N("maxHp")),16);runLabel.text=$"NIGHT {Run.Night}   •   LEVEL {Run.Level}   •   GOLD {Run.Gold}\n{room.S("name")}   •   {Enemies.Count} enemies";promptLabel.text=roomClear?(room.S("type")=="safehouse"?"F  ·  WAR TABLE / ARMORY":room.S("type")=="merchant"?"F  ·  MERCHANT":"F  ·  CLAIM REWARD / CONTINUE"):"";UpdateWorldBars();UpdateSkillLabels();}
+   EnsureUI();if(drawnScreen!=Screen||(Screen=="playing"&&drawnClass!=Run?.ClassId)){if(page)Destroy(page.gameObject);page=Rect(uiRoot,"Screen "+Screen,0,0,1600,900);drawnScreen=Screen;drawnClass=Run?.ClassId;DrawScreen();}
+   if(Screen=="playing"&&Run!=null){healthLabel.text=$"{Run.Stats.N("hp"):0} / {Run.Stats.N("maxHp"):0}";healthFill.rectTransform.sizeDelta=new Vector2(320*Mathf.Clamp01(Run.Stats.N("hp")/Run.Stats.N("maxHp")),24);runLabel.text=$"NIGHT {Run.Night}   •   LEVEL {Run.Level}   •   GOLD {Run.Gold}\n{room.S("name")}   •   {Enemies.Count} enemies";promptLabel.text=roomClear?(room.S("type")=="safehouse"?"F  ·  WAR TABLE / ARMORY":room.S("type")=="merchant"?"F  ·  MERCHANT":"F  ·  CLAIM REWARD / CONTINUE"):"";UpdateWorldBars();UpdateSkillLabels();}
   }
   void UpdateInteractionPrompt(){if(Screen=="playing"&&Run!=null&&promptLabel)promptLabel.text=InteractionHint();}
   void DrawScreen()
   {
-   if(Screen=="loading")return;
+   if(Screen=="loading"||Screen=="dying")return;
+   if(Screen=="death_transition")
+   {
+    Plate(page,"Death veil",0,0,1600,900,new Color(.015f,.01f,.015f,.65f));
+    Label(page,"YOU DIED",200,345,1200,120,76,true,TextAnchor.MiddleCenter).color=new Color(.78f,.26f,.29f);
+    Label(page,"THE NIGHT CLAIMED YOU",350,485,900,60,26,true,TextAnchor.MiddleCenter);return;
+   }
    if(Screen=="playing"){DrawHUD();return;}
    if(Screen=="menu"||Screen=="classes"){Art(page,"art/arena",0,0,1600,900);Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,.84f));}
    else Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.9f));

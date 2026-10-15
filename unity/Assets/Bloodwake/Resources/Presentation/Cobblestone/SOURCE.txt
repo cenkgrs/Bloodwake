@@ -1,0 +1,9 @@
+Cobblestone Floor 08 — Poly Haven
+https://polyhaven.com/a/cobblestone_floor_08
+License: CC0 1.0 — https://polyhaven.com/license
+Downloaded 2026-10-13. Original 2K Diffuse, OpenGL normal, ARM maps.
+
+MD5 (download verification):
+albedo.jpg 56404e8a3cdf04c8697dbbc7f9ddd65c
+normal.jpg 3d1c34ed083de54949e8375d69033b0b
+arm.jpg 6cbb7aa63416eb4ef1620477ac7b605b

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "house_haunted",
+    "archive": "medieval+haunted+house+3d+model.zip",
+    "sha256": "093f29340b4858e41ec5feb9025aba108e1717344fdc6fc9e060664046d3dfc3"
+  },
+  {
+    "id": "house",
+    "archive": "medieval+house+3d+model.zip",
+    "sha256": "da01860c32ba3fb8e972728187162ae992111636ac93f9b5c0b3b51c060fe8cd"
+  },
+  {
+    "id": "building",
+    "archive": "medieval+building+3d+model.zip",
+    "sha256": "407400b95444009c1ad79013d5b74bd49c6ea708399f5596411a6b997a0b02d4"
+  }
+]
