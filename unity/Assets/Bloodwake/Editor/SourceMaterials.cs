@@ -28,7 +28,7 @@ namespace Bloodwake.Editor
       string packedPath=folder+"/Packed_"+Path.GetFileNameWithoutExtension(row.S("metallicRoughness"))+".png";
       var source=new Texture2D(2,2,TextureFormat.RGBA32,false,true);source.LoadImage(File.ReadAllBytes(folder+"/"+row.S("metallicRoughness")));
       var pixels=source.GetPixels32();for(int p=0;p<pixels.Length;p++)pixels[p]=new Color32(pixels[p].b,0,0,(byte)(255-pixels[p].g));source.SetPixels32(pixels);source.Apply();File.WriteAllBytes(packedPath,source.EncodeToPNG());Object.DestroyImmediate(source);
-      AssetDatabase.ImportAsset(packedPath);var ti=(TextureImporter)AssetImporter.GetAtPath(packedPath);if(ti.sRGBTexture){ti.sRGBTexture=false;ti.SaveAndReimport();}
+      AssetDatabase.ImportAsset(packedPath);var ti=(TextureImporter)AssetImporter.GetAtPath(packedPath);ConfigureTexture(ti,false,false,folder.Contains("/Models/"));
       material.SetTexture("_MetallicGlossMap",AssetDatabase.LoadAssetAtPath<Texture2D>(packedPath));material.SetFloat("_Smoothness",1);material.EnableKeyword("_METALLICSPECGLOSSMAP");
      }
      if(row["tiling"] is JArray scale)material.SetTextureScale("_BaseMap",new Vector2((float)scale[0],(float)scale[1]));
@@ -45,10 +45,25 @@ namespace Bloodwake.Editor
   static void SetTexture(Material material,JToken row,string folder,string key,string property,bool normal)
   {
    if(row[key]==null)return;string path=folder+"/"+row.S(key);
+   if(File.Exists(path))AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);
    var importer=AssetImporter.GetAtPath(path) as TextureImporter;
    if(importer==null)throw new System.Exception("Missing texture "+path);
-   if(normal&&importer.textureType!=TextureImporterType.NormalMap){importer.textureType=TextureImporterType.NormalMap;importer.SaveAndReimport();}
+   ConfigureTexture(importer,normal,!normal,folder.Contains("/Models/"));
    material.SetTexture(property,AssetDatabase.LoadAssetAtPath<Texture2D>(path));if(normal)material.EnableKeyword("_NORMALMAP");
+  }
+  static void ConfigureTexture(TextureImporter importer,bool normal,bool srgb,bool character)
+  {
+   var type=normal?TextureImporterType.NormalMap:TextureImporterType.Default;
+   bool changed=importer.textureType!=type||importer.sRGBTexture!=srgb;
+   importer.textureType=type;importer.sRGBTexture=srgb;
+   if(character)
+   {
+    // Keep full-resolution lossless source files. High-quality GPU compression
+    // is separate from JPEG encoding and avoids multi-GB uncompressed actors.
+    changed|=importer.maxTextureSize!=8192||importer.textureCompression!=TextureImporterCompression.CompressedHQ||importer.compressionQuality!=100||importer.crunchedCompression||importer.anisoLevel!=4;
+    importer.maxTextureSize=8192;importer.textureCompression=TextureImporterCompression.CompressedHQ;importer.compressionQuality=100;importer.crunchedCompression=false;importer.anisoLevel=4;
+   }
+   if(changed)importer.SaveAndReimport();
   }
  }
 }

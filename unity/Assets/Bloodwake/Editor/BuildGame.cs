@@ -16,6 +16,8 @@ namespace Bloodwake.Editor
    if(AssetDatabase.LoadAssetAtPath<Material>(root+"EffectUnlit.mat")==null)AssetDatabase.CreateAsset(new Material(Shader.Find("Universal Render Pipeline/Unlit")),root+"EffectUnlit.mat");
    foreach(string path in Directory.GetFiles(root+"Models","*.fbx",SearchOption.AllDirectories))
    {
+    // Noble importer owns its action events; the generic pass would erase them.
+    if(Path.GetFileNameWithoutExtension(path)=="revenant_noble"){RevenantNobleImport.Build();continue;}
     var importer=(ModelImporter)AssetImporter.GetAtPath(path);importer.animationType=ModelImporterAnimationType.Generic;importer.importAnimation=true;importer.materialImportMode=ModelImporterMaterialImportMode.ImportStandard;
     var clips=importer.defaultClipAnimations;foreach(var c in clips){c.name=c.name.Split('|').Last();c.loopTime=c.name.Contains("Idle")||c.name.Contains("Run")||c.name.Contains("Walk");c.lockRootPositionXZ=true;c.lockRootHeightY=true;c.lockRootRotation=true;}importer.clipAnimations=clips;importer.SaveAndReimport();
     string name=Path.GetFileNameWithoutExtension(path),controllerPath=root+"Controllers/"+name+".controller";
@@ -29,6 +31,8 @@ namespace Bloodwake.Editor
     PrefabUtility.SaveAsPrefabAsset(instance,root+"Actors/"+name+".prefab");UnityEngine.Object.DestroyImmediate(instance);
    }
    RevenantVfxImport.Build();
+   if(File.Exists(root+"Animations/WarriorLocomotion/Warrior_ShieldWalk.fbx"))WarriorWalkImport.Build();
+   if(File.Exists(root+"Animations/WarriorCombat/Warrior_OutwardSlash.fbx"))WarriorAttackImport.Build();
    BuildRooms();
    var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,Application.isBatchMode?NewSceneMode.Single:NewSceneMode.Additive);
    UnityEngine.SceneManagement.SceneManager.SetActiveScene(scene);new GameObject("Bloodwake").AddComponent<BloodwakeGame>();

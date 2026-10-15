@@ -1,0 +1,1037 @@
+[
+  {
+    "model": "bloodhound_player",
+    "material": "tripo_mat_0aff0967",
+    "channel": "albedo",
+    "source": "art/bloodhound_v2/source/gunslinger_original.glb#albedo",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/bloodhound_player/HQ_tripo_mat_0aff0967_albedo.png"
+  },
+  {
+    "model": "bloodhound_player",
+    "material": "tripo_mat_0aff0967",
+    "channel": "normal",
+    "source": "art/bloodhound_v2/source/gunslinger_original.glb#normal",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/bloodhound_player/HQ_tripo_mat_0aff0967_normal.png"
+  },
+  {
+    "model": "bloodhound_player",
+    "material": "tripo_mat_0aff0967",
+    "channel": "metallicRoughness",
+    "source": "art/bloodhound_v2/source/gunslinger_original.glb#metallicRoughness",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/bloodhound_player/HQ_tripo_mat_0aff0967_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_tank",
+    "material": "tank_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Tank/Weapon Fbx/tripo_convert_89ea5692-a0fb-4132-b647-10216f0b0899.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_tank/HQ_tank_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_tank",
+    "material": "tank_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Tank/Weapon Fbx/tripo_convert_89ea5692-a0fb-4132-b647-10216f0b0899.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_tank/HQ_tank_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_tank",
+    "material": "tank_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Tank/Weapon Fbx/tripo_convert_89ea5692-a0fb-4132-b647-10216f0b0899.fbm/medieval_battle_axe_3d_model_metallic.JPEG + art/enemies/source/Tank/Weapon Fbx/tripo_convert_89ea5692-a0fb-4132-b647-10216f0b0899.fbm/medieval_battle_axe_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_tank/HQ_tank_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_tank",
+    "material": "tank_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Tank/Character Fbx/tripo_convert_e62e5a9a-11af-4561-a79c-06189135a080.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_tank/HQ_tank_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_tank",
+    "material": "tank_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Tank/Character Fbx/tripo_convert_e62e5a9a-11af-4561-a79c-06189135a080.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_tank/HQ_tank_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_tank",
+    "material": "tank_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Tank/Character Fbx/tripo_convert_e62e5a9a-11af-4561-a79c-06189135a080.fbm/medieval_knight_3d_model_metallic.JPEG + art/enemies/source/Tank/Character Fbx/tripo_convert_e62e5a9a-11af-4561-a79c-06189135a080.fbm/medieval_knight_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_tank/HQ_tank_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_warrior",
+    "material": "warrior_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Warrior/Weapon Fbx/tripo_convert_6366fc10-962d-4883-bb20-6d80f4639575.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_warrior/HQ_warrior_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_warrior",
+    "material": "warrior_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Warrior/Weapon Fbx/tripo_convert_6366fc10-962d-4883-bb20-6d80f4639575.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_warrior/HQ_warrior_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_warrior",
+    "material": "warrior_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Warrior/Weapon Fbx/tripo_convert_6366fc10-962d-4883-bb20-6d80f4639575.fbm/medieval_sword_3d_model_metallic.JPEG + art/enemies/source/Warrior/Weapon Fbx/tripo_convert_6366fc10-962d-4883-bb20-6d80f4639575.fbm/medieval_sword_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_warrior/HQ_warrior_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_warrior",
+    "material": "warrior_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Warrior/Character Fbx/tripo_convert_289080ba-9011-4e8a-a456-0b19d4b6c886.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_warrior/HQ_warrior_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_warrior",
+    "material": "warrior_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Warrior/Character Fbx/tripo_convert_289080ba-9011-4e8a-a456-0b19d4b6c886.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_warrior/HQ_warrior_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_warrior",
+    "material": "warrior_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Warrior/Character Fbx/tripo_convert_289080ba-9011-4e8a-a456-0b19d4b6c886.fbm/medieval_knight_3d_model_metallic.JPEG + art/enemies/source/Warrior/Character Fbx/tripo_convert_289080ba-9011-4e8a-a456-0b19d4b6c886.fbm/medieval_knight_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_warrior/HQ_warrior_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_archer",
+    "material": "archer_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Archer/Character fbx/tripo_convert_1d290182-c356-412b-8e48-637cc7897ce3.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_archer/HQ_archer_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_archer",
+    "material": "archer_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Archer/Character fbx/tripo_convert_1d290182-c356-412b-8e48-637cc7897ce3.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_archer/HQ_archer_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_archer",
+    "material": "archer_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Archer/Character fbx/tripo_convert_1d290182-c356-412b-8e48-637cc7897ce3.fbm/grim_reaper_3d_model_metallic.JPEG + art/enemies/source/Archer/Character fbx/tripo_convert_1d290182-c356-412b-8e48-637cc7897ce3.fbm/grim_reaper_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_archer/HQ_archer_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_archer",
+    "material": "archer_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Archer/Weapon fbx/tripo_convert_b2281091-ccd5-4e11-9bb7-2efd02dca4d7.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_archer/HQ_archer_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_archer",
+    "material": "archer_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Archer/Weapon fbx/tripo_convert_b2281091-ccd5-4e11-9bb7-2efd02dca4d7.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_archer/HQ_archer_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_archer",
+    "material": "archer_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Archer/Weapon fbx/tripo_convert_b2281091-ccd5-4e11-9bb7-2efd02dca4d7.fbm/fantasy_bow_3d_model_metallic.JPEG + art/enemies/source/Archer/Weapon fbx/tripo_convert_b2281091-ccd5-4e11-9bb7-2efd02dca4d7.fbm/fantasy_bow_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_archer/HQ_archer_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_commander",
+    "material": "commander_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Commander/Character Fbx/tripo_convert_fd5538db-6ff7-4ba1-9476-71cbadc21d80.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_commander/HQ_commander_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_commander",
+    "material": "commander_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Commander/Character Fbx/tripo_convert_fd5538db-6ff7-4ba1-9476-71cbadc21d80.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_commander/HQ_commander_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_commander",
+    "material": "commander_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Commander/Character Fbx/tripo_convert_fd5538db-6ff7-4ba1-9476-71cbadc21d80.fbm/dark_necromancer_3d_model_metallic.JPEG + art/enemies/source/Commander/Character Fbx/tripo_convert_fd5538db-6ff7-4ba1-9476-71cbadc21d80.fbm/dark_necromancer_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_commander/HQ_commander_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_commander",
+    "material": "commander_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Commander/Weapon Fbx/tripo_convert_42dd8905-6c25-45f0-a8e6-44230a713ad0.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_commander/HQ_commander_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_commander",
+    "material": "commander_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Commander/Weapon Fbx/tripo_convert_42dd8905-6c25-45f0-a8e6-44230a713ad0.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_commander/HQ_commander_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_commander",
+    "material": "commander_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Commander/Weapon Fbx/tripo_convert_42dd8905-6c25-45f0-a8e6-44230a713ad0.fbm/fantasy_weapon_3d_model_metallic.JPEG + art/enemies/source/Commander/Weapon Fbx/tripo_convert_42dd8905-6c25-45f0-a8e6-44230a713ad0.fbm/fantasy_weapon_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_commander/HQ_commander_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "warrior_player",
+    "material": "Greatsword PBR",
+    "channel": "albedo",
+    "source": "art/warrior/source/greatsword/tripo_convert_734e3fa8-5454-4bb4-9045-b0ce5482fde6.fbm/greatsword_3d_model_basecolor.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Greatsword_PBR_albedo.png"
+  },
+  {
+    "model": "warrior_player",
+    "material": "Greatsword PBR",
+    "channel": "normal",
+    "source": "art/warrior/source/greatsword/tripo_convert_734e3fa8-5454-4bb4-9045-b0ce5482fde6.fbm/greatsword_3d_model_normal.PNG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Greatsword_PBR_normal.png"
+  },
+  {
+    "model": "warrior_player",
+    "material": "Greatsword PBR",
+    "channel": "metallicRoughness",
+    "source": "art/warrior/source/greatsword/tripo_convert_734e3fa8-5454-4bb4-9045-b0ce5482fde6.fbm/greatsword_3d_model_metallic.JPEG + art/warrior/source/greatsword/tripo_convert_734e3fa8-5454-4bb4-9045-b0ce5482fde6.fbm/greatsword_3d_model_roughness.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Greatsword_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "warrior_player",
+    "material": "Knight PBR",
+    "channel": "albedo",
+    "source": "art/warrior/source/knight/tripo_convert_4db84b6b-bbe9-4e20-bbda-d9d649cd3032.fbm/medieval_knight_armor_3d_model_basecolor.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Knight_PBR_albedo.png"
+  },
+  {
+    "model": "warrior_player",
+    "material": "Knight PBR",
+    "channel": "normal",
+    "source": "art/warrior/source/knight/tripo_convert_4db84b6b-bbe9-4e20-bbda-d9d649cd3032.fbm/medieval_knight_armor_3d_model_normal.PNG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Knight_PBR_normal.png"
+  },
+  {
+    "model": "warrior_player",
+    "material": "Knight PBR",
+    "channel": "metallicRoughness",
+    "source": "art/warrior/source/knight/tripo_convert_4db84b6b-bbe9-4e20-bbda-d9d649cd3032.fbm/medieval_knight_armor_3d_model_metallic.JPEG + art/warrior/source/knight/tripo_convert_4db84b6b-bbe9-4e20-bbda-d9d649cd3032.fbm/medieval_knight_armor_3d_model_roughness.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Knight_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "assassin_player",
+    "material": "Assassin PBR",
+    "channel": "albedo",
+    "source": "art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Assassin_PBR_albedo.png"
+  },
+  {
+    "model": "assassin_player",
+    "material": "Assassin PBR",
+    "channel": "normal",
+    "source": "art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/Normal.png",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Assassin_PBR_normal.png"
+  },
+  {
+    "model": "assassin_player",
+    "material": "Assassin PBR",
+    "channel": "metallicRoughness",
+    "source": "art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/dark_assassin_character_3d_model_metallic.JPEG + art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/dark_assassin_character_3d_model_roughness.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Assassin_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "assassin_player",
+    "material": "Dagger PBR",
+    "channel": "albedo",
+    "source": "art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Dagger_PBR_albedo.png"
+  },
+  {
+    "model": "assassin_player",
+    "material": "Dagger PBR",
+    "channel": "normal",
+    "source": "art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/Normal.png",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Dagger_PBR_normal.png"
+  },
+  {
+    "model": "assassin_player",
+    "material": "Dagger PBR",
+    "channel": "metallicRoughness",
+    "source": "art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/dark_fantasy_dagger_3d_model_metallic.JPEG + art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/dark_fantasy_dagger_3d_model_roughness.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Dagger_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Assasin/Character Fbx/tripo_convert_11e73cb6-ab42-48df-b333-9134b0711dff.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Assasin/Character Fbx/tripo_convert_11e73cb6-ab42-48df-b333-9134b0711dff.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Assasin/Character Fbx/tripo_convert_11e73cb6-ab42-48df-b333-9134b0711dff.fbm/hooded_assassin_3d_model_metallic.JPEG + art/enemies/source/Assasin/Character Fbx/tripo_convert_11e73cb6-ab42-48df-b333-9134b0711dff.fbm/hooded_assassin_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_weapon_PBR.001",
+    "channel": "albedo",
+    "source": "art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_001_albedo.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_weapon_PBR.001",
+    "channel": "normal",
+    "source": "art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_001_normal.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_weapon_PBR.001",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/dual_curved_daggers_3d_model_metallic.JPEG + art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/dual_curved_daggers_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_001_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_assassin",
+    "material": "assassin_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/dual_curved_daggers_3d_model_metallic.JPEG + art/enemies/source/Assasin/Weapon Fbx/tripo_convert_0c93de5d-9fee-488a-9580-d262df92bac8.fbm/dual_curved_daggers_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "revenant_player",
+    "material": "tripo_mat_67e3196c",
+    "channel": "albedo",
+    "source": "art/revenant-astra-ready/deliverables/textures/BaseColor.png",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/revenant_player/HQ_tripo_mat_67e3196c_albedo.png"
+  },
+  {
+    "model": "revenant_player",
+    "material": "tripo_mat_67e3196c",
+    "channel": "normal",
+    "source": "art/revenant-astra-ready/deliverables/textures/Normal.png",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/revenant_player/HQ_tripo_mat_67e3196c_normal.png"
+  },
+  {
+    "model": "revenant_player",
+    "material": "tripo_mat_67e3196c",
+    "channel": "metallicRoughness",
+    "source": "art/revenant-astra-ready/deliverables/textures/Metallic.png + art/revenant-astra-ready/deliverables/textures/Roughness.png",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/revenant_player/HQ_tripo_mat_67e3196c_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_mage",
+    "material": "mage_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Mage/fantasy_wizard.glb#albedo",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_mage/HQ_mage_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_mage",
+    "material": "mage_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Mage/fantasy_wizard.glb#normal",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_mage/HQ_mage_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_mage",
+    "material": "mage_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Mage/fantasy_wizard.glb#metallicRoughness",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_mage/HQ_mage_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_boss",
+    "material": "boss_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Boss/Character Fbx/tripo_convert_993d6269-8646-411e-9914-425a84ee6dfc.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_boss/HQ_boss_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_boss",
+    "material": "boss_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Boss/Character Fbx/tripo_convert_993d6269-8646-411e-9914-425a84ee6dfc.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_boss/HQ_boss_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_boss",
+    "material": "boss_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Boss/Character Fbx/tripo_convert_993d6269-8646-411e-9914-425a84ee6dfc.fbm/fantasy_armor_3d_model_metallic.JPEG + art/enemies/source/Boss/Character Fbx/tripo_convert_993d6269-8646-411e-9914-425a84ee6dfc.fbm/fantasy_armor_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_boss/HQ_boss_character_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_boss",
+    "material": "boss_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Boss/Weapon Fbx/tripo_convert_a0c28692-5e9c-4331-b122-967e10565af0.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_boss/HQ_boss_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_boss",
+    "material": "boss_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Boss/Weapon Fbx/tripo_convert_a0c28692-5e9c-4331-b122-967e10565af0.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_boss/HQ_boss_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_boss",
+    "material": "boss_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Boss/Weapon Fbx/tripo_convert_a0c28692-5e9c-4331-b122-967e10565af0.fbm/lava_infused_sword_3d_model_metallic.JPEG + art/enemies/source/Boss/Weapon Fbx/tripo_convert_a0c28692-5e9c-4331-b122-967e10565af0.fbm/lava_infused_sword_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_boss/HQ_boss_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "mage_player",
+    "material": "Mage PBR",
+    "channel": "albedo",
+    "source": "art/mage/source/model/tripo_convert_36c34467-f660-4e0a-a6fb-1f2816df0465.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/mage_player/HQ_Mage_PBR_albedo.png"
+  },
+  {
+    "model": "mage_player",
+    "material": "Mage PBR",
+    "channel": "normal",
+    "source": "art/mage/source/model/tripo_convert_36c34467-f660-4e0a-a6fb-1f2816df0465.fbm/Normal.png",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/mage_player/HQ_Mage_PBR_normal.png"
+  },
+  {
+    "model": "mage_player",
+    "material": "Mage PBR",
+    "channel": "metallicRoughness",
+    "source": "art/mage/source/model/tripo_convert_36c34467-f660-4e0a-a6fb-1f2816df0465.fbm/dark_fantasy_character_3d_model_metallic.JPEG + art/mage/source/model/tripo_convert_36c34467-f660-4e0a-a6fb-1f2816df0465.fbm/dark_fantasy_character_3d_model_roughness.JPEG",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/mage_player/HQ_Mage_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_healer",
+    "material": "healer_weapon_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Healer/Weapon Fbx/tripo_convert_4869c9ad-03ad-4a54-8d34-d902b1353686.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_healer/HQ_healer_weapon_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_healer",
+    "material": "healer_weapon_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Healer/Weapon Fbx/tripo_convert_4869c9ad-03ad-4a54-8d34-d902b1353686.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_healer/HQ_healer_weapon_PBR_normal.png"
+  },
+  {
+    "model": "enemy_healer",
+    "material": "healer_weapon_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Healer/Weapon Fbx/tripo_convert_4869c9ad-03ad-4a54-8d34-d902b1353686.fbm/medieval_lantern_prop_3d_model_metallic.JPEG + art/enemies/source/Healer/Weapon Fbx/tripo_convert_4869c9ad-03ad-4a54-8d34-d902b1353686.fbm/medieval_lantern_prop_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_healer/HQ_healer_weapon_PBR_metallicRoughness.png"
+  },
+  {
+    "model": "enemy_healer",
+    "material": "healer_character_PBR",
+    "channel": "albedo",
+    "source": "art/enemies/source/Healer/Character Fbx/tripo_convert_f3383035-ae75-4ebe-ad79-798f5914c768.fbm/Color.jpg",
+    "previous": [
+      2048,
+      2048
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_healer/HQ_healer_character_PBR_albedo.png"
+  },
+  {
+    "model": "enemy_healer",
+    "material": "healer_character_PBR",
+    "channel": "normal",
+    "source": "art/enemies/source/Healer/Character Fbx/tripo_convert_f3383035-ae75-4ebe-ad79-798f5914c768.fbm/Normal.png",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_healer/HQ_healer_character_PBR_normal.png"
+  },
+  {
+    "model": "enemy_healer",
+    "material": "healer_character_PBR",
+    "channel": "metallicRoughness",
+    "source": "art/enemies/source/Healer/Character Fbx/tripo_convert_f3383035-ae75-4ebe-ad79-798f5914c768.fbm/plague_doctor_3d_model_metallic.JPEG + art/enemies/source/Healer/Character Fbx/tripo_convert_f3383035-ae75-4ebe-ad79-798f5914c768.fbm/plague_doctor_3d_model_roughness.JPEG",
+    "previous": [
+      4096,
+      4096
+    ],
+    "restored": [
+      4096,
+      4096
+    ],
+    "output": "unity/Assets/Bloodwake/Resources/Models/enemy_healer/HQ_healer_character_PBR_metallicRoughness.png"
+  }
+]

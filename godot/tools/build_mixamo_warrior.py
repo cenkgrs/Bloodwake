@@ -187,8 +187,7 @@ def material(folder,prefix):
  for suffix,socket in [('basecolor','Base Color'),('roughness','Roughness'),('metallic','Metallic'),('normal','Normal')]:
   path=next((SRC/folder).glob('*.fbm/*_'+suffix+'.*'))
   tex=nodes.new('ShaderNodeTexImage');tex.image=bpy.data.images.load(str(path),check_existing=True)
-  # Game textures: retain the supplied sources, cap the embedded copies at 2K.
-  if max(tex.image.size)>2048:tex.image.scale(2048,2048)
+  # Preserve original texture resolution; Unity handles GPU import separately.
   tex.image.pack()
   if suffix!='basecolor':tex.image.colorspace_settings.name='Non-Color'
   if suffix=='normal':
@@ -258,7 +257,7 @@ for o in [rig,body,sword]:o.select_set(True)
 bpy.context.view_layer.objects.active=rig
 # Export each action without relying on object names imported from other FBXs.
 bpy.context.scene.render.fps=60;bpy.context.scene.render.fps_base=1.0
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/warrior_player.glb'),export_format='GLB',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/warrior_player.glb'),export_format='GLB',export_image_format='PNG',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
 rig.animation_data.action=actions['Idle'];rig.animation_data.action_slot=actions['Idle'].slots[0]
 bpy.context.scene.frame_set(1)
 bpy.ops.wm.save_as_mainfile(filepath='/tmp/warrior_review.blend')

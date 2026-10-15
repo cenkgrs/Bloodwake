@@ -103,17 +103,52 @@ namespace Bloodwake
    }
   }
 
+  public void BloodBomb(Vector3 hands,Vector3 forward,float radius)
+  {
+   forward.y=0;forward=forward.sqrMagnitude>.001f?forward.normalized:Vector3.forward;
+   var facing=Quaternion.LookRotation(forward);
+   // Instant aerial detonation. No fountain, delayed acceleration or floor sigil.
+   var core=Particle(hands,Vector3.one*.55f,Tone("9c1026"),.12f,false,true);core.name="Blood bomb core";
+   core.Tick=(p,dt)=>core.transform.localScale=Vector3.one*Mathf.Lerp(.55f,.08f,p);
+   var flash=Glow(hands,Tone("e8213b"),1.5f,1.8f,.14f);flash.name="Blood bomb flash";
+   flash.Tick=(p,dt)=>{flash.transform.rotation=Game.Cam.transform.rotation;flash.transform.localScale=Vector3.one*Mathf.Lerp(1.5f,2,p);};
+   for(int layer=-1;layer<=1;layer++)BloodBombSheet(hands,facing,radius,layer);
+   for(int i=0;i<84;i++)
+   {
+    float angle=Mathf.Lerp(-Mathf.PI/4,Mathf.PI/4,(i+UnityEngine.Random.value)/84);
+    var direction=facing*new Vector3(Mathf.Sin(angle),UnityEngine.Random.Range(-.3f,.45f),Mathf.Cos(angle)).normalized;
+    var start=hands+direction*.06f;var velocity=direction*UnityEngine.Random.Range(radius*3.5f,radius*5f);
+    float size=UnityEngine.Random.Range(.035f,.095f);
+    var drop=Particle(start,new Vector3(size,size*3,size),Tone(i%4==0?"ae132b":"700b1b"),.65f,false,true);
+    drop.name="Blood bomb droplet";drop.transform.rotation=Quaternion.FromToRotation(Vector3.up,direction);
+    bool landed=false;
+    drop.Tick=(p,dt)=>
+    {
+     float t=drop.Age;
+     // Fast initial spray settles inside the blast footprint, then falls.
+     var point=start+velocity*((1-Mathf.Exp(-5*t))/5)-Vector3.up*4.9f*t*t;
+     if(point.y<=.03f)
+     {
+      if(!landed){landed=true;Stain(point,size*4,2.5f,.6f);}drop.transform.localScale=Vector3.zero;return;
+     }
+     drop.transform.position=point;
+     var tangent=velocity*Mathf.Exp(-5*t)-Vector3.up*9.8f*t;
+     if(tangent.sqrMagnitude>.001f)drop.transform.rotation=Quaternion.FromToRotation(Vector3.up,tangent.normalized);
+     drop.transform.localScale=new Vector3(size,size*Mathf.Lerp(3,1,p),size)*(1-p*.6f);
+    };
+   }
+  }
   public void Burst(Vector3 pos,float radius,float height=3.5f)
   {
    Fountain(pos,radius,height,.85f);
    for(int i=0;i<55;i++){var dir=Quaternion.Euler(0,UnityEngine.Random.Range(0,360),0)*Vector3.forward;var start=pos+dir*UnityEngine.Random.Range(.2f,.65f)+Vector3.up*.5f;float size=UnityEngine.Random.Range(.035f,.095f);var drop=Particle(start,Vector3.one*size,Tone("6e0818"),UnityEngine.Random.Range(.65f,1.05f),false,true);var velocity=dir*UnityEngine.Random.Range(1.4f,4f)+Vector3.up*UnityEngine.Random.Range(2,5f);drop.Tick=(p,dt)=>{float t=drop.Age;var current=velocity-Vector3.up*9.8f*t;var point=start+velocity*t-Vector3.up*4.9f*t*t;point.y=Mathf.Max(.028f,point.y);drop.transform.position=point;drop.transform.rotation=Quaternion.FromToRotation(Vector3.up,current.normalized);float shrink=1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.7f,1,p));drop.transform.localScale=new Vector3(size,size*(1+current.magnitude*.2f),size)*shrink;};}
-   Stain(pos,radius*2,0,1.6f);BurstRing(pos,radius,Tone("d71435"),32,5.5f,.7f);Flash(pos,Tone("d71435"),.9f,radius,.25f);
+   Stain(pos,radius*2,2.5f,.6f);BurstRing(pos,radius,Tone("d71435"),32,5.5f,.7f);Flash(pos,Tone("d71435"),.9f,radius,.25f);
   }
-  public void Impact(Vector3 pos)
+  public void Impact(Vector3 pos,float stainHold=0)
   {
    var tone=Tone("ef1931");Sparks(pos,tone,12,.3f,1.3f,3.4f);var flare=Glow(pos,tone,.38f,1.4f,.16f);
    flare.Tick=(p,dt)=>{flare.transform.localScale=Vector3.one*.38f*Mathf.Lerp(1,1.7f,p);flare.transform.rotation=Game.Cam.transform.rotation;};
-   Flash(pos,tone,.65f,1.8f,.12f);Stain(pos,.85f,0,1.4f);
+   Flash(pos,tone,.65f,1.8f,.12f);Stain(pos,.85f,stainHold,stainHold>0?.6f:1.4f);
   }
   public void Stain(Vector3 pos,float size,float hold,float dry)
   {
@@ -143,13 +178,13 @@ namespace Bloodwake
   public void Splatter(Vector3 pos,Vector3 direction)
   {
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Vector3.forward;direction.Normalize();var side=Vector3.Cross(direction,Vector3.up);
-   for(int i=0;i<5;i++)
+   for(int i=0;i<12;i++)
    {
-    var end=pos+direction*UnityEngine.Random.Range(.48f,1.25f)+side*UnityEngine.Random.Range(-.5f,.5f);end.y=.024f;
-    var start=pos+Vector3.up*UnityEngine.Random.Range(.65f,1.1f)+side*UnityEngine.Random.Range(-.12f,.12f);
-    float life=UnityEngine.Random.Range(.17f,.28f),height=UnityEngine.Random.Range(.12f,.38f);
-    var fx=Particle(start,new Vector3(.05f,.07f,.05f),Tone("6e0712"),life,false,true);
-    fx.Tick=(p,dt)=>{fx.transform.position=Vector3.Lerp(start,end,p)+Vector3.up*Mathf.Sin(p*Mathf.PI)*height;};
+    var end=pos+direction*UnityEngine.Random.Range(.9f,1.9f)+side*UnityEngine.Random.Range(-.4f,.4f);end.y=.024f;
+    var start=pos+direction*.3f+Vector3.up*UnityEngine.Random.Range(.95f,1.4f)+side*UnityEngine.Random.Range(-.12f,.12f);
+    float life=UnityEngine.Random.Range(.32f,.48f),height=UnityEngine.Random.Range(.2f,.5f);
+    var fx=Particle(start,new Vector3(.055f,.12f,.055f),Tone("6e0712"),life,false,true);
+    fx.Tick=(p,dt)=>{fx.transform.position=Vector3.Lerp(start,end,p)+Vector3.up*(4*p*(1-p)*height);var velocity=(end-start)+Vector3.up*(4*(1-2*p)*height);fx.transform.rotation=Quaternion.FromToRotation(Vector3.up,velocity.normalized);};
     fx.Completed=()=>Stain(end,UnityEngine.Random.Range(.12f,.3f),UnityEngine.Random.Range(4,6),1.25f);
    }
   }

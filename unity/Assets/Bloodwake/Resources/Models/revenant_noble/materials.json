@@ -1,0 +1,15 @@
+{
+  "Noble Original Color": {
+    "color": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "alpha": 1,
+    "metallic": 0,
+    "roughness": 0.75,
+    "albedo": "Noble_BaseColor_8K.jpg",
+    "preserveOriginal": true
+  }
+}

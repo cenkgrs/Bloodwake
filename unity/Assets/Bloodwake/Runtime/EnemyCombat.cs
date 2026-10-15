@@ -6,14 +6,14 @@ namespace Bloodwake
 {
  public sealed partial class BloodwakeGame
  {
-  IEnumerator Projectile(Vector3 start,Vector3 direction,float damage,float speed,float range,bool hostile,int pierce=0,bool hostileMagic=false,string hand="R")
+  IEnumerator Projectile(Vector3 start,Vector3 direction,float damage,float speed,float range,bool hostile,int pierce=0,bool hostileMagic=false,string hand="R",bool finisher=false)
   {
    bool magic=hostile?hostileMagic:Run.ClassId=="mage",gun=!hostile&&Run.ClassId=="gunslinger";var muzzle=gun?Player.MuzzleSocket(hand):null;var origin=gun?Player.MuzzlePosition(hand):!hostile&&magic?Player.MagicPalmPosition():start+Vector3.up;
    var go=RevFx.ProjectileVisual(origin,direction,magic,hostile);float traveled=0,trail=0;var hit=new HashSet<Enemy>();
    if(!hostile){RevFx.Muzzle(origin,direction,magic,muzzle);if(gun)RevFx.Casing(origin,direction,hand);}
    while(traveled<range&&go){if(Screen!="playing"||hitStop>0){yield return null;continue;}float step=Mathf.Min(range-traveled,Mathf.Max(1,speed)*Time.deltaTime);var previous=go.transform.position;go.transform.position+=direction*step;traveled+=step;trail-=Time.deltaTime;if(trail<=0&&(magic||hostile)){RevFx.ProjectileTrail(go.transform.position,magic,hostile);trail=magic?.035f:.02f;}
     if(hostile){if(SegmentDistance(Player.transform.position+Vector3.up,previous,go.transform.position)<.55f){RevFx.ProjectileImpact(go.transform.position,magic,true,direction);HurtPlayer(damage);break;}}
-    else foreach(var e in Enemies.OrderBy(e=>Vector3.Distance(previous,e.View.transform.position+Vector3.up)).ToArray()){if(hit.Contains(e)||ProjectileBodyDistance(e.View,previous,go.transform.position)>e.Data.N("radius",16)*.02f+(magic?.5f:.16f))continue;hit.Add(e);RevFx.ProjectileImpact(e.View.transform.position+Vector3.up,magic,false,direction);DamageEnemy(e,damage);if(e.Hp>0&&Run.Weapons.TryGetValue("magic_orb",out var orb)&&Run.ClassId=="mage"&&orb.N("burn")>0){e.Burn=3;e.BurnDps=orb.N("burn");}if(hit.Count>pierce){traveled=range;break;}}
+    else foreach(var e in Enemies.OrderBy(e=>Vector3.Distance(previous,e.View.transform.position+Vector3.up)).ToArray()){if(hit.Contains(e)||ProjectileBodyDistance(e.View,previous,go.transform.position)>e.Data.N("radius",16)*.02f+(magic?.5f:.16f))continue;hit.Add(e);RevFx.ProjectileImpact(e.View.transform.position+Vector3.up,magic,false,direction);DamageEnemy(e,damage);if(finisher)hitStop=Mathf.Max(hitStop,FinisherHitStop);if(e.Hp>0&&Run.Weapons.TryGetValue("magic_orb",out var orb)&&Run.ClassId=="mage"&&orb.N("burn")>0){e.Burn=3;e.BurnDps=orb.N("burn");}if(hit.Count>pierce){traveled=range;break;}}
     yield return null;
    }if(gun&&go)RevFx.BallisticTrace(origin,go.transform.position);if(go)Destroy(go);
   }
@@ -37,6 +37,11 @@ namespace Bloodwake
     if(e.Burn>0){DamageEnemy(e,e.BurnDps*Mathf.Min(dt,e.Burn),false);e.Burn-=dt;}if(e.Hp<=0)continue;
     if(e.Bleed>0){DamageEnemy(e,e.BleedDps*Mathf.Min(dt,e.Bleed),false);e.Bleed-=dt;}if(e.Hp<=0)continue;
     e.Cooldown-=dt;e.AreaRecovery=Mathf.Max(0,e.AreaRecovery-dt);e.Stagger-=dt;e.Slow-=dt;e.Mark-=dt;e.Aura-=dt;e.RuneCooldown-=dt;var delta=Player.transform.position-e.View.transform.position;float distance=delta.magnitude;var dir=delta.normalized;
+    if(e.Turning)
+    {
+     if(e.RecoilTime>0||e.Stagger>0||e.Casting)e.Turning=false;
+     else{TickWarriorTurn(e,dt);continue;}
+    }
     if(e.RecoilTime>0){TickRecoil(e,dt);e.View.Tick(dt,false);continue;}
     if(e.Casting){e.View.Tick(dt,false);continue;}
     if(e.Stagger>0||e.View.Locked>0){e.View.Tick(dt,false);continue;}
@@ -45,14 +50,26 @@ namespace Bloodwake
     if(e.Id=="boss"){string next=new[]{"attack","sweep","cast","charge","slam","summon"}[e.Pattern%6];reach=next=="attack"||next=="sweep"||next=="slam"?GameData.Rules["boss"][next].N("radius")-.3f:12;}
     var before=e.View.transform.position;Vector3 wish=Vector3.zero;
     if(distance>reach)wish=ChaseDirection(before);else if(ranged&&distance<4)wish=-dir;
-    if(wish.sqrMagnitude>.0001f)e.View.transform.position=Move(before,wish*speed*dt,.45f);
+    bool warriorSteering=e.Id=="grunt"&&e.View.TurnData!=null;
+    if(e.Id=="grunt"&&BeginWarriorTurn(e,wish.sqrMagnitude>.0001f?wish:dir))continue;
+    if(warriorSteering)e.View.transform.position=SteerWarrior(e,wish.sqrMagnitude>.0001f?wish:dir,wish,speed,dt);
+    else if(wish.sqrMagnitude>.0001f)e.View.transform.position=Move(before,wish*speed*dt,.45f);
     var moved=e.View.transform.position-before;moved.y=0;bool moving=moved.sqrMagnitude>.000001f;
     // A forward run must face its actual displacement, including collision sliding.
-    var facing=moving?moved:dir;if(facing.sqrMagnitude>.0001f)e.View.transform.rotation=Quaternion.LookRotation(facing);
-    e.View.Tick(dt,moving,moving?Mathf.Clamp(moved.magnitude/Mathf.Max(.0001f,dt*speed),.5f,1.5f):1);
-    if(e.Cooldown>0||distance>reach+.5f)continue;e.Cooldown=e.Data.N("attackCooldown",1.5f);
+    // Use a direction, not a per-frame distance: at >180 fps a grunt moves
+    // less than 1 cm and the old squared-distance gate prevented ALL turning.
+    var facing=moving?moved.normalized:dir;if(!warriorSteering&&facing.sqrMagnitude>.000001f)e.View.transform.rotation=Quaternion.LookRotation(facing);
+    // Match steps to actual displacement, including slow/aura modifiers and wall sliding.
+    float gaitSpeed=e.View.LocomotionSpeed>0?e.View.LocomotionSpeed:speed;
+    float gaitRate=moved.magnitude/Mathf.Max(.0001f,dt*gaitSpeed);
+    e.View.Tick(dt,moving,moving?(e.View.LocomotionSpeed>0?gaitRate:Mathf.Clamp(gaitRate,.5f,1.5f)):1);
+    if(e.Cooldown>0||distance>reach+.5f)continue;
+    if(warriorSteering&&Vector3.Angle(e.View.transform.forward,dir)>WarriorAttackFacingTolerance)continue;
+    e.Cooldown=e.Data.N("attackCooldown",1.5f);
     if(e.Id=="boss"){StartCoroutine(BossCast(e));continue;}
-    e.View.transform.rotation=Quaternion.LookRotation(dir.sqrMagnitude>.001f?dir:Vector3.forward);e.View.Play("Attack",.6f);
+    if(!warriorSteering)e.View.transform.rotation=Quaternion.LookRotation(dir.sqrMagnitude>.001f?dir:Vector3.forward);
+    if(e.Id=="grunt"&&e.View.HasWarriorSlashes){WarriorMelee(e,warriorSteering?e.View.transform.forward:dir);continue;}
+    e.View.Play("Attack",.6f);
     if(e.Id=="healer"||e.Id=="commander")StartCoroutine(SupportCast(e));
     else if(e.Id=="mage"){
      e.Pattern++;if(e.Pattern%2==0&&e.RuneCooldown<=0){e.RuneCooldown=e.Data.N("runeCooldown",6.5f);StartCoroutine(EnemyArea(e,Player.transform.position,e.Data.N("runeRadius",150)*.02f,e.Data.N("runeFuse",1.4f)));}
@@ -61,6 +78,22 @@ namespace Bloodwake
     else if(e.Id=="archer")StartCoroutine(EnemyShot(e,dir));
     else StartCoroutine(EnemyMelee(e,dir));
    }
+  }
+  void WarriorMelee(Enemy e,Vector3 dir)
+  {
+   // Advance only when an attack starts, never on a hit/miss or animation event.
+   string clip=(e.Pattern&1)==0?"Warrior_OutwardSlash":"Warrior_InwardSlash";
+   e.Pattern=(e.Pattern+1)&1;
+   int impact=e.ImpactVersion;
+   // Default hold uses the source length at 1x, instead of squeezing to 0.6 s.
+   e.View.Play(clip);
+   e.View.OnMarker("DAMAGE",()=>
+   {
+    if(Screen=="playing"&&e.Hp>0&&impact==e.ImpactVersion&&
+       (Player.transform.position-e.View.transform.position).magnitude<1.8f&&
+       Vector3.Angle(dir,Player.transform.position-e.View.transform.position)<70)
+     HurtPlayer(e.Damage*(e.Aura>0?1.25f:1));
+   });
   }
   IEnumerator EnemyShot(Enemy e,Vector3 dir){int impact=e.ImpactVersion;e.Casting=true;yield return Delay(.3f);if(e.Hp>0&&impact==e.ImpactVersion)StartCoroutine(Projectile(e.View.transform.position,dir,e.Damage,e.Data.N("projectileSpeed",340)*.02f,12,true,0,e.Id=="mage"));yield return Delay(.3f);e.Casting=false;}
   IEnumerator EnemyMelee(Enemy e,Vector3 dir){int impact=e.ImpactVersion;yield return Delay(.3f);if(e.Hp>0&&impact==e.ImpactVersion&&(Player.transform.position-e.View.transform.position).magnitude<1.8f&&Vector3.Angle(dir,Player.transform.position-e.View.transform.position)<70)HurtPlayer(e.Damage*(e.Aura>0?1.25f:1));}

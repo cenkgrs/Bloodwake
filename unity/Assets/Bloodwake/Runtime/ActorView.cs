@@ -23,7 +23,13 @@ namespace Bloodwake
   public void CancelAction(){markers.Clear();SetVisible(true);}
   public bool Visible {get;private set;}=true;
   public bool ContactPending=>markers.ContainsKey("DAMAGE");
-  public bool IsCasting=>Locked>0&&(state==Clip("Teleport")||state==Clip("Ultimate"));
+  public bool IsCasting=>Locked>0&&(state==Clip("Teleport")||state==Clip("Ultimate")||state=="REV_BloodClap");
+  public bool NobleRevenant=>Kind=="revenant"&&Animator.runtimeAnimatorController.name=="revenant_noble";
+  public float LocomotionSpeed {get;private set;}
+  public bool HasWarriorSlashes {get;private set;}
+  public WarriorTurnData TurnData {get;private set;}
+  [System.Serializable]class StrideCalibration {public float referenceSpeed,referenceHeight;}
+  public float MarkerTime(string key,string marker)=>Animator.runtimeAnimatorController.animationClips.First(c=>c.name==Clip(key)).events.First(e=>e.stringParameter==marker).time;
   public bool IsDead=>state==Clip("Death");
   public void SetVisible(bool visible){Visible=visible;foreach(var r in Animator.GetComponentsInChildren<Renderer>())r.enabled=visible;}
   public void ReceiveMarker(AnimationEvent evt)
@@ -34,6 +40,7 @@ namespace Bloodwake
   public static ActorView Create(string id,bool enemy,float height,Transform parent)
   {
    string name=enemy?"enemy_"+(id=="grunt"?"warrior":id):id=="gunslinger"?"bloodhound_player":id+"_player";
+   if(!enemy&&id=="revenant")name="revenant_noble";
    var prefab=Resources.Load<GameObject>("Actors/"+name);
    if(prefab==null)throw new System.InvalidOperationException("Missing actor prefab: "+name);
    var go=new GameObject(id);go.transform.SetParent(parent,false);var pivot=new GameObject("Impact pose").transform;pivot.SetParent(go.transform,false);var model=Instantiate(prefab,pivot);var view=go.AddComponent<ActorView>();view.Kind=id;view.Height=height;view.reactionPivot=pivot;
@@ -42,9 +49,28 @@ namespace Bloodwake
    // include weapons and are not a valid standing-height or foot-origin measure.
    model.transform.localScale*=height/1.8f;model.transform.localPosition=Vector3.zero;
    foreach(var renderer in model.GetComponentsInChildren<Renderer>())renderer.renderingLayerMask|=2u;
+   if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_ShieldWalk"))
+   {
+    var calibration=JsonUtility.FromJson<StrideCalibration>(Resources.Load<TextAsset>("Animations/WarriorLocomotion/stride").text);
+    view.LocomotionSpeed=calibration.referenceSpeed*height/calibration.referenceHeight;
+   }
+   view.HasWarriorSlashes=enemy&&id=="grunt"&&new[]{"Warrior_OutwardSlash","Warrior_InwardSlash"}.All(n=>view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name==n));
+   if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_Turn180"))
+    view.TurnData=JsonUtility.FromJson<WarriorTurnData>(Resources.Load<TextAsset>("Animations/WarriorCombat/turn").text);
    view.Play("Idle",0);return view;
   }
   Transform magicHand;
+  Transform clapLeftHand,clapRightHand;
+  public Vector3 ClapPosition()
+  {
+   if(!clapLeftHand||!clapRightHand)
+   {
+    var bones=Animator.GetComponentsInChildren<Transform>();
+    clapLeftHand=bones.FirstOrDefault(t=>t.name.EndsWith("LeftHand"));
+    clapRightHand=bones.FirstOrDefault(t=>t.name.EndsWith("RightHand"));
+   }
+   return clapLeftHand&&clapRightHand?(clapLeftHand.position+clapRightHand.position)*.5f:MagicPalmPosition();
+  }
   public Vector3 MagicPalmPosition()
   {
    if(!magicHand)magicHand=Animator.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name.EndsWith("RightHand"));
@@ -66,6 +92,7 @@ namespace Bloodwake
   float hitRemaining,legsWeight;
   public void HitOverlay()
   {
+   if(NobleRevenant&&!IsDead){ImpactPose(transform.position+transform.forward,5,.22f);return;}
    int layer=Animator.GetLayerIndex("Upper body hit");if(Kind!="revenant"||layer<0||IsDead)return;
    string clip="REV_HitLight_"+new[]{"Front","Left","Right"}[Random.Range(0,3)]+"_Additive";
    hitRemaining=Animator.runtimeAnimatorController.animationClips.First(c=>c.name==clip).length;
@@ -76,12 +103,13 @@ namespace Bloodwake
    if(Kind!="revenant")return;int legs=Animator.GetLayerIndex("Moving attack legs"),hit=Animator.GetLayerIndex("Upper body hit");if(legs<0||hit<0)return;
    hitRemaining=Mathf.Max(0,hitRemaining-dt);Animator.SetLayerWeight(hit,hitRemaining>0&&!IsDead?1:0);
    bool layered=moving&&!IsDead&&state.StartsWith("REV_ClawAttack")&&Locked>0;legsWeight=Mathf.MoveTowards(legsWeight,layered?1:0,dt*10);
-   Animator.SetLayerWeight(legs,legsWeight);Animator.SetFloat("RevenantLegSpeed",rate*.85f/Mathf.Max(.01f,PlaybackRate));Animator.SetFloat("RevenantHitSpeed",1/Mathf.Max(.01f,PlaybackRate));
+   Animator.SetLayerWeight(legs,legsWeight);Animator.SetFloat("RevenantLegSpeed",rate/Mathf.Max(.01f,PlaybackRate));Animator.SetFloat("RevenantHitSpeed",1/Mathf.Max(.01f,PlaybackRate));
   }
   public string Clip(string key)
   {
+   if(Kind=="grunt"&&LocomotionSpeed>0&&(key=="Run"||key=="Walk"))return "Warrior_ShieldWalk";
    if(Kind=="warrior"&&key=="Attack4")return "Ultimate";
-   if(Kind=="revenant")return key switch{"Idle"=>"REV_AssassinIdle","Run"=>"REV_AssassinRun","Attack"=>"REV_ClawAttack_1","Attack1"=>"REV_ClawAttack_1","Attack2"=>"REV_ClawAttack_2","Attack3"=>"REV_ClawAttack_3","Hit"=>"REV_HitLight_Front","Death"=>"REV_Death","Teleport"=>"REV_TeleportAttack","Ultimate"=>"REV_BloodBurst",_=>key};
+   if(Kind=="revenant")return key switch{"Idle"=>"REV_NeutralIdle","Walk"=>"REV_SwaggerWalk","Run"=>"REV_StandardRun","Attack"=>"REV_ClawAttack_1","Attack1"=>"REV_ClawAttack_1","Attack2"=>"REV_ClawAttack_2","Attack3"=>"REV_ClawAttack_3","Hit"=>"REV_HitLight_Front","Death"=>"REV_Death","Teleport"=>"REV_TeleportAttack","Ultimate"=>"REV_BloodBurst",_=>key};
    if(Kind=="gunslinger")return key switch{"Idle"=>"BH_Idle","Run"=>"BH_Walk_InPlace","Attack"=>"BH_FiveShot","Hit"=>"BH_GetHit","Death"=>"BH_Death","Ultimate"=>"BH_Ultimate_BloodWake","BombThrow"=>"BH_BombThrow",_=>key};
    return key;
   }
@@ -95,7 +123,7 @@ namespace Bloodwake
    Locked=hold==0?0:hold>0?hold:anim.length;return Locked;
   }
   public float ClipLength(string key)=>Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==Clip(key))?.length??.6f;
-  public void Tick(float dt,bool moving,float rate=1){Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?"Run":"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate*(Kind=="revenant"?.85f:1),.5f,2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
+  public void Tick(float dt,bool moving,float rate=1,bool walking=false){Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?(Kind=="revenant"&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
  }
  public sealed class RevenantMarkerRelay:MonoBehaviour
  {

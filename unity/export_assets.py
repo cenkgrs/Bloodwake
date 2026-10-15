@@ -1,5 +1,5 @@
 """Export existing production models without retargeting or altering their rigs."""
-import bpy, json, shutil, sys
+import bpy, json, shutil, sys, subprocess
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'unity'))
@@ -24,6 +24,9 @@ for name in models:
  bpy.ops.export_scene.fbx(filepath=str(folder/(name+'.fbx')),use_selection=True,object_types={'ARMATURE','MESH','EMPTY'},add_leaf_bones=False,bake_anim=True,bake_anim_use_all_actions=True,bake_anim_use_nla_strips=False,bake_anim_simplify_factor=0.0,path_mode='COPY',embed_textures=False,axis_forward='-Z',axis_up='Y')
  report[name]=[a.name for a in bpy.data.actions]
  print('UNITY_MODEL_EXPORTED',name,report[name],flush=True)
+# Runtime GLBs may predate the lossless policy. Restore from original art,
+# never from a decoded low-resolution JPEG, on every Unity asset rebuild.
+subprocess.run(['python3',str(ROOT/'unity/restore_character_textures.py')],check=True)
 for category in ['audio','ui','textures','fonts','vfx','art']:
  for source in (ROOT/'godot/assets'/category).rglob('*'):
   if not source.is_file() or source.suffix.lower() not in ['.wav','.ogg','.mp3','.png','.jpg','.jpeg','.ttf','.otf']:continue

@@ -1,0 +1,9 @@
+{
+  "classes": {"revenant": {"skills": ["blood_step", "blood_clap"]}},
+  "abilities": [{
+    "id": "blood_clap", "name": "Blood Bomb", "behavior": "bloodClap",
+    "icon": "flame", "damage": 32, "cooldown": 9,
+    "range": 200, "blastRadius": 200, "tone": "d61936", "accent": "ff4156",
+    "description": "Clap your hands to blast blood into a 90-degree cone in front of you."
+  }]
+}

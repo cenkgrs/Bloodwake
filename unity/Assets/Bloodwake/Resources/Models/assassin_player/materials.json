@@ -9,7 +9,7 @@
     "alpha": 1,
     "metallic": 1,
     "roughness": 1,
-    "albedo": "SourceImage_1.jpg",
+    "albedo": "HQ_Assassin_PBR_albedo.png",
     "tiling": [
       1,
       1
@@ -18,8 +18,8 @@
       0,
       0
     ],
-    "normal": "SourceImage_0.png",
-    "metallicRoughness": "SourceImage_2.png"
+    "normal": "HQ_Assassin_PBR_normal.png",
+    "metallicRoughness": "HQ_Assassin_PBR_metallicRoughness.png"
   },
   "Dagger PBR": {
     "color": [
@@ -31,7 +31,7 @@
     "alpha": 1,
     "metallic": 1,
     "roughness": 1,
-    "albedo": "SourceImage_4.jpg",
+    "albedo": "HQ_Dagger_PBR_albedo.png",
     "tiling": [
       1,
       1
@@ -40,7 +40,7 @@
       0,
       0
     ],
-    "normal": "SourceImage_3.png",
-    "metallicRoughness": "SourceImage_5.png"
+    "normal": "HQ_Dagger_PBR_normal.png",
+    "metallicRoughness": "HQ_Dagger_PBR_metallicRoughness.png"
   }
 }

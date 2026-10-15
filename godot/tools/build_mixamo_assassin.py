@@ -61,7 +61,6 @@ def material(name,folder,color_pattern='Color.jpg'):
  textures=next((SRC/folder).glob('*.fbm'))
  for pattern,socket in [(color_pattern,'Base Color'),('*roughness*','Roughness'),('*metallic*','Metallic'),('Normal.png','Normal')]:
   path=next(textures.glob(pattern));tex=nodes.new('ShaderNodeTexImage');tex.image=bpy.data.images.load(str(path),check_existing=True)
-  if max(tex.image.size)>2048:tex.image.scale(2048,2048)
   tex.image.pack()
   if socket!='Base Color':tex.image.colorspace_settings.name='Non-Color'
   if socket=='Normal':
@@ -144,7 +143,7 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in [rig,*meshes,*weapons]:o.select_set(True)
 bpy.context.view_layer.objects.active=rig
 bpy.context.scene.render.fps=60;bpy.context.scene.render.fps_base=1.0
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/assassin_player.glb'),export_format='GLB',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/assassin_player.glb'),export_format='GLB',export_image_format='PNG',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
 rig.animation_data.action=actions['Idle'];rig.animation_data.action_slot=actions['Idle'].slots[0];bpy.context.scene.frame_set(1)
 bpy.ops.wm.save_as_mainfile(filepath='/tmp/assassin_review.blend')
 print('ASSASSIN_BUILD',sum(len(m.data.vertices) for m in meshes),'body verts',sum(len(w.data.vertices) for w in weapons),'dagger verts x2',bounds())

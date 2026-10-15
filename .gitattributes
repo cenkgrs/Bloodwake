@@ -1,0 +1,2 @@
+# Unity's uncompressed legacy locomotion clip exceeds GitHub's file limit.
+unity/Assets/Bloodwake/Resources/Animations/RevenantLocomotion/REV_NeutralIdle.anim filter=lfs diff=lfs merge=lfs -text

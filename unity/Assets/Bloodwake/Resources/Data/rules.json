@@ -592,7 +592,7 @@
       "name": "Revenant",
       "skills": [
         "blood_step",
-        "mark_of_ruin"
+        "blood_clap"
       ],
       "stats": {
         "attackSpeed": 1.65,

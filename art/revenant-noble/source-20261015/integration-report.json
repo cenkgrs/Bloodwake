@@ -1,0 +1,108 @@
+{
+  "source_triangles": 49831,
+  "source_height": 0.00999511681000809,
+  "normalized_height": 1.8,
+  "clips": {
+    "REV_NeutralIdle": {
+      "source": "Idle.fbx",
+      "frames": [
+        1.0,
+        85.0
+      ],
+      "fps": 60,
+      "temporary": false
+    },
+    "REV_StandardRun": {
+      "source": "Run.fbx",
+      "frames": [
+        1.0,
+        39.0
+      ],
+      "fps": 60,
+      "temporary": false,
+      "stride_mps": 4.085267633199692
+    },
+    "REV_SwaggerWalk": {
+      "source": "Sneak Walk.fbx",
+      "frames": [
+        1.0,
+        67.0
+      ],
+      "fps": 60,
+      "temporary": false,
+      "stride_mps": 1.9621825218200684
+    },
+    "REV_Death": {
+      "source": "Dying.fbx",
+      "frames": [
+        1.0,
+        208.0
+      ],
+      "fps": 60,
+      "temporary": false
+    },
+    "REV_BloodClap": {
+      "source": "Standing 2H Magic Attack 05.fbx",
+      "frames": [
+        1.0,
+        62.0
+      ],
+      "fps": 60,
+      "temporary": false
+    },
+    "REV_BloodBurst": {
+      "source": "Standing 2H Magic Area Attack 02.fbx",
+      "frames": [
+        1.0,
+        75.0
+      ],
+      "fps": 60,
+      "temporary": false
+    },
+    "REV_ClawAttack_1": {
+      "source": "previous production rig",
+      "frames": [
+        1,
+        28
+      ],
+      "fps": 60,
+      "temporary": true
+    },
+    "REV_ClawAttack_2": {
+      "source": "previous production rig",
+      "frames": [
+        1,
+        31
+      ],
+      "fps": 60,
+      "temporary": true
+    },
+    "REV_ClawAttack_3": {
+      "source": "previous production rig",
+      "frames": [
+        1,
+        41
+      ],
+      "fps": 60,
+      "temporary": true
+    },
+    "REV_TeleportAttack": {
+      "source": "previous production rig",
+      "frames": [
+        1,
+        41
+      ],
+      "fps": 60,
+      "temporary": true
+    },
+    "REV_HitLight_Front": {
+      "source": "previous production rig",
+      "frames": [
+        1,
+        11
+      ],
+      "fps": 60,
+      "temporary": true
+    }
+  }
+}

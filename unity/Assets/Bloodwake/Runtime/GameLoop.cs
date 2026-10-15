@@ -16,7 +16,7 @@ namespace Bloodwake
    PositionCamera(false);if(playerFill&&Player)playerFill.transform.position=Player.transform.position+new Vector3(-1.8f,2.4f,2.4f);
    bool paused=Screen!="playing"&&Screen!="dead"&&Screen!="dying"&&Screen!="death_transition";if(Player)Player.Animator.speed=paused?0:Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=paused?0:e.View.PlaybackRate;
    if(Screen!="playing"||Run==null||Run.Stats.N("hp")<=0)return;
-   float dt=Time.deltaTime;if(hitStop>0){hitStop-=dt;Player.Animator.speed=0;foreach(var e in Enemies)e.View.Animator.speed=0;return;}
+   float dt=Time.deltaTime;if(hitStop>0){comboExpires+=dt;hitStop=Mathf.Max(0,hitStop-dt);Player.Animator.speed=0;foreach(var e in Enemies)e.View.Animator.speed=0;return;}
    Player.Animator.speed=Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=e.View.PlaybackRate;
    attackCd-=dt;dashCd-=dt;invulnerable-=dt;foreach(string id in Run.Cooldowns.Keys.ToArray())Run.Cooldowns[id]=Mathf.Max(0,Run.Cooldowns[id]-dt);
    if(keys?.tabKey.wasPressedThisFrame==true||pad?.buttonNorth.wasPressedThisFrame==true)autoFire=!autoFire;
@@ -24,9 +24,13 @@ namespace Bloodwake
    Vector3 forward=Vector3.ProjectOnPlane(Cam.transform.forward,Vector3.up).normalized,right=Cam.transform.right;right.y=0;var move=forward*input.y+right*input.x;
    if(Mouse.current!=null&&!Application.isBatchMode){var ray=Cam.ScreenPointToRay(Mouse.current.position.ReadValue());if(new Plane(Vector3.up,0).Raycast(ray,out float distance)){var target=ray.GetPoint(distance)-Player.transform.position;if(target.sqrMagnitude>.01f)aim=target.normalized;}}
    var stick=pad?.rightStick.ReadValue()??Vector2.zero;if(stick.sqrMagnitude>.1f)aim=(forward*stick.y+right*stick.x).normalized;
+   // Measured planted-foot stride: new Sneak Walk 1.962 m/s, legacy Swagger .89.
+   // Match that stride to the displayed body size; upgrades scale speed and playback together.
+   bool walking=Run.ClassId=="revenant"&&(keys?.leftCtrlKey.isPressed==true||(pad!=null&&input.sqrMagnitude>.01f&&input.magnitude<.65f));float walkStride=Player.NobleRevenant?1.96218f:.89f;float locomotionScale=walking?(walkStride*Player.Height/1.8f)/(GameData.Stats("revenant").N("moveSpeed")*.02f):1;
    bool canMove=Run.ClassId=="revenant"?!Player.IsCasting:Player.Locked<=.15f;
-   if(canMove){Player.transform.position=Move(Player.transform.position,move*Run.Stats.N("moveSpeed")*.02f*dt);if(move.sqrMagnitude>.01f&&!(Run.ClassId=="revenant"&&Player.ContactPending))Player.transform.rotation=Quaternion.Slerp(Player.transform.rotation,Quaternion.LookRotation(move),dt*16);}
-   Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,Run.Stats.N("moveSpeed")/GameData.Stats(Run.ClassId).N("moveSpeed"));Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
+   if(canMove){Player.transform.position=Move(Player.transform.position,move*Run.Stats.N("moveSpeed")*.02f*dt*locomotionScale);if(move.sqrMagnitude>.01f&&!(Run.ClassId=="revenant"&&Player.ContactPending))Player.transform.rotation=Quaternion.Slerp(Player.transform.rotation,Quaternion.LookRotation(move),dt*16);}
+   float motionRate=Run.Stats.N("moveSpeed")/GameData.Stats(Run.ClassId).N("moveSpeed");if(Player.NobleRevenant&&!walking)motionRate=Run.Stats.N("moveSpeed")*.02f/(4.08527f*Player.Height/1.8f);
+   Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
    if(keys!=null){if(keys.qKey.wasPressedThisFrame)Cast(0);if(keys.eKey.wasPressedThisFrame)Cast(1);if(keys.spaceKey.wasPressedThisFrame)Cast(2);if(keys.fKey.wasPressedThisFrame)Interact();}
    if(pad!=null){if(pad.buttonWest.wasPressedThisFrame)Cast(0);if(pad.buttonEast.wasPressedThisFrame)Cast(1);if(pad.buttonSouth.wasPressedThisFrame)Cast(2);if(pad.rightShoulder.wasPressedThisFrame)Interact();}
    if((autoFire||Mouse.current?.leftButton.isPressed==true||pad?.rightTrigger.isPressed==true)&&attackCd<=0)Attack();

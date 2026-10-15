@@ -9,12 +9,26 @@ namespace Bloodwake
   void Cast(int index)
   {
    if(Player.Locked>.15f)return;var cls=GameData.Rules["classes"][Run.ClassId];string id=index==2?cls.S("ability"):(string)cls["skills"][index];
-   if(Run.Cooldowns.TryGetValue(id,out float cd)&&cd>0)return;var data=GameData.Row("abilities",id);Run.Cooldowns[id]=data.N("cooldown");StartCoroutine(CastRoutine(data,index==2));
+   if(!combatPractice&&Run.Cooldowns.TryGetValue(id,out float cd)&&cd>0)return;var data=GameData.Row("abilities",id);Run.Cooldowns[id]=combatPractice?0:data.N("cooldown");StartCoroutine(CastRoutine(data,index==2));
   }
   IEnumerator CastRoutine(JObject data,bool ultimate)
   {
    string behavior=data.S("behavior");float range=data.N("range")*.02f*Run.Stats.N("attackRange"),radius=data.N("blastRadius",data.N("range"))*.02f*Run.Stats.N("attackRange"),damage=data.N("damage")*Run.Stats.N("damage");
    var start=Player.transform.position;var dir=aim;var target=GroundTarget(range);Player.transform.rotation=Quaternion.LookRotation(dir);
+   if(behavior=="bloodClap")
+   {
+    Player.Play("REV_BloodClap");
+    Player.OnMarker("CLAP_GATHER",()=>RevFx.Charge(Player.transform.position,radius,Player.MarkerTime("REV_BloodClap","CLAP_DAMAGE")-Player.MarkerTime("REV_BloodClap","CLAP_GATHER")));
+    Player.OnMarker("CLAP_DAMAGE",()=>
+    {
+     var hands=Player.ClapPosition();
+     // VFX starts at the hands; ground-plane AoE keeps its full radius in every
+     // direction rather than losing reach to the hands' height above enemy feet.
+     var center=new Vector3(hands.x,Player.transform.position.y,hands.z);
+     RevFx.BloodBomb(hands,dir,radius);BloodCone(center,dir,radius,damage);Sound("skill_meteor_blast");
+    });
+    Player.OnMarker("RECOVER",()=>Player.Locked=0);yield break;
+   }
    if(behavior=="markOfRuin"){var e=Enemies.Where(x=>Vector3.Distance(x.View.transform.position,start)<range).OrderBy(x=>Vector3.Distance(start,x.View.transform.position)).FirstOrDefault();if(e!=null){foreach(var other in Enemies)other.Mark=0;markChain=0;e.Mark=float.PositiveInfinity;ApplyRuinMark(e);Player.Play("Attack",.24f);Sound("skill_leap_launch");}yield break;}
    if(behavior!="bloodTeleport"&&behavior!="bloodBurst")Player.Play(ultimate?"Ultimate":behavior=="bloodTeleport"?"Teleport":behavior=="powderCharge"?"BombThrow":behavior=="whirl"?"SpinAttack":behavior=="voidLeap"?"SunderLeap":"Attack",.8f);
    if(behavior!="bloodBurst")Sound(behavior=="meteor"?"skill_meteor_cast":"skill_leap_launch");
@@ -49,7 +63,7 @@ namespace Bloodwake
    if(behavior=="bloodBurst")
    {
     radius=range;Player.Play("Ultimate");Sound("skill_meteor_cast");
-    Player.OnMarker("ULT_TELEGRAPH_START",()=>RevFx.Charge(start,radius,RevenantEventTime("REV_BloodBurst","ULT_DAMAGE")-RevenantEventTime("REV_BloodBurst","ULT_TELEGRAPH_START")));
+    Player.OnMarker("ULT_TELEGRAPH_START",()=>RevFx.Charge(start,radius,Player.MarkerTime("Ultimate","ULT_DAMAGE")-Player.MarkerTime("Ultimate","ULT_TELEGRAPH_START")));
     Player.OnMarker("ULT_DAMAGE",()=>{BloodArea(start,radius,damage,true);RevFx.Burst(start,radius);Sound("skill_meteor_blast");});
     Player.OnMarker("ULT_DISSIPATE",()=>Player.Locked=0);yield break;
    }
@@ -78,7 +92,18 @@ namespace Bloodwake
   void BloodArea(Vector3 origin,float radius,float damage,bool heavyImpact=false)
   {
    if(Run.Stats.N("hp")<=0)return;
-   foreach(var enemy in Enemies.ToArray())if(Vector3.Distance(enemy.View.transform.position,origin)<radius+.4f){DamageEnemy(enemy,damage);if(heavyImpact)StartAreaRecoil(enemy,origin);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f);}
+   foreach(var enemy in Enemies.ToArray())if(Vector3.Distance(enemy.View.transform.position,origin)<radius+.4f){DamageEnemy(enemy,damage);if(heavyImpact)StartAreaRecoil(enemy,origin);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f,2.5f);}
+  }
+  public static bool InsideBloodCone(Vector3 offset,Vector3 direction,float radius)
+  {
+   offset.y=0;direction.y=0;
+   return offset.sqrMagnitude<=radius*radius&&(offset.sqrMagnitude<.0001f||Vector3.Dot(offset.normalized,direction.normalized)>=.7071067f);
+  }
+  void BloodCone(Vector3 origin,Vector3 direction,float radius,float damage)
+  {
+   if(Run.Stats.N("hp")<=0)return;
+   foreach(var enemy in Enemies.ToArray())if(InsideBloodCone(enemy.View.transform.position-origin,direction,radius))
+   {DamageEnemy(enemy,damage);StartAreaRecoil(enemy,origin);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f,2.5f);}
   }
   void ApplyRuinMark(Enemy enemy)
   {

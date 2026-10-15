@@ -9,7 +9,7 @@
     "alpha": 1,
     "metallic": 1,
     "roughness": 1,
-    "albedo": "SourceImage_1.jpg",
+    "albedo": "HQ_assassin_character_PBR_albedo.png",
     "tiling": [
       1,
       1
@@ -18,8 +18,8 @@
       0,
       0
     ],
-    "normal": "SourceImage_0.png",
-    "metallicRoughness": "SourceImage_2.png"
+    "normal": "HQ_assassin_character_PBR_normal.png",
+    "metallicRoughness": "HQ_assassin_character_PBR_metallicRoughness.png"
   },
   "assassin_weapon_PBR.001": {
     "color": [
@@ -31,7 +31,7 @@
     "alpha": 1,
     "metallic": 1,
     "roughness": 1,
-    "albedo": "SourceImage_4.jpg",
+    "albedo": "HQ_assassin_weapon_PBR_001_albedo.png",
     "tiling": [
       1,
       1
@@ -40,8 +40,8 @@
       0,
       0
     ],
-    "normal": "SourceImage_3.png",
-    "metallicRoughness": "SourceImage_5.png"
+    "normal": "HQ_assassin_weapon_PBR_001_normal.png",
+    "metallicRoughness": "HQ_assassin_weapon_PBR_001_metallicRoughness.png"
   },
   "assassin_weapon_PBR": {
     "color": [
@@ -53,7 +53,7 @@
     "alpha": 1,
     "metallic": 1,
     "roughness": 1,
-    "albedo": "SourceImage_4.jpg",
+    "albedo": "HQ_assassin_weapon_PBR_albedo.png",
     "tiling": [
       1,
       1
@@ -62,7 +62,7 @@
       0,
       0
     ],
-    "normal": "SourceImage_3.png",
-    "metallicRoughness": "SourceImage_5.png"
+    "normal": "HQ_assassin_weapon_PBR_normal.png",
+    "metallicRoughness": "HQ_assassin_weapon_PBR_metallicRoughness.png"
   }
 }

@@ -24,12 +24,21 @@ namespace Bloodwake.Editor
     detour|=Mathf.Abs(enemy.View.transform.position.z)>3.4f;
    }
    Check(aligned,"forward run faces actual movement around obstacle");Check(detour,"takes clearance route around wall");Check(Vector3.Distance(enemy.View.transform.position,g.Player.transform.position)<1.4f,"wall detour reaches melee range");
+   blockers.Clear();Call(g,"BuildNavigation");
+   foreach(int fps in new[]{30,60,144,240,360})
+   {
+    enemy.View.transform.position=Vector3.zero;enemy.View.transform.rotation=Quaternion.identity;enemy.View.Locked=0;enemy.Cooldown=999;
+    g.Player.transform.position=Vector3.back*6;Call(g,"UpdateNavigation",1f);var before=enemy.View.transform.position;Call(g,"TickEnemies",1f/fps);
+    var step=enemy.View.transform.position-before;
+    Check(step.sqrMagnitude>0&&Vector3.Dot(step.normalized,enemy.View.transform.forward)>.999f,"turns toward player behind at "+fps+" fps");
+   }
+   g.Player.transform.position=new Vector3(-4,0,0);
    blockers.Clear();blockers.Add(new Bounds(new Vector3(0,1,0),new Vector3(1,2,100)));enemy.View.transform.position=new Vector3(3,0,0);Call(g,"BuildNavigation");Call(g,"UpdateNavigation",1f);var stuck=enemy.View.transform.position;
    for(int i=0;i<20;i++)Call(g,"TickEnemies",1f/60);yield return new WaitForSeconds(.15f);
    Check(Vector3.Distance(stuck,enemy.View.transform.position)<.001f,"unreachable target does not push against blocked route");Check(enemy.View.Animator.GetCurrentAnimatorStateInfo(0).IsName(enemy.View.Clip("Idle")),"blocked enemy idles rather than running in place");
    blockers.Clear();g.Player.transform.position=Vector3.zero;enemy.View.transform.position=Vector3.forward;enemy.Hp=10000;g.Run.Stats["criticalChance"]=0;
    Call(g,"DamageEnemy",enemy,1f,true);var start=enemy.View.transform.position;for(int i=0;i<12;i++)Call(g,"TickRecoil",enemy,1f/60);
-   float recoil=Vector3.Distance(start,enemy.View.transform.position);Check(recoil>.05f&&recoil<=.121f,"ordinary hit recoils no more than twelve centimetres");
+   float recoil=Vector3.Distance(start,enemy.View.transform.position);Check(recoil>.18f&&recoil<=.241f,"ordinary hit produces visible recoil within twenty four centimetres");
    var row=GameData.Row("weapons","sword");float reach=row.N("range")*.02f*g.Run.Stats.N("attackRange")*g.Run.Weapons["sword"].N("range")*1.7f+.45f;
    enemy.View.transform.position=Vector3.forward*(reach-.015f);for(int hit=0;hit<5;hit++){Call(g,"DamageEnemy",enemy,1f,true);for(int i=0;i<12;i++)Call(g,"TickRecoil",enemy,1f/60);}
    Check(Vector3.Distance(g.Player.transform.position,enemy.View.transform.position)<=reach,"combo edge remains within next melee hit range");

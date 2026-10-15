@@ -60,7 +60,6 @@ def material(kind):
   mat.name=identifier+'_character_PBR'
   for node in mat.node_tree.nodes:
    if node.type=='TEX_IMAGE' and node.image:
-    if max(node.image.size)>2048:node.image.scale(2048,2048)
     node.image.pack()
   for obj in imported:bpy.data.objects.remove(obj,do_unlink=True)
   return mat
@@ -71,7 +70,6 @@ def material(kind):
  for pattern,socket in [('Color.jpg','Base Color'),('*roughness*','Roughness'),('*metallic*','Metallic'),('Normal.png','Normal')]:
   path=next(textures.glob(pattern))
   tex=nodes.new('ShaderNodeTexImage');tex.image=bpy.data.images.load(str(path),check_existing=True)
-  if max(tex.image.size)>2048:tex.image.scale(2048,2048)
   if socket!='Base Color':tex.image.colorspace_settings.name='Non-Color'
   tex.image.pack()
   if socket=='Normal':
@@ -123,7 +121,7 @@ bpy.ops.object.select_all(action='DESELECT')
 for obj in [rig,*bodies,*weapons]:obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
 bpy.context.scene.render.fps=60;bpy.context.scene.render.fps_base=1
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models'/('enemy_'+identifier+'.glb')),export_format='GLB',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models'/('enemy_'+identifier+'.glb')),export_format='GLB',export_image_format='PNG',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
 rig.animation_data.action=actions['Idle'];rig.animation_data.action_slot=actions['Idle'].slots[0]
 bpy.context.scene.frame_set(1);bpy.context.view_layer.update()
 bpy.ops.wm.save_as_mainfile(filepath='/tmp/enemy_'+identifier+'.blend')

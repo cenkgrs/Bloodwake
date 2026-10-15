@@ -9,7 +9,7 @@
     "alpha": 1,
     "metallic": 1,
     "roughness": 1,
-    "albedo": "SourceImage_1.jpg",
+    "albedo": "HQ_tripo_mat_67e3196c_albedo.png",
     "tiling": [
       1,
       1
@@ -18,7 +18,7 @@
       0,
       0
     ],
-    "normal": "SourceImage_0.jpg",
-    "metallicRoughness": "SourceImage_2.jpg"
+    "normal": "HQ_tripo_mat_67e3196c_normal.png",
+    "metallicRoughness": "HQ_tripo_mat_67e3196c_metallicRoughness.png"
   }
 }

@@ -13,7 +13,6 @@ original=next(o for o in bpy.context.scene.objects if o.type=='MESH')
 material=original.data.materials[0];material.name='Revenant PBR';material.use_fake_user=True
 for node in material.node_tree.nodes:
  if node.type=='TEX_IMAGE' and node.image:
-  if max(node.image.size)>2048:node.image.scale(2048,2048)
   node.image.pack()
 for obj in list(bpy.context.scene.objects):bpy.data.objects.remove(obj,do_unlink=True)
 clips={'Idle':('Mutant Breathing Idle',None),'Run':('Mutant Run',None),
@@ -76,5 +75,5 @@ bpy.ops.object.select_all(action='DESELECT')
 for obj in [rig,*meshes]:obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
 bpy.context.scene.render.fps=30;bpy.context.scene.render.fps_base=1.0
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/revenant_player.glb'),export_format='GLB',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'godot/assets/models/revenant_player.glb'),export_format='GLB',export_image_format='PNG',use_selection=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_anim_slide_to_zero=True)
 print('REVENANT_BUILD',len(rig.data.bones),'bones',list(actions),bounds())

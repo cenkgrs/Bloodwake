@@ -7,7 +7,7 @@ namespace Bloodwake
   {
    if(enemy.AreaRecovery>0)return;
    var delta=enemy.View.transform.position-Player.transform.position;delta.y=0;float distance=delta.magnitude;
-   float amount=enemy.Id=="boss"?.025f:enemy.Id=="tank"?.055f:.12f;
+   float amount=enemy.Id=="boss"?.06f:enemy.Id=="tank"?.12f:.24f;
    // Reserve combo reach at the outer edge; repeated hits cannot push an enemy
    // beyond the shortest equipped melee weapon's normal reach.
    foreach(var entry in Run.Weapons)
@@ -18,7 +18,7 @@ namespace Bloodwake
     amount=Mathf.Min(amount,Mathf.Max(0,reach-distance-.08f));
    }
    enemy.RecoilDirection=distance>.001f?delta/distance:Player.transform.forward;
-   enemy.RecoilRemaining=amount;enemy.RecoilTime=.12f;
+   enemy.RecoilRemaining=amount;enemy.RecoilTime=.36f;
    enemy.View.ImpactPose(Player.transform.position,enemy.Id=="boss"?1.5f:enemy.Id=="tank"?3:7);
   }
   void StartAreaRecoil(Enemy enemy,Vector3 origin)
