@@ -1,0 +1,36 @@
+NPC dialogue portraits — prompts and delivery spec
+==================================================
+
+Delivery (drop-in, no code change needed):
+  unity/Assets/Bloodwake/Resources/ui/npc/merchant.png   (THE QUARTERMASTER)
+  unity/Assets/Bloodwake/Resources/ui/npc/mentor.png     (THE BLOOD SAGE)
+  - PNG with transparent background, portrait orientation ~860x1000 (any size with that ratio works).
+  - Head-and-shoulders to waist bust; the head's centre near 50% across and ~18% from the top.
+    (If it lands elsewhere, add "portraitFace": [x, y] in UV, origin bottom-left, to the host in rooms.json.)
+  - Bottom edge may be cut at the waist; the UI fades the lower 40% into darkness.
+  - Turn on "Alpha Is Transparency" in the texture import settings after dropping the file in.
+  - Until a file exists, the dialogue shows a live 3D bust of the in-game model.
+
+Shared style (append to both prompts):
+  dark gothic fantasy character portrait, painterly realism, three-quarter view, chest-up bust
+  cropped at the waist, natural relaxed pose (arms down, NOT a T-pose), dramatic chiaroscuro:
+  warm candle key light from the front-left, cool moonlit blue rim light from behind, deep
+  shadow falloff, subtle film grain, muted desaturated palette with oxblood red accents,
+  consistent with a grim night-town survivor game, transparent background, no text, no frame,
+  no weapons drawn, high detail face, sharp eyes looking slightly toward the viewer
+
+THE QUARTERMASTER (merchant.png):
+  A weathered quartermaster in his late fifties, swept-back steel-grey hair, short trimmed grey
+  beard, deep-set tired but shrewd eyes, faint scar through one eyebrow. Worn brown leather
+  sleeveless coat with tooled brass clasps over a quilted oxblood gambeson, cream linen collar
+  open at the throat, heavy leather belt with pouches and a ring of iron keys. Calm, guarded,
+  half-smile of a man who has sold steel to many hunters who never came back. One hand resting on
+  the belt.
+
+THE BLOOD SAGE (mentor.png):
+  A composed woman in her thirties, pale skin, dark hair pulled into a tight braided chignon, a few
+  loose strands, sharp grey-green eyes, dark lips. High standing collar of a long black coat with
+  oxblood-red lining and silver ritual embroidery down the front, a small blood-red gem brooch at
+  the throat, wide leather sash belt with a silver sigil buckle. Stern, knowing expression, the
+  look of a teacher weighing an oath. Hands folded in front at the waist, a faint red glow
+  catching her fingertips.
