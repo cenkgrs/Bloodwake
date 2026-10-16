@@ -55,6 +55,9 @@ namespace Bloodwake.Editor
    var animator=instance.GetComponentInChildren<Animator>()??instance.AddComponent<Animator>();
    animator.runtimeAnimatorController=controller;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.CullUpdateTransforms;
    SourceMaterials.Apply(instance,model);
+   // Tripo exports are normalised to ~1 m; ActorView expects production rigs authored at 1.8 m.
+   var skin=instance.GetComponentInChildren<SkinnedMeshRenderer>();float authored=skin.sharedMesh.bounds.size.y*skin.transform.lossyScale.y;
+   if(authored<.2f)throw new Exception($"{id} bind-pose height {authored}");instance.transform.localScale=Vector3.one*(1.8f/authored);
    int bones=animator.GetComponentsInChildren<Transform>().Length;
    int triangles=instance.GetComponentsInChildren<SkinnedMeshRenderer>().Where(r=>r.sharedMesh).Sum(r=>r.sharedMesh.triangles.Length/3);
    if(triangles<90000||bones<60)throw new Exception($"{id} incomplete bones={bones} triangles={triangles}");

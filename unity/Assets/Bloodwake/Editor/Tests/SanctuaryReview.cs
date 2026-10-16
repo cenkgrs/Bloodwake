@@ -46,6 +46,10 @@ namespace Bloodwake.Editor
     Check(host.Animator&&host.Animator.runtimeAnimatorController&&host.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Idle"),host.Kind+" idle missing");
     var skins=host.Animator.GetComponentsInChildren<SkinnedMeshRenderer>();Check(skins.Length>0&&skins.Sum(r=>r.sharedMesh?r.sharedMesh.triangles.Length/3:0)>90000,host.Kind+" skinned mesh incomplete");
     Check(skins.All(r=>r.sharedMaterials.All(m=>m&&m.shader&&m.shader.name=="Universal Render Pipeline/Lit")),host.Kind+" material missing");
+    // Measure the posed body, not import metadata: the first hosts passed while standing 1.08 m tall.
+    var posed=new Mesh();skins[0].BakeMesh(posed,true);float top=float.MinValue,bottom=float.MaxValue;foreach(var v in posed.vertices){float y=skins[0].transform.TransformPoint(v).y;top=Mathf.Max(top,y);bottom=Mathf.Min(bottom,y);}UnityEngine.Object.DestroyImmediate(posed);
+    Check(top-bottom>1.9f&&top-bottom<2.8f,$"{host.Kind} stands {top-bottom:0.00} m tall");Check(Mathf.Abs(bottom-host.transform.position.y)<.15f,$"{host.Kind} feet at {bottom:0.00}");
+    Check(Vector3.Dot(host.transform.forward,-game.Cam.transform.forward)>0,host.Kind+" faces away from the camera");
    }
    var oldSize=game.Cam.orthographicSize;var oldPos=game.Cam.transform.position;var oldRot=game.Cam.transform.rotation;
    var rt=new RenderTexture(1600,1000,24);var image=new Texture2D(1600,1000,TextureFormat.RGB24,false);var oldTarget=game.Cam.targetTexture;var active=RenderTexture.active;
