@@ -92,13 +92,13 @@ namespace Bloodwake
    if(e.Training)
    {
     if(e.Emerging)return;e.Hp-=damage;
-    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("d9dce2"));e.Stagger=.5f+PostImpactRecovery;hitStop=Mathf.Max(hitStop,NormalHitStop);Sound("sword_hit_flesh");Blood(e.View.transform.position);e.ImpactVersion++;StartRecoil(e);e.View.FlashHit(false);e.View.Play("Hit",.5f);}
+    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("d9dce2"));e.Stagger=.5f+PostImpactRecovery;hitStop=Mathf.Max(hitStop,NormalHitStop);if(!bakedImpactSound)Sound("sword_hit_flesh");Blood(e.View.transform.position);e.ImpactVersion++;StartRecoil(e);e.View.FlashHit(false);e.View.Play("Hit",.5f);}
     if(e.Hp<=0){e.Hp=e.MaxHp;e.RecoilRemaining=e.RecoilTime=0;e.View.transform.position=e.TrainingHome;e.View.transform.rotation=Quaternion.LookRotation(Vector3.forward);}
     return;
    }
    if(e.Hp<=0||e.Emerging)return;bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
-   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound("sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
+   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);hitStop=Mathf.Max(hitStop,NormalHitStop);if(!bakedImpactSound)Sound("sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
    if(effects&&actual>0)e.View.FlashHit(false);
    if(e.Hp>0){if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}

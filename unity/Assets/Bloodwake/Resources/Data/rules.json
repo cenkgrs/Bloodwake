@@ -263,14 +263,18 @@
       "files": ["revenant_space_blood_burst"],
       "gap": 0.0,
       "pitch": [1.0, 1.0],
-      "voices": 1
+      "voices": 1,
+      "priority": true,
+      "duck": {"db": -9.0, "seconds": 1.25}
     },
     "revenant_q_mist_claw": {
       "db": 0.0,
       "files": ["revenant_q_mist_claw"],
       "gap": 0.0,
       "pitch": [1.0, 1.0],
-      "voices": 1
+      "voices": 1,
+      "priority": true,
+      "duck": {"db": -9.0, "seconds": 0.75}
     },
     "revenant_swing": {
       "db": 3.0,

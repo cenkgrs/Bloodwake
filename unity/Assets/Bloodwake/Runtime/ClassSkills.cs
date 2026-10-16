@@ -125,14 +125,18 @@ namespace Bloodwake
    if(Run.Stats.N("hp")<=0)return;
    DamageCargoSegment(start,end,BloodStepHalfWidth);DamageCargo(end,radius,Vector3.forward);
    // One union query, not two area attacks: an enemy on both regions is hit once.
-   foreach(var enemy in Enemies.ToArray())if(!enemy.Emerging&&enemy.Hp>0&&InsideBloodStep(enemy.View.transform.position,start,end,radius))
-   {DamageEnemy(enemy,damage);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f,2.5f);}
+   bakedImpactSound=true;
+   try{foreach(var enemy in Enemies.ToArray())if(!enemy.Emerging&&enemy.Hp>0&&InsideBloodStep(enemy.View.transform.position,start,end,radius))
+   {DamageEnemy(enemy,damage);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f,2.5f);}}
+   finally{bakedImpactSound=false;}
   }
   void BloodArea(Vector3 origin,float radius,float damage,bool heavyImpact=false,float recoilMultiplier=1)
   {
    if(Run.Stats.N("hp")<=0)return;
    DamageCargo(origin,radius,Vector3.forward);
-   foreach(var enemy in Enemies.ToArray())if(!enemy.Emerging&&Vector3.Distance(enemy.View.transform.position,origin)<radius+.4f){DamageEnemy(enemy,damage);if(heavyImpact)StartAreaRecoil(enemy,origin,recoilMultiplier);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f,2.5f);}
+   bakedImpactSound=true;
+   try{foreach(var enemy in Enemies.ToArray())if(!enemy.Emerging&&Vector3.Distance(enemy.View.transform.position,origin)<radius+.4f){DamageEnemy(enemy,damage);if(heavyImpact)StartAreaRecoil(enemy,origin,recoilMultiplier);RevFx.Impact(enemy.View.transform.position+Vector3.up*.9f,2.5f);}}
+   finally{bakedImpactSound=false;}
   }
   public static bool InsideBloodCone(Vector3 offset,Vector3 direction,float radius)
   {

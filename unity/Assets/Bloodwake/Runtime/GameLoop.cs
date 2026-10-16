@@ -9,7 +9,7 @@ namespace Bloodwake
   bool autoFire;
   void Update()
   {
-   if(arrivalActive)return;
+   TickSoundMix();if(arrivalActive)return;
    var keys=Keyboard.current;var pad=Gamepad.current;
    if(keys?.f11Key.wasPressedThisFrame==true)UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen;
    if(keys?.escapeKey.wasPressedThisFrame==true||pad?.startButton.wasPressedThisFrame==true)Screen=Screen=="playing"?"pause":Screen=="pause"?"playing":Screen;

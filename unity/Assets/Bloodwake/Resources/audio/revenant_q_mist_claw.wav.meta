@@ -18,6 +18,6 @@ AudioImporter:
   loadInBackground: 0
   ambisonic: 0
   3D: 1
-  userData: Approved Q v3; preserve stereo, PCM, original pitch and level.
+  userData: Approved Q v3 +4.0 dB linear gain (2026-10-16 mix fix); preserve stereo, PCM, original pitch.
   assetBundleName:
   assetBundleVariant:
