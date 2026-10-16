@@ -3,6 +3,43 @@ namespace Bloodwake
 {
  public sealed partial class RevenantVfx
  {
+  public void EnemyEmergence(Vector3 position,float actorHeight)
+  {
+   float radius=Mathf.Clamp(actorHeight*.44f,.85f,1.65f);
+   const float duration=2.1f;
+   var hole=Sheet("Enemy spawn rift",position+Vector3.up*.065f,Vector3.one*radius*2.5f,"spawn_rift",duration,Tone("b51b32"),true);
+   // The dark opening stays under the feet, while the model rises independently.
+   hole.Block.SetFloat("_Progress",0);hole.Apply();
+   for(int i=0;i<18;i++)
+   {
+    float angle=i*2.399963f;var radial=new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle));
+    float delay=(i%6)*.105f,life=1.15f+(i%3)*.12f;
+    float spread=radius*(.18f+.055f*(i%5));
+    var origin=position+radial*spread+Vector3.up*.12f;
+    float size=radius*(.85f+(i%4)*.11f);
+    var smoke=Sheet("Enemy spawn crimson mist",origin,Vector3.one*size,"dust",delay+life,new Color(.48f,.055f,.09f,.72f));
+    var renderer=smoke.GetComponent<Renderer>();renderer.enabled=false;
+    smoke.Tick=(p,dt)=>
+    {
+     float age=smoke.Age-delay;if(age<0){renderer.enabled=false;return;}renderer.enabled=true;
+     float phase=Mathf.Clamp01(age/life),appear=Mathf.SmoothStep(0,1,phase/.14f);
+     var swirl=Quaternion.Euler(0,age*38,0)*radial;
+     smoke.transform.position=origin+swirl*(age*.17f*radius)+Vector3.up*(age*.72f);
+     smoke.transform.rotation=Game.Cam.transform.rotation;
+     smoke.transform.localScale=Vector3.one*size*Mathf.Lerp(.6f,1.45f,phase);
+     var color=Color.Lerp(new Color(.48f,.055f,.09f,.72f),new Color(.23f,.045f,.065f,.28f),phase);
+     color.a*=appear;smoke.Block.SetColor("_Tone",color);smoke.Block.SetFloat("_Progress",phase);
+    };
+   }
+   // Few slow rising embers, not a combat impact burst or a bright white flash.
+   for(int i=0;i<8;i++)
+   {
+    float angle=i*Mathf.PI*.25f;var radial=new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle));
+    var origin=position+radial*radius*.55f+Vector3.up*.1f;
+    var ember=Glow(origin,Tone("bd2038"),.055f,.8f,1.35f+i*.045f);ember.name="Enemy spawn ember";
+    ember.Tick=(p,dt)=>{ember.transform.position=origin+radial*Mathf.Sin(p*Mathf.PI)*.15f+Vector3.up*p*1.35f;ember.transform.rotation=Game.Cam.transform.rotation;};
+   }
+  }
   public GameObject ThreatWarning(Vector3 origin,Vector3 direction,float radius,float arc,float width,float duration,Color tone)
   {
    direction.y=0;direction=direction.sqrMagnitude>.0001f?direction.normalized:Vector3.forward;

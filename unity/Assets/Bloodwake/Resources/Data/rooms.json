@@ -7,29 +7,29 @@
       "region": "safehouse",
       "type": "safehouse",
       "scene": "res://assets/rooms/town_safehouse.glb",
-      "size": [22, 14],
+      "size": [31, 30],
       "light": {"ambient": "c79a74", "fog": "1d1512", "energy": 0.62, "ground": "5a4c42"},
-      "doors": {"entrance": {"at": [0, 7]}},
-      "markers": {"EntrySpawn": [0, 3.5]},
-      "layout": [{"kind": "hearth", "at": [0, -6.2], "size": [4, 1.4], "height": 1.6}],
+      "doors": {"entrance": {"at": [0, 15]}},
+      "markers": {"EntrySpawn": [0, 8]},
+      "layout": [],
       "hosts": [
         {
           "role": "builds",
           "name": "THE QUARTERMASTER",
           "verb": "EDIT BUILD",
-          "at": [-7, -2.5],
-          "model": "tank",
+          "at": [-8.7, 2],
+          "model": "merchant",
           "tint": "7e8a93"
         },
         {
           "role": "skills",
           "name": "THE BLOOD SAGE",
           "verb": "SHAPE THE OATH",
-          "at": [7, -2.5],
-          "model": "healer",
+          "at": [8.7, 2],
+          "model": "mentor",
           "tint": "b34a52"
         },
-        {"role": "maps", "name": "THE WAR TABLE", "verb": "CHOOSE A HUNT", "at": [0, -2.2], "kind": "war_table"}
+        {"role": "maps", "name": "THE WAR TABLE", "verb": "CHOOSE A HUNT", "at": [0, 3], "kind": "war_table"}
       ]
     },
     {

@@ -39,6 +39,7 @@ namespace Bloodwake
   }
   void LateUpdate()
   {
+   RebuildCargoNavigation();SyncEnemyAgents();
    EnsureUI();if(drawnScreen!=Screen||(Screen=="playing"&&drawnClass!=Run?.ClassId)){if(page)Destroy(page.gameObject);page=Rect(uiRoot,"Screen "+Screen,0,0,1600,900);drawnScreen=Screen;drawnClass=Run?.ClassId;DrawScreen();}
    if(Screen=="playing"&&Run!=null){healthLabel.text=$"{Run.Stats.N("hp"):0} / {Run.Stats.N("maxHp"):0}";healthFill.rectTransform.sizeDelta=new Vector2(320*Mathf.Clamp01(Run.Stats.N("hp")/Run.Stats.N("maxHp")),24);runLabel.text=$"NIGHT {Run.Night}   •   LEVEL {Run.Level}   •   GOLD {Run.Gold}\n{room.S("name")}   •   {Enemies.Count} enemies";promptLabel.text=roomClear?(room.S("type")=="safehouse"?"F  ·  WAR TABLE / ARMORY":room.S("type")=="merchant"?"F  ·  MERCHANT":"F  ·  CLAIM REWARD / CONTINUE"):"";UpdateWorldBars();UpdateSkillLabels();}
   }
@@ -74,6 +75,6 @@ namespace Bloodwake
    }
   }
   void Back(string target){Button(page,"BACK",70,800,250,55,()=>Screen=target);}
-  void ReturnToMenu(){StopAllCoroutines();if(actorRoot)Destroy(actorRoot.gameObject);if(roomRoot)Destroy(roomRoot.gameObject);Enemies.Clear();Player=null;Run=null;Screen="menu";SetMusic("music_menu");}
+  void ReturnToMenu(){StopAllCoroutines();ReleaseCrowdNavigation();if(actorRoot)Destroy(actorRoot.gameObject);if(roomRoot)Destroy(roomRoot.gameObject);Enemies.Clear();Player=null;Run=null;Screen="menu";SetMusic("music_menu");}
  }
 }

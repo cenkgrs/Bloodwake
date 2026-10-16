@@ -42,12 +42,12 @@ namespace Bloodwake
    var previous=(JObject)Data.DeepClone();
    try {
     var src=JObject.Parse(text);Essence=Mathf.Clamp((int?)src["essence"]??0,0,1000000000);
-    var levels=new JObject();foreach(var row in GameData.Rows("skills"))levels[(string)row["id"]]=Mathf.Clamp((int?)src["levels"]?[row.S("id")]??0,0,3);Data["levels"]=levels;
+    var levels=new JObject();foreach(var row in GameData.Rows("skills"))levels[(string)row["id"]]=Mathf.Clamp((int?)src["levels"]?[row.S("id")]??0,0,(int)row.N("maxLevel",3));Data["levels"]=levels;
     var owned=new JArray();foreach(var id in src["ownedEquipment"] as JArray??new JArray())if(id.Type==JTokenType.String&&GameData.Row("equipment",(string)id)!=null&&!owned.Any(x=>JToken.DeepEquals(x,id)))owned.Add(id.DeepClone());Data["ownedEquipment"]=owned;
     var loadouts=new JArray();for(int i=0;i<3;i++){var build=new JObject();foreach(string slot in new[]{"armor","boots","charm"}){var list=src["loadouts"] as JArray;string id=list!=null&&i<list.Count?list[i].S(slot):"";if(owned.Any(x=>(string)x==id)&&GameData.Row("equipment",id).S("slot")==slot)build[slot]=id;}loadouts.Add(build);}Data["loadouts"]=loadouts;Data["activeLoadout"]=Mathf.Clamp((int?)src["activeLoadout"]??0,0,2);return true;
    }catch(Exception e){Data=previous;Debug.LogWarning("Save import rejected: "+e.Message);return false;}
   }
   public void Save(){Directory.CreateDirectory(Application.persistentDataPath);File.WriteAllText(Path+".tmp",Data.ToString());if(File.Exists(Path))File.Replace(Path+".tmp",Path,Path+".bak");else File.Move(Path+".tmp",Path);}
-  public void Apply(JObject stats){foreach(var p in ((JObject)Data["levels"]).Properties())GameData.Apply(stats,p.Name,(int)p.Value);foreach(var p in ((JObject)Data["loadouts"][(int)Data["activeLoadout"]]).Properties())GameData.Apply(stats,(string)p.Value);}
+  public void Apply(JObject stats,string classId=null){foreach(var p in ((JObject)Data["levels"]).Properties()){var row=GameData.Row("skills",p.Name);if((int)p.Value>0&&(row.S("class")==""||row.S("class")==classId))GameData.Apply(stats,p.Name,(int)p.Value);}foreach(var p in ((JObject)Data["loadouts"][(int)Data["activeLoadout"]]).Properties())GameData.Apply(stats,(string)p.Value);}
  }
 }

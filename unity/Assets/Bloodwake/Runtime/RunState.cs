@@ -11,7 +11,7 @@ namespace Bloodwake
   public readonly Dictionary<string,float> Cooldowns=new(); public readonly HashSet<string> Claimed=new();
   public int Wave=1,Kills,Gold,Level=1,Xp,PendingLevels,Night=1,RoomIndex,Fights,RoomsCleared,LevelAwardedWave=-1;
   public bool Awarded; public List<string> Plan=new(); public string MapId="cursed_town";
-  public RunState(string id,Progression meta=null){ClassId=id;Stats=GameData.Stats(id);meta?.Apply(Stats);Stats["hp"]=Stats["maxHp"].DeepClone();AddWeapon(GameData.Rules["classes"][id].S("weapon"));}
+  public RunState(string id,Progression meta=null){ClassId=id;Stats=GameData.Stats(id);meta?.Apply(Stats,id);Stats["hp"]=Stats["maxHp"].DeepClone();AddWeapon(GameData.Rules["classes"][id].S("weapon"));}
   public bool AddWeapon(string id){if(Weapons.ContainsKey(id)||Weapons.Count>=4||GameData.Row("weapons",id)==null)return false;Weapons[id]=new JObject{["damage"]=1f,["speed"]=1f,["range"]=1f,["pierce"]=0,["chain"]=0,["shockwave"]=0,["burn"]=0,["bleed"]=0};return true;}
   public int XpNeeded=>80+30*(Level-1)+5*(Level-1)*(Level-1);
   public void AddXp(int amount){if(amount<=0)return;Xp+=Mathf.RoundToInt(amount*Stats.N("xpMultiplier"));if(LevelAwardedWave!=Wave&&Xp>=XpNeeded){Xp-=XpNeeded;Level++;PendingLevels++;LevelAwardedWave=Wave;}if(LevelAwardedWave==Wave)Xp=Mathf.Min(Xp,XpNeeded/2);}
@@ -21,11 +21,11 @@ namespace Bloodwake
    string id=row.S("id");if(kind=="upgrades"&&Upgrades.GetValueOrDefault(id)>=row.N("maxLevel"))return false;
    if(kind=="items"&&(ItemGrades.ContainsKey(id)||ItemGrades.Count>=8||Night<row.N("minNight",1)))return false;
    string gate=row.S("isAvailable");
-   foreach(string cls in new[]{"warrior","gunslinger","mage","assassin"})if(gate=="_"+cls)return ClassId==cls||(ClassId=="revenant"&&cls=="warrior");
+   foreach(string cls in new[]{"warrior","gunslinger","mage","assassin"})if(gate=="_"+cls)return ClassId==cls||((ClassId=="revenant"||ClassId=="vesper")&&cls=="warrior");
    var gates=new Dictionary<string,string>{{"_ownsSword","sword"},{"_ownsLightning","lightning"},{"_ownsRifle","rapid_rifle"},{"_ownsOrb","magic_orb"},{"_ownsDaggers","daggers"}};
    if(gates.ContainsKey(gate)&&!Weapons.ContainsKey(gates[gate]))return false;
    var needs=new Dictionary<string,string[]>{{"thunderquake",new[]{"warrior","greatsword","storm_blade"}},{"armor_piercer",new[]{"gunslinger","rifle_caliber","rifle_range"}},{"spellfire",new[]{"mage","orb_pierce","orb_power"}},{"hemorrhage",new[]{"assassin","dagger_tempo","dagger_edge"}}};
-   if(needs.TryGetValue(id,out var req))return (ClassId==req[0]||(ClassId=="revenant"&&req[0]=="warrior"))&&Upgrades.GetValueOrDefault(req[1])>0&&Upgrades.GetValueOrDefault(req[2])>0;return true;
+   if(needs.TryGetValue(id,out var req))return (ClassId==req[0]||((ClassId=="revenant"||ClassId=="vesper")&&req[0]=="warrior"))&&Upgrades.GetValueOrDefault(req[1])>0&&Upgrades.GetValueOrDefault(req[2])>0;return true;
   }
   public bool Upgrade(string id){var row=GameData.Row("upgrades",id);if(row==null||!Available(row,"upgrades"))return false;Upgrades[id]=Upgrades.GetValueOrDefault(id)+1;Apply(id);return true;}
   public void Apply(string id,float level=1)

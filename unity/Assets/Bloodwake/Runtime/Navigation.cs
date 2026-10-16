@@ -9,6 +9,8 @@ namespace Bloodwake
   int[] navCost;bool[] navSolid;int navWidth,navHeight,navTarget=-1;float navTimer;
   void BuildNavigation()
   {
+   BuildCrowdNavigation();
+   ResetSurroundSpawns();
    navWidth=Mathf.CeilToInt(half.x*2/NavCell);navHeight=Mathf.CeilToInt(half.y*2/NavCell);navCost=new int[navWidth*navHeight];navSolid=new bool[navCost.Length];navTarget=-1;navTimer=0;
    System.Array.Fill(navCost,int.MaxValue);
    for(int i=0;i<navCost.Length;i++)navSolid[i]=!NavSegmentClear(NavPosition(i),NavPosition(i),NavClearance);

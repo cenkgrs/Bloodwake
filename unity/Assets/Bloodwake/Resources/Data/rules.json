@@ -251,6 +251,27 @@
       ],
       "voices": 1
     },
+    "revenant_e_blood_bomb": {
+      "db": 0.0,
+      "files": ["revenant_e_blood_bomb"],
+      "gap": 0.0,
+      "pitch": [1.0, 1.0],
+      "voices": 1
+    },
+    "revenant_space_blood_burst": {
+      "db": 0.0,
+      "files": ["revenant_space_blood_burst"],
+      "gap": 0.0,
+      "pitch": [1.0, 1.0],
+      "voices": 1
+    },
+    "revenant_q_mist_claw": {
+      "db": 0.0,
+      "files": ["revenant_q_mist_claw"],
+      "gap": 0.0,
+      "pitch": [1.0, 1.0],
+      "voices": 1
+    },
     "revenant_swing": {
       "db": 3.0,
       "files": [
@@ -604,6 +625,26 @@
       "tag": "BLOOD / TELEPORT",
       "weapon": "sword"
     },
+    "vesper": {
+      "ability": "bloodfire_rite",
+      "blurb": "An aristocratic firebrand who fights like the night owes him a dance. His greatsword rings once, then the ground answers in blood and flame.",
+      "color": "f0b43c",
+      "name": "Vesper",
+      "skills": [
+        "cinder_ward",
+        "ember_dash"
+      ],
+      "stats": {
+        "attackSpeed": 1.45,
+        "criticalChance": 0.18,
+        "damage": 1.65,
+        "dodgeChance": 0.08,
+        "maxHp": 105.0,
+        "moveSpeed": 315.0
+      },
+      "tag": "BLOODFIRE / DUELIST",
+      "weapon": "sword"
+    },
     "warrior": {
       "ability": "war_cry",
       "blurb": "Heavy plate and a heavier blade. Walks into the press on purpose, and is still standing when it clears.",
@@ -756,6 +797,7 @@
       ]
     ],
     "last_stand": [],
+    "revenant_crimson_arrival": [["revenantDashImpact",1,"set"]],
     "leech_pendant": [
       [
         "lifesteal",

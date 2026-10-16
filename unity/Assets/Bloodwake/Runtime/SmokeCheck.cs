@@ -9,7 +9,7 @@ namespace Bloodwake
   IEnumerator Smoke()
   {
    Application.logMessageReceived+=OnSmokeLog;
-   foreach(string id in new[]{"warrior","revenant","gunslinger","mage","assassin"})
+   foreach(string id in new[]{"warrior","revenant","vesper","gunslinger","mage","assassin"})
    {
     // The driver runs on a separate object because room changes cancel combat coroutines.
     new GameObject("Smoke driver").AddComponent<SmokeDriver>().Begin(this,id);
@@ -20,7 +20,7 @@ namespace Bloodwake
   public IEnumerator SmokeClasses()
   {
    Screen="menu";yield return new WaitForSeconds(.5f);yield return Capture("menu");Screen="classes";yield return new WaitForSeconds(.2f);yield return Capture("classes");
-   foreach(string id in new[]{"warrior","revenant","gunslinger","mage","assassin"})
+   foreach(string id in new[]{"warrior","revenant","vesper","gunslinger","mage","assassin"})
    {
     BeginCharacterIntro(id);BeginCharacterIntro(id);yield return new WaitForSeconds(1);CheckSmoke(introActive&&Screen=="loading","cinematic locks controls "+id);yield return Capture(id+"-intro");yield return new WaitForSeconds(4);CheckSmoke(!introActive&&Screen=="playing"&&Run.ClassId==id,"cinematic enters safehouse "+id);yield return Capture(id+"-safehouse");EnterRoom(Run.Plan[0]);Screen="playing";yield return null;
     if(Player==null||Player.Animator.runtimeAnimatorController==null){Debug.LogError("SMOKE missing "+id);break;}

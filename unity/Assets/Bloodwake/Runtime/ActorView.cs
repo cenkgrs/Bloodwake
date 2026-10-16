@@ -2,11 +2,30 @@ using System.Linq;
 using UnityEngine;
 namespace Bloodwake
 {
- public sealed class ActorView:MonoBehaviour
+ public sealed partial class ActorView:MonoBehaviour
  {
   public Animator Animator; public float Locked,PlaybackRate=1; public string Kind;public float Height {get;private set;} string state="";
   readonly System.Collections.Generic.Dictionary<string,System.Action> markers=new();
   Transform reactionPivot;Vector3 reactionAxis;float reactionAge=1,reactionDegrees,reactionDuration=.28f;
+  public const float SpawnDelay=.35f,SpawnRiseTime=.9f;
+  public float SpawnRemaining {get;private set;}
+  public bool Emerging=>SpawnRemaining>0;
+  public float VisualSpawnOffset=>reactionPivot?reactionPivot.localPosition.y:0;
+  public void BeginEmergence()
+  {
+   CancelAction();Play("Idle",0);SpawnRemaining=SpawnDelay+SpawnRiseTime;
+   reactionPivot.localPosition=Vector3.down*(Height+.25f);SetVisible(false);Animator.speed=0;
+  }
+  public void TickEmergence(float dt)
+  {
+   if(!Emerging)return;
+   SpawnRemaining=Mathf.Max(0,SpawnRemaining-Mathf.Max(0,dt));
+   float rise=Mathf.Clamp01(1-SpawnRemaining/SpawnRiseTime);
+   // Move only the visual pivot: NavMesh and spawn reservations remain on the street.
+   reactionPivot.localPosition=Vector3.down*(Height+.25f)*Mathf.Pow(1-rise,3);
+   SetVisible(SpawnRemaining<SpawnRiseTime);Animator.speed=SpawnRemaining<SpawnRiseTime?1:0;
+   if(!Emerging){reactionPivot.localPosition=Vector3.zero;SetVisible(true);}
+  }
   public void ImpactPose(Vector3 source,float degrees,float duration=.28f)
   {
    var away=transform.InverseTransformDirection(transform.position-source);away.y=0;
@@ -23,13 +42,16 @@ namespace Bloodwake
   public void CancelAction(){markers.Clear();SetVisible(true);}
   public bool Visible {get;private set;}=true;
   public bool ContactPending=>markers.ContainsKey("DAMAGE");
-  public bool IsCasting=>Locked>0&&(state==Clip("Teleport")||state==Clip("Ultimate")||state=="REV_BloodClap");
+  public bool IsCasting=>Locked>0&&(state==Clip("Teleport")||state==Clip("Ultimate")||state==Clip("CastQ")||state=="REV_BloodClap");
   public bool NobleRevenant=>Kind=="revenant"&&Animator.runtimeAnimatorController.name=="revenant_noble";
   public float LocomotionSpeed {get;private set;}
   public bool HasWarriorSlashes {get;private set;}
   public WarriorTurnData TurnData {get;private set;}
+  public HitFlash HitFlash {get;private set;}
+  public void FlashHit(bool player)=>HitFlash.Pulse(player);
   [System.Serializable]class StrideCalibration {public float referenceSpeed,referenceHeight;}
-  public float MarkerTime(string key,string marker)=>Animator.runtimeAnimatorController.animationClips.First(c=>c.name==Clip(key)).events.First(e=>e.stringParameter==marker).time;
+  public float ActionStartTime(string key)=>NobleRevenant&&Clip(key)=="REV_BloodBurst"?ClipLength(key)*.15f:0;
+  public float MarkerTime(string key,string marker)=>Mathf.Max(0,Animator.runtimeAnimatorController.animationClips.First(c=>c.name==Clip(key)).events.First(e=>e.stringParameter==marker).time-ActionStartTime(key));
   public bool IsDead=>state==Clip("Death");
   public void SetVisible(bool visible){Visible=visible;foreach(var r in Animator.GetComponentsInChildren<Renderer>())r.enabled=visible;}
   public void ReceiveMarker(AnimationEvent evt)
@@ -49,6 +71,8 @@ namespace Bloodwake
    // include weapons and are not a valid standing-height or foot-origin measure.
    model.transform.localScale*=height/1.8f;model.transform.localPosition=Vector3.zero;
    foreach(var renderer in model.GetComponentsInChildren<Renderer>())renderer.renderingLayerMask|=2u;
+   view.HitFlash=go.AddComponent<HitFlash>();view.HitFlash.Initialize(model.GetComponentsInChildren<Renderer>());
+   if(!enemy&&id=="vesper")model.AddComponent<VesperBladeVfx>();
    if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_ShieldWalk"))
    {
     var calibration=JsonUtility.FromJson<StrideCalibration>(Resources.Load<TextAsset>("Animations/WarriorLocomotion/stride").text);
@@ -115,15 +139,16 @@ namespace Bloodwake
   }
   public float Play(string key,float hold=-1)
   {
-   if(key=="Death"){reactionAge=1;if(reactionPivot)reactionPivot.localRotation=Quaternion.identity;hitRemaining=0;legsWeight=0;TickLayers(0,false,1);}
+   if(key=="Death"){EndRevenantPose();reactionAge=1;if(reactionPivot)reactionPivot.localRotation=Quaternion.identity;hitRemaining=0;legsWeight=0;TickLayers(0,false,1);}
    string clip=Clip(key);var anim=Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==clip);
    if(anim==null){clip=Clip("Attack");anim=Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==clip);}
    if(anim==null)return 0;
-   if(state!=clip||hold!=0){CancelAction();PlaybackRate=hold>0?anim.length/hold:1;Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,.09f,0,0);state=clip;}
-   Locked=hold==0?0:hold>0?hold:anim.length;return Locked;
+   float start=ActionStartTime(clip),duration=anim.length-start;
+   if(state!=clip||hold!=0){CancelAction();PlaybackRate=hold>0?duration/hold:1;Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,.09f,0,start);state=clip;}
+   Locked=hold==0?0:hold>0?hold:duration;return Locked;
   }
   public float ClipLength(string key)=>Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==Clip(key))?.length??.6f;
-  public void Tick(float dt,bool moving,float rate=1,bool walking=false){Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?(Kind=="revenant"&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
+  public void Tick(float dt,bool moving,float rate=1,bool walking=false){if(RevenantPoseActive){Locked=Mathf.Max(.03f,Locked-dt);Animator.speed=0;TickImpact(dt);return;}Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?(Kind=="revenant"&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
  }
  public sealed class RevenantMarkerRelay:MonoBehaviour
  {

@@ -1,0 +1,98 @@
+[
+  {
+    "name": "Hall",
+    "source": "/home/cenkargevim/Downloads/medieval hall 3d model.glb",
+    "source_size": [
+      0.64306640625,
+      0.99951171875,
+      0.24560546875
+    ],
+    "scale": 14.006839276990718,
+    "world_size": [
+      9.007327796775769,
+      14.0,
+      3.4401563263312163
+    ],
+    "position": [
+      0,
+      2,
+      0
+    ],
+    "triangles": 47015,
+    "materials": [
+      "Hall_tripo_28dce533_2447_431d_bc9e_8dd0a3dc720b"
+    ]
+  },
+  {
+    "name": "Training",
+    "source": "/home/cenkargevim/Downloads/medieval castle interior 3d model.glb",
+    "source_size": [
+      0.9770509004592896,
+      0.9995118379592896,
+      0.42041015625
+    ],
+    "scale": 12.005860805511304,
+    "world_size": [
+      11.73033711081371,
+      12.0,
+      5.047385817160758
+    ],
+    "position": [
+      0,
+      -11.5,
+      0
+    ],
+    "triangles": 46069,
+    "materials": [
+      "Training_bf19ea1b_e149_4d15_b6f0_63a896fa3d19"
+    ]
+  },
+  {
+    "name": "Study",
+    "source": "/home/cenkargevim/Downloads/medieval study 3d model.glb",
+    "source_size": [
+      85.9544677734375,
+      97.829833984375,
+      51.62164306640625
+    ],
+    "scale": 0.08177464556750376,
+    "world_size": [
+      7.028896137116275,
+      8.0,
+      4.221341565367559
+    ],
+    "position": [
+      8.7,
+      -2.0,
+      0
+    ],
+    "triangles": 105736,
+    "materials": [
+      "Study_tripo_mat_83c5a74e"
+    ]
+  },
+  {
+    "name": "Shop",
+    "source": "/home/cenkargevim/Downloads/medieval shop interior 3d model.glb",
+    "source_size": [
+      96.90286254882812,
+      97.78764343261719,
+      34.9407958984375
+    ],
+    "scale": 0.08180992729937892,
+    "world_size": [
+      7.927616140221336,
+      8.0,
+      2.858503972233609
+    ],
+    "position": [
+      -8.7,
+      -2.0,
+      0
+    ],
+    "triangles": 108161,
+    "materials": [
+      "Shop_tripo_mat_0f064b54"
+    ]
+  }
+]

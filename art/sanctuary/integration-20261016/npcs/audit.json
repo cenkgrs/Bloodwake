@@ -1,0 +1,30 @@
+[
+  {
+    "id": "enemy_merchant",
+    "rig": "/home/cenkargevim/Downloads/Unarmed Idle.fbx",
+    "art": "/home/cenkargevim/Downloads/medieval fantasy character 3d model.glb",
+    "bones": 65,
+    "triangles": 95249,
+    "frames": [
+      1.0,
+      115.0
+    ],
+    "materials": [
+      "tripo_mat_28cefe10"
+    ]
+  },
+  {
+    "id": "enemy_mentor",
+    "rig": "/home/cenkargevim/Downloads/Idle(1).fbx",
+    "art": "/home/cenkargevim/Downloads/fantasy character 3d model(1).glb",
+    "bones": 65,
+    "triangles": 97079,
+    "frames": [
+      1.0,
+      477.0
+    ],
+    "materials": [
+      "tripo_mat_e2dc2eea"
+    ]
+  }
+]

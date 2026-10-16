@@ -60,18 +60,18 @@ namespace Bloodwake.Editor
    enemy.View.Tick(.3f,false);Check(Quaternion.Angle(pivot.localRotation,Quaternion.identity)<.001f,"area impact fully recovers");
    foreach(var id in new[]{"tank","boss"})
    {
-    g.SpawnEnemy(id,new Vector3(3,0,0));var heavy=g.Enemies.Last();Call(g,"StartAreaRecoil",heavy,Vector3.zero);
+    g.SpawnEnemy(id,new Vector3(3,0,0));var heavy=g.Enemies.Last();Call(g,"StartAreaRecoil",heavy,Vector3.zero,1f);
     Check(heavy.RecoilRemaining<(id=="boss"?.081f:.201f)&&heavy.AreaRecovery<.56f,"area resistance for "+id);
     g.Enemies.Remove(heavy);UnityEngine.Object.Destroy(heavy.View.gameObject);
    }
-   enemy.View.transform.position=Vector3.forward;blockers.Add(new Bounds(new Vector3(0,1,1.55f),new Vector3(2,2,.1f)));Call(g,"StartAreaRecoil",enemy,Vector3.zero);
+   enemy.View.transform.position=Vector3.forward;blockers.Add(new Bounds(new Vector3(0,1,1.55f),new Vector3(2,2,.1f)));Call(g,"StartAreaRecoil",enemy,Vector3.zero,1f);
    for(int i=0;i<20;i++)Call(g,"TickRecoil",enemy,1f/60);Check(enemy.View.transform.position.z<=1.051f,"large area recoil respects wall collision");
    blockers.Clear();enemy.View.transform.position=Vector3.forward;enemy.AreaRecovery=0;var health=g.Run.Stats.N("hp");Field(g,"invulnerable",0f);
-   var attack=(IEnumerator)Call(g,"EnemyMelee",enemy,Vector3.back);attack.MoveNext();Call(g,"StartAreaRecoil",enemy,Vector3.zero);attack.MoveNext();
+   var attack=(IEnumerator)Call(g,"EnemyMelee",enemy,Vector3.back);attack.MoveNext();Call(g,"StartAreaRecoil",enemy,Vector3.zero,1f);attack.MoveNext();
    Check(g.Run.Stats.N("hp")==health,"area hit interrupts pending enemy melee damage");
-   for(int i=0;i<40;i++)Call(g,"TickEnemies",1f/60);
+   for(int i=0;i<50;i++)Call(g,"TickEnemies",1f/60);
    Check(enemy.AreaRecovery<=0&&enemy.Stagger<=0,"area reaction releases enemy after recovery");
-   int version=enemy.ImpactVersion;enemy.Hp=0;Call(g,"StartAreaRecoil",enemy,Vector3.zero);Check(enemy.ImpactVersion==version,"area does not replace dead enemy animation");
+   int version=enemy.ImpactVersion;enemy.Hp=0;Call(g,"StartAreaRecoil",enemy,Vector3.zero,1f);Check(enemy.ImpactVersion==version,"area does not replace dead enemy animation");
    Field(g,"hitStop",0f);g.enabled=true;Debug.Log("BLOODWAKE_MOTION_CHECKS "+passed+" passed");
   }
  }

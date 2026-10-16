@@ -29,7 +29,7 @@ namespace Bloodwake.Editor
    yield return new WaitForSeconds(.2f);Check(g.Run.Stats.N("hp")==hp,"boss warning does not deal early damage");yield return new WaitForSeconds(.25f);Check(g.Run.Stats.N("hp")<hp,"boss contact still deals damage at windup end");
    yield return new WaitForSeconds(.5f);Check(!UnityEngine.Object.FindObjectsByType<VfxLifetime>(FindObjectsSortMode.None).Any(v=>v.name=="Enemy danger area"),"finished boss contact clears warning");
    Field(g,"invulnerable",0f);boss.Pattern=4;hp=g.Run.Stats.N("hp");g.StartCoroutine((IEnumerator)Call(g,"BossCast",boss));yield return new WaitForSeconds(.1f);
-   Call(g,"StartAreaRecoil",boss,g.Player.transform.position);yield return null;yield return null;
+   Call(g,"StartAreaRecoil",boss,g.Player.transform.position,1f);yield return null;yield return null;
    Check(!boss.Casting&&!UnityEngine.Object.FindObjectsByType<VfxLifetime>(FindObjectsSortMode.None).Any(v=>v.name=="Enemy danger area"),"interrupted boss windup immediately removes danger warning");
    yield return new WaitForSeconds(1.3f);Check(g.Run.Stats.N("hp")==hp,"interrupted slam cannot deliver delayed damage");
    g.enabled=true;Debug.Log("BLOODWAKE_ENEMY_VFX_CHECKS "+passed+" passed");

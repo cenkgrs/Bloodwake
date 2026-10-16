@@ -61,7 +61,7 @@ namespace Bloodwake
       var size=BoundsOf(obj.GetComponentsInChildren<Renderer>());
       float fit=Mathf.Min(b.size.y/size.size.y,Mathf.Min(b.size.x/size.size.x,b.size.z/size.size.z));obj.transform.localScale*=fit;
       size=BoundsOf(obj.GetComponentsInChildren<Renderer>());obj.transform.position=new Vector3(b.center.x-size.center.x,b.min.y-size.min.y,b.center.z-size.center.z);
-      old.enabled=false;clutter++;
+      obj.AddComponent<BreakableCargo>();old.enabled=false;clutter++;
      }
     }
     else if(Regex.IsMatch(slot.name,@"^Cargo[\d_.]*$")||(slot!=environment&&slot.childCount>1&&!slot.GetComponent<Renderer>()&&cargoPositions.Any(p=>Vector3.Distance(p,slot.position)<.02f)))
@@ -78,10 +78,12 @@ namespace Bloodwake
       obj.transform.rotation=Quaternion.Euler(0,((i*47+cargo*19)%31)-15,0);var bounds=BoundsOf(obj.GetComponentsInChildren<Renderer>());
       float fit=Mathf.Min(1.08f,Mathf.Min(b.size.x*.27f/bounds.size.x,b.size.z*.34f/bounds.size.z))*(.84f+(i*17%19)*.01f);obj.transform.localScale*=fit;bounds=BoundsOf(obj.GetComponentsInChildren<Renderer>());
       var n=pattern[(i+cargo*3)%pattern.Length];var position=new Vector3(b.center.x+n.x*b.size.x,b.min.y-bounds.min.y,b.center.z+n.y*b.size.z);obj.transform.position=position;
+      var breakable=obj.AddComponent<BreakableCargo>();breakable.Footprint=b;breakable.ReplacesFootprint=true;
       if(source==crate&&i%4==1&&b.size.x>3.2f)
       {
        var upper=Object.Instantiate(crate,root);upper.name="Cargo upper detail "+cargo+" "+i;upper.transform.rotation=Quaternion.Euler(0,obj.transform.eulerAngles.y+31,0);upper.transform.localScale*=fit*.88f;
        var upperBounds=BoundsOf(upper.GetComponentsInChildren<Renderer>());upper.transform.position=new Vector3(position.x+.07f,bounds.max.y-upperBounds.min.y,position.z-.04f);
+       upper.transform.SetParent(obj.transform,true); // Supported stack breaks together; no floating upper crate.
       }
      }
      foreach(var r in originals)r.enabled=false;

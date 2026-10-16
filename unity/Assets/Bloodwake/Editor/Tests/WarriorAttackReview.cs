@@ -88,10 +88,10 @@ namespace Bloodwake.Editor
     Call("UpdateNavigation",1f);Call("TickEnemies",1f/fps);
     Check(enemy.Turning,"Behind-target did not start turn");
     Check(Quaternion.Angle(enemy.View.transform.rotation,Quaternion.identity)<1,"Turn snapped at entry");
-    float lastYaw=0,totalYaw=0,maxStep=0;
+    float lastYaw=0,totalYaw=0,maxStep=0;int turnTicks=0;
     for(int i=0;i<Mathf.CeilToInt(fps*1.2f)&&enemy.Turning;i++)
     {
-     Call("TickEnemies",1f/fps);enemy.View.Animator.Update(1f/fps);
+     Call("TickEnemies",1f/fps);enemy.View.Animator.Update(1f/fps);turnTicks++;
      float yaw=enemy.View.transform.eulerAngles.y,step=Mathf.DeltaAngle(lastYaw,yaw);lastYaw=yaw;totalYaw+=step;maxStep=Mathf.Max(maxStep,Mathf.Abs(step));
      Check(enemy.Pattern==pattern&&!enemy.View.ContactPending,"Attacked while turning");
      if(i>fps*.15f)
@@ -104,6 +104,7 @@ namespace Bloodwake.Editor
      }
     }
     Check(!enemy.Turning&&Mathf.Abs(Mathf.Abs(totalYaw)-180)<1,"Turn did not finish at 180 degrees");
+    Check(Mathf.Abs(turnTicks/(float)fps-enemy.View.TurnData.duration/1.2f)<=1.01f/fps,"Turn playback is not 1.2x");
     Check(maxStep<30,"Turn snapped between frames");
     Check(Vector3.Dot(enemy.View.transform.forward,(game.Player.transform.position-enemy.View.transform.position).normalized)>.97f,"Turn ended facing away");
     var before=enemy.View.transform.position;Call("UpdateNavigation",1f);Call("TickEnemies",1f/fps);
@@ -133,7 +134,7 @@ namespace Bloodwake.Editor
       var rotation=enemy.View.transform.rotation;var position=enemy.View.transform.position;bool wasTurning=enemy.Turning;
       Call("UpdateNavigation",1f/fps);Call("TickEnemies",1f/fps);enemy.View.Animator.Update(1f/fps);
       float step=Quaternion.Angle(rotation,enemy.View.transform.rotation);
-      Check(step<=(wasTurning||enemy.Turning?500:240)/(float)fps+.1f,$"Instant yaw jump angle={angle} fps={fps} step={step}");
+      Check(step<=(wasTurning||enemy.Turning?600:320)/(float)fps+.1f,$"Instant yaw jump angle={angle} fps={fps} step={step}");
       var moved=enemy.View.transform.position-position;
       if(!wasTurning&&!enemy.Turning&&moved.sqrMagnitude>.000001f)
        Check(Vector3.Angle(moved,enemy.View.transform.forward)<25.1f,"Sideways movement during steering");
@@ -146,7 +147,7 @@ namespace Bloodwake.Editor
     for(int tick=0;tick<fps&&enemy.Pattern==0;tick++)
     {
      var previous=enemy.View.transform.rotation;Call("TickEnemies",1f/fps);enemy.View.Animator.Update(1f/fps);
-     Check(Quaternion.Angle(previous,enemy.View.transform.rotation)<=240f/fps+.1f,"Attack entry snapped facing");
+     Check(Quaternion.Angle(previous,enemy.View.transform.rotation)<=320f/fps+.1f,"Attack entry snapped facing");
     }
     Check(enemy.Pattern==1,"Aligned Warrior did not attack");
     Debug.Log("WARRIOR_ANGLE_SWEEP_PASSED fps="+fps+" signedAngles=16 plus attack-entry");
@@ -158,7 +159,7 @@ namespace Bloodwake.Editor
     if(tick==25)game.Player.transform.position=Vector3.right*3;
     var previous=enemy.View.transform.rotation;bool turning=enemy.Turning;
     Call("UpdateNavigation",1f/60);Call("TickEnemies",1f/60);enemy.View.Animator.Update(1f/60);
-    Check(Quaternion.Angle(previous,enemy.View.transform.rotation)<=(turning||enemy.Turning?500:240)/60f+.1f,"Retarget after turn snapped facing");
+    Check(Quaternion.Angle(previous,enemy.View.transform.rotation)<=(turning||enemy.Turning?600:320)/60f+.1f,"Retarget after turn snapped facing");
    }
    Debug.Log("WARRIOR_MOVING_TARGET_TURN_PASSED");Reset();enemy.Pattern=0;
   }

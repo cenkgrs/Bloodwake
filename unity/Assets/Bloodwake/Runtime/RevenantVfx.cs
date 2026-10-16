@@ -112,14 +112,15 @@ namespace Bloodwake
    core.Tick=(p,dt)=>core.transform.localScale=Vector3.one*Mathf.Lerp(.55f,.08f,p);
    var flash=Glow(hands,Tone("e8213b"),1.5f,1.8f,.14f);flash.name="Blood bomb flash";
    flash.Tick=(p,dt)=>{flash.transform.rotation=Game.Cam.transform.rotation;flash.transform.localScale=Vector3.one*Mathf.Lerp(1.5f,2,p);};
-   for(int layer=-1;layer<=1;layer++)BloodBombSheet(hands,facing,radius,layer);
-   for(int i=0;i<84;i++)
+   BloodVolume(hands,radius,1.9f,.78f,true,facing);
+   // Dense supporting spray surrounds Space-style sheets and tapering liquid jets.
+   for(int i=0;i<64;i++)
    {
-    float angle=Mathf.Lerp(-Mathf.PI/4,Mathf.PI/4,(i+UnityEngine.Random.value)/84);
+    float angle=Mathf.Lerp(-Mathf.PI/4,Mathf.PI/4,(i+UnityEngine.Random.value)/64);
     var direction=facing*new Vector3(Mathf.Sin(angle),UnityEngine.Random.Range(-.3f,.45f),Mathf.Cos(angle)).normalized;
     var start=hands+direction*.06f;var velocity=direction*UnityEngine.Random.Range(radius*3.5f,radius*5f);
-    float size=UnityEngine.Random.Range(.035f,.095f);
-    var drop=Particle(start,new Vector3(size,size*3,size),Tone(i%4==0?"ae132b":"700b1b"),.65f,false,true);
+    float size=UnityEngine.Random.Range(.035f,.085f);
+    var drop=Particle(start,new Vector3(size,size*5,size),Tone(i%4==0?"ae132b":"700b1b"),.85f,false,true);
     drop.name="Blood bomb droplet";drop.transform.rotation=Quaternion.FromToRotation(Vector3.up,direction);
     bool landed=false;
     drop.Tick=(p,dt)=>
@@ -134,7 +135,7 @@ namespace Bloodwake
      drop.transform.position=point;
      var tangent=velocity*Mathf.Exp(-5*t)-Vector3.up*9.8f*t;
      if(tangent.sqrMagnitude>.001f)drop.transform.rotation=Quaternion.FromToRotation(Vector3.up,tangent.normalized);
-     drop.transform.localScale=new Vector3(size,size*Mathf.Lerp(3,1,p),size)*(1-p*.6f);
+     drop.transform.localScale=new Vector3(size,size*Mathf.Lerp(5,1,p),size)*(1-p*.6f);
     };
    }
   }

@@ -1,0 +1,34 @@
+{
+  "source": "/home/cenkargevim/Downloads/Upward Thrust.fbx",
+  "source_fps": 60.0,
+  "source_frames": [
+    1,
+    71
+  ],
+  "trim_start_seconds": 0.1,
+  "duration": 1.0666666666666667,
+  "contact": 0.3,
+  "peak_hand_extension": 0.7069829702377319,
+  "bone_scale_validated": true,
+  "finger_only_edit": [
+    "mixamorig:RightHandIndex1",
+    "mixamorig:RightHandIndex2",
+    "mixamorig:RightHandIndex3",
+    "mixamorig:RightHandMiddle1",
+    "mixamorig:RightHandMiddle2",
+    "mixamorig:RightHandMiddle3",
+    "mixamorig:RightHandPinky1",
+    "mixamorig:RightHandPinky2",
+    "mixamorig:RightHandPinky3",
+    "mixamorig:RightHandRing1",
+    "mixamorig:RightHandRing2",
+    "mixamorig:RightHandRing3",
+    "mixamorig:RightHandThumb1",
+    "mixamorig:RightHandThumb2",
+    "mixamorig:RightHandThumb3"
+  ],
+  "grip_retained": 0.12,
+  "thumb_grip_retained": 0.22,
+  "root_motion": "planar hips fixed; original vertical and body rotations retained",
+  "target": "actual in-game noble skeleton"
+}

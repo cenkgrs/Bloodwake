@@ -1,0 +1,16 @@
+{
+  "tripo_mat_28cefe10": {
+    "color": [
+      0.800000011920929,
+      0.800000011920929,
+      0.800000011920929,
+      1.0
+    ],
+    "alpha": 1.0,
+    "metallic": 1,
+    "roughness": 1,
+    "albedo": "SourceImage_0.jpg",
+    "normal": "SourceImage_2.png",
+    "metallicRoughness": "SourceImage_1.png"
+  }
+}

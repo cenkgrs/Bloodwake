@@ -18,10 +18,10 @@ namespace Bloodwake
   }
   void DrawClasses()
   {
-   string[] ids={"revenant","warrior","gunslinger","mage","assassin"};
+   string[] ids={"revenant","vesper","warrior","gunslinger","mage","assassin"};
    for(int i=0;i<ids.Length;i++)
    {
-    string id=ids[i];float x=260+i*218;var card=Plate(page,id,x,170,204,286,SelectedClass==id?blood:panel);
+    string id=ids[i];float x=150+i*218;var card=Plate(page,id,x,170,204,286,SelectedClass==id?blood:panel);
     Art(card.transform,"ui/portraits/"+id,4,4,196,278);Plate(card.transform,"Name veil",4,226,196,56,new Color(0,0,0,.8f));
     Art(card.transform,"ui/class_screen/panel_frame",0,0,204,286);Label(card.transform,GameData.Rules["classes"][id].S("name"),10,240,184,35,20,true,TextAnchor.MiddleCenter);
     card.raycastTarget=true;var select=card.gameObject.AddComponent<Button>();select.targetGraphic=card;select.onClick.AddListener(()=>{SelectedClass=id;Sound("ui_click");drawnScreen=null;});
@@ -65,7 +65,7 @@ namespace Bloodwake
   }
   void DrawProgression()
   {
-   var rows=GameData.Rows("skills").ToArray();var levels=(JObject)Meta.Data["levels"];var content=ScrollBody(Mathf.Ceil(rows.Length/3f)*165);
+   var rows=GameData.Rows("skills").Where(r=>r.S("class")==""||r.S("class")== (Run?.ClassId??SelectedClass)).ToArray();var levels=(JObject)Meta.Data["levels"];var content=ScrollBody(Mathf.Ceil(rows.Length/3f)*165);
    for(int i=0;i<rows.Length;i++){var row=rows[i];string id=row.S("id");int level=(int?)levels[id]??0,cost=(int)row.N("baseCost")*(level+1),max=(int)row.N("maxLevel",3);float x=i%3*440,y=i/3*165;Label(content,row.S("name")+$"  {level}/{max}",x,y,420,40,26,true);Label(content,row.S("description"),x,y+42,410,55,18);Button(content,level>=max?"MASTERED":$"UNLOCK · {cost} ESSENCE",x,y+100,400,50,()=>{if(level>=max||Meta.Essence<cost)return;if(row["requires"]!=null&&((int?)levels[row.S("requires")]??0)<=0)return;Meta.Essence-=cost;levels[id]=level+1;Meta.Save();});}
    Label(page,$"ESSENCE {Meta.Essence}",650,810,600,45);Back(Run==null?"menu":"hub");
   }

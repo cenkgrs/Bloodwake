@@ -24,7 +24,7 @@ namespace Bloodwake
    else Debug.LogError("Missing character cinematic resources: "+id);
    Plate(overlay,"Top letterbox",0,0,1600,108,Color.black);Plate(overlay,"Bottom letterbox",0,792,1600,108,Color.black);
    Label(overlay,GameData.Rules["classes"][id].S("name"),250,786,1100,49,38,true,TextAnchor.MiddleCenter).color=gold;
-   string line=id=="warrior"?"STEEL ANSWERS STEEL":id=="revenant"?"BECOMING THE MIST":id=="gunslinger"?"THE HUNT IS LOADED":id=="mage"?"THE VOID TAKES SHAPE":"THE SHADOW MOVES";
+   string line=id=="warrior"?"STEEL ANSWERS STEEL":id=="revenant"?"BECOMING THE MIST":id=="vesper"?"THE ASHEN BELL TOLLS":id=="gunslinger"?"THE HUNT IS LOADED":id=="mage"?"THE VOID TAKES SHAPE":"THE SHADOW MOVES";
    Label(overlay,line,250,836,1100,26,15,true,TextAnchor.MiddleCenter);
    Plate(overlay,"Loading track",550,880,500,2,panel);var progress=Plate(overlay,"Loading progress",550,880,0,2,blood);
    // This coroutine lives outside the game object: room creation cancels combat coroutines.
