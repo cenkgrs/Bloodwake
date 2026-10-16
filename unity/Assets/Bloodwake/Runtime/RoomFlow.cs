@@ -23,11 +23,11 @@ namespace Bloodwake
    }
    EnvironmentDressing.Apply(roomRoot,half,room["layout"]);
    EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);
-   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}ConfigureBreakableCargo();
+   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else DressRoom(id);ConfigureBreakableCargo();
    roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
    SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);RevFx.HandMagic(Player);if(id=="town_safehouse")SpawnTrainingWarrior();
-   float maxSize=Mathf.Min((half.x*2+10)/Cam.aspect,(half.y*2+11)*cameraOffset.normalized.y)/2;Cam.orthographicSize=Mathf.Min(PlayerPrefs.GetFloat("zoom",6.5f),maxSize);PositionCamera(true);
+   float maxSize=Mathf.Min((half.x*2+10)/Cam.aspect,(half.y*2+11)*cameraOffset.normalized.y)/2;Cam.orthographicSize=Mathf.Min(PlayerPrefs.GetFloat("zoom",DefaultZoom),maxSize);PositionCamera(true);
    roomClear=room.S("type")=="merchant"||room.S("type")=="safehouse";waves=room["encounter"]?["waves"] as JArray;
    if(room.S("type")=="boss")waves=new JArray{new JArray("boss")};
    waveIndex=0;spawnCursor=0;spawnTimer=1.5f;attackCd=0;dashCd=0;

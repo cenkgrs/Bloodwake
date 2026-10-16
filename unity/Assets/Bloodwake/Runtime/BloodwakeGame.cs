@@ -22,7 +22,7 @@ namespace Bloodwake
   {
    Meta.Load();Cam=Camera.main;
    if(Cam==null){Cam=new GameObject("Gameplay Camera").AddComponent<Camera>();Cam.tag="MainCamera";Cam.gameObject.AddComponent<AudioListener>();}
-   Cam.orthographic=true;Cam.orthographicSize=PlayerPrefs.GetFloat("zoom",7.2f);Cam.farClipPlane=140;Cam.clearFlags=CameraClearFlags.SolidColor;Cam.backgroundColor=new Color(.025f,.025f,.035f);AudioListener.volume=PlayerPrefs.GetFloat("volume",.8f);
+   Cam.orthographic=true;Cam.orthographicSize=PlayerPrefs.GetFloat("zoom",DefaultZoom);Cam.farClipPlane=140;Cam.clearFlags=CameraClearFlags.SolidColor;Cam.backgroundColor=new Color(.025f,.025f,.035f);AudioListener.volume=PlayerPrefs.GetFloat("volume",.8f);
    Cam.GetUniversalAdditionalCameraData().renderPostProcessing=true;
    musicBlend=gameObject.AddComponent<MusicBlend>();musicBlend.Game=this;
    foreach(var clip in Resources.LoadAll<AudioClip>("audio"))sounds[clip.name]=clip;

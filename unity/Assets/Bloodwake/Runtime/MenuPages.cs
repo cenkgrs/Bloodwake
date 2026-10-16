@@ -79,7 +79,7 @@ namespace Bloodwake
   void DrawSettings()
   {
    Label(page,$"MASTER VOLUME  {AudioListener.volume*100:0}%",500,250,600,50,28);Button(page,"−",500,315,140,55,()=>{AudioListener.volume=Mathf.Max(0,AudioListener.volume-.1f);PlayerPrefs.SetFloat("volume",AudioListener.volume);});Button(page,"+",940,315,140,55,()=>{AudioListener.volume=Mathf.Min(1,AudioListener.volume+.1f);PlayerPrefs.SetFloat("volume",AudioListener.volume);});
-   Button(page,"FULLSCREEN / WINDOWED",500,420,580,60,()=>UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen);Button(page,"CAMERA DISTANCE · "+Cam.orthographicSize.ToString("0.0"),500,520,580,60,()=>{Cam.orthographicSize=Cam.orthographicSize>=10?6:Cam.orthographicSize+1;PlayerPrefs.SetFloat("zoom",Cam.orthographicSize);});Back(Run==null?"menu":"pause");
+   Button(page,"FULLSCREEN / WINDOWED",500,420,580,60,()=>UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen);Button(page,"CAMERA DISTANCE · "+Cam.orthographicSize.ToString("0.0"),500,520,580,60,()=>{Cam.orthographicSize=Cam.orthographicSize>=8.6f?DefaultZoom-1:Cam.orthographicSize+1.2f;PlayerPrefs.SetFloat("zoom",Cam.orthographicSize);});Back(Run==null?"menu":"pause");
   }
  }
 }

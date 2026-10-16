@@ -5,6 +5,8 @@ namespace Bloodwake
  {
   // Blender's FBX importer conversion mirrors source X, not source Z.
   readonly Vector3 cameraOffset=new Vector3(-12,14,16);
+  // Closer than the old 6.5-7.2 so armour, faces and fire read like the art-direction frames.
+  const float DefaultZoom=5.6f;
   Vector3 CameraFocus(Vector3 target)
   {
    if(room==null)return target;Vector3 forward=-cameraOffset.normalized,right=Vector3.Cross(Vector3.up,forward).normalized,up=Vector3.Cross(forward,right);
