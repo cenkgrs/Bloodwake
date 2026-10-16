@@ -21,11 +21,11 @@ namespace Bloodwake
    Directional("Cool silhouette",new Vector3(25,130,0),new Color(.53f,.7f,1),.25f,false);
    // Rendering layer 2 is reserved for actor readability. It cannot wash out
    // the courtyard; normal world lights still illuminate these renderers.
-   var portrait=Directional("Actor soft fill",new Vector3(38,145,0),new Color(.9f,.91f,1),1.6f,false);
+   var portrait=Directional("Actor soft fill",new Vector3(38,145,0),new Color(.9f,.91f,1),2.3f,false);
    portrait.GetUniversalAdditionalLightData().renderingLayers=2u;
-   // A warm rim from behind the actors, travelling toward the isometric camera,
+   // A warm rim from above and behind the actors, so shoulders and heads catch it from the camera,
    // separates dark armour from dark stone the way the art-direction frames do.
-   var rim=Directional("Actor rim",Quaternion.LookRotation(new Vector3(-.6f,-.35f,.8f)).eulerAngles,new Color(1,.52f,.4f),2.4f,false);
+   var rim=Directional("Actor rim",Quaternion.LookRotation(new Vector3(-.45f,-.75f,.5f)).eulerAngles,new Color(1,.55f,.42f),4f,false);
    rim.GetUniversalAdditionalLightData().renderingLayers=2u;
    previousSky=RenderSettings.skybox;
    sky=new Material(Resources.Load<Shader>("Presentation/TownSky")){name="Town reflection sky"};
