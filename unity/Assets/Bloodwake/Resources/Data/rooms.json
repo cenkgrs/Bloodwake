@@ -19,7 +19,13 @@
           "verb": "EDIT BUILD",
           "at": [-8.7, 2],
           "model": "merchant",
-          "tint": "7e8a93"
+          "tint": "7e8a93",
+          "lines": [
+            "Back from the dark, and mostly in one piece. Good. Dead hunters settle no debts.",
+            "Steel, charms, a spare edge for a bad night. I stock what the hunt needs, not what it wants.",
+            "Bring me gold and I will make sure the next thing that bites you regrets it.",
+            "Well then. Let us see what you are carrying."
+          ]
         },
         {
           "role": "skills",
@@ -27,7 +33,13 @@
           "verb": "SHAPE THE OATH",
           "at": [8.7, 2],
           "model": "mentor",
-          "tint": "b34a52"
+          "tint": "b34a52",
+          "lines": [
+            "Your oath still smells of the last hunt. Good. It means you kept it.",
+            "Every drop you spill out there is a lesson. Most hunters never learn to read it.",
+            "Tell me what the night took from you, and I will show you what it can give back.",
+            "Choose carefully. An oath shaped in haste breaks at the worst moment."
+          ]
         },
         {"role": "maps", "name": "THE WAR TABLE", "verb": "CHOOSE A HUNT", "at": [0, 3], "kind": "war_table"}
       ]

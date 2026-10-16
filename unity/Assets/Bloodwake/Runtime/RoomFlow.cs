@@ -69,7 +69,8 @@ namespace Bloodwake
    foreach(var b in blockers){var expanded=b;expanded.Expand(new Vector3(radius*2,10,radius*2));if(!expanded.Contains(new Vector3(next.x,b.center.y,next.z)))continue;var xOnly=new Vector3(p.x+delta.x,b.center.y,p.z);var zOnly=new Vector3(p.x,b.center.y,p.z+delta.z);if(!expanded.Contains(xOnly))next.z=p.z;else if(!expanded.Contains(zOnly))next.x=p.x;else next=p;}return next;
   }
   bool bossReward;
-  void Interact(){var host=NearbyHost();if(host!=null){Screen=host.S("role") switch{"maps"=>"maps","builds"=>"armory","skills"=>"progression","merchant"=>"merchant",_=>"hub"};return;}if(!RewardReady||Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))>=2.4f)return;bossReward=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);PrepareReward();}
+  string HostScreen(JToken host)=>host.S("role") switch{"maps"=>"maps","builds"=>"armory","skills"=>"progression","merchant"=>"merchant",_=>"hub"};
+  void Interact(){var host=NearbyHost();if(host!=null){if(!OpenDialogue(host))Screen=HostScreen(host);return;}if(!RewardReady||Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))>=2.4f)return;bossReward=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);PrepareReward();}
   void PrepareReward(){offers.Clear();offers.AddRange(GameData.Rows("upgrades").Where(r=>Run.Available(r,"upgrades")&&(Run.PendingLevels>0||r.S("rarity")!="common")).OrderBy(_=>Random.value).Take(3));Screen=offers.Count>0?"upgrade":"playing";if(offers.Count==0){Run.PendingLevels=0;bossReward=false;Run.Claimed.Add(Run.Night+":"+Run.RoomIndex);}}
   public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.RoomIndex=0;Run.Night++;}EnterRoom(Run.Plan[Run.RoomIndex]);Screen="playing";}
  }

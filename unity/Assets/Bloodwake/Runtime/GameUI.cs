@@ -54,6 +54,7 @@ namespace Bloodwake
     Label(page,"THE NIGHT CLAIMED YOU",350,485,900,60,26,true,TextAnchor.MiddleCenter);return;
    }
    if(Screen=="playing"){DrawHUD();return;}
+   if(Screen=="dialogue"){DrawDialogue();return;}
    if(Screen=="menu"||Screen=="classes"){Art(page,"art/arena",0,0,1600,900);Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,.84f));}
    else Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.9f));
    Label(page,Screen=="menu"?"BLOODWAKE":Screen=="classes"?"CHOOSE YOUR OATH":Screen.ToUpperInvariant(),70,48,1460,90,Screen=="menu"?74:44,true,TextAnchor.MiddleCenter);

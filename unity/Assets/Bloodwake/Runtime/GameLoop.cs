@@ -13,6 +13,7 @@ namespace Bloodwake
    var keys=Keyboard.current;var pad=Gamepad.current;
    if(keys?.f11Key.wasPressedThisFrame==true)UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen;
    if(keys?.escapeKey.wasPressedThisFrame==true||pad?.startButton.wasPressedThisFrame==true)Screen=Screen=="playing"?"pause":Screen=="pause"?"playing":Screen;
+   if(Screen=="dialogue")DialogueInput(keys,pad);
    PositionCamera(false);if(playerFill&&Player)playerFill.transform.position=Player.transform.position+new Vector3(-1.8f,2.4f,2.4f);
    bool paused=Screen!="playing"&&Screen!="dead"&&Screen!="dying"&&Screen!="death_transition";if(Player)Player.Animator.speed=paused?0:Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=paused?0:e.View.PlaybackRate;
    if(Screen!="playing"||Run==null||Run.Stats.N("hp")<=0)return;
