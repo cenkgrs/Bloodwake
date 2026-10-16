@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 
 namespace Bloodwake
 {
- // Geometry and shader equations come from godot/scripts/fx.gd. This component
+ // Geometry and shader equations were ported from the original fx.gd. This component
  // owns its materials; transient renderers use property blocks, never .material.
  public sealed partial class RevenantVfx:MonoBehaviour
  {

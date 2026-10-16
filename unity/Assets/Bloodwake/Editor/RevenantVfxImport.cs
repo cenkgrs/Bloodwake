@@ -11,7 +11,7 @@ namespace Bloodwake.Editor
  public static class RevenantVfxImport
  {
   const string Root="Assets/Bloodwake/Resources/Vfx/";
-  const string Model="Assets/Bloodwake/Resources/Models/revenant_player/revenant_player.fbx";
+  const string Model="Assets/Bloodwake/Resources/Models/revenant_noble/revenant_noble.fbx";
   [MenuItem("Bloodwake/Import Revenant VFX and Events")]
   public static void Build()
   {
@@ -42,16 +42,17 @@ namespace Bloodwake.Editor
     }
     finally {UnityEngine.Object.DestroyImmediate(root);}
    }
-   AssetDatabase.ImportAsset(Model,ImportAssetOptions.ForceUpdate);
-   ValidateEvents();RevenantLayersImport.Build();AssetDatabase.SaveAssets();Debug.Log("BLOODWAKE_REVENANT_VFX_IMPORTED");
+   ValidateEvents();AssetDatabase.SaveAssets();Debug.Log("BLOODWAKE_REVENANT_VFX_IMPORTED");
   }
+  // RevenantNobleImport replaces these clips' markers with noble-specific frames.
+  static readonly string[] NobleOverrides={"REV_BloodClap","REV_BloodBurst","REV_Death"};
   public static void ValidateEvents()
   {
    var actions=JObject.Parse(File.ReadAllText("Assets/Bloodwake/Resources/Data/revenant_events.json"))["actions"];
-   int count=0;
-   foreach(var clip in AssetDatabase.LoadAllAssetsAtPath(Model).OfType<AnimationClip>().Where(c=>!c.name.StartsWith("__preview__")))
+   int count=0;var clips=AssetDatabase.LoadAllAssetsAtPath(Model).OfType<AnimationClip>().Where(c=>!c.name.StartsWith("__preview__")).ToArray();
+   foreach(var clip in clips)
    {
-    var expected=actions[clip.name]?["events"] as JObject;if(expected==null)continue;
+    var expected=actions[clip.name]?["events"] as JObject;if(expected==null||NobleOverrides.Contains(clip.name))continue;
     foreach(var marker in expected.Properties())
     {
      float seconds=((float)marker.Value-1)/60f;
@@ -60,35 +61,10 @@ namespace Bloodwake.Editor
      count++;
     }
    }
-   if(count!=actions.Children<JProperty>().Sum(p=>(p.Value["events"] as JObject)?.Count??0))throw new Exception("Revenant clip events missing");
+   // The noble rig has no directional/additive hit variants; check every clip it does have.
+   if(count!=actions.Children<JProperty>().Where(p=>!NobleOverrides.Contains(p.Name)&&clips.Any(c=>c.name==p.Name)).Sum(p=>(p.Value["events"] as JObject)?.Count??0))throw new Exception("Revenant clip events missing");
    Debug.Log("BLOODWAKE_REVENANT_EVENT_TIMES "+count+" passed");
   }
 
- }
- public sealed class RevenantAnimationImport:AssetPostprocessor
- {
-  public override uint GetVersion()=>4;
-  void OnPreprocessAnimation()
-  {
-   if(!assetPath.EndsWith("/revenant_player.fbx",StringComparison.Ordinal))return;
-   const string path="Assets/Bloodwake/Resources/Data/revenant_events.json";
-   var actions=JObject.Parse(File.ReadAllText(path))["actions"];
-   var importer=(ModelImporter)assetImporter;var clips=importer.clipAnimations;
-   if(clips.Length==0)clips=importer.defaultClipAnimations;
-   foreach(var clip in clips)
-   {
-    var markers=actions[clip.name.Split('|').Last()]?["events"] as JObject;if(markers==null)continue;
-    if(clip.name.EndsWith("_Additive",StringComparison.Ordinal)){clip.hasAdditiveReferencePose=true;clip.additiveReferencePoseFrame=clip.firstFrame;}
-    float frames=clip.lastFrame-clip.firstFrame;
-    if(frames<=0)throw new Exception("Invalid Revenant clip range: "+clip.name);
-    // Production FBX is exported at 60fps. Importer events use normalized
-    // positions; normalize authored frames by the ACTUAL imported frame range.
-    clip.events=clip.events.Where(e=>e.functionName!="OnRevenantMarker").Concat(markers.Properties().Select(p=>new AnimationEvent{
-     time=((float)p.Value-1)/frames,functionName="OnRevenantMarker",stringParameter=p.Name,
-     messageOptions=SendMessageOptions.DontRequireReceiver
-    })).OrderBy(e=>e.time).ToArray();
-   }
-   importer.clipAnimations=clips;
-  }
  }
 }

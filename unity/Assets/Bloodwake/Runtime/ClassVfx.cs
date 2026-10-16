@@ -91,18 +91,6 @@ namespace Bloodwake
    var localPoint=anchor?anchor.InverseTransformPoint(pos):Vector3.zero;var localRotation=anchor?Quaternion.Inverse(anchor.rotation)*rotation:Quaternion.identity;
    var fx=Life(go,.085f);fx.Block.SetColor("_Tone",new Color(2.7f,1.45f,.42f,1));fx.Block.SetFloat("_Opacity",1);fx.Tick=(p,dt)=>{if(anchor)go.transform.SetPositionAndRotation(anchor.TransformPoint(localPoint),anchor.rotation*localRotation);fx.Block.SetFloat("_Opacity",(1-p)*(1-p));go.transform.localScale=Vector3.one*Mathf.Lerp(1,.35f,p);};fx.Apply();
   }
-  public void Casing(Vector3 pos,Vector3 dir,string hand)
-  {
-   var side=Vector3.Cross(Vector3.up,dir).normalized*(hand=="L"?-1:1);float size=Random.Range(.75f,1.15f);
-   var fx=Particle(pos+side*.06f,new Vector3(.028f,.085f,.026f)*size,Tone("c89b52"),.9f,true,true);fx.name="Spent casing";
-   var velocity=side*Random.Range(.65f,1.05f)-dir*Random.Range(.08f,.25f)+Vector3.up*Random.Range(1.2f,1.8f);var spin=Random.onUnitSphere*Random.Range(500,900);
-   fx.Tick=(p,dt)=>{float t=fx.Age;var point=pos+velocity*t-Vector3.up*4.9f*t*t;point.y=Mathf.Max(.035f,point.y);fx.transform.position=point;fx.transform.Rotate(spin*dt,Space.World);fx.transform.localScale=new Vector3(.028f,.085f,.026f)*size*(1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.75f,1,p)));};
-  }
-  public void BallisticTrace(Vector3 start,Vector3 end)
-  {
-   if((end-start).sqrMagnitude<.04f)return;var go=new GameObject("Ballistic tracer");go.transform.SetParent(transform);var line=go.AddComponent<LineRenderer>();line.useWorldSpace=true;line.positionCount=2;line.SetPositions(new[]{start,end});line.widthMultiplier=.014f;line.widthCurve=new AnimationCurve(new Keyframe(0,.25f),new Keyframe(.15f,1),new Keyframe(1,0));line.sharedMaterial=Material("arcane_energy");line.shadowCastingMode=ShadowCastingMode.Off;line.receiveShadows=false;
-   var fx=Life(go,.13f);fx.Block.SetColor("_Tone",new Color(2.8f,1.55f,.48f,1));fx.Block.SetFloat("_Opacity",1);fx.Tick=(p,dt)=>{fx.Block.SetFloat("_Opacity",(1-p)*(1-p));line.widthMultiplier=.014f*(1-.45f*p);};fx.Apply();
-  }
   public GameObject ProjectileVisual(Vector3 pos,Vector3 dir,bool magic,bool hostile)
   {
    if(magic){var orb=Orb(pos,hostile,true);orb.transform.rotation=Quaternion.LookRotation(dir);return orb.gameObject;}

@@ -35,8 +35,8 @@ namespace Bloodwake
    var image=Rect(portrait,"Portrait",0,0,68,90).gameObject.AddComponent<RawImage>();image.texture=Resources.Load<Texture2D>("ui/portraits/"+Run.ClassId);image.raycastTarget=false;
    // Each source is a full-body 2:3 painting. Crop around its own face,
    // preserving pixels' aspect ratio inside the oval rather than stretching it.
-   var face=Run.ClassId switch{"warrior"=>new Vector2(.59f,.855f),"mage"=>new Vector2(.53f,.85f),"revenant"=>new Vector2(.59f,.87f),"vesper"=>new Vector2(.5f,.86f),"gunslinger"=>new Vector2(.49f,.855f),_=>new Vector2(.41f,.85f)};
-   float cropWidth=Run.ClassId=="gunslinger"?.38f:.30f;
+   var face=Run.ClassId switch{"warrior"=>new Vector2(.59f,.855f),"mage"=>new Vector2(.53f,.85f),"revenant"=>new Vector2(.59f,.87f),"vesper"=>new Vector2(.5f,.86f),_=>new Vector2(.41f,.85f)};
+   float cropWidth=.30f;
    float cropHeight=cropWidth*(90f/68)*(image.texture.width/(float)image.texture.height);
    image.uvRect=new UnityEngine.Rect(face.x-cropWidth*.5f,Mathf.Clamp(face.y-cropHeight*.5f,0,1-cropHeight),cropWidth,cropHeight);
    Art(page,"Presentation/HUD/vitality-frame-v1",x,y,480,160);

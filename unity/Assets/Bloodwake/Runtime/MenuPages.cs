@@ -11,17 +11,17 @@ namespace Bloodwake
   void DrawMainMenu()
   {
    Label(page,"SURVIVE THE NIGHT. CLAIM THE DAWN.",250,165,1100,40,23,false,TextAnchor.MiddleCenter);
-   string[] names={"PLAY","SETTINGS","EXIT"},details={"Choose your oath.\nEnter the cursed town.","Sound, display\nand progression imports.","Leave the night.\nYour progression is saved."};
+   string[] names={"PLAY","SETTINGS","EXIT"},details={"Choose your oath.\nEnter the cursed town.","Sound, display\nand camera.","Leave the night.\nYour progression is saved."};
    for(int i=0;i<3;i++){int index=i;float x=280+i*355;Plate(page,names[i],x,310,330,360,panel);Art(page,"ui/class_screen/panel_frame",x,310,330,360);Label(page,new[]{"I","II","III"}[i],x+50,355,230,90,56,true,TextAnchor.MiddleCenter).color=blood;Label(page,details[i],x+35,475,260,85,22,false,TextAnchor.MiddleCenter);Button(page,names[i],x+25,585,280,58,()=>{if(index==0)Screen="classes";else if(index==1)Screen="settings";else Application.Quit();});}
    Label(page,$"BLOOD ESSENCE  {Meta.Essence}",450,760,700,45,23,true,TextAnchor.MiddleCenter);
    Label(page,"WASD · MOUSE · SPACE   /   CONTROLLER SUPPORTED",350,822,900,35,16,false,TextAnchor.MiddleCenter);
   }
   void DrawClasses()
   {
-   string[] ids={"revenant","vesper","warrior","gunslinger","mage","assassin"};
+   string[] ids={"revenant","vesper","warrior","mage"};
    for(int i=0;i<ids.Length;i++)
    {
-    string id=ids[i];float x=150+i*218;var card=Plate(page,id,x,170,204,286,SelectedClass==id?blood:panel);
+    string id=ids[i];float x=(1600-(ids.Length*218-14))/2f+i*218;var card=Plate(page,id,x,170,204,286,SelectedClass==id?blood:panel);
     Art(card.transform,"ui/portraits/"+id,4,4,196,278);Plate(card.transform,"Name veil",4,226,196,56,new Color(0,0,0,.8f));
     Art(card.transform,"ui/class_screen/panel_frame",0,0,204,286);Label(card.transform,GameData.Rules["classes"][id].S("name"),10,240,184,35,20,true,TextAnchor.MiddleCenter);
     card.raycastTarget=true;var select=card.gameObject.AddComponent<Button>();select.targetGraphic=card;select.onClick.AddListener(()=>{SelectedClass=id;Sound("ui_click");drawnScreen=null;});
@@ -79,17 +79,7 @@ namespace Bloodwake
   void DrawSettings()
   {
    Label(page,$"MASTER VOLUME  {AudioListener.volume*100:0}%",500,250,600,50,28);Button(page,"−",500,315,140,55,()=>{AudioListener.volume=Mathf.Max(0,AudioListener.volume-.1f);PlayerPrefs.SetFloat("volume",AudioListener.volume);});Button(page,"+",940,315,140,55,()=>{AudioListener.volume=Mathf.Min(1,AudioListener.volume+.1f);PlayerPrefs.SetFloat("volume",AudioListener.volume);});
-   Button(page,"FULLSCREEN / WINDOWED",500,420,580,60,()=>UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen);Button(page,"CAMERA DISTANCE · "+Cam.orthographicSize.ToString("0.0"),500,520,580,60,()=>{Cam.orthographicSize=Cam.orthographicSize>=10?6:Cam.orthographicSize+1;PlayerPrefs.SetFloat("zoom",Cam.orthographicSize);});Button(page,"IMPORT GODOT / FLUTTER SAVE",500,620,580,60,()=>Screen="import save");Back(Run==null?"menu":"pause");
-  }
-  string importPath=System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal),".local/share/godot/app_userdata/Bloodwake/bloodwake_progression.json"),importMessage="";Progression pendingImport;
-  void DrawSaveImport()
-  {
-   Label(page,"Your original save is never modified. Importing replaces Unity progression; a backup is kept.",220,225,1160,90,24,false,TextAnchor.MiddleCenter);
-   var box=Plate(page,"Save path",220,350,1160,70,panel);box.raycastTarget=true;var field=box.gameObject.AddComponent<InputField>();field.textComponent=Label(box.transform,"",18,12,1124,46,20);field.text=importPath;field.onValueChanged.AddListener(value=>{importPath=value;pendingImport=null;});
-   Button(page,"READ SAVE",500,460,600,65,()=>{try{var candidate=new Progression();if(candidate.Import(System.IO.File.ReadAllText(importPath))){pendingImport=candidate;importMessage=$"Ready: {candidate.Essence} essence. Confirm to replace Unity progression.";}else importMessage="Invalid progression file. Nothing was changed.";}catch(System.Exception){importMessage="Could not read the file. Check its full path.";}});
-   Label(page,importMessage,220,555,1160,75,23,false,TextAnchor.MiddleCenter);
-   if(pendingImport!=null)Button(page,"CONFIRM REPLACEMENT",500,665,600,65,()=>{var previous=(JObject)Meta.Data.DeepClone();try{Meta.Data=(JObject)pendingImport.Data.DeepClone();Meta.Save();pendingImport=null;importMessage="Progression imported. It applies to the next run.";}catch(System.Exception){Meta.Data=previous;importMessage="Save failed. Current progression was restored.";}});
-   Back("settings");
+   Button(page,"FULLSCREEN / WINDOWED",500,420,580,60,()=>UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen);Button(page,"CAMERA DISTANCE · "+Cam.orthographicSize.ToString("0.0"),500,520,580,60,()=>{Cam.orthographicSize=Cam.orthographicSize>=10?6:Cam.orthographicSize+1;PlayerPrefs.SetFloat("zoom",Cam.orthographicSize);});Back(Run==null?"menu":"pause");
   }
  }
 }

@@ -9,7 +9,7 @@ namespace Bloodwake
   IEnumerator Smoke()
   {
    Application.logMessageReceived+=OnSmokeLog;
-   foreach(string id in new[]{"warrior","revenant","vesper","gunslinger","mage","assassin"})
+   foreach(string id in new[]{"warrior","revenant","vesper","mage"})
    {
     // The driver runs on a separate object because room changes cancel combat coroutines.
     new GameObject("Smoke driver").AddComponent<SmokeDriver>().Begin(this,id);
@@ -20,7 +20,7 @@ namespace Bloodwake
   public IEnumerator SmokeClasses()
   {
    Screen="menu";yield return new WaitForSeconds(.5f);yield return Capture("menu");Screen="classes";yield return new WaitForSeconds(.2f);yield return Capture("classes");
-   foreach(string id in new[]{"warrior","revenant","vesper","gunslinger","mage","assassin"})
+   foreach(string id in new[]{"warrior","revenant","vesper","mage"})
    {
     BeginCharacterIntro(id);BeginCharacterIntro(id);yield return new WaitForSeconds(1);CheckSmoke(introActive&&Screen=="loading","cinematic locks controls "+id);yield return Capture(id+"-intro");yield return new WaitForSeconds(4);CheckSmoke(!introActive&&Screen=="playing"&&Run.ClassId==id,"cinematic enters safehouse "+id);yield return Capture(id+"-safehouse");EnterRoom(Run.Plan[0]);Screen="playing";yield return null;
     if(Player==null||Player.Animator.runtimeAnimatorController==null){Debug.LogError("SMOKE missing "+id);break;}
@@ -34,14 +34,14 @@ namespace Bloodwake
   void CheckSmoke(bool ok,string message){if(!ok){smokeFailed=true;Debug.LogError("CONTRACT_FAILED "+message);}else Debug.Log("CONTRACT_PASSED "+message);}
   IEnumerator SmokeParity()
   {
-   StartRun("assassin");EnterRoom(Run.Plan[0]);spawnTimer=999;
+   StartRun("warrior");EnterRoom(Run.Plan[0]);spawnTimer=999;
    Run.Stats["criticalChance"]=0;Run.Stats["maxHp"]=1000;Run.Stats["hp"]=100;Run.Stats["lifesteal"]=.1f;
    var p=Player.transform.position;SpawnEnemy("grunt",p+Vector3.forward);SpawnEnemy("grunt",p+Vector3.forward*2);var victim=Enemies[0];victim.Hp=10;victim.Mark=float.PositiveInfinity;int goldBefore=Run.Gold;DamageEnemy(victim,1000);
    CheckSmoke(Mathf.Approximately(Run.Stats.N("hp"),101),"lifesteal excludes overkill");CheckSmoke(Run.Gold>goldBefore,"gold awarded immediately");CheckSmoke(Enemies[0].Mark>0&&markChain==1,"mark inherited after kill");
    var next=Enemies[0];next.Mark=0;next.Hp=100;next.Burn=3;next.BurnDps=7;hitStop=0;TickEnemies(.1f);CheckSmoke(Mathf.Abs(next.Hp-99.3f)<.01f,"burn damage per second");CheckSmoke(hitStop==0,"damage over time does not hit stop");
    CheckSmoke(SegmentDistance(new Vector3(5,0,0),Vector3.zero,new Vector3(10,0,0))<.001f,"fast projectile swept hit");
    var save=new Progression();save.Essence=123;CheckSmoke(!save.Import("{\"essence\":25,\"levels\":\"bad\"}")&&save.Essence==123,"invalid import leaves progression unchanged");
-   foreach(string screen in new[]{"maps","armory","progression","settings","import save"}){Screen=screen;yield return null;yield return Capture(screen.Replace(' ','-'));}
+   foreach(string screen in new[]{"maps","armory","progression","settings"}){Screen=screen;yield return null;yield return Capture(screen.Replace(' ','-'));}
    Screen="maps";BeginCharacterIntro(Run.ClassId,GameData.Maps["maps"][0]);yield return new WaitForSeconds(5);yield return Capture("district-arrival");yield return new WaitForSeconds(4);CheckSmoke(Screen=="playing"&&room.S("id")==Run.Plan[0],"map selection cinematic enters district");
   }
   IEnumerator SmokeRoute()

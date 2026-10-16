@@ -8,15 +8,15 @@ namespace Bloodwake
  {
   IEnumerator Projectile(Vector3 start,Vector3 direction,float damage,float speed,float range,bool hostile,int pierce=0,bool hostileMagic=false,string hand="R",bool finisher=false)
   {
-   bool magic=hostile?hostileMagic:Run.ClassId=="mage",gun=!hostile&&Run.ClassId=="gunslinger";var muzzle=gun?Player.MuzzleSocket(hand):null;var origin=gun?Player.MuzzlePosition(hand):!hostile&&magic?Player.MagicPalmPosition():start+Vector3.up;
+   bool magic=hostile?hostileMagic:Run.ClassId=="mage";var origin=!hostile&&magic?Player.MagicPalmPosition():start+Vector3.up;
    var go=RevFx.ProjectileVisual(origin,direction,magic,hostile);float traveled=0,trail=0;var hit=new HashSet<Enemy>();
-   if(!hostile){RevFx.Muzzle(origin,direction,magic,muzzle);if(gun)RevFx.Casing(origin,direction,hand);}
+   if(!hostile)RevFx.Muzzle(origin,direction,magic,null);
    while(traveled<range&&go){if(Screen!="playing"||hitStop>0){yield return null;continue;}float step=Mathf.Min(range-traveled,Mathf.Max(1,speed)*Time.deltaTime);var previous=go.transform.position;go.transform.position+=direction*step;traveled+=step;trail-=Time.deltaTime;if(trail<=0&&(magic||hostile)){RevFx.ProjectileTrail(go.transform.position,magic,hostile);trail=magic?.035f:.02f;}
     if(!hostile)DamageCargoSegment(previous,go.transform.position,magic?.4f:.15f);
     if(hostile){if(SegmentDistance(Player.transform.position+Vector3.up,previous,go.transform.position)<.55f){RevFx.ProjectileImpact(go.transform.position,magic,true,direction);HurtPlayer(damage);break;}}
     else foreach(var e in Enemies.OrderBy(e=>Vector3.Distance(previous,e.View.transform.position+Vector3.up)).ToArray()){if(e.Emerging||hit.Contains(e)||ProjectileBodyDistance(e.View,previous,go.transform.position)>e.Data.N("radius",16)*.02f+(magic?.5f:.16f))continue;hit.Add(e);RevFx.ProjectileImpact(e.View.transform.position+Vector3.up,magic,false,direction);DamageEnemy(e,damage);if(finisher)hitStop=Mathf.Max(hitStop,FinisherHitStop);if(e.Hp>0&&Run.Weapons.TryGetValue("magic_orb",out var orb)&&Run.ClassId=="mage"&&orb.N("burn")>0){e.Burn=3;e.BurnDps=orb.N("burn");}if(hit.Count>pierce){traveled=range;break;}}
     yield return null;
-   }if(gun&&go)RevFx.BallisticTrace(origin,go.transform.position);if(go)Destroy(go);
+   }if(go)Destroy(go);
   }
   static float SegmentDistance(Vector3 point,Vector3 start,Vector3 end){var delta=end-start;return Vector3.Distance(point,start+delta*Mathf.Clamp01(Vector3.Dot(point-start,delta)/Mathf.Max(.000001f,delta.sqrMagnitude)));}
   // Closest points between the swept projectile and the standing body's axis.

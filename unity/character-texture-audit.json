@@ -1,50 +1,5 @@
 [
   {
-    "model": "bloodhound_player",
-    "material": "tripo_mat_0aff0967",
-    "channel": "albedo",
-    "source": "art/bloodhound_v2/source/gunslinger_original.glb#albedo",
-    "previous": [
-      4096,
-      4096
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/bloodhound_player/HQ_tripo_mat_0aff0967_albedo.png"
-  },
-  {
-    "model": "bloodhound_player",
-    "material": "tripo_mat_0aff0967",
-    "channel": "normal",
-    "source": "art/bloodhound_v2/source/gunslinger_original.glb#normal",
-    "previous": [
-      4096,
-      4096
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/bloodhound_player/HQ_tripo_mat_0aff0967_normal.png"
-  },
-  {
-    "model": "bloodhound_player",
-    "material": "tripo_mat_0aff0967",
-    "channel": "metallicRoughness",
-    "source": "art/bloodhound_v2/source/gunslinger_original.glb#metallicRoughness",
-    "previous": [
-      4096,
-      4096
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/bloodhound_player/HQ_tripo_mat_0aff0967_metallicRoughness.png"
-  },
-  {
     "model": "enemy_tank",
     "material": "tank_weapon_PBR",
     "channel": "albedo",
@@ -495,96 +450,6 @@
     "output": "unity/Assets/Bloodwake/Resources/Models/warrior_player/HQ_Knight_PBR_metallicRoughness.png"
   },
   {
-    "model": "assassin_player",
-    "material": "Assassin PBR",
-    "channel": "albedo",
-    "source": "art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/Color.jpg",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Assassin_PBR_albedo.png"
-  },
-  {
-    "model": "assassin_player",
-    "material": "Assassin PBR",
-    "channel": "normal",
-    "source": "art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/Normal.png",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Assassin_PBR_normal.png"
-  },
-  {
-    "model": "assassin_player",
-    "material": "Assassin PBR",
-    "channel": "metallicRoughness",
-    "source": "art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/dark_assassin_character_3d_model_metallic.JPEG + art/assassin/source/model/tripo_convert_ea7de6e7-e8ea-4381-abdf-727c21d3426a.fbm/dark_assassin_character_3d_model_roughness.JPEG",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Assassin_PBR_metallicRoughness.png"
-  },
-  {
-    "model": "assassin_player",
-    "material": "Dagger PBR",
-    "channel": "albedo",
-    "source": "art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/Color.jpg",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Dagger_PBR_albedo.png"
-  },
-  {
-    "model": "assassin_player",
-    "material": "Dagger PBR",
-    "channel": "normal",
-    "source": "art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/Normal.png",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Dagger_PBR_normal.png"
-  },
-  {
-    "model": "assassin_player",
-    "material": "Dagger PBR",
-    "channel": "metallicRoughness",
-    "source": "art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/dark_fantasy_dagger_3d_model_metallic.JPEG + art/assassin/source/dagger/tripo_convert_f4901f41-7645-4ad3-9b62-6c5d93f3b9f6.fbm/dark_fantasy_dagger_3d_model_roughness.JPEG",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/assassin_player/HQ_Dagger_PBR_metallicRoughness.png"
-  },
-  {
     "model": "enemy_assassin",
     "material": "assassin_character_PBR",
     "channel": "albedo",
@@ -718,51 +583,6 @@
       4096
     ],
     "output": "unity/Assets/Bloodwake/Resources/Models/enemy_assassin/HQ_assassin_weapon_PBR_metallicRoughness.png"
-  },
-  {
-    "model": "revenant_player",
-    "material": "tripo_mat_67e3196c",
-    "channel": "albedo",
-    "source": "art/revenant-astra-ready/deliverables/textures/BaseColor.png",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/revenant_player/HQ_tripo_mat_67e3196c_albedo.png"
-  },
-  {
-    "model": "revenant_player",
-    "material": "tripo_mat_67e3196c",
-    "channel": "normal",
-    "source": "art/revenant-astra-ready/deliverables/textures/Normal.png",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/revenant_player/HQ_tripo_mat_67e3196c_normal.png"
-  },
-  {
-    "model": "revenant_player",
-    "material": "tripo_mat_67e3196c",
-    "channel": "metallicRoughness",
-    "source": "art/revenant-astra-ready/deliverables/textures/Metallic.png + art/revenant-astra-ready/deliverables/textures/Roughness.png",
-    "previous": [
-      2048,
-      2048
-    ],
-    "restored": [
-      4096,
-      4096
-    ],
-    "output": "unity/Assets/Bloodwake/Resources/Models/revenant_player/HQ_tripo_mat_67e3196c_metallicRoughness.png"
   },
   {
     "model": "enemy_mage",

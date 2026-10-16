@@ -61,7 +61,7 @@ namespace Bloodwake
   }
   public static ActorView Create(string id,bool enemy,float height,Transform parent)
   {
-   string name=enemy?"enemy_"+(id=="grunt"?"warrior":id):id=="gunslinger"?"bloodhound_player":id+"_player";
+   string name=enemy?"enemy_"+(id=="grunt"?"warrior":id):id+"_player";
    if(!enemy&&id=="revenant")name="revenant_noble";
    var prefab=Resources.Load<GameObject>("Actors/"+name);
    if(prefab==null)throw new System.InvalidOperationException("Missing actor prefab: "+name);
@@ -100,19 +100,6 @@ namespace Bloodwake
    if(!magicHand)magicHand=Animator.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name.EndsWith("RightHand"));
    return magicHand?magicHand.position+magicHand.rotation*new Vector3(0,.1f,.035f):transform.position+Vector3.up*1.2f;
   }
-  Transform rightSocket,leftSocket;
-  public Transform MuzzleSocket(string side)
-  {
-   var bone=side=="L"?leftSocket:rightSocket;
-   if(!bone){bone=Animator.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name=="WeaponSocket."+side);if(side=="L")leftSocket=bone;else rightSocket=bone;}
-   return bone;
-  }
-  public Vector3 MuzzlePosition(string side)
-  {
-   var bone=MuzzleSocket(side);
-   // FBX bones use centimetres; source socket offsets are in metres.
-   return bone?bone.TransformPoint(new Vector3(side=="L"?-.068f:.073f,.266f,.035f)*.01f):transform.position+Vector3.up;
-  }
   float hitRemaining,legsWeight;
   public void HitOverlay()
   {
@@ -134,7 +121,6 @@ namespace Bloodwake
    if(Kind=="grunt"&&LocomotionSpeed>0&&(key=="Run"||key=="Walk"))return "Warrior_ShieldWalk";
    if(Kind=="warrior"&&key=="Attack4")return "Ultimate";
    if(Kind=="revenant")return key switch{"Idle"=>"REV_NeutralIdle","Walk"=>"REV_SwaggerWalk","Run"=>"REV_StandardRun","Attack"=>"REV_ClawAttack_1","Attack1"=>"REV_ClawAttack_1","Attack2"=>"REV_ClawAttack_2","Attack3"=>"REV_ClawAttack_3","Hit"=>"REV_HitLight_Front","Death"=>"REV_Death","Teleport"=>"REV_TeleportAttack","Ultimate"=>"REV_BloodBurst",_=>key};
-   if(Kind=="gunslinger")return key switch{"Idle"=>"BH_Idle","Run"=>"BH_Walk_InPlace","Attack"=>"BH_FiveShot","Hit"=>"BH_GetHit","Death"=>"BH_Death","Ultimate"=>"BH_Ultimate_BloodWake","BombThrow"=>"BH_BombThrow",_=>key};
    return key;
   }
   public float Play(string key,float hold=-1)

@@ -70,7 +70,6 @@ namespace Bloodwake
     case "progression":DrawProgression();break;
     case "armory":DrawArmory();break;
     case "settings":DrawSettings();break;
-    case "import save":DrawSaveImport();break;
     case "dead":Label(page,$"Kills  {Run.Kills}    Rooms cleared  {Run.RoomsCleared}\nEssence  {Meta.Essence}",300,260,1000,130,30,false,TextAnchor.MiddleCenter);Button(page,"RETURN TO SAFEHOUSE",450,470,700,70,()=>StartRun(SelectedClass));Button(page,"RETURN TO TITLE",450,570,700,70,ReturnToMenu);break;
    }
   }

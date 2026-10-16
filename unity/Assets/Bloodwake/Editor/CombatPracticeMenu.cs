@@ -39,7 +39,6 @@ namespace Bloodwake.Editor
   {
    if(!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()){if(File.Exists(Request))File.Delete(Request);return;}
    if(File.Exists(Request))File.Delete(Request);
-   if(File.Exists("Assets/Bloodwake/Resources/Animations/RevenantLocomotion/REV_StandardRun.fbx"))RevenantLocomotionImport.Build();
    EditorSceneManager.OpenScene(Scene,OpenSceneMode.Single);
    EditorApplication.isPlaying=true;
   }

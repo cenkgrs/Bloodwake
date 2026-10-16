@@ -77,17 +77,6 @@
 	  "description": "A roar that throws every body around you outward."
 	},
 	{
-	  "id": "fan_shot",
-	  "name": "Fan Shot",
-	  "behavior": "fanShot",
-	  "icon": "bullets",
-	  "damage": 12,
-	  "cooldown": 5,
-	  "range": 320,
-	  "projectileSpeed": 560,
-	  "description": "Five rounds in a wide cone, point blank."
-	},
-	{
 	  "id": "frost_nova",
 	  "name": "Frost Nova",
 	  "behavior": "frostNova",
@@ -96,16 +85,6 @@
 	  "cooldown": 7,
 	  "range": 125,
 	  "description": "A cold front that damages and slows everything near you."
-	},
-	{
-	  "id": "shadow_strike",
-	  "name": "Shadow Strike",
-	  "behavior": "shadowStrike",
-	  "icon": "daggers",
-	  "damage": 38,
-	  "cooldown": 6,
-	  "range": 135,
-	  "description": "Dash through the gap and cut whatever lands beside you."
 	},
 	{
 	  "id": "arcane_meteor",
@@ -155,58 +134,6 @@
 	  "tone": "ffd08a",
 	  "accent": "ff9a4d",
 	  "description": "Turns on the spot and sweeps everything within reach."
-	},
-	{
-	  "id": "phantom_volley",
-	  "name": "Phantom Volley",
-	  "behavior": "backstepVolley",
-	  "icon": "daggers",
-	  "damage": 22,
-	  "cooldown": 6,
-	  "range": 300,
-	  "projectileSpeed": 520,
-	  "tone": "9d6bff",
-	  "accent": "d9c6ff",
-	  "description": "Break away backwards, answer with three blades."
-	},
-	{
-	  "id": "ricochet_round",
-	  "name": "Ricochet Round",
-	  "behavior": "ricochet",
-	  "icon": "bullets",
-	  "damage": 30,
-	  "cooldown": 6,
-	  "range": 320,
-	  "projectileSpeed": 620,
-	  "bounces": 3,
-	  "tone": "ffd07a",
-	  "accent": "ffe9bd",
-	  "description": "One round that redirects to whatever it has not hit yet."
-	},
-	{
-	  "id": "powder_charge",
-	  "name": "Powder Charge",
-	  "behavior": "powderCharge",
-	  "icon": "bullets",
-	  "damage": 34,
-	  "cooldown": 8,
-	  "range": 260,
-	  "blastRadius": 190,
-	  "tone": "ff9a4d",
-	  "accent": "ffd08a",
-	  "description": "Lob a charge; it telegraphs, then throws bodies off it."
-	},
-	{
-	  "id": "mark_of_ruin",
-	  "name": "Mark of Ruin",
-	  "behavior": "markOfRuin",
-	  "icon": "daggers",
-	  "damage": 0,
-	  "cooldown": 9,
-	  "range": 300,
-	  "tone": "63bd9f",
-	  "accent": "cdf5e4",
-	  "description": "Brand a target. It bites harder, and outlives its host."
 	},
 	{
 	  "id": "ember_dash",
@@ -513,36 +440,6 @@
 	  "isAvailable": "_warrior"
 	},
 	{
-	  "id": "rifle_tempo",
-	  "name": "Trigger Tempo",
-	  "description": "+18% rifle fire rate",
-	  "category": "weapon",
-	  "rarity": "rare",
-	  "maxLevel": 3,
-	  "apply": "_rifleTempo",
-	  "isAvailable": "_gunslinger"
-	},
-	{
-	  "id": "rifle_caliber",
-	  "name": "Heavy Caliber",
-	  "description": "+20% rifle damage",
-	  "category": "weapon",
-	  "rarity": "rare",
-	  "maxLevel": 3,
-	  "apply": "_rifleCaliber",
-	  "isAvailable": "_gunslinger"
-	},
-	{
-	  "id": "rifle_range",
-	  "name": "Long Barrel",
-	  "description": "+15% rifle range",
-	  "category": "weapon",
-	  "rarity": "rare",
-	  "maxLevel": 3,
-	  "apply": "_rifleRange",
-	  "isAvailable": "_gunslinger"
-	},
-	{
 	  "id": "orb_pierce",
 	  "name": "Piercing Orb",
 	  "description": "Magic orb pierces +1 enemy",
@@ -573,36 +470,6 @@
 	  "isAvailable": "_mage"
 	},
 	{
-	  "id": "dagger_tempo",
-	  "name": "Flurry",
-	  "description": "+18% dagger attack speed",
-	  "category": "weapon",
-	  "rarity": "rare",
-	  "maxLevel": 3,
-	  "apply": "_daggerTempo",
-	  "isAvailable": "_assassin"
-	},
-	{
-	  "id": "dagger_reach",
-	  "name": "Long Blades",
-	  "description": "+20% dagger reach and larger slash",
-	  "category": "weapon",
-	  "rarity": "rare",
-	  "maxLevel": 3,
-	  "apply": "_daggerReach",
-	  "isAvailable": "_assassin"
-	},
-	{
-	  "id": "dagger_edge",
-	  "name": "Razor Edge",
-	  "description": "+20% dagger damage",
-	  "category": "weapon",
-	  "rarity": "rare",
-	  "maxLevel": 3,
-	  "apply": "_daggerEdge",
-	  "isAvailable": "_assassin"
-	},
-	{
 	  "id": "thunderquake",
 	  "name": "Thunderquake",
 	  "description": "Greatsword + Storm Blade: every 3rd swing erupts and chains farther",
@@ -613,16 +480,6 @@
 	  "isAvailable": "_thunderquakeAvailable"
 	},
 	{
-	  "id": "armor_piercer",
-	  "name": "Armor Piercer",
-	  "description": "Heavy Caliber + Long Barrel: rifle rounds pierce 2 enemies",
-	  "category": "special",
-	  "rarity": "legendary",
-	  "maxLevel": 1,
-	  "apply": "_armorPiercer",
-	  "isAvailable": "_armorPiercerAvailable"
-	},
-	{
 	  "id": "spellfire",
 	  "name": "Spellfire",
 	  "description": "Piercing Orb + Arcane Focus: orb hits burn enemies",
@@ -631,16 +488,6 @@
 	  "maxLevel": 1,
 	  "apply": "_spellfire",
 	  "isAvailable": "_spellfireAvailable"
-	},
-	{
-	  "id": "hemorrhage",
-	  "name": "Hemorrhage",
-	  "description": "Flurry + Razor Edge: dagger hits inflict bleeding",
-	  "category": "special",
-	  "rarity": "legendary",
-	  "maxLevel": 1,
-	  "apply": "_hemorrhage",
-	  "isAvailable": "_hemorrhageAvailable"
 	}
   ],
   "items": [

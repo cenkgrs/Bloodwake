@@ -44,11 +44,9 @@ namespace Bloodwake
     bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
     if(Run.ClassId=="revenant")duration=Player.ClipLength(clip)/Mathf.Sqrt(Mathf.Max(.5f,Run.Stats.N("attackSpeed")/GameData.Stats("revenant").N("attackSpeed")*slot.N("speed")));
-    if(Run.ClassId=="assassin")duration=Mathf.Min(duration,attackCd*.9f);
     if(Run.ClassId=="warrior"&&combo==4)duration=.9f;
     if(heavy){clip="SpinAttack";duration=Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,1.5f));attackCd*=2.6f;combo=0;}
-    if(Run.ClassId=="gunslinger"){duration=Player.ClipLength("Attack");StartCoroutine(BloodhoundVolley(row,slot,dir,damage*duration/attackCd/5,range));attackCd=duration;}
-    else if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":Run.ClassId=="assassin"?"dagger_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
+    if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
      else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?1.65f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,combo==(Run.ClassId=="warrior"?4:3)));}
     else StartCoroutine(ReleaseWeapon(row,slot,dir,damage,range,duration*.55f,"R",combo==3));
     Player.Play(clip,duration);if(contactEvent!=null)Player.OnMarker("DAMAGE",contactEvent);attackCd=Mathf.Max(attackCd,duration*(heavy?.85f:.62f));comboExpires=Time.time+duration+.5f;
@@ -60,7 +58,7 @@ namespace Bloodwake
    if(delay>0)yield return Delay(delay);if(Screen!="playing"||Run.Stats.N("hp")<=0)yield break;
    // User-selected recording: use the contact beat, not the start of the wind-up.
    if(Run.ClassId=="warrior")Sound("warrior_sword_clash_user");
-   string weapon=Run.ClassId=="assassin"?"daggers":"sword";Run.Weapons.TryGetValue(weapon,out var slot);
+   string weapon="sword";Run.Weapons.TryGetValue(weapon,out var slot);
    if(slot!=null){slot["swings"]=slot.N("swings")+1;if(slot.N("shockwave")>0&&(int)slot.N("swings")%3==0){wide=true;float extra=slot.N("shockwave")*.02f;range+=extra*(revenantSwing>0?1.8f:1);sourceRadius+=extra;}}
    float arc=Run.ClassId=="warrior"?150:Run.ClassId=="revenant"?180:Run.ClassId=="vesper"?155:105;
    var hit=new System.Collections.Generic.HashSet<Enemy>();Vector3 origin=Player.transform.position;
@@ -77,15 +75,6 @@ namespace Bloodwake
    for(int i=0;i<count;i++){var e=Enemies.Where(x=>!x.Emerging&&!hit.Contains(x)&&Vector3.Distance(origin,x.View.transform.position)<radius).OrderBy(x=>Vector3.Distance(origin,x.View.transform.position)).FirstOrDefault();if(e==null)break;var end=e.View.transform.position;var beam=new GameObject("Chain lightning").AddComponent<LineRenderer>();beam.transform.SetParent(actorRoot);beam.positionCount=2;beam.SetPosition(0,origin+Vector3.up);beam.SetPosition(1,end+Vector3.up);beam.startWidth=beam.endWidth=.05f;beam.material=Effects.Mat(new Color(.65f,.81f,1));Destroy(beam.gameObject,.16f);hit.Add(e);DamageEnemy(e,damage);if(e.Hp>0){e.Burn=2;e.BurnDps=4;}origin=end;}
   }
   IEnumerator ReleaseWeapon(JToken row,JToken slot,Vector3 dir,float damage,float range,float delay,string hand="R",bool finisher=false){yield return Delay(delay);Sound(Run.ClassId=="mage"?"orb_cast":"gun_rifle");int count=(int)row.N("projectileCount",1);for(int i=0;i<count;i++)StartCoroutine(Projectile(Player.transform.position,Quaternion.Euler(0,(i-(count-1)*.5f)*8,0)*dir,damage,row.N("projectileSpeed",500)*.02f,range,false,(int)(row.N("pierceCount")+slot.N("pierce")),false,hand,finisher));}
-  IEnumerator BloodhoundVolley(JToken row,JToken slot,Vector3 initialDirection,float damage,float range)
-  {
-   int previous=0;int[] contactFrames={5,13,21,29,37};
-   for(int i=0;i<contactFrames.Length;i++)
-   {
-    yield return Delay((contactFrames[i]-previous)/60f);previous=contactFrames[i];var direction=aim.sqrMagnitude>.001f?aim:initialDirection;
-    Player.transform.rotation=Quaternion.LookRotation(direction);yield return ReleaseWeapon(row,slot,direction,damage,range,0,i%2==0?"R":"L",i==contactFrames.Length-1);
-   }
-  }
   int markChain;
   void DamageEnemy(Enemy e,float damage,bool effects=true)
   {

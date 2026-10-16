@@ -41,7 +41,7 @@ namespace Bloodwake.Editor
   public static void Validate()
   {
    int checks=0;
-   foreach(string id in new[]{"warrior","revenant","vesper","gunslinger","mage","assassin"})
+   foreach(string id in new[]{"warrior","revenant","vesper","mage"})
    {
     var run=new RunState(id);if(run.Stats.N("hp")<=0||run.Weapons.Count!=1)throw new Exception("Invalid class "+id);checks++;
     run.AddXp(100000);if(run.Level!=2||run.PendingLevels!=1)throw new Exception("XP one-level gate broken");checks++;

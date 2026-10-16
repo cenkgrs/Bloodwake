@@ -2,7 +2,7 @@
 
 Run with Python + Pillow. PNG output preserves decoded source pixels exactly;
 an original JPEG remains limited by its original quality (never 'restored' by
-renaming a low-resolution runtime JPEG). Re-run after export_assets.py.
+renaming a low-resolution runtime JPEG). Re-run after re-exporting a character model.
 """
 from pathlib import Path
 from PIL import Image
@@ -41,13 +41,8 @@ def sources():
     for model,material,folder,knight in [
         ('warrior_player','Knight PBR','art/warrior/source/knight',True),
         ('warrior_player','Greatsword PBR','art/warrior/source/greatsword',True),
-        ('mage_player','Mage PBR','art/mage/source/model',False),
-        ('assassin_player','Assassin PBR','art/assassin/source/model',False),
-        ('assassin_player','Dagger PBR','art/assassin/source/dagger',False)]:
+        ('mage_player','Mage PBR','art/mage/source/model',False)]:
         spec[(model,material)]=files(one(ROOT/folder,'*.fbm'),knight)
-    rev=ROOT/'art/revenant-astra-ready/deliverables/textures'
-    spec[('revenant_player','tripo_mat_67e3196c')]={k:rev/f for k,f in [('albedo','BaseColor.png'),('normal','Normal.png'),('metallic','Metallic.png'),('roughness','Roughness.png')]}
-    spec[('bloodhound_player','tripo_mat_0aff0967')]=glb_material(ROOT/'art/bloodhound_v2/source/gunslinger_original.glb','tripo_mat_0aff0967')
     return spec
 
 def restore():

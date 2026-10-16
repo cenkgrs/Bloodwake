@@ -21,10 +21,10 @@ namespace Bloodwake
    string id=row.S("id");if(kind=="upgrades"&&Upgrades.GetValueOrDefault(id)>=row.N("maxLevel"))return false;
    if(kind=="items"&&(ItemGrades.ContainsKey(id)||ItemGrades.Count>=8||Night<row.N("minNight",1)))return false;
    string gate=row.S("isAvailable");
-   foreach(string cls in new[]{"warrior","gunslinger","mage","assassin"})if(gate=="_"+cls)return ClassId==cls||((ClassId=="revenant"||ClassId=="vesper")&&cls=="warrior");
+   foreach(string cls in new[]{"warrior","mage"})if(gate=="_"+cls)return ClassId==cls||((ClassId=="revenant"||ClassId=="vesper")&&cls=="warrior");
    var gates=new Dictionary<string,string>{{"_ownsSword","sword"},{"_ownsLightning","lightning"},{"_ownsRifle","rapid_rifle"},{"_ownsOrb","magic_orb"},{"_ownsDaggers","daggers"}};
    if(gates.ContainsKey(gate)&&!Weapons.ContainsKey(gates[gate]))return false;
-   var needs=new Dictionary<string,string[]>{{"thunderquake",new[]{"warrior","greatsword","storm_blade"}},{"armor_piercer",new[]{"gunslinger","rifle_caliber","rifle_range"}},{"spellfire",new[]{"mage","orb_pierce","orb_power"}},{"hemorrhage",new[]{"assassin","dagger_tempo","dagger_edge"}}};
+   var needs=new Dictionary<string,string[]>{{"thunderquake",new[]{"warrior","greatsword","storm_blade"}},{"spellfire",new[]{"mage","orb_pierce","orb_power"}}};
    if(needs.TryGetValue(id,out var req))return (ClassId==req[0]||((ClassId=="revenant"||ClassId=="vesper")&&req[0]=="warrior"))&&Upgrades.GetValueOrDefault(req[1])>0&&Upgrades.GetValueOrDefault(req[2])>0;return true;
   }
   public bool Upgrade(string id){var row=GameData.Row("upgrades",id);if(row==null||!Available(row,"upgrades"))return false;Upgrades[id]=Upgrades.GetValueOrDefault(id)+1;Apply(id);return true;}
@@ -33,10 +33,8 @@ namespace Bloodwake
    GameData.Apply(Stats,id,level);
    string[] spec=id switch {
     "greatsword"=>new[]{"sword","range",".25"},"storm_blade"=>new[]{"sword","chain","1"},"shockwave"=>new[]{"sword","shockwave","35"},
-    "rifle_tempo"=>new[]{"rapid_rifle","speed",".18"},"rifle_caliber"=>new[]{"rapid_rifle","damage",".2"},"rifle_range"=>new[]{"rapid_rifle","range",".15"},
     "orb_pierce"=>new[]{"magic_orb","pierce","1"},"orb_power"=>new[]{"magic_orb","damage",".25"},"orb_range"=>new[]{"magic_orb","range",".2"},
-    "dagger_tempo"=>new[]{"daggers","speed",".18"},"dagger_reach"=>new[]{"daggers","range",".2"},"dagger_edge"=>new[]{"daggers","damage",".2"},
-    "armor_piercer"=>new[]{"rapid_rifle","pierce","2"},"spellfire"=>new[]{"magic_orb","burn","7"},"hemorrhage"=>new[]{"daggers","bleed","9"},
+    "spellfire"=>new[]{"magic_orb","burn","7"},
     "rifle_mechanism"=>new[]{"rapid_rifle","speed",".25"},"orb_focus"=>new[]{"magic_orb","damage",".3"},"dagger_steel"=>new[]{"daggers","damage",".3"},_=>null};
    if(spec!=null&&Weapons.TryGetValue(spec[0],out var slot))slot[spec[1]]=slot.N(spec[1])+float.Parse(spec[2],System.Globalization.CultureInfo.InvariantCulture)*level;
    if(id=="thunderquake"&&Weapons.TryGetValue("sword",out var sword)){sword["chain"]=sword.N("chain")+1;sword["shockwave"]=sword.N("shockwave")+60;}
