@@ -40,6 +40,13 @@ namespace Bloodwake
   }
   readonly Dictionary<string,float> soundTimes=new();readonly List<AudioSource> soundVoices=new();
   void Sound(string id)=>SoundFrom(id,0);
+  // Lines up the clip's authored "impact" (seconds into the file) with a gameplay contact that is `contact` seconds away.
+  void SoundOnContact(string id,float contact)
+  {
+   float impact=GameData.Rules["audio"][id].N("impact"),lead=contact-impact;
+   if(lead<=0)SoundFrom(id,-lead);else StartCoroutine(SoundAfter(id,lead));
+  }
+  IEnumerator SoundAfter(string id,float wait){yield return Delay(wait);Sound(id);}
   void SoundFrom(string id,float startSeconds)
   {
    var data=GameData.Rules["audio"]?[id];if(soundTimes.TryGetValue(id,out float last)&&Time.unscaledTime-last<data.N("gap"))return;

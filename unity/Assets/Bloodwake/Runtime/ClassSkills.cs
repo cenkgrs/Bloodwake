@@ -34,7 +34,7 @@ namespace Bloodwake
    if(behavior=="vesperWard"||behavior=="vesperRite")
    {
     bool major=behavior=="vesperRite";float hold=major?1.32f:1.15f,contact=major?.72f:.48f;
-    Player.Play(major?"Ultimate":"CastQ",hold);Sound(major?"revenant_space_blood_burst":"revenant_e_blood_bomb");
+    Player.Play(major?"Ultimate":"CastQ",hold);SoundOnContact(major?"vesper_bloodfire_rite":"vesper_cinder_ward",contact);
     RevFx.VesperCastWarning(start,radius,contact,major);
     yield return Delay(contact);Area(start,radius,damage,false,true);RevFx.VesperGroundCast(start,radius,major);yield break;
    }

@@ -410,18 +410,6 @@
       ],
       "voices": 1
     },
-    "ulti_shadow_strike": {
-      "db": -1.0,
-      "files": [
-        "ulti_shadow_strike"
-      ],
-      "gap": 0.2,
-      "pitch": [
-        0.99,
-        1.01
-      ],
-      "voices": 1
-    },
     "ulti_war_cry": {
       "db": 0.0,
       "files": [
@@ -443,6 +431,32 @@
       "pitch": [
         0.98,
         1.02
+      ],
+      "voices": 1
+    },
+    "vesper_bloodfire_rite": {
+      "db": 0.0,
+      "files": [
+        "revenant_space_blood_burst"
+      ],
+      "gap": 0.0,
+      "impact": 0.827,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "vesper_cinder_ward": {
+      "db": 0.0,
+      "files": [
+        "revenant_e_blood_bomb"
+      ],
+      "gap": 0.0,
+      "impact": 0.442,
+      "pitch": [
+        1.0,
+        1.0
       ],
       "voices": 1
     },
