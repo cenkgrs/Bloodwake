@@ -11,7 +11,7 @@ namespace Bloodwake
    stone=new Material(Resources.Load<Shader>("Presentation/WetStone")){name="Wet courtyard stone"};
    stone.SetTexture("_BaseMap",Resources.Load<Texture2D>("Presentation/Cobblestone/albedo"));
    stone.SetTexture("_BumpMap",Resources.Load<Texture2D>("Presentation/Cobblestone/normal"));
-   stone.SetTexture("_ARM",Resources.Load<Texture2D>("Presentation/Cobblestone/arm"));
+   stone.SetTexture("_ARM",Resources.Load<Texture2D>("Presentation/Cobblestone/arm"));stone.SetFloat("_Wetness",.85f);
    foreach(var r in environment.GetComponentsInChildren<MeshRenderer>())
    {
     if(r.name=="ExitGlow")
@@ -31,7 +31,7 @@ namespace Bloodwake
    }
    foreach(var lamp in environment.GetComponentsInChildren<Light>())
    {
-    lamp.color=new Color(1,.46f,.15f);lamp.intensity=lamp.name=="Brazier light"?2.1f:3.2f;lamp.range=lamp.name=="Brazier light"?4.5f:6;
+    lamp.color=new Color(1,.46f,.15f);lamp.intensity=lamp.name=="Brazier light"?4.2f:4.8f;lamp.range=lamp.name=="Brazier light"?8f:8;
     if(!fire)fire=new Material(Resources.Load<Shader>("Presentation/Flame")){name="Lantern flame"};
     var flame=GameObject.CreatePrimitive(PrimitiveType.Quad);flame.name="Lantern flame";Destroy(flame.GetComponent<Collider>());
     // Imported light parents can carry the FBX centimetre conversion scale.
