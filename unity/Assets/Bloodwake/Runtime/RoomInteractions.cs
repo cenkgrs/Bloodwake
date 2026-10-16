@@ -12,6 +12,8 @@ namespace Bloodwake
    foreach(var host in room["hosts"]??new JArray())if(host["model"]!=null)
    {
     var view=ActorView.Create(host.S("model"),true,2*CombatActorScale,roomRoot);view.name="Host · "+host.S("name");view.transform.position=Point(host["at"]);
+    // Hosts are solid: the player and the crowd navigation walk around them.
+    blockers.Add(new Bounds(view.transform.position+Vector3.up,new Vector3(.8f,2,.8f)));
     // Turn halfway between the arrival path and the isometric camera so the face reads from either.
     var toEntry=entry-view.transform.position;var toCamera=cameraOffset;toEntry.y=toCamera.y=0;
     var facing=toEntry.normalized+toCamera.normalized;view.transform.rotation=Quaternion.LookRotation(facing.sqrMagnitude>.01f?facing:Vector3.back);

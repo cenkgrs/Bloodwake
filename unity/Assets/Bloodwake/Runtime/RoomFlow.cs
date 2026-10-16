@@ -17,14 +17,13 @@ namespace Bloodwake
    Box("East wall",new Vector3(half.x+.3f,1,0),new Vector3(.6f,2,half.y*2),ground*.65f,true);
    foreach(int side in new[]{-1,1})foreach(int edge in new[]{-1,1})Box("Gate wall",new Vector3(side*(half.x+3)*.5f,1,edge*half.y),new Vector3(half.x-3,2,.6f),ground*.65f,true);
    // The FBX and the converted prefab must never share a Resources key.
-   var authored=id=="town_safehouse"?Resources.Load<GameObject>("Sanctuary/sanctuary_environment"):Resources.Load<GameObject>("Rooms/"+id+"/"+id+"_environment");
+   var authored=id=="town_safehouse"?null:Resources.Load<GameObject>("Rooms/"+id+"/"+id+"_environment");
    if(authored){foreach(var r in roomRoot.GetComponentsInChildren<Renderer>())r.enabled=false;var environment=Instantiate(authored,roomRoot);environment.name="Imported town geometry";
     var metadata=id=="town_safehouse"?null:Resources.Load<TextAsset>("Rooms/"+id+"/collision");if(metadata){var data=JObject.Parse(metadata.text);blockers.Clear();foreach(var r in data["rects"]){float x=(float)r[0],z=(float)r[1],w=(float)r[2],h=(float)r[3];blockers.Add(new Bounds(new Vector3(-x-w/2,1,z+h/2),new Vector3(w,2,h)));}foreach(var c in data["circles"]){float radius=(float)c[2];blockers.Add(new Bounds(new Vector3(-(float)c[0],1,(float)c[1]),new Vector3(radius*2,2,radius*2)));}var hidden=data["hidden"].Values<string>().ToHashSet();foreach(var t in environment.GetComponentsInChildren<Transform>())if(hidden.Contains(t.name))t.gameObject.SetActive(false);}
-    if(id=="town_safehouse")ConfigureSanctuaryBlockers();
    }
    EnvironmentDressing.Apply(roomRoot,half,room["layout"]);
    EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);
-   if(id=="town_safehouse")SpawnSanctuaryCargo();ConfigureBreakableCargo();
+   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}ConfigureBreakableCargo();
    roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
    SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);RevFx.HandMagic(Player);if(id=="town_safehouse")SpawnTrainingWarrior();
@@ -35,25 +34,15 @@ namespace Bloodwake
    if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(room.S("type")=="boss"?"music_boss":roomClear?"music_menu":"music_combat");
   }
   static Vector3 Point(JToken v)=>v is JArray a&&a.Count>=2?new Vector3(-(float)a[0],0,(float)a[1]):Vector3.zero;
-  void ConfigureSanctuaryBlockers()
-  {
-   blockers.Clear();
-   foreach(var b in new[]{
-    new Bounds(new Vector3(-13.8f,1,2),new Vector3(.6f,2,9)),new Bounds(new Vector3(13.8f,1,2),new Vector3(.6f,2,9)),
-    new Bounds(new Vector3(-8.7f,1,6.2f),new Vector3(8,.6f,2)),new Bounds(new Vector3(8.7f,1,6.2f),new Vector3(8,.6f,2)),
-    new Bounds(new Vector3(-8.7f,1,-2.2f),new Vector3(8,.6f,2)),new Bounds(new Vector3(8.7f,1,-2.2f),new Vector3(8,.6f,2)),
-    new Bounds(new Vector3(0,1,17.4f),new Vector3(12,.6f,2)),new Bounds(new Vector3(-6,1,11.5f),new Vector3(.6f,2,12)),new Bounds(new Vector3(6,1,11.5f),new Vector3(.6f,2,12))
-   })blockers.Add(b);
-  }
   void SpawnSanctuaryCargo()
   {
    var crate=Resources.Load<GameObject>("Environment/Kit01/crate/crate");var barrel=Resources.Load<GameObject>("Environment/Kit01/barrel/barrel");if(!crate||!barrel)return;
-   Vector3[] spots={new(-5,0,14.5f),new(-4.2f,0,15.2f),new(4.8f,0,14.5f),new(5.1f,0,10),new(-5.2f,0,9.5f),new(4.7f,0,8.5f),new(-4.8f,0,8.2f),new(3.9f,0,15.4f)};
+   Vector3[] spots={new(-8.6f,0,6.2f),new(-9.7f,0,7.5f),new(-8.3f,0,9.7f),new(-6.6f,0,10.4f),new(8.4f,0,6.4f),new(9.7f,0,7.7f),new(7.9f,0,9.9f),new(6.4f,0,10.4f)};
    for(int i=0;i<spots.Length;i++){var go=Instantiate(i%3==0?barrel:crate,roomRoot);go.name="Training breakable "+i;go.transform.position=spots[i];go.transform.rotation=Quaternion.Euler(0,i*37,0);go.AddComponent<BreakableCargo>();}
   }
   void SpawnTrainingWarrior()
   {
-   var home=new Vector3(0,0,11.5f);SpawnEnemy("grunt",home);var dummy=Enemies.Last();dummy.Training=true;dummy.TrainingHome=home;dummy.MaxHp=dummy.Hp=250;dummy.Cooldown=float.PositiveInfinity;dummy.View.TickEmergence(10);HoldEnemyAgent(dummy);dummy.View.transform.rotation=Quaternion.LookRotation(Vector3.back);
+   var home=new Vector3(0,0,8.2f);SpawnEnemy("grunt",home);var dummy=Enemies.Last();dummy.Training=true;dummy.TrainingHome=home;dummy.MaxHp=dummy.Hp=250;dummy.Cooldown=float.PositiveInfinity;dummy.View.TickEmergence(10);HoldEnemyAgent(dummy);dummy.View.transform.rotation=Quaternion.LookRotation(Vector3.back);
   }
   void Box(string name,Vector3 pos,Vector3 size,Color color,bool solid)
   {

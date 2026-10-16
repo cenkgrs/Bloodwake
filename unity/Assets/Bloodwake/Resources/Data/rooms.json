@@ -7,17 +7,17 @@
       "region": "safehouse",
       "type": "safehouse",
       "scene": "res://assets/rooms/town_safehouse.glb",
-      "size": [31, 30],
+      "size": [23, 23],
       "light": {"ambient": "c79a74", "fog": "1d1512", "energy": 0.62, "ground": "5a4c42"},
-      "doors": {"entrance": {"at": [0, 15]}},
-      "markers": {"EntrySpawn": [0, 8]},
+      "doors": {"entrance": {"at": [0, 11.5]}},
+      "markers": {"EntrySpawn": [0, 1.5]},
       "layout": [],
       "hosts": [
         {
           "role": "builds",
           "name": "THE QUARTERMASTER",
           "verb": "EDIT BUILD",
-          "at": [-8.7, 2],
+          "at": [-7.6, -9.6],
           "model": "merchant",
           "tint": "7e8a93",
           "lines": [
@@ -31,7 +31,7 @@
           "role": "skills",
           "name": "THE BLOOD SAGE",
           "verb": "SHAPE THE OATH",
-          "at": [8.7, 2],
+          "at": [7.6, -9.6],
           "model": "mentor",
           "tint": "b34a52",
           "lines": [
@@ -41,7 +41,7 @@
             "Choose carefully. An oath shaped in haste breaks at the worst moment."
           ]
         },
-        {"role": "maps", "name": "THE WAR TABLE", "verb": "CHOOSE A HUNT", "at": [0, 3], "kind": "war_table"}
+        {"role": "maps", "name": "THE WAR TABLE", "verb": "CHOOSE A HUNT", "at": [0, -8.6], "kind": "war_table"}
       ]
     },
     {
