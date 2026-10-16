@@ -1,0 +1,32 @@
+{
+  "status": "AUDITION ONLY; runtime E still v1, Q/Space unchanged",
+  "base": "v4 with same sources, same timing, unchanged non-claw/non-blood layers",
+  "claw_gain": 0.25,
+  "blood_gain": 47.86194977870316,
+  "blood_over_claw_rms_db": 3.4006780791396425,
+  "source_sha256": {
+    "audio_review_e_space_v1/build_previews.py": "8700774f3b65f9a89b9e1851b60b0053b134d167d00e1ba67dea13b935964e01",
+    "audio_review_e_space_v1/e_v1_single.wav": "83834f30629d524739fe150948f7f11137df7f5d714474e04d65eb190d6a459f",
+    "audio_review_e_v4/e_v4_single.wav": "b930896c2fd5b990ad15eb8807e05c703812185ef8d05a6e8635e3406b43b2d3"
+  },
+  "outputs": [
+    {
+      "file": "e_blood_forward_v5_preview.wav",
+      "seconds": 4.6,
+      "true_peak_dbtp": -4.0,
+      "rms_dbfs": -32.16
+    },
+    {
+      "file": "e_v4_then_v5_comparison.wav",
+      "seconds": 4.6,
+      "true_peak_dbtp": -4.0,
+      "rms_dbfs": -29.49
+    },
+    {
+      "file": "e_blood_forward_v5_single.wav",
+      "seconds": 1.55,
+      "true_peak_dbtp": -4.0,
+      "rms_dbfs": -30.44
+    }
+  ]
+}

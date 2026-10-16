@@ -1,0 +1,36 @@
+{
+  "status": "AUDITION ONLY; no runtime edits",
+  "base": "Exact approved E v1 single; no v2/v3 material",
+  "ab_order": [
+    "original E v1",
+    "small v4 revision"
+  ],
+  "unchanged_intervals_seconds": [
+    [
+      0,
+      0.33
+    ],
+    [
+      0.85,
+      1.55
+    ]
+  ],
+  "contact_seconds": 0.38333333333333336,
+  "contact_gain": 0.7093217661806457,
+  "waveform_correlation": 0.9702617017203964,
+  "source_sha256": "83834f30629d524739fe150948f7f11137df7f5d714474e04d65eb190d6a459f",
+  "outputs": [
+    {
+      "file": "e_v1_then_v4_comparison.wav",
+      "seconds": 4.6,
+      "true_peak_dbtp": -4.5,
+      "rms_dbfs": -28.17
+    },
+    {
+      "file": "e_v4_single.wav",
+      "seconds": 1.55,
+      "true_peak_dbtp": -4.66,
+      "rms_dbfs": -26.14
+    }
+  ]
+}

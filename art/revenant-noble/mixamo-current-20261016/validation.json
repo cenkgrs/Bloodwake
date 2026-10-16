@@ -1,0 +1,11 @@
+{
+  "source": "/home/cenkargevim/Desktop/Cenk/roughlike/unity/Assets/Bloodwake/Resources/Models/revenant_noble/revenant_noble.fbx",
+  "source_sha256": "bda3606d3eb8c8c2dd424855a31da4df0d556baf899695db3dee557c1bd8c892",
+  "source_faces": 49831,
+  "exported_faces": 49831,
+  "height_metres": 1.7999999453123436,
+  "pose": "original rig REST bind pose",
+  "texture": "unaltered 8192x8192 original JPEG; no recompression",
+  "uv_preserved": true,
+  "obj_reimport_passed": true
+}

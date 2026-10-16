@@ -1,0 +1,41 @@
+{
+  "status": "AUDITION ONLY \u2014 not approved, not integrated",
+  "hide_seconds": 0.25,
+  "arrival_damage_seconds": 0.4166666666666667,
+  "outputs": [
+    {
+      "file": "q_bloodstep_v2_preview.wav",
+      "seconds": 4.1,
+      "peak_dbfs": -4.03,
+      "true_peak_dbtp": -4.0,
+      "rms_dbfs": -26.25
+    },
+    {
+      "file": "q_bloodstep_v2_single.wav",
+      "seconds": 1.25,
+      "peak_dbfs": -4.03,
+      "true_peak_dbtp": -4.0,
+      "rms_dbfs": -24.11
+    },
+    {
+      "file": "q_departure_v2.wav",
+      "seconds": 0.55,
+      "peak_dbfs": -9.69,
+      "true_peak_dbtp": -9.56,
+      "rms_dbfs": -28.87
+    },
+    {
+      "file": "q_arrival_v2.wav",
+      "seconds": 0.78,
+      "peak_dbfs": -4.03,
+      "true_peak_dbtp": -4.0,
+      "rms_dbfs": -22.75
+    }
+  ],
+  "mono_to_stereo_rms_db": -0.01953569451454975,
+  "sources_sha256": {
+    "squish_03.mp3": "701d979524931d774ec52f0decb7e838d2aaeeb4286eab4d8e56b598769c67f5",
+    "squish_06.mp3": "271d21b257e4d31daf04726210d11e7942bd91419c23a2a3c3282e2bf00af54e",
+    "squishsplat_impact.mp3": "4b347996a324cb23fe82033986c96fb2b098618df626972b7c505e088013bd76"
+  }
+}

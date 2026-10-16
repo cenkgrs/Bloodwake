@@ -1,0 +1,53 @@
+Bloodhound animation quality gate — 2026-10-06
+STATUS: INCOMPLETE / NOT A FINAL DELIVERY / NOT IN THE PLAYABLE BUILD
+
+Scope: Stage 1, preserved user model and v2 rig, new Idle and AgileMove.
+Tripo game-asset guidance used for rig/export inspection only; no cloud generation.
+Separate blocking, breakdown, spline and polish .blend checkpoints exist in stage1/.
+Editable scalar control actions are retained; dense deform keys are export caches.
+
+Corrections made after inspection
+- Previous movement preview assigned move_input once, which main.gd overwrote.
+  The preview and new movement regression use real held Input actions instead.
+- Old walk speed calibration required roughly 3.55x playback at game speed.
+  AgileMove is authored for 5 m/s at game height 2.05 m, normal playback speed.
+- Tucked elbows and lowered hands after blocking silhouette inspection.
+- Removed shin influence from boot soles after measuring approximately 6 mm slip.
+- Replaced ankle-tip roll pivot with the physical mesh sole toe/heel pivot.
+- Changed swing trajectory after measured sole penetration in breakdown.
+- Moved the right pelvis apex into flight during polish; reduced head displacement.
+
+Polish numeric gate: PASS (not equivalent to final visual/gameplay approval)
+- Loop endpoint matrix error: 0 for Idle and AgileMove.
+- Root horizontal drift: 0.
+- Four-frame planted sole maximum world drift: L 0.000247 mm, R 0.000432 mm.
+- Whole-support toe maximum world drift: L 0.000345 mm, R 0.000940 mm.
+- Minimum mesh height: approximately -0.000086 mm (floating-point noise).
+- Pelvis vertical range: 74 mm; head vertical range: 23 mm.
+- Hip/shoulder yaw correlation: -0.94486 (opposite rotation).
+- Left/right support and swing timings differ; secondary delays vary 2–4 frames.
+These measurements are for authored forward locomotion, not strafing, slopes,
+runtime blended combat, or an exhaustive clothing self-collision check.
+
+Visual evidence
+- Direct GLB import rendered in Godot at 60 FPS using Mesa software rendering.
+- normal.mp4, half-speed.mp4, game.mp4 (5 m/s), silhouette.mp4, idle.mp4.
+- Reviewed sampled frame sequences and measured curves; do not interpret this
+  as a human real-time viewing approval or exhaustive mesh collision certification.
+- One corrupt game preview PNG (0099) was regenerated before final encoding.
+- NVIDIA driver unavailable during this run; no driver/system changes made.
+
+Current gameplay source movement regression
+180 ticks at 60 Hz, held move_right with/without fire:
+travel 14.894105 m, maximum path difference 0 m, 21 weapon events, 0 failures.
+This does NOT prove the user's previously launched executable was the same build,
+nor does it certify touch input, strafing visuals, hits, skills or all arena states.
+
+Unfinished / release blockers
+- Stage 1 has not been integrated into the live animation/state machine asset.
+- Full clothing clearance and fused source holster/weapon mesh issues remain open.
+- Stage 2 additive upper-body hit, death and epic ultimate are not revised yet.
+- Requested Teleport + Blood Burst names conflict with Bloodhound's existing
+  bomb + BloodWake kit; user clarification requested before changing abilities.
+- Stage 3 playable integration, events, regression tests and new build pending.
+- No final/game-ready/completed status has been assigned.

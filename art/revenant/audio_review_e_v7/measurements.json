@@ -1,0 +1,19 @@
+{
+  "status": "AUDITION ONLY; Unity unchanged",
+  "change": "Existing v6 ending burst multiplied by 1.30; all other sections unchanged",
+  "ending_plateau_gain_relative_to_v4": 1.625,
+  "claw_gain_relative_to_v4": 0.9,
+  "source_sha256": "fa6fd1ac5261a8b84351523ff88239b05127510fd08f2a71f7b1a07ffd8af0cc",
+  "outputs": [
+    {
+      "file": "e_v7_burst_plus30_preview.wav",
+      "seconds": 4.6,
+      "true_peak_dbtp": -4.82
+    },
+    {
+      "file": "e_v7_burst_plus30_single.wav",
+      "seconds": 1.55,
+      "true_peak_dbtp": -4.82
+    }
+  ]
+}

@@ -54,3 +54,9 @@ godot/assets/models/enemy_warrior_*
 /linux/
 /macos/
 /windows/
+
+# Local Unity/editor junk
+unity/.vscode/
+unity/Assets/_Recovery/
+unity/Assets/_Recovery.meta
+unity/mono_crash.*

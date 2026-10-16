@@ -1,0 +1,33 @@
+{
+  "status": "UNAPPROVED AUDITION, no runtime changes",
+  "arrival": "Existing polished revenant_basic_attack_c, original pitch and speed, gain .58; no wet arrival layers",
+  "note": "Runtime currently randomly selects A/B/C, not a fixed finisher sound",
+  "departure_preserved": true,
+  "claw_start_seconds": 0.2031041666666667,
+  "claw_energy_peak_seconds": 0.4166666666666667,
+  "damage_seconds": 0.4166666666666667,
+  "outputs": [
+    {
+      "file": "q_mist_claw_v3_preview.wav",
+      "duration": 4.1,
+      "true_peak_dbtp": -4.25,
+      "rms_dbfs": -27.16
+    },
+    {
+      "file": "q_mist_claw_v3_single.wav",
+      "duration": 1.25,
+      "true_peak_dbtp": -4.25,
+      "rms_dbfs": -25.01
+    },
+    {
+      "file": "q_claw_v3.wav",
+      "duration": 0.65,
+      "true_peak_dbtp": -4.26,
+      "rms_dbfs": -23.04
+    }
+  ],
+  "input_sha256": {
+    "unity/Assets/Bloodwake/Resources/audio/polished/revenant_basic_attack_c.wav": "8f32fd669c8661fa736c785599723baccbac5c9982ed7411b23c259574f7b582",
+    "art/revenant/audio_review_q_v2/q_departure_v2.wav": "9de726c63006d7f43b9e439a49fb88422dd7f28f903ba5590913973daa0312b7"
+  }
+}

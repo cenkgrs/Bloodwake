@@ -1,0 +1,27 @@
+{
+  "status": "AUDITION ONLY. E v1 remains installed. Q/Space unchanged.",
+  "claw_used": false,
+  "synthetic_pop_used": false,
+  "contact_seconds": 0.38333333333333336,
+  "sources_sha256": {
+    "explosion1.ogg": "5fb4f29c68513ba69c8e4e4a0820596f609827435615a713b5a8487266f37401",
+    "muffled_distant_explosion.wav": "13a0bf75af94ec6d332bc71cba489b573466e05c4b17288158b3d683b41de39f",
+    "squishsplat_impact.mp3": "4b347996a324cb23fe82033986c96fb2b098618df626972b7c505e088013bd76"
+  },
+  "outputs": [
+    {
+      "file": "e_detonation_v3_preview.wav",
+      "seconds": 5.4,
+      "true_peak_dbtp": -4.5,
+      "rms_dbfs": -22.93,
+      "mono_loss_db": -0.0
+    },
+    {
+      "file": "e_detonation_v3_single.wav",
+      "seconds": 1.95,
+      "true_peak_dbtp": -4.5,
+      "rms_dbfs": -21.51,
+      "mono_loss_db": -0.0
+    }
+  ]
+}

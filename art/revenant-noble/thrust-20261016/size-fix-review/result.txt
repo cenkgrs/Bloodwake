@@ -1,0 +1,1 @@
+PASS: bind/idle bone scales and limb lengths preserved through every dash/thrust frame and recovery (not compared only to the same clip); .30s windup removed, .8667s clip, .10s contact; 45-frame transition render sequence; 30/60/144/360FPS dash; full path mist/ground trace cleanup; talent gate; open claw, one basic hit, 2x push; buffering/pause/wall/death; E liquid volume.

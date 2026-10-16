@@ -1,0 +1,80 @@
+{
+  "status": "AUDITION ONLY \u2014 awaiting listening approval; no E/Space runtime changes",
+  "timing_source": "RevenantNobleImport + noble FBX import events (not old revenant_events JSON)",
+  "sources_sha256": {
+    "unity/Assets/Bloodwake/Resources/audio/polished/revenant_basic_attack_c.wav": "8f32fd669c8661fa736c785599723baccbac5c9982ed7411b23c259574f7b582",
+    "art/revenant/audio_review_q_v2/sources/squish_03.mp3": "701d979524931d774ec52f0decb7e838d2aaeeb4286eab4d8e56b598769c67f5"
+  },
+  "results": [
+    {
+      "ability": "e",
+      "contact_seconds": 0.38333333333333336,
+      "claw_start_seconds": 0.06714583333333335,
+      "outputs": [
+        {
+          "file": "e_v1_preview.wav",
+          "seconds": 4.5,
+          "true_peak_dbtp": -4.5,
+          "rms_dbfs": -28.42,
+          "mono_loss_db": -0.038
+        },
+        {
+          "file": "e_v1_single.wav",
+          "seconds": 1.55,
+          "true_peak_dbtp": -4.5,
+          "rms_dbfs": -26.8,
+          "mono_loss_db": -0.038
+        },
+        {
+          "file": "e_v1_gather_timeline.wav",
+          "seconds": 1.55,
+          "true_peak_dbtp": -21.73,
+          "rms_dbfs": -45.95,
+          "mono_loss_db": -0.037
+        },
+        {
+          "file": "e_v1_impact_timeline.wav",
+          "seconds": 1.55,
+          "true_peak_dbtp": -4.52,
+          "rms_dbfs": -26.85,
+          "mono_loss_db": -0.038
+        }
+      ]
+    },
+    {
+      "ability": "space",
+      "contact_seconds": 0.8333333333333334,
+      "claw_start_seconds": 0.42539583333333336,
+      "outputs": [
+        {
+          "file": "space_v1_preview.wav",
+          "seconds": 6.0,
+          "true_peak_dbtp": -4.0,
+          "rms_dbfs": -25.96,
+          "mono_loss_db": -0.038
+        },
+        {
+          "file": "space_v1_single.wav",
+          "seconds": 2.3,
+          "true_peak_dbtp": -4.0,
+          "rms_dbfs": -24.81,
+          "mono_loss_db": -0.038
+        },
+        {
+          "file": "space_v1_gather_timeline.wav",
+          "seconds": 2.3,
+          "true_peak_dbtp": -17.9,
+          "rms_dbfs": -38.31,
+          "mono_loss_db": -0.038
+        },
+        {
+          "file": "space_v1_impact_timeline.wav",
+          "seconds": 2.3,
+          "true_peak_dbtp": -3.9,
+          "rms_dbfs": -24.97,
+          "mono_loss_db": -0.038
+        }
+      ]
+    }
+  ]
+}

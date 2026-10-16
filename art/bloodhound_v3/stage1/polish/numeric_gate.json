@@ -1,0 +1,39 @@
+{
+  "status": "AWAITING_VISUAL_REVIEW",
+  "stage": "STAGE1_POLISH_UNAPPROVED",
+  "actions": {
+    "BH_Idle": {
+      "loop_matrix_error": 0.0,
+      "min_mesh_z": 6.218115089495768e-08,
+      "lowest_vertex": {
+        "frame": 56,
+        "vertex": 51013,
+        "weights": {
+          "Foot.L": 1.0
+        }
+      },
+      "root_max_horizontal": 0.0
+    },
+    "BH_AgileMove": {
+      "loop_matrix_error": 0.0,
+      "min_mesh_z": -8.62370228560394e-08,
+      "lowest_vertex": {
+        "frame": 4,
+        "vertex": 51013,
+        "weights": {
+          "Foot.L": 1.0
+        }
+      },
+      "root_max_horizontal": 0.0,
+      "pelvis_vertical_range": 0.07400000095367432,
+      "head_vertical_range": 0.023000001907348633,
+      "pelvis_shoulder_yaw_correlation": -0.9448596549663484,
+      "L_contact_4_frame_max_vertex_drift": 2.474360416609303e-07,
+      "L_stance_toe_max_world_drift": 3.45178021653818e-07,
+      "R_contact_4_frame_max_vertex_drift": 4.3173112404693655e-07,
+      "R_stance_toe_max_world_drift": 9.399615855080016e-07
+    }
+  },
+  "failures": [],
+  "numeric_pass": true
+}

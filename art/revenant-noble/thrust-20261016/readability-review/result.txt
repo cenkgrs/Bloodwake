@@ -1,0 +1,1 @@
+PASS: idle scales/limb lengths retained; .30s forward stroke + .07s visible contact pose, no recovery animation; contact matches authored pose; recoil .96m, physical movement >.90m; four transparent tapered target claw marks; one hit; 45-frame render; FPS/buffering/wall/pause/death/E regressions. This is mechanical verification, NOT aesthetic approval.
