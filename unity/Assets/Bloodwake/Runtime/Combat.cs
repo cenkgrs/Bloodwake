@@ -29,7 +29,8 @@ namespace Bloodwake
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
   }
-  void Attack()
+  bool HeavyUnlocked=>Run!=null&&Run.ClassId=="warrior";
+  void Attack(bool heavyAttack=false)
   {
    if(RevenantActionActive)return;
    if(BeginRevenantThrust())return;
@@ -46,7 +47,7 @@ namespace Bloodwake
     // The first two swings step in a little too, so the chain carries her forward.
     else if(Run.ClassId=="vesper")StartCoroutine(VesperLunge(Player.transform.forward,LungeDistance(Player.transform.forward,.7f),.16f));
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
-    bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
+    bool heavy=heavyAttack&&HeavyUnlocked;
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
     // Vesper's Mixamo swings are already quick; play them slightly slower than authored so each
     // reads, and let only attack speed gained above the class base shorten them.

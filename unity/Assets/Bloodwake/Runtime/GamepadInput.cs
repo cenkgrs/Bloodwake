@@ -12,7 +12,7 @@ namespace Bloodwake
  {
   // The device the player touched last decides aim, menu focus and the button art on screen.
   bool usingPad,drawnPad;Gamepad litPad;float rumbleUntil;int lastMenuFrame=-10;
-  Vector2 stickAim;Vector3 moveIntent;
+  Vector3 moveIntent;
   bool ShowPad=>usingPad&&Gamepad.current!=null;
   bool PlayStationPad=>Gamepad.current is DualShockGamepad;
   // A press that closed a menu or dialogue must not also cast, dash or attack on the frame it lands in the fight.
@@ -32,13 +32,13 @@ namespace Bloodwake
    bool desktopUsed=Keyboard.current?.anyKey.wasPressedThisFrame==true||mouse!=null&&(mouse.delta.ReadValue().sqrMagnitude>36||mouse.leftButton.wasPressedThisFrame||mouse.rightButton.wasPressedThisFrame);
    if(padUsed)usingPad=true;else if(desktopUsed||pad==null)usingPad=false;
   }
-  // Gamepad attacks: right-stick aim wins; otherwise turn toward the nearest foe roughly ahead.
+  // Gamepad attacks go where the left stick points (or the facing); a foe just off that line pulls the swing onto it.
   void PadFacing()
   {
    if(!ShowPad||!Player)return;
-   bool melee=Run.ClassId is "warrior" or "revenant" or "vesper",aimed=stickAim.sqrMagnitude>.1f;
-   var from=Player.transform.position;var ahead=aimed?aim:moveIntent.sqrMagnitude>.01f?moveIntent.normalized:Player.transform.forward;
-   float range=melee?4.2f:12,cone=aimed?18:melee?70:32;Enemy best=null;float bestScore=float.MaxValue;
+   bool melee=Run.ClassId is "warrior" or "revenant" or "vesper";
+   var from=Player.transform.position;var ahead=moveIntent.sqrMagnitude>.01f?moveIntent.normalized:Player.transform.forward;
+   float range=melee?4.2f:12,cone=melee?35:20;Enemy best=null;float bestScore=float.MaxValue;
    foreach(var e in Enemies)
    {
     if(e.Emerging||e.Hp<=0||!e.View)continue;var to=e.View.transform.position-from;to.y=0;float distance=to.magnitude,angle=Vector3.Angle(ahead,to);
@@ -113,9 +113,9 @@ namespace Bloodwake
   }
 
   // ---- Button prompts in the current device's art.
-  static string KeyFor(string action)=>action switch{"skill0"=>"Q","skill1"=>"E","skill2"=>"SPACE","dash"=>"SHIFT","interact"=>"F","confirm"=>"F","pause"=>"ESC","back"=>"ESC","autofire"=>"TAB","attack"=>"LMB",_=>action};
+  static string KeyFor(string action)=>action switch{"skill0"=>"Q","skill1"=>"E","skill2"=>"SPACE","dash"=>"SHIFT","interact"=>"F","confirm"=>"F","pause"=>"ESC","back"=>"ESC","attack"=>"LMB","heavy"=>"RMB",_=>action};
   // Face buttons by position (south = Cross / A); shoulders, triggers and Options as text.
-  static string PadFor(string action)=>action switch{"skill0"=>"west","skill1"=>"east","skill2"=>"south","interact"=>"south","confirm"=>"south","back"=>"east","autofire"=>"north","dash"=>"L1","attack"=>"R2","pause"=>"OPTIONS","prev"=>"L1","next"=>"R1",_=>action};
+  static string PadFor(string action)=>action switch{"skill0"=>"north","skill1"=>"east","skill2"=>"south","interact"=>"south","confirm"=>"south","back"=>"east","dash"=>"west","attack"=>"R1","heavy"=>"R2","pause"=>"OPTIONS","prev"=>"L1","next"=>"R1",_=>action};
   static bool FaceButton(string control)=>control is "south" or "east" or "west" or "north";
   string PadLabel(string control)=>PlayStationPad?control:control switch{"L1"=>"LB","R1"=>"RB","L2"=>"LT","R2"=>"RT","OPTIONS"=>"MENU",_=>control};
   float CapWidth(string action,float h=30){if(!ShowPad)return KeyWidth(KeyFor(action),h);string control=PadFor(action);return FaceButton(control)?h:KeyWidth(PadLabel(control),h);}

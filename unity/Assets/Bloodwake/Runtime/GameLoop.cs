@@ -6,7 +6,6 @@ namespace Bloodwake
 {
  public sealed partial class BloodwakeGame
  {
-  bool autoFire;
   void Update()
   {
    TrackInputDevice();TickRumble(Screen!="playing");
@@ -23,17 +22,19 @@ namespace Bloodwake
    Player.Animator.speed=Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=e.View.PlaybackRate;
    attackCd-=dt;dashCd-=dt;invulnerable-=dt;foreach(string id in Run.Cooldowns.Keys.ToArray())Run.Cooldowns[id]=Mathf.Max(0,Run.Cooldowns[id]-dt);
    bool fresh=FreshGameplayInput;
-   if(fresh&&(keys?.tabKey.wasPressedThisFrame==true||pad?.buttonNorth.wasPressedThisFrame==true))autoFire=!autoFire;
    if(combatPractice&&keys?.f8Key.wasPressedThisFrame==true)TogglePracticeCrowd();
    if(combatPractice&&Run.ClassId=="revenant"&&keys?.f9Key.wasPressedThisFrame==true)practiceDashImpact=!practiceDashImpact;
    Vector2 input=pad?.leftStick.ReadValue()??Vector2.zero;if(keys!=null){input.x+=(keys.dKey.isPressed||keys.rightArrowKey.isPressed?1:0)-(keys.aKey.isPressed||keys.leftArrowKey.isPressed?1:0);input.y+=(keys.wKey.isPressed||keys.upArrowKey.isPressed?1:0)-(keys.sKey.isPressed||keys.downArrowKey.isPressed?1:0);}input=Vector2.ClampMagnitude(input,1);
    Vector3 forward=Vector3.ProjectOnPlane(Cam.transform.forward,Vector3.up).normalized,right=Cam.transform.right;right.y=0;var move=forward*input.y+right*input.x;
-   // The mouse only aims while it is the active device; on a gamepad the right stick aims, else the walking direction.
+   // The mouse aims while it is the active device; on a gamepad the hunter acts where the left stick points (else where she faces).
    if(!usingPad&&Mouse.current!=null&&!Application.isBatchMode){var ray=Cam.ScreenPointToRay(Mouse.current.position.ReadValue());if(new Plane(Vector3.up,0).Raycast(ray,out float distance)){var target=ray.GetPoint(distance)-Player.transform.position;if(target.sqrMagnitude>.01f)aim=target.normalized;}}
-   stickAim=pad?.rightStick.ReadValue()??Vector2.zero;moveIntent=move;
-   if(stickAim.sqrMagnitude>.1f)aim=(forward*stickAim.y+right*stickAim.x).normalized;else if(usingPad&&move.sqrMagnitude>.01f)aim=move.normalized;
-   if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.leftShoulder.wasPressedThisFrame==true))TryRevenantDash(move.sqrMagnitude>.01f?move:aim);
-   if(fresh&&revenantDashing&&(Mouse.current?.leftButton.wasPressedThisFrame==true||pad?.rightTrigger.wasPressedThisFrame==true))thrustQueued=true;
+   moveIntent=move;if(usingPad)aim=move.sqrMagnitude>.01f?move.normalized:Player.transform.forward;
+   // Light attack: left mouse / R1. Heavy attack: right mouse / R2. Dash: Shift / Square.
+   bool lightPressed=Mouse.current?.leftButton.wasPressedThisFrame==true||pad?.rightShoulder.wasPressedThisFrame==true;
+   bool lightHeld=Mouse.current?.leftButton.isPressed==true||pad?.rightShoulder.isPressed==true;
+   bool heavyPressed=Mouse.current?.rightButton.wasPressedThisFrame==true||pad?.rightTrigger.wasPressedThisFrame==true;
+   if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true))TryRevenantDash(move.sqrMagnitude>.01f?move:aim);
+   if(fresh&&revenantDashing&&lightPressed)thrustQueued=true;
    bool actionFrame=RevenantActionActive;TickRevenantDash(dt);
    // Measured planted-foot stride: new Sneak Walk 1.962 m/s, legacy Swagger .89.
    // Match that stride to the displayed body size; upgrades scale speed and playback together.
@@ -43,9 +44,10 @@ namespace Bloodwake
    float motionRate=Run.Stats.N("moveSpeed")/GameData.Stats(Run.ClassId).N("moveSpeed");if(Player.NobleRevenant&&!walking)motionRate=Run.Stats.N("moveSpeed")*.02f/(4.08527f*Player.Height/1.8f);
    Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
    if(fresh&&keys!=null){if(keys.qKey.wasPressedThisFrame)Cast(0);if(keys.eKey.wasPressedThisFrame)Cast(1);if(keys.spaceKey.wasPressedThisFrame)Cast(2);if(keys.fKey.wasPressedThisFrame)Interact();}
-   // Cross / A talks or claims when something is in reach, otherwise it is the third skill; R1 / RB always interacts.
-   if(fresh&&pad!=null){if(pad.buttonWest.wasPressedThisFrame)Cast(0);if(pad.buttonEast.wasPressedThisFrame)Cast(1);if(pad.buttonSouth.wasPressedThisFrame){if(InteractInRange)Interact();else Cast(2);}if(pad.rightShoulder.wasPressedThisFrame)Interact();}
-   if(fresh&&(autoFire||Mouse.current?.leftButton.isPressed==true||pad?.rightTrigger.isPressed==true)&&attackCd<=0)Attack();
+   // Skills: Triangle, Circle, Cross. Cross talks or claims instead when something is in reach. L1 / L2 are free.
+   if(fresh&&pad!=null){if(pad.buttonNorth.wasPressedThisFrame)Cast(0);if(pad.buttonEast.wasPressedThisFrame)Cast(1);if(pad.buttonSouth.wasPressedThisFrame){if(InteractInRange)Interact();else Cast(2);}}
+   if(fresh&&heavyPressed&&HeavyUnlocked&&attackCd<=0)Attack(true);
+   else if(fresh&&lightHeld&&attackCd<=0)Attack();
    UpdateNavigation(dt);TickEnemies(dt);TickWaves(dt);TickPickups(dt);CheckRoomExit();
   }
   void TickWaves(float dt)

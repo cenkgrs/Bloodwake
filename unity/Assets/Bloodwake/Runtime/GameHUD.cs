@@ -43,7 +43,7 @@ namespace Bloodwake
    }
    // Legend, bottom right, laid out from the screen edge leftward.
    float edge=1580;
-   foreach(var (action,text) in ShowPad?new[]{("pause","Pause"),("autofire","Auto-attack"),("attack","Attack")}:new[]{("pause","Pause"),("interact","Interact")})
+   foreach(var (action,text) in HeavyUnlocked?new[]{("pause","Pause"),("heavy","Heavy"),("attack","Attack")}:new[]{("pause","Pause"),("attack","Attack")})
    {
     float w=text.Length*9+6;Label(bottomRight,text,edge-w,856,w,28,16,false,TextAnchor.MiddleLeft).color=new Color(.6f,.57f,.54f);
     float cw=CapWidth(action,24);InputCap(bottomRight,action,edge-w-8-cw,858,24);edge-=w+8+cw+26;
