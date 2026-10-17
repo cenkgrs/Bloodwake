@@ -33,6 +33,12 @@ namespace Bloodwake
    bool lightPressed=Mouse.current?.leftButton.wasPressedThisFrame==true||pad?.rightShoulder.wasPressedThisFrame==true;
    bool lightHeld=Mouse.current?.leftButton.isPressed==true||pad?.rightShoulder.isPressed==true;
    bool heavyPressed=Mouse.current?.rightButton.wasPressedThisFrame==true||pad?.rightTrigger.wasPressedThisFrame==true;
+   // Vesper L1 + R2 (left Alt + right mouse): flame breath from the left hand; any other action ends it.
+   bool offHandHeld=pad?.leftShoulder.isPressed==true||keys?.leftAltKey.isPressed==true;
+   bool dashPressed=keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true;
+   bool skillPressed=pad!=null&&(pad.buttonNorth.wasPressedThisFrame||pad.buttonEast.wasPressedThisFrame||pad.buttonSouth.wasPressedThisFrame)||keys!=null&&(keys.qKey.wasPressedThisFrame||keys.eKey.wasPressedThisFrame||keys.spaceKey.wasPressedThisFrame);
+   if(flameBreathing&&fresh&&(lightPressed||dashPressed||skillPressed||heavyPressed&&!offHandHeld))StopFlameBreath();
+   if(fresh&&Run.ClassId=="vesper"&&offHandHeld&&heavyPressed&&!flameBreathing){BeginFlameBreath();heavyPressed=false;}
    if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true))TryRevenantDash(move.sqrMagnitude>.01f?move:aim);
    if(fresh&&revenantDashing&&lightPressed)thrustQueued=true;
    bool actionFrame=RevenantActionActive;TickRevenantDash(dt);
