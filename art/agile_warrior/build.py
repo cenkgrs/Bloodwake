@@ -145,6 +145,18 @@ for name in CLIPS:
             bone.location = donor.location * ratio
             bone.rotation_quaternion = donor.rotation_quaternion.copy()
             bone.scale = donor.scale.copy()
+        # In place: everything but the locomotion loops keeps the Hips at their
+        # standing ground position, so lunges no longer snap back at the end.
+        # Vertical travel (crouch, jump, fall) is kept.
+        # Anchored to Idle's opening stance so blends in and out of idle don't shift either.
+        hips = rig.pose.bones[root_name]
+        rest = rig.data.bones[root_name].matrix_local.to_3x3()
+        planar = rest @ hips.location
+        if name == "Idle" and frame == 0:
+            anchor = planar.copy()
+        if name not in ("Idle", "Run"):
+            planar.x, planar.y = anchor.x, anchor.y
+            hips.location = rest.inverted() @ planar
         bpy.context.view_layer.update()
         for bone in matched:
             bone.rotation_mode = "QUATERNION"
@@ -166,14 +178,17 @@ for old in source_actions.values():
 # Create explicit grip/mid/tip bones. They make the sword bind deterministic and
 # give Unity exact anchors for the flame ribbon instead of guessing renderer bounds.
 hand_name = "mixamorig:RightHand"
-rig.animation_data.action=baked['Idle']
-if hasattr(baked['Idle'],'slots') and len(baked['Idle'].slots):rig.animation_data.action_slot=baked['Idle'].slots[0]
-scene.frame_set(1);bpy.context.view_layer.update()
-hand_delta=rig.pose.bones[hand_name].matrix @ rig.data.bones[hand_name].matrix_local.inverted()
-desired_idle_direction = Vector((-0.58, 0.26, 0.77)).normalized()
-blade_direction = hand_delta.to_quaternion().inverted() @ desired_idle_direction
-grip_position = rig.data.bones[hand_name].head_local.copy()
-rig.animation_data.action=None
+# The grip comes from the rest skeleton, not from one hand-tuned idle frame:
+# the handle sits inside the closed fingers (62% from wrist to knuckles) and
+# runs along the fist's pinky-to-index axis, so it holds in every clip.
+rest_bones = rig.data.bones
+def rest_head(name):
+    return rest_bones["mixamorig:" + name].head_local.copy()
+knuckles = (rest_head("RightHandIndex1") + rest_head("RightHandMiddle1") + rest_head("RightHandRing1")) / 3
+hand_axis = (knuckles - rest_head("RightHand")).normalized()
+blade_direction = (rest_head("RightHandIndex1") - rest_head("RightHandPinky1"))
+blade_direction = (blade_direction - hand_axis * blade_direction.dot(hand_axis)).normalized()
+grip_position = rest_head("RightHand").lerp(knuckles, .62)
 bpy.context.view_layer.objects.active=rig;rig.select_set(True);bpy.ops.object.mode_set(mode='EDIT')
 edit=rig.data.edit_bones
 grip=edit.new('VesperSwordGrip');grip.head=grip_position;grip.tail=grip_position+blade_direction*.16;grip.parent=edit[hand_name];grip.use_connect=False
@@ -191,7 +206,11 @@ sword_material.name="Vesper Sword PBR"
 save_basecolor(sword_material,"Vesper_Sword_Albedo.png")
 sword_points = [sword.matrix_world @ vertex.co for vertex in sword.data.vertices]
 sword_length = max(point.z for point in sword_points) - min(point.z for point in sword_points)
-blade_rotation = blade_direction.to_track_quat('Z','Y').to_matrix().to_4x4()
+wide_x = (max(p.x for p in sword_points) - min(p.x for p in sword_points)) >= (max(p.y for p in sword_points) - min(p.y for p in sword_points))
+edge = (hand_axis - blade_direction * hand_axis.dot(blade_direction)).normalized()
+side = blade_direction.cross(edge)
+x_axis, y_axis = (edge, side) if wide_x else (-side, edge)
+blade_rotation = Matrix((x_axis, y_axis, blade_direction)).transposed().to_4x4()
 sword_scale=1.58/sword_length
 # The mesh origin is the pommel; the actual palm closes roughly 10.5% up the
 # authored sword. Move that grip point to the socket rather than the pommel.
