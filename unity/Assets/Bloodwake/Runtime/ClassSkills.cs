@@ -38,7 +38,9 @@ namespace Bloodwake
     float contact=(major?.50f:1.17f)*hold/Player.ClipLength(major?"Ultimate":"CastQ");
     Player.Play(major?"Ultimate":"CastQ",hold);SoundOnContact(major?"vesper_bloodfire_rite":"vesper_cinder_ward",contact);
     RevFx.VesperCastWarning(start,radius,contact,major);
-    yield return Delay(contact);Area(start,radius,damage,false,true);RevFx.VesperGroundCast(start,radius,major);if(major)RevFx.VesperBodyBurn(Player,2.5f);yield break;
+    yield return Delay(contact);Area(start,radius,damage,false,true);RevFx.VesperGroundCast(start,radius,major);if(major)RevFx.VesperBodyBurn(Player,2.5f);
+    // The eruption sets everyone in it alight, and the ground keeps burning.
+    IgniteAround(start,radius,major?4:2.5f,damage*.12f);AddFireZone(start,radius*(major?.9f:.7f),major?3:1.5f,damage*.08f);yield break;
    }
    if(behavior=="dash"&&Run.ClassId=="vesper")
    {
@@ -46,6 +48,7 @@ namespace Bloodwake
     Player.Play("Run",Player.ClipLength("Run"));invulnerable=.34f;RevFx.VesperDash(start,target);SoundOnContact("vesper_ember_dash",.16f+.25f);
     float age=0;while(age<.16f){if(Screen=="playing"&&hitStop<=0){age+=Time.deltaTime;Player.transform.position=Vector3.Lerp(start,target,Mathf.SmoothStep(0,1,age/.16f));}yield return null;}
     Player.transform.position=target;Player.transform.rotation=Quaternion.LookRotation(heading);Player.Play("DashAttack",.6f);
+    for(float d=0;d<Vector3.Distance(start,target);d+=.6f)AddFireZone(start+heading*d,.5f,1.5f,damage*.06f);
     yield return Delay(.25f);yield return MeleeContact(heading,radius*1.25f,damage,0,false,0,0,true);yield break;
    }
    if(behavior!="bloodTeleport"&&behavior!="bloodBurst")Player.Play(ultimate?"Ultimate":behavior=="bloodTeleport"?"Teleport":behavior=="whirl"?"SpinAttack":behavior=="voidLeap"?"SunderLeap":"Attack",.8f);

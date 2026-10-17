@@ -44,7 +44,7 @@ namespace Bloodwake
     float travel=RevenantDashDistance*((1-(1-b)*(1-b))-(1-(1-a)*(1-a)));
     var from=Player.transform.position;Player.transform.position=Move(from,revenantDashDirection*travel);
     float actual=Vector3.Distance(from,Player.transform.position);dashTravelled+=actual;dashWakeDistance+=actual;
-    for(float d=.45f;dashWakeDistance>=d;dashWakeDistance-=d)RevFx.DashWake(Player.transform.position-revenantDashDirection*(dashWakeDistance-d),revenantDashDirection,Run.ClassId=="vesper");
+    for(float d=.45f;dashWakeDistance>=d;dashWakeDistance-=d){var wake=Player.transform.position-revenantDashDirection*(dashWakeDistance-d);RevFx.DashWake(wake,revenantDashDirection,Run.ClassId=="vesper");if(Run.ClassId=="vesper")AddFireZone(wake,.45f,1.5f,RevenantBasicDamage()*.1f);}
     Player.RevenantPosePhase=b;
     bool blocked=travel>.001f&&Vector3.Dot(Player.transform.position-from,revenantDashDirection)<travel*.35f;
     if(revenantDashAge>=RevenantDashDuration||blocked)

@@ -33,6 +33,7 @@ namespace Bloodwake
   }
   void TickEnemies(float dt)
   {
+   TickFireZones(dt);
    foreach(var e in Enemies.ToArray())
    {
     if(e.Emerging)
@@ -50,7 +51,10 @@ namespace Bloodwake
     }
     if(e.Burn>0){DamageEnemy(e,e.BurnDps*Mathf.Min(dt,e.Burn),false);e.Burn-=dt;}if(e.Hp<=0)continue;
     if(e.Bleed>0){DamageEnemy(e,e.BleedDps*Mathf.Min(dt,e.Bleed),false);e.Bleed-=dt;}if(e.Hp<=0)continue;
-    e.Cooldown-=dt;e.AreaRecovery=Mathf.Max(0,e.AreaRecovery-dt);e.Stagger-=dt;e.Slow-=dt;e.Mark-=dt;e.Aura-=dt;e.RuneCooldown-=dt;var delta=Player.transform.position-e.View.transform.position;float distance=delta.magnitude;var dir=delta.normalized;
+    TickBurnVisual(e,dt);e.PanicCooldown-=dt;
+    if(e.Panic>0&&e.RecoilTime<=0){TickPanic(e,dt);continue;}
+    // Burning enemies come on slower and take longer to ready an attack.
+    e.Cooldown-=dt*(e.Burn>0?.6f:1);e.AreaRecovery=Mathf.Max(0,e.AreaRecovery-dt);e.Stagger-=dt;e.Slow-=dt;e.Mark-=dt;e.Aura-=dt;e.RuneCooldown-=dt;var delta=Player.transform.position-e.View.transform.position;float distance=delta.magnitude;var dir=delta.normalized;
     if(e.Turning)
     {
      if(e.RecoilTime>0||e.Stagger>0||e.Casting)e.Turning=false;
@@ -60,7 +64,7 @@ namespace Bloodwake
     if(e.Casting){HoldEnemyAgent(e);e.View.Tick(dt,false);continue;}
     if(e.Stagger>0||e.View.Locked>0){if(e.Id=="grunt")e.Intent=e.View.ContactPending?WarriorIntent.Attack:WarriorIntent.Recover;HoldEnemyAgent(e);e.View.Tick(dt,false);continue;}
     if(e.Id=="assassin"&&distance<3.2f&&e.Cooldown<=0){StartCoroutine(AssassinStrike(e));continue;}
-    float speed=e.Data.N("moveSpeed")*.02f*(e.Slow>0?1-e.SlowAmount:1)*(e.Aura>0?1.22f:1);bool ranged=e.Id=="archer"||e.Id=="mage"||e.Id=="healer";float reach=ranged?7:1.25f;
+    float speed=e.Data.N("moveSpeed")*.02f*(e.Slow>0?1-e.SlowAmount:1)*(e.Aura>0?1.22f:1)*(e.Burn>0?.6f:1);bool ranged=e.Id=="archer"||e.Id=="mage"||e.Id=="healer";float reach=ranged?7:1.25f;
     if(e.Id=="boss"){string next=new[]{"attack","sweep","cast","charge","slam","summon"}[e.Pattern%6];reach=next=="attack"||next=="sweep"||next=="slam"?GameData.Rules["boss"][next].N("radius")-.3f:12;}
     var before=e.View.transform.position;Vector3 wish=Vector3.zero;
     if(distance>reach)wish=ChaseDirection(before);else if(ranged&&distance<4)wish=-dir;

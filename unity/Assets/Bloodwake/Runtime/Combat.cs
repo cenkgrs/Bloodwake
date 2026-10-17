@@ -12,13 +12,13 @@ namespace Bloodwake
   public UnityEngine.AI.NavMeshAgent Agent;public int CrowdId,ApproachSlot=-1;public float PathTimer;public Vector3 PathGoal;
   public WarriorIntent Intent;public int AttackCount,ContactCount;public bool StepPending;public float StepTime,StuckTime,ApproachTimer;public Vector3 StepGoal,ApproachAnchor;
   public bool Turning;public float TurnAge,TurnYawScale;public Quaternion TurnRotation;public Vector3 TurnOffset;
-  public string Id;public JObject Data;public ActorView View;public float Hp,MaxHp,Damage,Cooldown,Stagger,Slow,SlowAmount,Mark,Aura,RuneCooldown,Burn,BurnDps,Bleed,BleedDps;public int Pattern,ImpactVersion;public bool Casting,Training;public Vector3 RecoilDirection,TrainingHome;public float RecoilTime,RecoilRemaining,AreaRecovery;
+  public string Id;public JObject Data;public ActorView View;public float Hp,MaxHp,Damage,Cooldown,Stagger,Slow,SlowAmount,Mark,Aura,RuneCooldown,Burn,BurnDps,Bleed,BleedDps;public int Pattern,ImpactVersion;public bool Casting,Training;public Vector3 RecoilDirection,TrainingHome,PanicDirection;public float Panic,PanicCooldown,PanicFlinch,BurnVisual;public float RecoilTime,RecoilRemaining,AreaRecovery;
  }
  public sealed partial class BloodwakeGame
  {
   int combo;float comboExpires;
   const float CombatActorScale=1.173f;
-  const float NormalHitStop=.05f,MeleeHitStop=.075f,FinisherHitStop=.12f;
+  const float NormalHitStop=.05f,MeleeHitStop=.09f,FinisherHitStop=.16f;
   public void SpawnEnemy(string id,Vector3 pos)
   {
    var data=GameData.Row("enemies",id);float n=Run.Wave-1,t=Run.Night-1;
@@ -77,7 +77,7 @@ namespace Bloodwake
    {
     bool heavy=revenantSwing==3||finisher;hitStop=Mathf.Max(hitStop,heavy?FinisherHitStop:MeleeHitStop);
     ShakeCamera(heavy?.6f:.42f,dir);
-    foreach(var e in hit){MeleeKnockback(e,dir,heavy);if(revenantSwing==0&&e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);}
+    foreach(var e in hit){MeleeKnockback(e,dir,heavy);if(revenantSwing==0&&e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);if(Run.ClassId=="vesper"&&heavy)Ignite(e,2,damage*.15f);}
    }
    if(hit.Count>0&&slot.N("chain")>0)ChainStrike(hit.First().View.transform.position,damage*.5f,(int)slot.N("chain"),2.4f,hit);
    if(revenantSwing>0){RevFx.Claws(origin,dir,sourceRadius,revenantSwing==2,wide||revenantSwing==3);foreach(var e in hit)if(e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);}
@@ -119,7 +119,7 @@ namespace Bloodwake
    }
    if(e.Hp<=0||e.Emerging)return;bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
-   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
+   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
    if(effects&&actual>0)e.View.FlashHit(false);
    if(e.Hp>0){if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}

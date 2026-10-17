@@ -35,13 +35,15 @@ namespace Bloodwake
    if(enemy.Hp<=0||enemy.Emerging||enemy.AreaRecovery>0||!enemy.View)return;
    var away=enemy.View.transform.position-Player.transform.position;away.y=0;float distance=away.magnitude;swing.y=0;
    var direction=(distance>.001f?away/distance:swing.normalized)*.6f+swing.normalized*.4f;
-   float push=BasicRecoilDistance(enemy)*(heavy?3.4f:2);
+   // Finishers and heavy blows throw the body well clear; ordinary swings only rock it back.
+   float push=BasicRecoilDistance(enemy)*(heavy?6:2);
    if(!heavy)push=Mathf.Min(push,Mathf.Max(BasicRecoilDistance(enemy),MeleeReach()-distance+.2f));
    enemy.RecoilDirection=direction.sqrMagnitude>.0001f?direction.normalized:Player.transform.forward;
-   enemy.RecoilRemaining=push;enemy.RecoilTime=heavy?.34f:.24f;
-   enemy.Stagger=Mathf.Max(enemy.Stagger,(heavy?.75f:.5f)+PostImpactRecovery);
+   enemy.RecoilRemaining=push;enemy.RecoilTime=heavy?.42f:.24f;
+   enemy.Stagger=Mathf.Max(enemy.Stagger,(heavy?1.05f:.55f)+PostImpactRecovery);HoldAttack(enemy);
    bool boss=enemy.Id=="boss",tank=enemy.Id=="tank";
-   enemy.View.ImpactPose(Player.transform.position,boss?(heavy?5:3):tank?(heavy?11:7):(heavy?24:15),heavy?.42f:.32f);
+   enemy.View.ImpactPose(Player.transform.position,boss?(heavy?6:3):tank?(heavy?14:8):(heavy?32:18),heavy?.5f:.32f);
+   if(heavy&&!boss)enemy.View.Play("Hit",.7f);
   }
   void StartAreaRecoil(Enemy enemy,Vector3 origin,float distanceMultiplier=1)
   {
@@ -53,7 +55,7 @@ namespace Bloodwake
    enemy.RecoilRemaining=(boss?.08f:tank?.2f:.48f)*distanceMultiplier;
    enemy.RecoilTime=boss?.18f:.28f;
    enemy.AreaRecovery=boss?.32f:tank?.44f:.56f;
-   enemy.Stagger=Mathf.Max(enemy.Stagger,enemy.AreaRecovery+PostImpactRecovery);
+   enemy.Stagger=Mathf.Max(enemy.Stagger,enemy.AreaRecovery+PostImpactRecovery);HoldAttack(enemy);
    // Invalidate attacks already winding up, so the reaction cannot conceal a hit.
    enemy.ImpactVersion++;
    enemy.View.Play("Hit",enemy.AreaRecovery);
