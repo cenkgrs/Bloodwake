@@ -25,7 +25,7 @@ namespace Bloodwake
     }
    }
   }
-  public void Pulse(bool player){playerPulse=player;duration=player?.09f:.16f;strength=player?.12f:.322f;remaining=duration;pulseFrame=Time.frameCount;Apply(strength);}
+  public void Pulse(bool player){playerPulse=player;duration=player?.09f:.15f;strength=player?.12f:.62f;remaining=duration;pulseFrame=Time.frameCount;Apply(strength);}
   // A hit late in a long frame must still be rendered once at its intended peak.
   void LateUpdate(){if(remaining<=0||Time.frameCount==pulseFrame)return;Advance(Time.unscaledDeltaTime);}
   void Advance(float dt)

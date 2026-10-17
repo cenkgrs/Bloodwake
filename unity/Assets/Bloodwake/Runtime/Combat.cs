@@ -18,13 +18,14 @@ namespace Bloodwake
  {
   int combo;float comboExpires;
   const float CombatActorScale=1.173f;
-  const float NormalHitStop=.05f,MeleeHitStop=.09f,FinisherHitStop=.16f;
+  const float NormalHitStop=.06f,MeleeHitStop=.11f,FinisherHitStop=.19f;
   public void SpawnEnemy(string id,Vector3 pos)
   {
    var data=GameData.Row("enemies",id);float n=Run.Wave-1,t=Run.Night-1;
    float power=id=="boss"?(1+.65f*t+.2f*t*t)*BossVariant.N("hp",1):1+.25f*n+.035f*n*n;
    float height=id=="boss"?3.5f*BossVariant.N("scale",1):id=="tank"?2.3f:id=="commander"?2.225f:id=="grunt"?2.15f:1.8f;
    var view=ActorView.Create(id,true,height*CombatActorScale,actorRoot);view.transform.position=FreeEnemySpawn(pos,id=="boss"?.8f:id=="tank"||id=="grunt"?.65f:.56f);RevFx.HandMagic(view,true);
+   if(id=="boss")view.CalibrateRunFromFeet();
    var enemy=new Enemy{Id=id,Data=data,View=view,Hp=data.N("maxHp")*power,MaxHp=data.N("maxHp")*power,Damage=data.N("damage")*(id=="boss"?1+.25f*t:1+.09f*n+.002f*n*n),Cooldown=.9f};Enemies.Add(enemy);AttachEnemyAgent(enemy);
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
@@ -80,7 +81,7 @@ namespace Bloodwake
    {
     bool heavy=revenantSwing==3||finisher;hitStop=Mathf.Max(hitStop,heavy?FinisherHitStop:MeleeHitStop);
     ShakeCamera(heavy?.6f:.42f,dir);
-    foreach(var e in hit){MeleeKnockback(e,dir,heavy);if(revenantSwing==0&&e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);if(Run.ClassId=="vesper"&&heavy)Ignite(e,2,damage*.15f);}
+    foreach(var e in hit){MeleeKnockback(e,dir,heavy);if(revenantSwing==0&&e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);if(e.View)RevFx.Flash(e.View.transform.position+Vector3.up*1.1f,RevenantVfx.Tone(Run.ClassId=="vesper"?"ffc46b":"fff0dc"),heavy?1.5f:.9f,heavy?2.6f:1.8f,heavy?.14f:.09f);if(Run.ClassId=="vesper"&&heavy)Ignite(e,2,damage*.15f);}
    }
    if(hit.Count>0&&slot.N("chain")>0)ChainStrike(hit.First().View.transform.position,damage*.5f,(int)slot.N("chain"),2.4f,hit);
    if(revenantSwing>0){RevFx.Claws(origin,dir,sourceRadius,revenantSwing==2,wide||revenantSwing==3);foreach(var e in hit)if(e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);}
@@ -122,9 +123,9 @@ namespace Bloodwake
    }
    if(e.Hp<=0||e.Emerging)return;if(DevOneHit)damage=Mathf.Max(damage,e.Hp*4);bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
-   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
-   if(effects&&actual>0)e.View.FlashHit(false);
-   if(e.Hp>0){if(effects){Sound(e.Id=="boss"?"boss_hurt":e.Id+"_hurt");if(e.Id=="grunt"||e.Id=="tank"||e.Id=="boss")Sound("sword_hit_armor");}if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
+   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));if(e.Id!="boss"){e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);}hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0&&e.Id!="boss"){e.ImpactVersion++;StartRecoil(e);}}
+   if(effects&&actual>0){e.View.FlashHit(false);e.View.Shake?.Hit(e.View.transform.position-Player.transform.position,.7f);}
+   if(e.Hp>0){if(effects){Sound(e.Id=="boss"?"boss_hurt":e.Id+"_hurt");if(e.Id=="grunt"||e.Id=="tank"||e.Id=="boss")Sound("sword_hit_armor");}if(effects&&e.AreaRecovery<=0&&e.Id!="boss")e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}
    if(e.View.transform.Find("RuinMark"))Destroy(e.View.transform.Find("RuinMark").gameObject);Run.Kills++;OnEnemyKilled(e);Run.Gold+=(int)e.Data.N("goldReward")+(int)Run.Stats.N("bonusGoldPerKill");Drop(e.View.transform.position,"xp",(int)e.Data.N("xpReward"));if(e.Id=="boss"||Random.value<.08f)Drop(e.View.transform.position,"health",e.Id=="boss"?70:18);float length=e.View.Play("Death");Destroy(e.View.gameObject,Mathf.Max(1,length)+1);Sound(e.Id=="boss"?"boss_death":"enemy_death");Sound(e.Id+"_death");
   }

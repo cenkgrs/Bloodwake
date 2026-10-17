@@ -48,6 +48,7 @@ namespace Bloodwake
   public bool HasWarriorSlashes {get;private set;}
   public WarriorTurnData TurnData {get;private set;}
   public HitFlash HitFlash {get;private set;}
+  public HitShake Shake {get;private set;}
   public void FlashHit(bool player)=>HitFlash.Pulse(player);
   [System.Serializable]class StrideCalibration {public float referenceSpeed,referenceHeight;}
   public float ActionStartTime(string key)=>NobleRevenant&&Clip(key)=="REV_BloodBurst"?ClipLength(key)*.15f:0;
@@ -72,6 +73,7 @@ namespace Bloodwake
    model.transform.localScale*=height/1.8f;model.transform.localPosition=Vector3.zero;
    foreach(var renderer in model.GetComponentsInChildren<Renderer>())renderer.renderingLayerMask|=2u;
    view.HitFlash=go.AddComponent<HitFlash>();view.HitFlash.Initialize(model.GetComponentsInChildren<Renderer>());
+   view.Shake=go.AddComponent<HitShake>();view.Shake.Initialize(model.transform);
    if(!enemy&&id=="vesper")model.AddComponent<VesperBladeVfx>();
    if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_ShieldWalk"))
    {

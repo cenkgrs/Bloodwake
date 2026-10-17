@@ -64,7 +64,7 @@ namespace Bloodwake
     if(e.Casting){HoldEnemyAgent(e);e.View.Tick(dt,false);continue;}
     if(e.Stagger>0||e.View.Locked>0){if(e.Id=="grunt")e.Intent=e.View.ContactPending?WarriorIntent.Attack:WarriorIntent.Recover;HoldEnemyAgent(e);e.View.Tick(dt,false);continue;}
     if(e.Id=="assassin"&&distance<3.2f&&e.Cooldown<=0){StartCoroutine(AssassinStrike(e));continue;}
-    float speed=e.Data.N("moveSpeed")*.02f*(e.Slow>0?1-e.SlowAmount:1)*(e.Aura>0?1.22f:1)*(e.Burn>0?.6f:1);bool ranged=e.Id=="archer"||e.Id=="mage"||e.Id=="healer";float reach=ranged?7:1.25f;
+    float speed=e.Data.N("moveSpeed")*.02f*(e.Id=="boss"?2.5f:1)*(e.Slow>0?1-e.SlowAmount:1)*(e.Aura>0?1.22f:1)*(e.Burn>0?.6f:1);bool ranged=e.Id=="archer"||e.Id=="mage"||e.Id=="healer";float reach=ranged?7:1.25f;
     if(e.Id=="boss"){var pattern=BossPattern;string next=pattern[e.Pattern%pattern.Length];reach=next=="attack"||next=="sweep"||next=="slam"?GameData.Rules["boss"][next].N("radius")-.3f:12;}
     var before=e.View.transform.position;Vector3 wish=Vector3.zero;
     if(distance>reach)wish=ChaseDirection(before);else if(ranged&&distance<4)wish=-dir;
@@ -146,18 +146,19 @@ namespace Bloodwake
   IEnumerator EnemyArea(Enemy e,Vector3 pos,float radius,float delay){var warning=RevFx.ThreatWarning(pos,Vector3.forward,radius,360,0,delay,RevenantVfx.Tone("dc68ba"));yield return Delay(delay);if(warning)Destroy(warning);if(e.Hp>0){RevFx.HostileRuneImpact(pos,radius);if(Vector3.Distance(Player.transform.position,pos)<radius)HurtPlayer(e.Damage*1.7f);}}
   IEnumerator BossCast(Enemy e)
   {
-   int impact=e.ImpactVersion;e.Casting=true;Sound("boss_roar");string[] pattern=BossPattern;string attack=pattern[e.Pattern++%pattern.Length];var spec=GameData.Rules["boss"][attack];var origin=e.View.transform.position;var dir=(Player.transform.position-origin).normalized;float radius=spec.N("radius"),windup=spec.N("windup")*BossTempo,recovery=spec.N("recovery")*BossTempo;string clip=char.ToUpper(attack[0])+attack.Substring(1);float contact=spec.N("contact",.5f);e.View.Play(clip,windup/contact);var warning=BossWarning(origin,dir,radius,spec.N("arc",360),attack,windup);float preparation=0;while(preparation<windup&&e.Hp>0&&impact==e.ImpactVersion){if(Screen=="playing"&&hitStop<=0)preparation+=Time.deltaTime;yield return null;}if(warning)Destroy(warning);if(e.Hp<=0||impact!=e.ImpactVersion){e.Casting=false;yield break;}
+   int impact=e.ImpactVersion;e.Casting=true;Sound("boss_roar");string[] pattern=BossPattern;string attack=pattern[e.Pattern++%pattern.Length];var spec=GameData.Rules["boss"][attack];var origin=e.View.transform.position;var dir=(Player.transform.position-origin).normalized;float radius=spec.N("radius"),windup=spec.N("windup")*BossTempo,recovery=spec.N("recovery")*BossTempo*.6f;string clip=char.ToUpper(attack[0])+attack.Substring(1);float contact=spec.N("contact",.5f);e.View.Play(clip,windup/contact);var warning=BossWarning(origin,dir,radius,spec.N("arc",360),attack,windup);float preparation=0;while(preparation<windup&&e.Hp>0&&impact==e.ImpactVersion){if(Screen=="playing"&&hitStop<=0)preparation+=Time.deltaTime;yield return null;}if(warning)Destroy(warning);if(e.Hp<=0||impact!=e.ImpactVersion){e.Casting=false;yield break;}
    e.View.PlaybackRate=e.View.ClipLength(clip)*(1-contact)/(recovery+(attack=="charge"?.6f:0));e.View.Locked=recovery+(attack=="charge"?.6f:0);
    RevFx.BossContact(attack,origin,dir,radius,spec.N("arc",360));
    if(attack=="summon"){var kinds=BossSummons;int count=(int)BossVariant.N("summonCount",4);for(int i=0;i<count&&Enemies.Count<RolledAliveCap;i++){var spawn=Move(origin,Quaternion.Euler(0,i*360f/count,0)*Vector3.forward*4);SpawnEnemy(kinds[i%kinds.Length],spawn);}}
    else if(attack=="cast"){int bolts=(int)BossVariant.N("castCount",3);for(int k=0;k<bolts;k++){float i=k-(bolts-1)*.5f;StartCoroutine(Projectile(origin,Quaternion.Euler(0,i*.22f*Mathf.Rad2Deg,0)*dir,e.Damage*.7f,6.5f,14,true,0,true));}}
    else if(attack=="charge"){float age=0,wake=0;bool struck=false;while(age<.6f&&e.Hp>0&&impact==e.ImpactVersion){if(Screen!="playing"||hitStop>0){yield return null;continue;}float dt=Mathf.Min(Time.deltaTime,.6f-age);age+=dt;var previous=e.View.transform.position;var intended=previous+dir*(8/.6f)*dt;var actual=Move(previous,intended-previous,.65f);if(Vector3.Distance(actual,intended)>.15f)break;e.View.transform.position=actual;wake-=dt;if(wake<=0){RevFx.ChargeWake(previous,dir);wake=.08f;}if(!struck&&SegmentDistance(Player.transform.position,previous,actual)<1.36f){HurtPlayer(e.Damage*1.35f);struck=true;}yield return null;}}
    else if(Vector3.Distance(Player.transform.position,origin)<=radius+.36f&&Vector3.Angle(dir,Player.transform.position-origin)<=spec.N("arc",360)*.5f)HurtPlayer(e.Damage*spec.N("damage",1));
-   yield return Delay(recovery);e.Casting=false;e.Cooldown=.45f;
+   yield return Delay(recovery);e.Casting=false;e.Cooldown=.08f;
   }
   GameObject BossWarning(Vector3 origin,Vector3 direction,float radius,float arc,string attack,float lifetime)
   {
-   return RevFx.BossTelegraph(origin,direction,radius,arc,attack,lifetime);
+   // No ground markings: the warden's wind-up is the only warning, so it has to be read from the body.
+   return null;
   }
  }
 }

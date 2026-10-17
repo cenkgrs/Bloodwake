@@ -5,7 +5,7 @@ namespace Bloodwake
  {
   // Extra stillness after impact; do not slow the hit clip or the recoil itself.
   const float PostImpactRecovery=.2f;
-  static float BasicRecoilDistance(Enemy enemy)=>enemy.Id=="boss"?.06f:enemy.Id=="tank"?.12f:.24f;
+  static float BasicRecoilDistance(Enemy enemy)=>enemy.Id=="boss"?.06f:enemy.Id=="tank"?.18f:.34f;
   void StartRecoil(Enemy enemy)
   {
    if(enemy.Emerging||enemy.AreaRecovery>0)return;
@@ -33,6 +33,8 @@ namespace Bloodwake
   void MeleeKnockback(Enemy enemy,Vector3 swing,bool heavy)
   {
    if(enemy.Hp<=0||enemy.Emerging||enemy.AreaRecovery>0||!enemy.View)return;
+   // A Bellwarden does not flinch: hits shake it but never push it, stagger it or break its attack.
+   if(enemy.Id=="boss"){enemy.View.ImpactPose(Player.transform.position,heavy?4:2,.25f);enemy.View.Shake?.Hit(swing,heavy?.9f:.5f);return;}
    var away=enemy.View.transform.position-Player.transform.position;away.y=0;float distance=away.magnitude;swing.y=0;
    var direction=(distance>.001f?away/distance:swing.normalized)*.6f+swing.normalized*.4f;
    // Finishers and heavy blows throw the body well clear; ordinary swings only rock it back.
@@ -44,10 +46,12 @@ namespace Bloodwake
    bool boss=enemy.Id=="boss",tank=enemy.Id=="tank";
    enemy.View.ImpactPose(Player.transform.position,boss?(heavy?6:3):tank?(heavy?14:8):(heavy?32:18),heavy?.5f:.32f);
    if(heavy&&!boss)enemy.View.Play("Hit",.7f);
+   enemy.View.Shake?.Hit(enemy.RecoilDirection,boss?(heavy?.9f:.5f):heavy?1.7f:1.1f);
   }
   void StartAreaRecoil(Enemy enemy,Vector3 origin,float distanceMultiplier=1)
   {
    if(enemy.Hp<=0||enemy.Emerging)return;
+   if(enemy.Id=="boss"){enemy.View.ImpactPose(origin,3,.3f);ShakeCamera(.35f,Vector3.zero);return;}
    var away=enemy.View.transform.position-origin;away.y=0;
    if(away.sqrMagnitude<.0001f){away=enemy.View.transform.position-Player.transform.position;away.y=0;}
    enemy.RecoilDirection=away.sqrMagnitude>.0001f?away.normalized:enemy.View.transform.forward;

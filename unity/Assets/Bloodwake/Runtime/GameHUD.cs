@@ -73,6 +73,7 @@ namespace Bloodwake
   }
   void UpdateHUD()
   {
+   UpdateBossBar();
    float hp=Run.Stats.N("hp"),max=Run.Stats.N("maxHp");healthLabel.text=$"{hp:0} / {max:0}";
    float f=Mathf.Clamp01(hp/max);healthFill.rectTransform.sizeDelta=new Vector2(Mathf.Max(f>0?12:0,HealthWidth*f),16);healthFill.enabled=f>0;
    runLabel.text=$"{(room?.S("type")=="safehouse"?room.S("name"):DistrictName)}  ·  LEVEL {Run.Level}  ·  GOLD {Run.Gold}"+(Run.EssencePending>0?$"  ·  ESSENCE {Run.EssencePending}":"");
@@ -104,7 +105,7 @@ namespace Bloodwake
     }
     var screen=Cam.WorldToScreenPoint(enemy.View.transform.position+Vector3.up*(enemy.Id=="boss"?3.7f:2.45f));
     RectTransformUtility.ScreenPointToLocalPointInRectangle(page,screen,null,out var local);var rect=(RectTransform)fill.transform.parent;
-    rect.anchoredPosition=new Vector2(local.x-page.rect.xMin-32,local.y-page.rect.yMax);rect.gameObject.SetActive(screen.z>0&&!enemy.Emerging);fill.rectTransform.sizeDelta=new Vector2(64*Mathf.Clamp01(enemy.Hp/enemy.MaxHp),7);
+    rect.anchoredPosition=new Vector2(local.x-page.rect.xMin-32,local.y-page.rect.yMax);rect.gameObject.SetActive(screen.z>0&&!enemy.Emerging&&enemy.Id!="boss");fill.rectTransform.sizeDelta=new Vector2(64*Mathf.Clamp01(enemy.Hp/enemy.MaxHp),7);
    }
   }
  }
