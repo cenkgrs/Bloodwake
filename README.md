@@ -1,6 +1,6 @@
 # Bloodwake
 
-**Güncel devir (17 Ekim 2026): [unity/HANDOFF_STATUS.md](unity/HANDOFF_STATUS.md).**
+**Buradan başla: [HANDOFF.md](HANDOFF.md).** Ayrıntılı tarihçe: [unity/HANDOFF_STATUS.md](unity/HANDOFF_STATUS.md).
 Kurulum, doğrulanmış durum, kalan görsel/oynanış işleri ve diğer bilgisayarda
 devam adımları burada. Ayrıntılı teknik günlük: [unity/README.md](unity/README.md).
 
