@@ -73,8 +73,15 @@ namespace Bloodwake
    Sparks(pos+Vector3.up*.18f,VesperGold,major?80:26,major?.9f:.42f,.8f,major?8f:3.6f);
    Sparks(pos+Vector3.up*.1f,VesperBlood,major?30:10,major?.85f:.52f,.45f,major?5f:2.8f);
   }
+  // The same lingering ground fire Bloodfire Rite leaves, laid along a dash path.
+  public void VesperTrailBurn(Vector3 pos,Vector3 direction,int count)
+  {
+   var side=Vector3.Cross(Vector3.up,direction).normalized;
+   for(int i=0;i<count;i++)FlameCard(pos+side*Random.Range(-.35f,.35f)+direction.normalized*Random.Range(-.2f,.2f),Random.Range(.4f,.7f),Random.Range(1.1f,1.8f),Vector3.zero,.08f+Random.Range(0,.25f),1.4f,"ground");
+  }
   public void VesperDash(Vector3 start,Vector3 end)
   {
+   var dir=end-start;dir.y=0;float length=dir.magnitude;if(length>.01f)for(float d=.2f;d<length;d+=.45f)VesperTrailBurn(start+dir/length*d,dir/length,2);
    for(int i=0;i<9;i++)FlameCard(Vector3.Lerp(start,end,(i+.5f)/9f),Random.Range(.6f,1f),.5f,Vector3.up*.5f,i*.018f);
    for(int i=0;i<7;i++){var point=Vector3.Lerp(start,end,(i+.5f)/7f)+Vector3.up*.45f;Sparks(point,i%2==0?VesperGold:VesperBlack,4,.3f,.2f,1.5f);}
   }

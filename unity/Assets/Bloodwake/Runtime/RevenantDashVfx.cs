@@ -38,6 +38,7 @@ namespace Bloodwake
    trace.transform.rotation=Quaternion.LookRotation(Vector3.up,direction);
    trace.Block.SetFloat("_Seed",UnityEngine.Random.Range(0,20));trace.Apply();
    if(!fire)DashBloodThreads(position,direction);
+   else VesperTrailBurn(position,direction,1);
    for(int i=0;i<2;i++)
    {
     float spread=UnityEngine.Random.Range(-.35f,.35f),fogSize=UnityEngine.Random.Range(1.25f,1.7f);
