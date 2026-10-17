@@ -36,7 +36,7 @@ namespace Bloodwake
     bool major=behavior=="vesperRite";float hold=major?1.32f:1.15f,contact=major?.72f:.48f;
     Player.Play(major?"Ultimate":"CastQ",hold);SoundOnContact(major?"vesper_bloodfire_rite":"vesper_cinder_ward",contact);
     RevFx.VesperCastWarning(start,radius,contact,major);
-    yield return Delay(contact);Area(start,radius,damage,false,true);RevFx.VesperGroundCast(start,radius,major);yield break;
+    yield return Delay(contact);Area(start,radius,damage,false,true);RevFx.VesperGroundCast(start,radius,major);if(major)RevFx.VesperBodyBurn(Player,2.5f);yield break;
    }
    if(behavior=="dash"&&Run.ClassId=="vesper")
    {

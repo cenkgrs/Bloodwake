@@ -34,9 +34,8 @@ namespace Bloodwake
   readonly List<Transform> cards=new();readonly List<float> cardScale=new();
   void CreateFlameCards()
   {
-   var shader=Resources.Load<Shader>("Vfx/vesper_flame_flipbook");var atlas=Resources.Load<Texture2D>("Vfx/vesper_flame_flipbook");
-   if(!shader||!atlas){Debug.LogError("Vesper flame flipbook missing");return;}
-   var material=new Material(shader){name="Vesper flame flipbook"};material.SetTexture("_MainTex",atlas);material.SetColor("_Tint",new Color(1,.86f,.7f));materials.Add(material);
+   // The blade wears the thin body flame; the broad tongue reads as clutter on a sword.
+   var material=RevenantVfx.FlameMaterial("body");if(!material)return;
    var block=new MaterialPropertyBlock();
    for(int i=0;i<CardStops.Length;i++)
    {
@@ -100,7 +99,7 @@ namespace Bloodwake
    if(castGlow>.01f){cardBlock??=new MaterialPropertyBlock();foreach(var c in cards){var rr=c.GetComponent<MeshRenderer>();rr.GetPropertyBlock(cardBlock);cardBlock.SetFloat("_Intensity",1.55f+2.6f*castGlow);rr.SetPropertyBlock(cardBlock);}}
    float speed=trailReady?Vector3.Distance(previousTip,end)/Mathf.Max(Time.deltaTime,.001f):0;
    SweepRibbon(start,end);
-   for(int i=0;i<cards.Count;i++){float h=.5f*cardScale[i]*(1+.6f*castGlow),w=h*.75f;cards[i].SetPositionAndRotation(Vector3.Lerp(start,end,CardStops[i])+Vector3.up*h*.42f,facing);cards[i].localScale=Vector3.one;cards[i].localScale=new Vector3(w/cards[i].lossyScale.x,h/cards[i].lossyScale.y,1);}
+   for(int i=0;i<cards.Count;i++){float h=.5f*cardScale[i]*(1+.6f*castGlow),w=h*.5f;cards[i].SetPositionAndRotation(Vector3.Lerp(start,end,CardStops[i])+Vector3.up*h*.42f,facing);cards[i].localScale=Vector3.one;cards[i].localScale=new Vector3(w/cards[i].lossyScale.x,h/cards[i].lossyScale.y,1);}
    var shadowPosition=Vector3.Lerp(mid.position,end,.9f);
    if(!trailReady)
    {
