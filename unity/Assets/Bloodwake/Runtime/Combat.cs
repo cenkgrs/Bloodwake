@@ -42,6 +42,8 @@ namespace Bloodwake
     string clip=Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper"?"Attack"+combo:"Attack";
     // Vesper finishes the combo with the upward greatsword thrust.
     if(Run.ClassId=="vesper"&&combo==3){clip="DashAttack";StartCoroutine(VesperLunge(Player.transform.forward,LungeDistance(Player.transform.forward,2.4f),.18f));}
+    // The first two swings step in a little too, so the chain carries her forward.
+    else if(Run.ClassId=="vesper")StartCoroutine(VesperLunge(Player.transform.forward,LungeDistance(Player.transform.forward,.7f),.16f));
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
     bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);

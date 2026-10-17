@@ -54,8 +54,9 @@ namespace Bloodwake
    var image=Rect(portrait,"Portrait",0,0,hole,hole).gameObject.AddComponent<RawImage>();image.texture=Resources.Load<Texture2D>("ui/portraits/"+Run.ClassId);image.raycastTarget=false;
    // Each source is a full-body 2:3 painting. Crop around its own face, preserving the pixels' aspect ratio.
    var face=Run.ClassId switch{"warrior"=>new Vector2(.59f,.855f),"mage"=>new Vector2(.53f,.85f),"revenant"=>new Vector2(.59f,.87f),"vesper"=>new Vector2(.5f,.86f),_=>new Vector2(.41f,.85f)};
-   float cropWidth=.26f,cropHeight=cropWidth*(image.texture.width/(float)image.texture.height);
-   image.uvRect=new UnityEngine.Rect(face.x-cropWidth*.5f,Mathf.Clamp(face.y-cropHeight*.5f,0,1-cropHeight),cropWidth,cropHeight);
+   // Head and shoulders: a wider crop, centred a little above the face so the hair stays inside the ring.
+   float cropWidth=.34f,cropHeight=cropWidth*(image.texture.width/(float)image.texture.height);
+   image.uvRect=new UnityEngine.Rect(face.x-cropWidth*.5f,Mathf.Clamp(face.y+.035f-cropHeight*.5f,0,1-cropHeight),cropWidth,cropHeight);
    Art(page,"ui/kit/ring_hollow",x,y,ring,ringH);
    // Health: the forged frame with a blood fill that keeps its pointed end at any width.
    Kit(page,"bar_frame",x+ring-14,cy-26,330,53,1.7f);
