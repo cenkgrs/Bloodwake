@@ -9,6 +9,17 @@ namespace Bloodwake
  // embers over every fire. Adds no lights (they are the expensive part on this GPU).
  public sealed partial class BloodwakeGame
  {
+  // Props that join the kit once their models are delivered (Resources/Environment/Kit01/<id>/<id>.prefab):
+  // footprint in metres (width, height, depth), whether it blocks, and whether it backs onto the wall.
+  static readonly (string id,Vector3 size,bool solid,bool wall)[] deliveredProps=
+  {
+   ("cart",new Vector3(2.3f,1.4f,1.3f),true,false),("sacks",new Vector3(1.1f,.75f,.9f),true,false),("hay_bale",new Vector3(1.2f,.8f,.8f),true,false),
+   ("weapon_rack",new Vector3(1.5f,1.7f,.5f),true,true),("rubble",new Vector3(1.7f,.55f,1.4f),true,false),("coffin",new Vector3(2f,.65f,.75f),true,false),
+   ("cage",new Vector3(1f,1.9f,1f),true,false),("shrine_statue",new Vector3(1.2f,2.6f,1.2f),true,true),("candles",new Vector3(.6f,.45f,.6f),false,false),
+   ("bones",new Vector3(1f,.25f,.8f),false,false),("banner_pole",new Vector3(.5f,3.2f,.5f),true,true),("firewood",new Vector3(1.3f,.7f,.8f),true,true),
+  };
+  static readonly Dictionary<string,bool> kitPresent=new();
+  static bool HasKit(string id){if(!kitPresent.TryGetValue(id,out bool has))kitPresent[id]=has=Resources.Load<GameObject>("Environment/Kit01/"+id+"/"+id);return has;}
   void DressEdges(string id)
   {
    var random=new System.Random(id.Aggregate(91,(h,c)=>h*37+c));float R(float a,float b)=>a+(float)random.NextDouble()*(b-a);
@@ -42,6 +53,14 @@ namespace Bloodwake
    {
     if(placed>=budget)break;var p=spot+new Vector3(R(-.35f,.35f),0,R(-.35f,.35f));float yaw=Quaternion.LookRotation(inward).eulerAngles.y+R(-25,25);
     var along=Quaternion.Euler(0,yaw,0)*Vector3.right;
+    var delivered=deliveredProps.Where(d=>HasKit(d.id)).ToArray();
+    if(delivered.Length>0&&random.NextDouble()<.5)
+    {
+     var prop=delivered[random.Next(delivered.Length)];float r=Mathf.Max(prop.size.x,prop.size.z)*.55f;if(!Free(p,r))continue;
+     Piece(root,prop.id,p,prop.size,prop.wall?Quaternion.LookRotation(inward).eulerAngles.y:R(0,360),prop.solid);
+     if(prop.id=="candles"||prop.id=="bones"){keep.Add((p,.6f));placed++;continue;}
+     keep.Add((p,r+.4f));placed++;continue;
+    }
     switch(random.Next(6))
     {
      case 0: // Three barrels huddled together, one tipped over in front.
