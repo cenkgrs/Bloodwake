@@ -35,24 +35,28 @@ namespace Bloodwake
    Texture portrait=PaintedPortrait(dialogueHost);UnityEngine.Rect faceUv=default;bool last=dialogueLine>=DialogueCount-1;
    if(portrait){var at=dialogueHost["portraitFace"] as JArray;float cx=at!=null?(float)at[0]:.5f,cy=at!=null?(float)at[1]:.82f,cw=.36f,ch=cw*portrait.width/portrait.height;faceUv=new UnityEngine.Rect(cx-cw*.5f,cy-ch*.5f,cw,ch);}
    else if(dialoguePortrait){portrait=dialoguePortrait.Texture;faceUv=dialoguePortrait.FaceUv;}
-   Plate(page,"Dialogue veil",0,0,1600,900,new Color(.015f,.01f,.015f,.62f));
-   // Left: the host's own rig, live in its idle, framed as a bust.
+   // Layout follows art/ui-concepts/dialogue.webp: the speaker's bust on the left, a wide box along the bottom.
+   Bleed(Plate(page,"Dialogue veil",0,0,1600,900,new Color(.015f,.01f,.015f,.62f)));
    if(portrait)
    {
-    float h=800,w=h*portrait.width/portrait.height;var bust=Rect(page,"Speaker bust",340-w/2,90,w,h).gameObject.AddComponent<RawImage>();bust.texture=portrait;bust.raycastTarget=false;
+    float h=860,w=h*portrait.width/portrait.height;var bust=Rect(page,"Speaker bust",330-w/2,40,w,h).gameObject.AddComponent<RawImage>();bust.texture=portrait;bust.raycastTarget=false;
     // The bust is cut at the waist; let it sink into the veil instead of ending on a hard edge.
-    var fade=Rect(page,"Speaker bust fade",340-w/2,90+h*.6f,w,h*.4f).gameObject.AddComponent<RawImage>();fade.texture=FadeRamp;fade.color=new Color(.015f,.01f,.015f,1);fade.raycastTarget=false;
+    bust.material=SoftEdge(new Vector4(.18f,.4f,.22f,.04f));
    }
-   // Right: the rectangular speech panel.
-   const float x=650,y=470,w2=880,h2=330;
-   Plate(page,"Dialogue panel",x,y,w2,h2,panel);Frame(page,x-18,y-18,w2+36,h2+36,false);
-   Label(page,dialogueHost.S("name"),x+48,y+38,w2-96,42,32,true).color=gold;
-   Plate(page,"Dialogue rule",x+48,y+88,w2-96,2,new Color(gold.r,gold.g,gold.b,.45f));
-   Label(page,(string)dialogueHost["lines"][dialogueLine],x+48,y+128,w2-96,112,27);
-   Label(page,$"{dialogueLine+1} / {DialogueCount}",x+48,y+h2-52,100,30,17).color=new Color(.62f,.58f,.54f);
-   Label(page,"F · NEXT     ESC · CLOSE",x+150,y+h2-52,260,30,15).color=new Color(.62f,.58f,.54f);
-   Button(page,last?dialogueHost.S("verb"):"NEXT",x+w2-470,y+h2-72,250,56,AdvanceDialogue);
-   Button(page,"CLOSE",x+w2-206,y+h2-72,170,56,CloseDialogue);
+   const float x=124,y=598,w2=1354,h2=250;
+   var box=Kit(page,"dialogue_box",x,y,w2,h2,.82f);box.raycastTarget=true;var advance=box.gameObject.AddComponent<Button>();advance.transition=Selectable.Transition.None;advance.onClick.AddListener(AdvanceDialogue);
+   Label(page,dialogueHost.S("name").ToUpperInvariant(),x+58,y+10,330,52,25,true,TextAnchor.MiddleLeft).color=new Color(.88f,.8f,.72f);
+   Label(page,(string)dialogueHost["lines"][dialogueLine],x+110,y+92,w2-240,100,26).color=ink;
+   // Key prompts, bottom right; both are clickable.
+   string next=last?dialogueHost.S("verb"):"Continue";
+   void Prompt(string key,string text,float px,System.Action action)
+   {
+    var hit=Plate(page,text,px,y+h2-74,KeyWidth(key)+14+text.Length*11,32,Color.clear);hit.raycastTarget=true;var b=hit.gameObject.AddComponent<Button>();b.transition=Selectable.Transition.None;b.onClick.AddListener(()=>action());
+    KeyCap(page,key,px,y+h2-74);Label(page,text,px+KeyWidth(key)+12,y+h2-74,text.Length*12+20,32,19,false,TextAnchor.MiddleLeft).color=new Color(.78f,.74f,.7f);
+   }
+   float escX=x+w2-250;Prompt("ESC","Leave",escX,CloseDialogue);
+   Prompt("F",next.Length>0?char.ToUpper(next[0])+next.Substring(1).ToLowerInvariant():"Continue",escX-60-next.Length*12-KeyWidth("F"),AdvanceDialogue);
+   Kit(page,"diamond",x+w2-112,y+h2-76,16,27);
   }
  }
 }

@@ -8,58 +8,79 @@ namespace Bloodwake
  public sealed partial class BloodwakeGame
  {
   string merchantVisit="";int merchantRefreshes;System.Collections.Generic.List<JToken> merchantStock;
+  // Layouts follow art/ui-concepts (1672x941 frames, x0.957 onto the 1600x900 canvas).
   void DrawMainMenu()
   {
-   Label(page,"SURVIVE THE NIGHT. CLAIM THE DAWN.",250,165,1100,40,23,false,TextAnchor.MiddleCenter);
-   string[] names={"PLAY","SETTINGS","EXIT"},details={"Choose your oath.\nEnter the cursed town.","Sound, display\nand camera.","Leave the night.\nYour progression is saved."};
-   for(int i=0;i<3;i++){int index=i;float x=280+i*355;Plate(page,names[i],x,310,330,360,panel);Frame(page,x,310,330,360,false);Label(page,new[]{"I","II","III"}[i],x+50,355,230,90,56,true,TextAnchor.MiddleCenter).color=blood;Label(page,details[i],x+35,475,260,85,22,false,TextAnchor.MiddleCenter);Button(page,names[i],x+25,585,280,58,()=>{if(index==0)Screen="classes";else if(index==1)Screen="settings";else Application.Quit();});}
-   Label(page,$"BLOOD ESSENCE  {Meta.Essence}",450,760,700,45,23,true,TextAnchor.MiddleCenter);
-   Label(page,"WASD · MOUSE · SPACE   /   CONTROLLER SUPPORTED",350,822,900,35,16,false,TextAnchor.MiddleCenter);
+   Backdrop("ui/kit/menu_backdrop",0);
+   Art(page,"ui/kit/logo",78,40,672,187);
+   Label(page,"SURVIVE THE NIGHT.  CLAIM THE DAWN.",120,228,580,32,19,true,TextAnchor.MiddleCenter).color=new Color(.8f,.76f,.72f);
+   Rule(page,150,272,520,.35f);
+   string[] names={"NEW RUN","SETTINGS","EXIT"};System.Action[] actions={()=>Screen="classes",()=>Screen="settings",Application.Quit};
+   for(int i=0;i<names.Length;i++)
+   {
+    float y=330+i*66;MenuItem(page,names[i],136,y,260,54,27,actions[i]);
+    if(i<names.Length-1)Plate(page,"Menu rule",136,y+60,190,1,new Color(.78f,.72f,.66f,.22f));
+   }
+   Art(page,"ui/kit/icon_essence",70,793,28,40);
+   Label(page,"BLOOD ESSENCE",110,797,170,34,17,true,TextAnchor.MiddleLeft).color=new Color(.8f,.76f,.72f);
+   Label(page,Meta.Essence.ToString(),272,797,120,34,22,true,TextAnchor.MiddleLeft).color=ink;
+   Label(page,"v"+Application.version,1430,858,150,28,15,false,TextAnchor.MiddleRight).color=new Color(.55f,.52f,.5f);
   }
   void DrawClasses()
   {
-   string[] ids={"revenant","vesper","warrior","mage"};var cls=GameData.Rules["classes"][SelectedClass];var dim=new Color(.62f,.58f,.54f);
+   string[] ids={"warrior","revenant","vesper","mage"};var cls=GameData.Rules["classes"][SelectedClass];var dim=new Color(.62f,.58f,.54f);
+   Backdrop("ui/kit/menu_backdrop",.72f);
    // Left: the chosen oath in full, its painting sinking into the dark at the edges.
    var art=Resources.Load<Texture2D>("ui/portraits/"+SelectedClass);
-   if(art){float h=760,w=h*art.width/art.height;var hero=Rect(page,"Hero art",330-w/2,120,w,h).gameObject.AddComponent<RawImage>();hero.texture=art;hero.raycastTarget=false;
-    // Feather every edge into the backdrop: the ramp is rotated so its opaque end faces outward.
-    void Feather(float x,float y,float fw,float fh,float angle){var r=Rect(page,"Hero feather",x,y,fw,fh);r.pivot=new Vector2(.5f,.5f);r.anchoredPosition+=new Vector2(fw*.5f,-fh*.5f);r.localEulerAngles=new Vector3(0,0,angle);var f=r.gameObject.AddComponent<RawImage>();f.texture=FadeRamp;f.color=new Color(.02f,.015f,.02f,1);f.raycastTarget=false;}
-    float left=330-w/2,band=w*.28f;
-    Feather(left,120+h*.62f,w,h*.38f,0);Feather(left,120,w,h*.22f,180);
-    Feather(left-(h-band)*.5f,120+(h-band)*.5f,h,band,-90);Feather(left+w-band-(h-band)*.5f,120+(h-band)*.5f,h,band,90);}
-   // Right: oath selector.
-   const float rx=640,rw=880;
+   if(art){float h=830,w=h*art.width/art.height;var hero=Rect(page,"Hero art",470-w/2,70,w,h).gameObject.AddComponent<RawImage>();hero.texture=art;hero.raycastTarget=false;
+    hero.material=SoftEdge(new Vector4(.3f,.28f,.3f,.14f));}
+   Label(page,"CHOOSE YOUR OATH",74,34,560,62,44,true).color=new Color(.9f,.86f,.82f);
+   Rule(page,84,104,470,.4f);
+   // Oath tabs, top right.
+   const float tabX=968,tabW=140,tabH=164,tabGap=12;
    for(int i=0;i<ids.Length;i++)
    {
-    string id=ids[i];bool on=SelectedClass==id;float x=rx+i*(rw/4),cw=rw/4-18;
-    var card=Plate(page,id,x,145,cw,120,new Color(0,0,0,.6f));card.raycastTarget=true;var select=card.gameObject.AddComponent<Button>();select.targetGraphic=card;select.onClick.AddListener(()=>{SelectedClass=id;Sound("ui_click");drawnScreen=null;});
-    var thumb=Rect(card.transform,"Thumb",4,4,cw-8,112);thumb.gameObject.AddComponent<RectMask2D>();var tex=Resources.Load<Texture2D>("ui/portraits/"+id);
-    if(tex){float tw=cw-8,th=tw*tex.height/tex.width;var img=Rect(thumb,"Face",0,-th*.06f,tw,th).gameObject.AddComponent<RawImage>();img.texture=tex;img.raycastTarget=false;img.color=on?Color.white:new Color(.55f,.5f,.5f);}
-    Frame(card.transform,0,0,cw,120,false);
-    Label(page,GameData.Rules["classes"][id].S("name").ToUpperInvariant(),x,270,cw,30,18,true,TextAnchor.MiddleCenter).color=on?gold:dim;if(on)Plate(page,"Selected",x+cw*.3f,300,cw*.4f,2,gold);
+    string id=ids[i];bool on=SelectedClass==id;float x=tabX+i*(tabW+tabGap),y=26;
+    var hit=Plate(page,id,x,y,tabW,tabH,new Color(0,0,0,.75f));hit.raycastTarget=true;var select=hit.gameObject.AddComponent<Button>();select.targetGraphic=hit;select.transition=Selectable.Transition.None;select.onClick.AddListener(()=>{SelectedClass=id;Sound("ui_click");drawnScreen=null;});
+    var thumb=Rect(hit.transform,"Thumb",8,8,tabW-16,tabH-46);thumb.gameObject.AddComponent<RectMask2D>();var tex=Resources.Load<Texture2D>("ui/portraits/"+id);
+    if(tex){float tw=(tabW-16)*1.9f,th=tw*tex.height/tex.width;var img=Rect(thumb,"Face",(tabW-16-tw)*.5f,-th*.035f,tw,th).gameObject.AddComponent<RawImage>();img.texture=tex;img.raycastTarget=false;img.color=on?Color.white:new Color(.5f,.46f,.46f);}
+    Kit(hit.transform,on?"slot_active_hollow":"slot_hollow",on?-6:0,on?-6:0,tabW+(on?12:0),tabH+(on?12:0),on?2.2f:2.4f);
+    Label(hit.transform,GameData.Rules["classes"][id].S("name").ToUpperInvariant(),0,tabH-38,tabW,30,16,true,TextAnchor.MiddleCenter).color=on?ink:dim;
+    if(on)Kit(page,"diamond",x+tabW/2-7,y+tabH-4,14,23);
    }
-   // Dossier.
-   Label(page,cls.S("name").ToUpperInvariant(),rx,330,rw,62,52,true);Label(page,cls.S("tag"),rx+4,392,rw,28,17,true).color=new Color(.86f,.3f,.3f);
-   Plate(page,"Dossier rule",rx,428,rw,2,new Color(gold.r,gold.g,gold.b,.4f));
-   Label(page,cls.S("description",cls.S("blurb")),rx,442,rw,56,19).color=new Color(.85f,.81f,.76f);
+   // Dossier panel.
+   const float px=955,py=200,pw=626,ph=690,cx=px+62,cw=pw-124;
+   Frame(page,px,py,pw,ph);
+   Label(page,cls.S("name").ToUpperInvariant(),cx,py+30,cw,70,60,true).color=new Color(.92f,.89f,.86f);
+   Label(page,cls.S("tag"),cx+2,py+100,cw,28,19,true).color=new Color(.86f,.18f,.2f);
+   Label(page,cls.S("blurb",cls.S("description")),cx+2,py+132,cw,48,15).color=new Color(.82f,.78f,.74f);
    // Stats as bars, scaled against the strongest oath.
    var all=ids.Select(GameData.Stats).ToArray();var stats=GameData.Stats(SelectedClass);
-   (string label,string key,string fmt)[] rows={("HEALTH","maxHp","0"),("DAMAGE","damage","0.00"),("SPEED","moveSpeed","0"),("CRITICAL","criticalChance","0%")};
+   (string label,string key)[] rows={("HEALTH","maxHp"),("POWER","damage"),("SPEED","moveSpeed"),("CRITICAL","criticalChance")};
    for(int i=0;i<rows.Length;i++)
    {
-    var r=rows[i];float x=rx+(i%2)*(rw/2),y=512+(i/2)*36,v=stats.N(r.key),max=Mathf.Max(.0001f,all.Max(s=>s.N(r.key)));
-    Label(page,r.label,x,y,120,28,16,true).color=dim;Plate(page,"Bar back",x+130,y+10,230,8,new Color(.12f,.08f,.08f));Plate(page,"Bar",x+130,y+10,230*Mathf.Clamp01(v/max),8,new Color(.62f,.05f,.08f));
-    Label(page,r.key=="criticalChance"?(v*100).ToString("0")+"%":v.ToString(r.fmt),x+368,y,70,28,16).color=ink;
+    var r=rows[i];float y=py+190+i*27,v=stats.N(r.key),max=Mathf.Max(.0001f,all.Max(s=>s.N(r.key)));
+    Kit(page,"diamond",cx+6,y+3,10,17);
+    Label(page,r.label,cx+30,y,120,24,15,true,TextAnchor.MiddleLeft).color=dim;
+    Plate(page,"Bar back",cx+150,y+8,cw-160,8,new Color(.09f,.06f,.06f));Plate(page,"Bar edge",cx+150,y+16,cw-160,1,new Color(.5f,.46f,.44f,.35f));
+    Plate(page,"Bar",cx+150,y+8,(cw-160)*Mathf.Clamp01(v/max),8,new Color(.62f,.05f,.08f));
    }
+   Rule(page,cx-20,py+308,cw+40,.3f);
    // Abilities.
-   Frame(page,rx-14,598,rw+28,192);
    for(int i=0;i<3;i++)
    {
-    string id=i==2?cls.S("ability"):(string)cls["skills"][i];var ability=GameData.Row("abilities",id);float x=rx+12+i*(rw/3);
-    Art(page,"ui/class_screen/abilities/"+id,x,622,74,74);Label(page,i==2?"SPACE":i==0?"Q":"E",x,698,74,24,14,true,TextAnchor.MiddleCenter).color=gold;
-    Label(page,ability.S("name").ToUpperInvariant(),x+86,620,rw/3-104,30,19,true).color=ink;Label(page,ability.S("description"),x+86,652,rw/3-104,120,15).color=new Color(.78f,.74f,.7f);
+    string id=i==2?cls.S("ability"):(string)cls["skills"][i];var ability=GameData.Row("abilities",id);float y=py+322+i*78;string key=i==2?"SPACE":i==0?"Q":"E";
+    var mask=Rect(page,"Icon mask",cx+12,y+13,50,50);mask.gameObject.AddComponent<PortraitMask>();mask.gameObject.AddComponent<Mask>().showMaskGraphic=false;
+    var icon=Resources.Load<Texture2D>("ui/class_screen/abilities/"+id);if(icon){var img=Rect(mask,"Icon",-4,-4,58,58).gameObject.AddComponent<RawImage>();img.texture=icon;img.raycastTarget=false;}
+    Art(page,"ui/kit/ring_hollow",cx-3,y-2,80,79);
+    KeyCap(page,key,cx+92,y+22,32);
+    float tx=cx+92+KeyWidth(key,32)+18;
+    Label(page,ability.S("name").ToUpperInvariant(),tx,y+8,cx+cw-tx,28,17,true).color=ink;
+    Label(page,ability.S("description"),tx,y+34,cx+cw-tx,42,14).color=new Color(.74f,.7f,.66f);
+    if(i<2)Plate(page,"Ability rule",cx,y+76,cw,1,new Color(.78f,.72f,.66f,.14f));
    }
-   Button(page,"BACK",rx,810,260,60,()=>Screen="menu");Button(page,"BEGIN THE HUNT",rx+rw-420,810,420,60,()=>BeginCharacterIntro(SelectedClass));
+   KitButton(page,"BEGIN THE HUNT",px+40,py+ph-96,pw-80,66,()=>BeginCharacterIntro(SelectedClass));
+   MenuItem(page,"BACK",44,826,160,46,20,()=>Screen="menu");
   }
   void DrawMaps()
   {

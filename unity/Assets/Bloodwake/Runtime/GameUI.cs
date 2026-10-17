@@ -36,32 +36,90 @@ namespace Bloodwake
   void Art(Transform parent,string path,float x,float y,float w,float h,float alpha=1)
   {var tex=Resources.Load<Texture2D>(path);if(!tex)return;var r=Rect(parent,path,x,y,w,h);var image=r.gameObject.AddComponent<RawImage>();image.texture=tex;image.color=new Color(1,1,1,alpha);image.raycastTarget=false;}
   static readonly System.Collections.Generic.Dictionary<string,Sprite> slicedSprites=new();
+  // UI kit pieces cut from the art-direction sheet (art/ui-concepts/kit.webp). Borders are source pixels:
+  // left, bottom, right, top. Only the plain metal between the corners stretches.
+  static readonly System.Collections.Generic.Dictionary<string,Vector4> kitBorders=new()
+  {
+   ["panel_large"]=new Vector4(95,95,95,95),["panel_small"]=new Vector4(80,80,80,80),["dialogue_box"]=new Vector4(345,95,95,100),
+   ["button_primary"]=new Vector4(70,0,70,0),["button_primary_hover"]=new Vector4(70,0,70,0),["button_primary_pressed"]=new Vector4(70,0,70,0),
+   ["button_secondary"]=new Vector4(70,0,70,0),["button_secondary_hover"]=new Vector4(70,0,70,0),
+   ["slot"]=new Vector4(40,40,40,40),["slot_active"]=new Vector4(44,44,44,44),["slot_hollow"]=new Vector4(40,40,40,40),["slot_active_hollow"]=new Vector4(44,44,44,44),
+   ["bar_frame"]=new Vector4(80,0,30,0),["bar_fill_blood"]=new Vector4(0,0,24,0),["bar_fill_ember"]=new Vector4(0,0,24,0),
+  };
+  Sprite SlicedSprite(string path,Vector4 border)
+  {
+   if(slicedSprites.TryGetValue(path,out var sprite)&&sprite)return sprite;var tex=Resources.Load<Texture2D>(path);if(!tex)return null;
+   sprite=Sprite.Create(tex,new UnityEngine.Rect(0,0,tex.width,tex.height),new Vector2(.5f,.5f),100,0,SpriteMeshType.FullRect,border);sprite.name=path;slicedSprites[path]=sprite;return sprite;
+  }
+  Sprite KitSprite(string name)=>SlicedSprite("ui/kit/"+name,kitBorders.TryGetValue(name,out var b)?b:Vector4.zero);
   // 9-slice: ornate corners keep their painted proportions at any panel size; only the plain edges stretch.
   // border is in source pixels; scale shrinks the corners on the 1600x900 canvas.
   Image Sliced(Transform parent,string path,float x,float y,float w,float h,Vector4 border,float scale)
   {
-   if(!slicedSprites.TryGetValue(path,out var sprite)||!sprite){var tex=Resources.Load<Texture2D>(path);if(!tex)return null;sprite=Sprite.Create(tex,new UnityEngine.Rect(0,0,tex.width,tex.height),new Vector2(.5f,.5f),100,0,SpriteMeshType.FullRect,border);slicedSprites[path]=sprite;}
+   var sprite=SlicedSprite(path,border);if(!sprite)return null;
    var image=Rect(parent,path,x,y,w,h).gameObject.AddComponent<Image>();image.sprite=sprite;image.type=Image.Type.Sliced;image.pixelsPerUnitMultiplier=scale;image.raycastTarget=false;return image;
   }
-  // Panel: dark fill inset under an ornate sliced frame.
-  Image Frame(Transform parent,float x,float y,float w,float h,bool fill=true)
+  Image Kit(Transform parent,string name,float x,float y,float w,float h,float scale=1)
   {
-   if(fill)Plate(parent,"Panel fill",x+10,y+10,w-20,h-20,panel);
-   return Sliced(parent,"ui/class_screen/panel_frame_9",x,y,w,h,new Vector4(170,170,170,170),2.6f);
+   var image=Rect(parent,name,x,y,w,h).gameObject.AddComponent<Image>();image.sprite=KitSprite(name);image.raycastTarget=false;
+   if(kitBorders.ContainsKey(name)){image.type=Image.Type.Sliced;image.pixelsPerUnitMultiplier=scale;}return image;
   }
-  void Button(Transform parent,string text,float x,float y,float w,float h,Action action)
+  // Panel: black lacquer with forged-silver corners; its own fill is opaque.
+  Image Frame(Transform parent,float x,float y,float w,float h,bool fill=true)=>Kit(parent,w*h>220000?"panel_large":"panel_small",x,y,w,h,w*h>220000?1.6f:2);
+  // Silver hairline with a blood diamond at its centre.
+  void Rule(Transform parent,float x,float y,float w,float alpha=.45f)
   {
-   // The painted button itself is the clickable graphic, so nothing square shows behind its pointed ends.
-   var image=Sliced(parent,"ui/class_screen/button_frame_9",x,y,w,h,new Vector4(300,0,300,0),297f/h);image.name=text;image.raycastTarget=true;var button=image.gameObject.AddComponent<Button>();button.targetGraphic=image;
-   var colors=button.colors;colors.normalColor=Color.white;colors.highlightedColor=new Color(1.8f,1.5f,1.3f);colors.pressedColor=new Color(.9f,.25f,.25f);button.colors=colors;
-   Label(image.transform,text,w*.16f,4,w*.68f,h-8,20,true,TextAnchor.MiddleCenter);
-   button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});
+   Plate(parent,"Rule",x,y,w,1,new Color(.78f,.72f,.66f,alpha));Kit(parent,"diamond",x+w/2-6,y-10,12,20);
+  }
+  // A keyboard key drawn as a thin silver outline, as in the art-direction HUD and dialogue frames.
+  Text KeyCap(Transform parent,string key,float x,float y,float h=30)
+  {
+   float w=Mathf.Max(h,12+key.Length*11);var line=new Color(.7f,.66f,.62f,.75f);
+   Plate(parent,"Key fill",x,y,w,h,new Color(0,0,0,.55f));Plate(parent,"Key top",x,y,w,1,line);Plate(parent,"Key bottom",x,y+h-1,w,1,line);Plate(parent,"Key left",x,y,1,h,line);Plate(parent,"Key right",x+w-1,y,1,h,line);
+   var t=Label(parent,key,x,y+1,w,h-2,Mathf.RoundToInt(h*.5f),true,TextAnchor.MiddleCenter);t.color=ink;return t;
+  }
+  float KeyWidth(string key,float h=30)=>Mathf.Max(h,12+key.Length*11);
+  void Button(Transform parent,string text,float x,float y,float w,float h,Action action)=>KitButton(parent,text,x,y,w,h,action,text!="BACK"&&text!="CLOSE"&&text!="−"&&text!="+");
+  // The painted plaque is the clickable graphic, so nothing square shows behind its pointed ends.
+  Button KitButton(Transform parent,string text,float x,float y,float w,float h,Action action,bool primary=true)
+  {
+   string kind=primary?"button_primary":"button_secondary";
+   var image=Kit(parent,kind,x,y,w,h,84f/h);image.name=text;image.raycastTarget=true;
+   var button=image.gameObject.AddComponent<Button>();button.targetGraphic=image;button.transition=Selectable.Transition.SpriteSwap;
+   button.spriteState=new SpriteState{highlightedSprite=KitSprite(kind+"_hover"),selectedSprite=KitSprite(kind),pressedSprite=KitSprite(primary?"button_primary_pressed":kind)};
+   var label=Label(image.transform,text,w*.14f,2,w*.72f,h-4,Mathf.RoundToInt(Mathf.Min(24,h*.4f)),true,TextAnchor.MiddleCenter);label.color=primary?new Color(.96f,.9f,.84f):ink;
+   button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});return button;
+  }
+  static Texture2D sideRamp;
+  // Horizontal glow: strongest at the left, gone by the right edge.
+  static Texture2D SideRamp{get{if(sideRamp)return sideRamp;sideRamp=new Texture2D(64,8,TextureFormat.RGBA32,false){wrapMode=TextureWrapMode.Clamp,name="Menu glow"};for(int x=0;x<64;x++)for(int y=0;y<8;y++){float a=1-x/63f,v=Mathf.Sin(y/7f*Mathf.PI);sideRamp.SetPixel(x,y,new Color(1,1,1,a*a*(.35f+.65f*v)));}sideRamp.Apply();return sideRamp;}}
+  // Text-only menu entry; hovering lights it red with a sigil, like the title screen frames.
+  void MenuItem(Transform parent,string text,float x,float y,float w,float h,int size,Action action)
+  {
+   var hit=Plate(parent,text,x-70,y,w+70,h,Color.clear);hit.raycastTarget=true;
+   var marker=Rect(hit.transform,"Hover",0,0,w+70,h).gameObject;
+   var glow=marker.AddComponent<RawImage>();glow.texture=SideRamp;glow.color=new Color(.7f,.03f,.07f,.45f);glow.raycastTarget=false;
+   Kit(marker.transform,"diamond",22,h/2-14,17,28);
+   var label=Label(hit.transform,text,70,0,w,h,size,true,TextAnchor.MiddleLeft);
+   var hover=hit.gameObject.AddComponent<MenuHover>();hover.Label=label;hover.Marker=marker;hover.Normal=new Color(.78f,.74f,.7f);hover.Hot=new Color(1,.88f,.84f);marker.SetActive(false);label.color=hover.Normal;
+   var button=hit.gameObject.AddComponent<Button>();button.targetGraphic=hit;button.transition=Selectable.Transition.None;button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});
+  }
+  static Shader softEdgeShader;
+  // Painting whose rectangle melts into the backdrop; feather is (left, bottom, right, top) fractions.
+  static Material SoftEdge(Vector4 feather){if(!softEdgeShader)softEdgeShader=Resources.Load<Shader>("Presentation/SoftEdgeUI");var m=new Material(softEdgeShader){name="Soft edge"};m.SetVector("_Feather",feather);return m;}
+  // Full-bleed painting, cover-cropped to the real screen, optionally darkened.
+  void Backdrop(string path,float dim)
+  {
+   var bg=Resources.Load<Texture2D>(path);if(!bg)return;var img=Bleed(Rect(page,"Backdrop",0,0,1600,900).gameObject.AddComponent<RawImage>());img.texture=bg;img.raycastTarget=false;
+   var size=img.rectTransform.sizeDelta;float screenAspect=size.x/size.y,artAspect=bg.width/(float)bg.height;
+   img.uvRect=screenAspect>artAspect?new UnityEngine.Rect(0,(1-artAspect/screenAspect)*.5f,1,artAspect/screenAspect):new UnityEngine.Rect((1-screenAspect/artAspect)*.5f,0,screenAspect/artAspect,1);
+   if(dim>0)Bleed(Plate(page,"Backdrop dim",0,0,1600,900,new Color(.01f,.008f,.01f,dim)));
   }
   void LateUpdate()
   {
    RebuildCargoNavigation();SyncEnemyAgents();
    EnsureUI();if(drawnScreen!=Screen||(Screen=="playing"&&drawnClass!=Run?.ClassId)){if(page)Destroy(page.gameObject);page=Rect(uiRoot,"Screen "+Screen,0,0,1600,900);drawnScreen=Screen;drawnClass=Run?.ClassId;DrawScreen();}
-   if(Screen=="playing"&&Run!=null){healthLabel.text=$"{Run.Stats.N("hp"):0} / {Run.Stats.N("maxHp"):0}";healthFill.rectTransform.sizeDelta=new Vector2(320*Mathf.Clamp01(Run.Stats.N("hp")/Run.Stats.N("maxHp")),24);runLabel.text=$"NIGHT {Run.Night}   •   LEVEL {Run.Level}   •   GOLD {Run.Gold}\n{room.S("name")}   •   {Enemies.Count} enemies";promptLabel.text=roomClear?(room.S("type")=="safehouse"?"F  ·  WAR TABLE / ARMORY":room.S("type")=="merchant"?"F  ·  MERCHANT":"F  ·  CLAIM REWARD / CONTINUE"):"";UpdateWorldBars();UpdateSkillLabels();}
+   if(Screen=="playing"&&Run!=null)UpdateHUD();
   }
   void UpdateInteractionPrompt(){if(Screen=="playing"&&Run!=null&&promptLabel)promptLabel.text=InteractionHint();}
   void DrawScreen()
@@ -75,19 +133,12 @@ namespace Bloodwake
    }
    if(Screen=="playing"){DrawHUD();return;}
    if(Screen=="dialogue"){DrawDialogue();return;}
-   if(Screen=="menu"||Screen=="classes")
-   {
-    // Cover-crop the square backdrop instead of stretching it to 16:9.
-    var bg=Resources.Load<Texture2D>("art/arena");if(bg){var img=Bleed(Rect(page,"Backdrop",0,0,1600,900).gameObject.AddComponent<RawImage>());img.texture=bg;img.raycastTarget=false;var size=img.rectTransform.sizeDelta;float v=Mathf.Min(1,size.y/size.x*bg.width/bg.height);img.uvRect=new UnityEngine.Rect(0,(1-v)*.5f,1,v);}
-    Bleed(Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,Screen=="classes"?.9f:.8f)));
-   }
-   else Bleed(Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.9f)));
-   if(Screen=="classes"){Label(page,"CHOOSE YOUR OATH",640,48,880,70,40,true);Plate(page,"Heading rule",640,118,880,2,gold);}
-   else{Label(page,Screen=="menu"?"BLOODWAKE":Screen.ToUpperInvariant(),70,48,1460,90,Screen=="menu"?74:44,true,TextAnchor.MiddleCenter);Plate(page,"Heading rule",560,143,480,2,gold);}
+   if(Screen=="menu"){DrawMainMenu();return;}
+   if(Screen=="classes"){DrawClasses();return;}
+   if(Run==null)Backdrop("ui/kit/menu_backdrop",.82f);else Bleed(Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.86f)));
+   Label(page,Screen.ToUpperInvariant(),70,48,1460,90,44,true,TextAnchor.MiddleCenter);Rule(page,560,143,480);
    switch(Screen)
    {
-    case "menu":DrawMainMenu();break;
-    case "classes":DrawClasses();break;
     case "hub":Button(page,"WAR TABLE — THE CURSED TOWN",420,240,760,70,()=>Screen="maps");Button(page,"OATHS / SKILL TREE",420,335,760,70,()=>Screen="progression");Button(page,"ARMORY / LOADOUTS",420,430,760,70,()=>Screen="armory");Back("playing");break;
     case "maps":DrawMaps();break;
     case "pause":Button(page,"RESUME",520,300,560,70,()=>Screen="playing");Button(page,"SETTINGS",520,400,560,70,()=>Screen="settings");Button(page,"RETURN TO TITLE",520,500,560,70,ReturnToMenu);break;
