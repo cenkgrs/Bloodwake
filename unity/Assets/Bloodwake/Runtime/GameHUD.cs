@@ -22,7 +22,7 @@ namespace Bloodwake
     var text=Label(page,i==2?"SPACE":i==0?"Q":"E",x,877,140,21,15,false,TextAnchor.MiddleCenter);skillLabels.Add(text);
    }
    Label(page,Run.ClassId=="revenant"?"WASD  MOVE    LMB  ATTACK\nSHIFT  DASH"+(Player.HasRevenantThrust?" → LMB  THRUST":""):"WASD  MOVE    LMB  ATTACK    RMB / SHIFT + LMB  HEAVY",45,825,535,55,16);Label(page,"F  INTERACT     ESC  PAUSE",1170,840,390,35,17,false,TextAnchor.MiddleRight);
-   if(Run.ClassId=="revenant")dashLabel=Label(page,"",1030,780,480,52,17,false,TextAnchor.MiddleRight);
+   if(Run.ClassId=="revenant"||Run.ClassId=="vesper")dashLabel=Label(page,"",1030,780,480,52,17,false,TextAnchor.MiddleRight);
   }
   void DrawVitalityHUD()
   {

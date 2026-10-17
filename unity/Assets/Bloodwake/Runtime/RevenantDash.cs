@@ -22,17 +22,18 @@ namespace Bloodwake
   }
   bool TryRevenantDash(Vector3 direction)
   {
-   if(Run?.ClassId!="revenant"||Screen!="playing"||Run.Stats.N("hp")<=0||RevenantActionActive||dashCd>0||Player.IsCasting||Player.ContactPending)return false;
+   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||RevenantActionActive||dashCd>0||Player.IsCasting||Player.ContactPending)return false;
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Player.transform.forward;
    revenantDashDirection=direction.normalized;revenantDashAge=dashWakeDistance=dashTravelled=thrustWindow=0;thrustQueued=false;
    revenantDashing=true;dashCd=combatPractice?0:RevenantDashCooldown;attackCd=0;
    Player.transform.rotation=Quaternion.LookRotation(revenantDashDirection);Player.BeginRevenantDashPose(RevenantDashDuration);
-   RevFx.DashCloud(Player,revenantDashDirection);RevFx.DashWake(Player.transform.position,revenantDashDirection);return true;
+   bool fire=Run.ClassId=="vesper";RevFx.DashCloud(Player,revenantDashDirection,fire);RevFx.DashWake(Player.transform.position,revenantDashDirection,fire);return true;
   }
   // Game-clock state machine: pause and hit-stop freeze movement, pose and combo window together.
   void TickRevenantDash(float dt)
   {
-   if(Run?.ClassId!="revenant")return;
+   // Vesper shares the dash; only Revenant has the thrust follow-up and landing talent.
+   if(Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")return;
    if(Run.Stats.N("hp")<=0){ResetRevenantDash();return;}
    if(Screen!="playing"||hitStop>0||dt<=0)return;
    if(revenantDashing)
@@ -43,7 +44,7 @@ namespace Bloodwake
     float travel=RevenantDashDistance*((1-(1-b)*(1-b))-(1-(1-a)*(1-a)));
     var from=Player.transform.position;Player.transform.position=Move(from,revenantDashDirection*travel);
     float actual=Vector3.Distance(from,Player.transform.position);dashTravelled+=actual;dashWakeDistance+=actual;
-    for(float d=.45f;dashWakeDistance>=d;dashWakeDistance-=d)RevFx.DashWake(Player.transform.position-revenantDashDirection*(dashWakeDistance-d),revenantDashDirection);
+    for(float d=.45f;dashWakeDistance>=d;dashWakeDistance-=d)RevFx.DashWake(Player.transform.position-revenantDashDirection*(dashWakeDistance-d),revenantDashDirection,Run.ClassId=="vesper");
     Player.RevenantPosePhase=b;
     bool blocked=travel>.001f&&Vector3.Dot(Player.transform.position-from,revenantDashDirection)<travel*.35f;
     if(revenantDashAge>=RevenantDashDuration||blocked)

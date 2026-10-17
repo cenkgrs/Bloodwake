@@ -5,7 +5,8 @@ namespace Bloodwake
  {
   int dashMistVersion;
   public void CancelDashMist()=>dashMistVersion++;
-  public void DashCloud(ActorView actor,Vector3 direction)
+  // fire: Vesper's version of the same dash, ember mist and flame sparks instead of blood.
+  public void DashCloud(ActorView actor,Vector3 direction,bool fire=false)
   {
    int version=++dashMistVersion;var side=Vector3.Cross(Vector3.up,direction);
    // A body-sized moving volume, not stamps on the floor. World-space wake is separate.
@@ -14,7 +15,7 @@ namespace Bloodwake
     float seed=i*3.71f,size=actor.Height*(i<4?.94f:.73f);
     var offset=Vector3.up*actor.Height*(.24f+(i%4)*.17f)+side*((i%2==0?-1:1)*.24f)-direction*(i<4?.12f:.5f);
     var anchor=actor.transform.position;float released=-1;
-    var fog=Sheet("Dash moving crimson cloud",anchor+offset,Vector3.one*size,"dash_mist",.65f,new Color(.46f,.012f,.032f,.49f));
+    var fog=Sheet(fire?"Dash moving ember cloud":"Dash moving crimson cloud",anchor+offset,Vector3.one*size,"dash_mist",.65f,fire?new Color(.95f,.34f,.06f,.42f):new Color(.46f,.012f,.032f,.49f));
     fog.Block.SetFloat("_Seed",seed);fog.Block.SetFloat("_Opacity",.65f);fog.Apply();
     fog.Tick=(p,dt)=>
     {
@@ -30,29 +31,31 @@ namespace Bloodwake
     };
    }
   }
-  public void DashWake(Vector3 position,Vector3 direction)
+  public void DashWake(Vector3 position,Vector3 direction,bool fire=false)
   {
    var side=Vector3.Cross(Vector3.up,direction);
-   var trace=Sheet("Dash blood ground trace",position+Vector3.up*.035f,new Vector3(1.3f,.92f,1),"dash_trace",1.12f,Tone("70061b"),true);
+   var trace=Sheet(fire?"Dash scorched ground trace":"Dash blood ground trace",position+Vector3.up*.035f,new Vector3(1.3f,.92f,1),"dash_trace",1.12f,Tone(fire?"2b1408":"70061b"),true);
    trace.transform.rotation=Quaternion.LookRotation(Vector3.up,direction);
    trace.Block.SetFloat("_Seed",UnityEngine.Random.Range(0,20));trace.Apply();
-   DashBloodThreads(position,direction);
+   if(!fire)DashBloodThreads(position,direction);
    for(int i=0;i<2;i++)
    {
     float spread=UnityEngine.Random.Range(-.35f,.35f),fogSize=UnityEngine.Random.Range(1.25f,1.7f);
     var start=position+Vector3.up*(.55f+i*.65f)+side*spread;
-    var fog=Sheet("Dash shedding crimson mist",start,Vector3.one*fogSize,"dash_mist",1.05f,new Color(.4f,.008f,.023f,.55f));
+    var fog=Sheet(fire?"Dash shedding ember smoke":"Dash shedding crimson mist",start,Vector3.one*fogSize,"dash_mist",1.05f,fire?new Color(.7f,.2f,.04f,.5f):new Color(.4f,.008f,.023f,.55f));
     fog.Block.SetFloat("_Seed",UnityEngine.Random.Range(0,50f));fog.Apply();
     fog.Tick=(p,dt)=>{fog.Block.SetFloat("_Opacity",1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.38f,1,p)));fog.transform.position=start+side*spread*fog.Age*.25f+Vector3.up*fog.Age*.16f;fog.transform.rotation=Game.Cam.transform.rotation;fog.transform.localScale=Vector3.one*fogSize*Mathf.Lerp(.9f,1.3f,p);};
    }
-   for(int i=0;i<4;i++)
+   for(int i=0;i<(fire?7:4);i++)
    {
     float sign=i%2==0?-1:1;
     var start=position+Vector3.up*UnityEngine.Random.Range(.45f,1.4f)+side*sign*.3f;
     var velocity=side*sign*UnityEngine.Random.Range(2.3f,4f)-direction*UnityEngine.Random.Range(1,2.5f)+Vector3.up*UnityEngine.Random.Range(.4f,1.7f);
-    float size=UnityEngine.Random.Range(.065f,.105f);var drop=Particle(start,Vector3.one*size,Tone(i%2==0?"9d1229":"620817"),.65f,false,true);
-    drop.name="Dash blood droplet";
-    drop.Block.SetFloat("_Smoothness",.85f);drop.Apply();bool landed=false;bool stain=i==0;
+    float size=UnityEngine.Random.Range(.065f,.105f)*(fire?.6f:1);
+    // Flame sparks are unlit and HDR so bloom makes them glow; blood droplets stay lit and glossy.
+    var drop=fire?Particle(start,Vector3.one*size,i%2==0?new Color(4.2f,1.5f,.32f):new Color(3.2f,.7f,.12f),.65f,false,false):Particle(start,Vector3.one*size,Tone(i%2==0?"9d1229":"620817"),.65f,false,true);
+    drop.name=fire?"Dash flame spark":"Dash blood droplet";
+    drop.Block.SetFloat("_Smoothness",.85f);drop.Apply();bool landed=false;bool stain=i==0&&!fire;
     drop.Tick=(p,dt)=>
     {
      if(landed)return;float age=drop.Age;var at=start+velocity*age-Vector3.up*4.9f*age*age;

@@ -40,6 +40,8 @@ namespace Bloodwake
     if(!melee)Player.transform.rotation=Quaternion.LookRotation(dir);
     if(Time.time>comboExpires)combo=0;combo=combo%(Run.ClassId=="warrior"?4:3)+1;
     string clip=Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper"?"Attack"+combo:"Attack";
+    // Vesper finishes the combo with the upward greatsword thrust.
+    if(Run.ClassId=="vesper"&&combo==3)clip="DashAttack";
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
     bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
