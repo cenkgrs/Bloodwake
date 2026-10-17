@@ -45,19 +45,12 @@ namespace Bloodwake
    }
    // Right: the rectangular speech panel.
    const float x=650,y=470,w2=880,h2=330;
-   Plate(page,"Dialogue panel",x,y,w2,h2,panel);Art(page,"ui/class_screen/panel_frame",x-18,y-18,w2+36,h2+36);
-   var face=Rect(page,"Speaker face",x+38,y+30,76,76);face.gameObject.AddComponent<PortraitMask>();face.gameObject.AddComponent<Mask>().showMaskGraphic=false;
-   if(portrait)
-   {
-    var image=Rect(face,"Face",0,0,76,76).gameObject.AddComponent<RawImage>();image.texture=portrait;image.raycastTarget=false;
-    image.uvRect=faceUv;
-   }
-   Art(page,"ui/class_screen/medallion_frame",x+22,y+14,108,108);
-   Label(page,dialogueHost.S("name"),x+150,y+38,w2-190,42,32,true).color=gold;
-   Plate(page,"Dialogue rule",x+150,y+88,w2-190,2,new Color(gold.r,gold.g,gold.b,.45f));
+   Plate(page,"Dialogue panel",x,y,w2,h2,panel);Frame(page,x-18,y-18,w2+36,h2+36,false);
+   Label(page,dialogueHost.S("name"),x+48,y+38,w2-96,42,32,true).color=gold;
+   Plate(page,"Dialogue rule",x+48,y+88,w2-96,2,new Color(gold.r,gold.g,gold.b,.45f));
    Label(page,(string)dialogueHost["lines"][dialogueLine],x+48,y+128,w2-96,112,27);
-   Label(page,$"{dialogueLine+1} / {DialogueCount}",x+70,y+h2-52,100,30,17).color=new Color(.62f,.58f,.54f);
-   Label(page,"F · NEXT     ESC · CLOSE",x+170,y+h2-52,260,30,15).color=new Color(.62f,.58f,.54f);
+   Label(page,$"{dialogueLine+1} / {DialogueCount}",x+48,y+h2-52,100,30,17).color=new Color(.62f,.58f,.54f);
+   Label(page,"F · NEXT     ESC · CLOSE",x+150,y+h2-52,260,30,15).color=new Color(.62f,.58f,.54f);
    Button(page,last?dialogueHost.S("verb"):"NEXT",x+w2-470,y+h2-72,250,56,AdvanceDialogue);
    Button(page,"CLOSE",x+w2-206,y+h2-72,170,56,CloseDialogue);
   }

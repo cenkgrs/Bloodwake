@@ -30,11 +30,26 @@ namespace Bloodwake
   {var r=Rect(parent,text.Split('\n')[0],x,y,w,h);var t=r.gameObject.AddComponent<Text>();t.font=title?titleFont:bodyFont;t.text=text;t.color=ink;t.fontSize=size;t.resizeTextForBestFit=true;t.resizeTextMinSize=Mathf.Min(size,14);t.resizeTextMaxSize=size;t.alignment=align;t.raycastTarget=false;return t;}
   void Art(Transform parent,string path,float x,float y,float w,float h,float alpha=1)
   {var tex=Resources.Load<Texture2D>(path);if(!tex)return;var r=Rect(parent,path,x,y,w,h);var image=r.gameObject.AddComponent<RawImage>();image.texture=tex;image.color=new Color(1,1,1,alpha);image.raycastTarget=false;}
+  static readonly System.Collections.Generic.Dictionary<string,Sprite> slicedSprites=new();
+  // 9-slice: ornate corners keep their painted proportions at any panel size; only the plain edges stretch.
+  // border is in source pixels; scale shrinks the corners on the 1600x900 canvas.
+  Image Sliced(Transform parent,string path,float x,float y,float w,float h,Vector4 border,float scale)
+  {
+   if(!slicedSprites.TryGetValue(path,out var sprite)||!sprite){var tex=Resources.Load<Texture2D>(path);if(!tex)return null;sprite=Sprite.Create(tex,new UnityEngine.Rect(0,0,tex.width,tex.height),new Vector2(.5f,.5f),100,0,SpriteMeshType.FullRect,border);slicedSprites[path]=sprite;}
+   var image=Rect(parent,path,x,y,w,h).gameObject.AddComponent<Image>();image.sprite=sprite;image.type=Image.Type.Sliced;image.pixelsPerUnitMultiplier=scale;image.raycastTarget=false;return image;
+  }
+  // Panel: dark fill inset under an ornate sliced frame.
+  Image Frame(Transform parent,float x,float y,float w,float h,bool fill=true)
+  {
+   if(fill)Plate(parent,"Panel fill",x+10,y+10,w-20,h-20,panel);
+   return Sliced(parent,"ui/class_screen/panel_frame_9",x,y,w,h,new Vector4(170,170,170,170),2.6f);
+  }
   void Button(Transform parent,string text,float x,float y,float w,float h,Action action)
   {
-   var image=Plate(parent,text,x,y,w,h,panel);image.raycastTarget=true;var button=image.gameObject.AddComponent<Button>();button.targetGraphic=image;
+   // The painted button itself is the clickable graphic, so nothing square shows behind its pointed ends.
+   var image=Sliced(parent,"ui/class_screen/button_frame_9",x,y,w,h,new Vector4(300,0,300,0),297f/h);image.name=text;image.raycastTarget=true;var button=image.gameObject.AddComponent<Button>();button.targetGraphic=image;
    var colors=button.colors;colors.normalColor=Color.white;colors.highlightedColor=new Color(1.8f,1.5f,1.3f);colors.pressedColor=new Color(.9f,.25f,.25f);button.colors=colors;
-   Art(image.transform,"ui/class_screen/button_frame_v2",0,0,w,h);Label(image.transform,text,24,8,w-48,h-16,20,true,TextAnchor.MiddleCenter);
+   Label(image.transform,text,w*.16f,4,w*.68f,h-8,20,true,TextAnchor.MiddleCenter);
    button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});
   }
   void LateUpdate()
@@ -55,10 +70,15 @@ namespace Bloodwake
    }
    if(Screen=="playing"){DrawHUD();return;}
    if(Screen=="dialogue"){DrawDialogue();return;}
-   if(Screen=="menu"||Screen=="classes"){Art(page,"art/arena",0,0,1600,900);Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,.84f));}
+   if(Screen=="menu"||Screen=="classes")
+   {
+    // Cover-crop the square backdrop instead of stretching it to 16:9.
+    var bg=Resources.Load<Texture2D>("art/arena");if(bg){var img=Rect(page,"Backdrop",0,0,1600,900).gameObject.AddComponent<RawImage>();img.texture=bg;img.raycastTarget=false;float v=(900f/1600f)*bg.width/bg.height;img.uvRect=new UnityEngine.Rect(0,(1-v)*.5f,1,v);}
+    Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,Screen=="classes"?.9f:.8f));
+   }
    else Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.9f));
-   Label(page,Screen=="menu"?"BLOODWAKE":Screen=="classes"?"CHOOSE YOUR OATH":Screen.ToUpperInvariant(),70,48,1460,90,Screen=="menu"?74:44,true,TextAnchor.MiddleCenter);
-   Plate(page,"Heading rule",560,143,480,2,gold);
+   if(Screen=="classes"){Label(page,"CHOOSE YOUR OATH",640,48,880,70,40,true);Plate(page,"Heading rule",640,118,880,2,gold);}
+   else{Label(page,Screen=="menu"?"BLOODWAKE":Screen.ToUpperInvariant(),70,48,1460,90,Screen=="menu"?74:44,true,TextAnchor.MiddleCenter);Plate(page,"Heading rule",560,143,480,2,gold);}
    switch(Screen)
    {
     case "menu":DrawMainMenu();break;
