@@ -8,10 +8,11 @@ namespace Bloodwake
  {
   readonly Dictionary<Enemy,Image> worldBars=new();
   readonly List<(string id,Image sweep,Text count)> skillSlots=new();
-  Image xpFill;Text dashLabel;Image dashSweep;Text dashCount;
+  Text dashLabel;Image dashSweep;Text dashCount;
   static Sprite whiteSprite;
   static Sprite WhiteSprite=>whiteSprite?whiteSprite:whiteSprite=Sprite.Create(Texture2D.whiteTexture,new UnityEngine.Rect(0,0,4,4),new Vector2(.5f,.5f));
-  const float HealthWidth=276;
+  // Inner opening of bar_frame (source x 76-530, y 30-56) at the 330x53 size drawn below.
+  const float HealthWidth=266;
   // Layout follows art/ui-concepts/hud.webp: vitals top-left, run state top-right, abilities bottom-centre, nothing over the fight.
   void DrawHUD()
   {
@@ -56,17 +57,13 @@ namespace Bloodwake
    Art(page,"ui/kit/ring_hollow",x,y,122,120);
    // Health: the forged frame with a blood fill that keeps its pointed end at any width.
    Kit(page,"bar_frame",x+108,y+30,330,53,1.7f);
-   healthFill=Kit(page,"bar_fill_blood",x+108+37,y+30+13,HealthWidth,24,1.4f);
-   // Experience to the next level as a thin ember line under it.
-   Plate(page,"Ember back",x+150,y+86,232,7,new Color(.06f,.03f,.02f,.9f));Plate(page,"Ember edge",x+150,y+93,232,1,new Color(.6f,.55f,.5f,.35f));
-   xpFill=Kit(page,"bar_fill_ember",x+150,y+86,232,7,4);
-   healthLabel=Label(page,"",x+446,y+38,140,32,19,true,TextAnchor.MiddleLeft);healthLabel.color=ink;
+   healthFill=Kit(page,"bar_fill_blood",x+108+45,y+30+18,HealthWidth,16,2.1f);
+   healthLabel=Label(page,"",x+446,y+40,140,32,19,true,TextAnchor.MiddleLeft);healthLabel.color=ink;
   }
   void UpdateHUD()
   {
    float hp=Run.Stats.N("hp"),max=Run.Stats.N("maxHp");healthLabel.text=$"{hp:0} / {max:0}";
-   float f=Mathf.Clamp01(hp/max);healthFill.rectTransform.sizeDelta=new Vector2(Mathf.Max(f>0?18:0,HealthWidth*f),24);healthFill.enabled=f>0;
-   xpFill.rectTransform.sizeDelta=new Vector2(232*Mathf.Clamp01(Run.Xp/(float)Mathf.Max(1,Run.XpNeeded)),7);
+   float f=Mathf.Clamp01(hp/max);healthFill.rectTransform.sizeDelta=new Vector2(Mathf.Max(f>0?12:0,HealthWidth*f),16);healthFill.enabled=f>0;
    runLabel.text=$"NIGHT {Run.Night}  ·  LEVEL {Run.Level}  ·  GOLD {Run.Gold}";
    roomLabel.text=$"{room.S("name")}  ·  {Enemies.Count} {(Enemies.Count==1?"enemy":"enemies")}";
    promptLabel.text=roomClear?(room.S("type")=="safehouse"?"F  ·  WAR TABLE / ARMORY":room.S("type")=="merchant"?"F  ·  MERCHANT":"F  ·  CLAIM REWARD / CONTINUE"):"";

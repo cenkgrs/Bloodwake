@@ -90,18 +90,14 @@ namespace Bloodwake
    var label=Label(image.transform,text,w*.14f,2,w*.72f,h-4,Mathf.RoundToInt(Mathf.Min(24,h*.4f)),true,TextAnchor.MiddleCenter);label.color=primary?new Color(.96f,.9f,.84f):ink;
    button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});return button;
   }
-  static Texture2D sideRamp;
-  // Horizontal glow: strongest at the left, gone by the right edge.
-  static Texture2D SideRamp{get{if(sideRamp)return sideRamp;sideRamp=new Texture2D(64,8,TextureFormat.RGBA32,false){wrapMode=TextureWrapMode.Clamp,name="Menu glow"};for(int x=0;x<64;x++)for(int y=0;y<8;y++){float a=1-x/63f,v=Mathf.Sin(y/7f*Mathf.PI);sideRamp.SetPixel(x,y,new Color(1,1,1,a*a*(.35f+.65f*v)));}sideRamp.Apply();return sideRamp;}}
-  // Text-only menu entry; hovering lights it red with a sigil, like the title screen frames.
+  // Text-only menu entry; hovering turns it red and shows the sigil, like the title screen frames.
   void MenuItem(Transform parent,string text,float x,float y,float w,float h,int size,Action action)
   {
    var hit=Plate(parent,text,x-70,y,w+70,h,Color.clear);hit.raycastTarget=true;
    var marker=Rect(hit.transform,"Hover",0,0,w+70,h).gameObject;
-   var glow=marker.AddComponent<RawImage>();glow.texture=SideRamp;glow.color=new Color(.7f,.03f,.07f,.45f);glow.raycastTarget=false;
    Kit(marker.transform,"diamond",22,h/2-14,17,28);
    var label=Label(hit.transform,text,70,0,w,h,size,true,TextAnchor.MiddleLeft);
-   var hover=hit.gameObject.AddComponent<MenuHover>();hover.Label=label;hover.Marker=marker;hover.Normal=new Color(.78f,.74f,.7f);hover.Hot=new Color(1,.88f,.84f);marker.SetActive(false);label.color=hover.Normal;
+   var hover=hit.gameObject.AddComponent<MenuHover>();hover.Label=label;hover.Marker=marker;hover.Normal=new Color(.78f,.74f,.7f);hover.Hot=new Color(.93f,.24f,.22f);marker.SetActive(false);label.color=hover.Normal;
    var button=hit.gameObject.AddComponent<Button>();button.targetGraphic=hit;button.transition=Selectable.Transition.None;button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});
   }
   static Shader softEdgeShader;
