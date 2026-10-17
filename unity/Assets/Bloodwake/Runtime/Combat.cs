@@ -35,6 +35,7 @@ namespace Bloodwake
    if(BeginRevenantThrust())return;
    if(Player.IsCasting)return;
    if(Player.Locked>0&&attackCd>0)return;
+   PadFacing();
    foreach(var entry in Run.Weapons){var row=GameData.Row("weapons",entry.Key);var slot=entry.Value;float rate=row.N("attacksPerSecond")*Run.Stats.N("attackSpeed")*slot.N("speed");attackCd=Mathf.Max(.15f,1/rate);
     System.Action contactEvent=null;bool melee=row.S("behavior")=="melee";Vector3 dir=melee&&(Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper")?Player.transform.forward:aim;
     if(!melee)Player.transform.rotation=Quaternion.LookRotation(dir);
@@ -130,12 +131,12 @@ namespace Bloodwake
    bool struck=combatPractice||Run.Stats.N("hp")<beforeHp;
    if(struck)
    {
-    Player.FlashHit(true);Sound("player_hit");
+    Player.FlashHit(true);Sound("player_hit");Rumble(.75f,.45f,.22f);
     if(!combatPractice)RevFx.DamageText(Player.transform.position,beforeHp-Run.Stats.N("hp"),RevenantVfx.Tone("ff8678"));
     if(Run.ClassId=="revenant"&&Run.Stats.N("hp")>0)Player.HitOverlay();
    }
    invulnerable=.25f;
-   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Screen="dying";SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());if(!Run.Awarded){Run.Awarded=true;Meta.Essence+=Mathf.Clamp(Run.Wave*2+Run.Kills/5,2,100000);Meta.Save();}}
+   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Rumble(1,.6f,.55f);Screen="dying";SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());if(!Run.Awarded){Run.Awarded=true;Meta.Essence+=RunEssence;Meta.Save();}}
   }
  }
 }

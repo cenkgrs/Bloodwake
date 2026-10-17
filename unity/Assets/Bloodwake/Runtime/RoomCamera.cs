@@ -21,6 +21,7 @@ namespace Bloodwake
   {
    shakeTrauma=Mathf.Min(1,Mathf.Max(shakeTrauma,trauma));direction.y=0;
    shakeKick=direction.sqrMagnitude>.0001f?direction.normalized:Vector3.zero;shakeSeed=Random.value*100;
+   Rumble(trauma*.55f,trauma*.85f,.07f+trauma*.12f);
   }
   void PositionCamera(bool snap)
   {

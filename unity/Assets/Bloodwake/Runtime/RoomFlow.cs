@@ -58,9 +58,17 @@ namespace Bloodwake
    foreach(var b in blockers){var expanded=b;expanded.Expand(new Vector3(radius*2,10,radius*2));if(!expanded.Contains(new Vector3(next.x,b.center.y,next.z)))continue;var xOnly=new Vector3(p.x+delta.x,b.center.y,p.z);var zOnly=new Vector3(p.x,b.center.y,p.z+delta.z);if(!expanded.Contains(xOnly))next.z=p.z;else if(!expanded.Contains(zOnly))next.x=p.x;else next=p;}return next;
   }
   bool bossReward;
-  string HostScreen(JToken host)=>host.S("role") switch{"maps"=>"maps","builds"=>"armory","skills"=>"progression","merchant"=>"merchant",_=>"hub"};
-  void Interact(){var host=NearbyHost();if(host!=null){if(!OpenDialogue(host))Screen=HostScreen(host);return;}if(!RewardReady||Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))>=2.4f)return;bossReward=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);PrepareReward();}
+  string HostScreen(JToken host)=>host.S("role") switch{"builds"=>"armory","skills"=>"progression","merchant"=>"merchant",_=>"hub"};
+  // There is one district chain, so the war table sends the hunter straight into it instead of offering a choice.
+  void OpenHost(JToken host){if(host.S("role")=="maps"){Sound("ui_enter_district");EnterDistrict();}else Screen=HostScreen(host);}
+  void EnterDistrict()=>BeginCharacterIntro(Run.ClassId,GameData.Maps["maps"][0]);
+  // Each pass through the route and its boss is one district; beating the last district's boss wins the run.
+  JArray Districts=>(JArray)GameData.Maps["maps"][0]["districts"];
+  int FinalDistrict=>Districts.Count;
+  // The HUD names the district rather than counting it, so the run never reads as a countdown.
+  string DistrictName=>(string)Districts[Mathf.Clamp(Run.Night-1,0,Districts.Count-1)];
+  void Interact(){var host=NearbyHost();if(host!=null){if(!OpenDialogue(host))OpenHost(host);return;}if(!RewardReady||Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))>=2.4f)return;bossReward=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);PrepareReward();}
   void PrepareReward(){offers.Clear();offers.AddRange(GameData.Rows("upgrades").Where(r=>Run.Available(r,"upgrades")&&(Run.PendingLevels>0||r.S("rarity")!="common")).OrderBy(_=>Random.value).Take(3));Screen=offers.Count>0?"upgrade":"playing";if(offers.Count==0){Run.PendingLevels=0;bossReward=false;Run.Claimed.Add(Run.Night+":"+Run.RoomIndex);}}
-  public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.RoomIndex=0;Run.Night++;}EnterRoom(Run.Plan[Run.RoomIndex]);Screen="playing";}
+  public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.RoomIndex=0;Run.Night++;Sound("ui_enter_district");}EnterRoom(Run.Plan[Run.RoomIndex]);Screen="playing";}
  }
 }

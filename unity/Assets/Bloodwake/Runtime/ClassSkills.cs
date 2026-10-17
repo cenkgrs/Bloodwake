@@ -136,7 +136,7 @@ namespace Bloodwake
   }
   Vector3 GroundTarget(float range)
   {
-   var start=Player.transform.position;var mouse=UnityEngine.InputSystem.Mouse.current;if(mouse==null||Application.isBatchMode||UnityEngine.InputSystem.Gamepad.current?.rightStick.ReadValue().sqrMagnitude>.1f)return BlinkDestination(start,start+aim*range);
+   var start=Player.transform.position;var mouse=UnityEngine.InputSystem.Mouse.current;if(mouse==null||Application.isBatchMode||usingPad)return BlinkDestination(start,start+aim*range);
    var ray=Cam.ScreenPointToRay(mouse.position.ReadValue());if(!new Plane(Vector3.up,0).Raycast(ray,out float distance))return start;
    return BlinkDestination(start,start+Vector3.ClampMagnitude(ray.GetPoint(distance)-start,range));
   }

@@ -8,7 +8,7 @@ namespace Bloodwake
  {
   readonly Dictionary<Enemy,Image> worldBars=new();
   readonly List<(string id,Image sweep,Text count)> skillSlots=new();
-  Text dashLabel;Image dashSweep;Text dashCount;
+  Text dashLabel;Image dashSweep;Text dashCount;RectTransform promptKey;
   static Sprite whiteSprite;
   static Sprite WhiteSprite=>whiteSprite?whiteSprite:whiteSprite=Sprite.Create(Texture2D.whiteTexture,new UnityEngine.Rect(0,0,4,4),new Vector2(.5f,.5f));
   // Inner opening of bar_frame (source x 76-530, y 30-56) at the 330x53 size drawn below.
@@ -26,21 +26,28 @@ namespace Bloodwake
    roomLabel=Label(topRight,"",1000,46,580,26,16,false,TextAnchor.UpperRight);roomLabel.color=new Color(.78f,.74f,.7f);
    Rule(topRight,1390,80,190,.3f);
    promptLabel=Label(bottom,"",350,690,900,50,22,false,TextAnchor.MiddleCenter);
+   promptKey=Rect(bottom,"Prompt key",0,700,CapWidth("interact"),30);InputCap(promptKey,"interact",0,0);promptKey.gameObject.SetActive(false);
    var cls=GameData.Rules["classes"][Run.ClassId];bool dash=Run.ClassId=="revenant"||Run.ClassId=="vesper";
    int count=dash?4:3;const float size=80,gap=22;float x0=800-(count*size+(count-1)*gap)/2;
    for(int i=0;i<count;i++)
    {
-    float x=x0+i*(size+gap),y=752;string key=i==3?"SHIFT":i==2?"SPACE":i==0?"Q":"E";
+    float x=x0+i*(size+gap),y=752;string action=i==3?"dash":"skill"+i;
     string id=i==3?null:i==2?cls.S("ability"):(string)cls["skills"][i];
     Plate(bottom,"Slot back",x+6,y+6,size-12,size-12,Color.black);
     Art(bottom,id==null?"ui/kit/icon_dash":"ui/class_screen/abilities/"+id,x+8,y+8,size-16,size-16);
     var sweep=Rect(bottom,"Cooldown",x+8,y+8,size-16,size-16).gameObject.AddComponent<Image>();sweep.sprite=WhiteSprite;sweep.type=Image.Type.Filled;sweep.fillMethod=Image.FillMethod.Radial360;sweep.fillOrigin=(int)Image.Origin360.Top;sweep.fillClockwise=false;sweep.color=new Color(0,0,0,.72f);sweep.raycastTarget=false;sweep.fillAmount=0;
     Art(bottom,"ui/kit/slot_hollow",x-4,y-4,size+8,size+8);
     var countText=Label(bottom,"",x,y,size,size,24,true,TextAnchor.MiddleCenter);countText.color=ink;
-    KeyCap(bottom,key,x+size/2-KeyWidth(key,24)/2,y+size+4,24);
+    InputCap(bottom,action,x+size/2-CapWidth(action,24)/2,y+size+4,24);
     if(id==null){dashSweep=sweep;dashCount=countText;}else skillSlots.Add((id,sweep,countText));
    }
-   Label(bottomRight,"F  Interact      ESC  Pause",1180,858,400,30,16,false,TextAnchor.MiddleRight).color=new Color(.6f,.57f,.54f);
+   // Legend, bottom right, laid out from the screen edge leftward.
+   float edge=1580;
+   foreach(var (action,text) in ShowPad?new[]{("pause","Pause"),("autofire","Auto-attack"),("attack","Attack")}:new[]{("pause","Pause"),("interact","Interact")})
+   {
+    float w=text.Length*9+6;Label(bottomRight,text,edge-w,856,w,28,16,false,TextAnchor.MiddleLeft).color=new Color(.6f,.57f,.54f);
+    float cw=CapWidth(action,24);InputCap(bottomRight,action,edge-w-8-cw,858,24);edge-=w+8+cw+26;
+   }
    if(combatPractice&&Run.ClassId=="revenant")dashLabel=Label(bottomRight,"",1180,820,400,30,15,false,TextAnchor.MiddleRight);
   }
   Text roomLabel;
@@ -67,9 +74,8 @@ namespace Bloodwake
   {
    float hp=Run.Stats.N("hp"),max=Run.Stats.N("maxHp");healthLabel.text=$"{hp:0} / {max:0}";
    float f=Mathf.Clamp01(hp/max);healthFill.rectTransform.sizeDelta=new Vector2(Mathf.Max(f>0?12:0,HealthWidth*f),16);healthFill.enabled=f>0;
-   runLabel.text=$"NIGHT {Run.Night}  ·  LEVEL {Run.Level}  ·  GOLD {Run.Gold}";
+   runLabel.text=$"{(room?.S("type")=="safehouse"?room.S("name"):DistrictName)}  ·  LEVEL {Run.Level}  ·  GOLD {Run.Gold}";
    roomLabel.text=$"{room.S("name")}  ·  {Enemies.Count} {(Enemies.Count==1?"enemy":"enemies")}";
-   promptLabel.text=roomClear?(room.S("type")=="safehouse"?"F  ·  WAR TABLE / ARMORY":room.S("type")=="merchant"?"F  ·  MERCHANT":"F  ·  CLAIM REWARD / CONTINUE"):"";
    UpdateWorldBars();UpdateSkillLabels();
   }
   void UpdateSkillLabels()

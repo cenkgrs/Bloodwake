@@ -41,8 +41,8 @@ namespace Bloodwake
    var next=Enemies[0];next.Mark=0;next.Hp=100;next.Burn=3;next.BurnDps=7;hitStop=0;TickEnemies(.1f);CheckSmoke(Mathf.Abs(next.Hp-99.3f)<.01f,"burn damage per second");CheckSmoke(hitStop==0,"damage over time does not hit stop");
    CheckSmoke(SegmentDistance(new Vector3(5,0,0),Vector3.zero,new Vector3(10,0,0))<.001f,"fast projectile swept hit");
    var save=new Progression();save.Essence=123;CheckSmoke(!save.Import("{\"essence\":25,\"levels\":\"bad\"}")&&save.Essence==123,"invalid import leaves progression unchanged");
-   foreach(string screen in new[]{"maps","armory","progression","settings"}){Screen=screen;yield return null;yield return Capture(screen.Replace(' ','-'));}
-   Screen="maps";BeginCharacterIntro(Run.ClassId,GameData.Maps["maps"][0]);yield return new WaitForSeconds(5);yield return Capture("district-arrival");yield return new WaitForSeconds(4);CheckSmoke(Screen=="playing"&&room.S("id")==Run.Plan[0],"map selection cinematic enters district");
+   foreach(string screen in new[]{"armory","progression","settings"}){Screen=screen;yield return null;yield return Capture(screen.Replace(' ','-'));}
+   EnterDistrict();yield return new WaitForSeconds(5);yield return Capture("district-arrival");yield return new WaitForSeconds(4);CheckSmoke(Screen=="playing"&&room.S("id")==Run.Plan[0],"war table cinematic enters district");
   }
   IEnumerator SmokeRoute()
   {
@@ -63,6 +63,9 @@ namespace Bloodwake
    }
    CheckSmoke(Run.Night==2&&Run.RoomIndex==0,"night wraps after merchant");CheckSmoke(Mathf.Approximately(Run.Grade,1.6f),"night two merchant grade");
    Screen="pause";yield return null;yield return Capture("pause");Screen="playing";
+   Run.Night=FinalDistrict;Run.RoomIndex=Run.Plan.Count-2;EnterRoom(Run.Plan[Run.RoomIndex]);
+   int guard=0;while(!roomClear&&guard++<300){spawnTimer=0;TickWaves(.1f);foreach(var enemy in Enemies.ToArray())DamageEnemy(enemy,100000000);yield return null;}
+   yield return new WaitForSeconds(3);CheckSmoke(Screen=="victory","last district boss ends the run");yield return Capture("victory");
   }
   IEnumerator Capture(string name)
   {

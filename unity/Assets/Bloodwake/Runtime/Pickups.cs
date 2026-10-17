@@ -12,7 +12,7 @@ namespace Bloodwake
   }
   void TickPickups(float dt)
   {
-   for(int i=pickups.Count-1;i>=0;i--){var p=pickups[i];if(!p.Body){pickups.RemoveAt(i);continue;}var target=Player.transform.position+Vector3.up*.2f;float distance=Vector3.Distance(p.Body.transform.position,target);if(distance<Run.Stats.N("pickupRadius")*.02f)p.Body.transform.position=Vector3.MoveTowards(p.Body.transform.position,target,dt*8);if(distance>.5f)continue;if(p.Kind=="xp")Run.AddXp(p.Amount);else if(p.Kind=="gold")Run.Gold+=p.Amount;else Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+p.Amount);Destroy(p.Body);pickups.RemoveAt(i);}
+   for(int i=pickups.Count-1;i>=0;i--){var p=pickups[i];if(!p.Body){pickups.RemoveAt(i);continue;}var target=Player.transform.position+Vector3.up*.2f;float distance=Vector3.Distance(p.Body.transform.position,target);if(distance<Run.Stats.N("pickupRadius")*.02f)p.Body.transform.position=Vector3.MoveTowards(p.Body.transform.position,target,dt*8);if(distance>.5f)continue;if(p.Kind=="xp"){int level=Run.Level;Run.AddXp(p.Amount);if(Run.Level>level)Sound("ui_level_up");}else if(p.Kind=="gold")Run.Gold+=p.Amount;else Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+p.Amount);Destroy(p.Body);pickups.RemoveAt(i);}
   }
   void Blood(Vector3 position)
   {

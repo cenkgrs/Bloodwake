@@ -12,6 +12,18 @@
       ],
       "voices": 1
     },
+    "boss_slain": {
+      "db": -2.0,
+      "files": [
+        "boss_slain"
+      ],
+      "gap": 1.0,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
     "boss_phase": {
       "db": -1.0,
       "files": [
@@ -362,6 +374,42 @@
       ],
       "voices": 3
     },
+    "dialogue_advance": {
+      "db": -10.0,
+      "files": [
+        "dialogue_advance"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "ui_begin_hunt": {
+      "db": -2.0,
+      "files": [
+        "ui_begin_hunt"
+      ],
+      "gap": 1.0,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "ui_back": {
+      "db": -12.0,
+      "files": [
+        "ui_back"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
     "ui_click": {
       "db": -6.0,
       "files": [
@@ -373,6 +421,18 @@
         1.02
       ],
       "voices": 2
+    },
+    "ui_enter_district": {
+      "db": -4.0,
+      "files": [
+        "ui_enter_district"
+      ],
+      "gap": 1.0,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
     },
     "ui_error": {
       "db": -6.0,
@@ -386,8 +446,44 @@
       ],
       "voices": 1
     },
+    "ui_hover": {
+      "db": -20.0,
+      "files": [
+        "ui_hover"
+      ],
+      "gap": 0.06,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "ui_level_up": {
+      "db": -4.0,
+      "files": [
+        "ui_level_up"
+      ],
+      "gap": 0.5,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "ui_pause_open": {
+      "db": -7.0,
+      "files": [
+        "ui_pause_open"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
     "ui_select": {
-      "db": -6.0,
+      "db": 0.0,
       "files": [
         "ui_select"
       ],

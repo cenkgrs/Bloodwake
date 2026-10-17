@@ -17,7 +17,8 @@ user-supplied ArtDirection images define the overall visual target.
 Implemented: four player classes (Revenant, Vesper, Warrior, Mage), enemy
 actors, eight room prefabs, source PBR textures, world-projected room UVs,
 collision data, camera bounds, menus, progression/loadouts, encounters, rewards
-and the night/merchant loop. The class-screen artwork supplies the portrait
+and the district loop: the war table enters the route directly, each
+route → boss → merchant pass is one harder district, and the tenth boss wins the run. The class-screen artwork supplies the portrait
 cards, ability panels and ornamental buttons. All characters use the six-frame
 entry cinematic; district entry adds the entrance walk and camera pullback.
 Keyboard arrows, gamepad movement/aim, skill bindings and auto-fire are

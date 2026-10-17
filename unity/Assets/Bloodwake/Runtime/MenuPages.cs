@@ -36,6 +36,7 @@ namespace Bloodwake
     hero.material=SoftEdge(new Vector4(.3f,.28f,.3f,.14f));}
    Label(page,"CHOOSE YOUR OATH",74,34,560,62,44,true).color=new Color(.9f,.86f,.82f);
    Rule(page,84,104,470,.4f);
+   if(ShowPad){InputCap(page,"prev",84,122,28);InputCap(page,"next",84+CapWidth("prev",28)+8,122,28);Label(page,"CHANGE OATH",84+CapWidth("prev",28)+CapWidth("next",28)+22,122,240,28,16,true,TextAnchor.MiddleLeft).color=dim;}
    // Oath tabs, top right.
    const float tabX=968,tabW=140,tabH=164,tabGap=12;
    for(int i=0;i<ids.Length;i++)
@@ -45,7 +46,8 @@ namespace Bloodwake
     var thumb=Rect(hit.transform,"Thumb",8,8,tabW-16,tabH-46);thumb.gameObject.AddComponent<RectMask2D>();var tex=Resources.Load<Texture2D>("ui/portraits/"+id);
     if(tex){float tw=(tabW-16)*1.9f,th=tw*tex.height/tex.width;var img=Rect(thumb,"Face",(tabW-16-tw)*.5f,-th*.035f,tw,th).gameObject.AddComponent<RawImage>();img.texture=tex;img.raycastTarget=false;img.color=on?Color.white:new Color(.5f,.46f,.46f);}
     Kit(hit.transform,on?"slot_active_hollow":"slot_hollow",on?-6:0,on?-6:0,tabW+(on?12:0),tabH+(on?12:0),on?2.2f:2.4f);
-    Label(hit.transform,GameData.Rules["classes"][id].S("name").ToUpperInvariant(),0,tabH-38,tabW,30,16,true,TextAnchor.MiddleCenter).color=on?ink:dim;
+    var tabName=Label(hit.transform,GameData.Rules["classes"][id].S("name").ToUpperInvariant(),0,tabH-38,tabW,30,16,true,TextAnchor.MiddleCenter);
+    var tabHover=hit.gameObject.AddComponent<MenuHover>();tabHover.Label=tabName;tabHover.Normal=on?ink:dim;tabHover.Hot=new Color(.93f,.24f,.22f);tabHover.Entered=HoverSound;tabName.color=tabHover.Normal;
     if(on)Kit(page,"diamond",x+tabW/2-7,y+tabH-4,14,23);
    }
    // Dossier panel.
@@ -69,22 +71,18 @@ namespace Bloodwake
    // Abilities.
    for(int i=0;i<3;i++)
    {
-    string id=i==2?cls.S("ability"):(string)cls["skills"][i];var ability=GameData.Row("abilities",id);float y=py+322+i*78;string key=i==2?"SPACE":i==0?"Q":"E";
+    string id=i==2?cls.S("ability"):(string)cls["skills"][i];var ability=GameData.Row("abilities",id);float y=py+322+i*78;string input="skill"+i;
     var mask=Rect(page,"Icon mask",cx+12,y+13,50,50);mask.gameObject.AddComponent<PortraitMask>();mask.gameObject.AddComponent<Mask>().showMaskGraphic=false;
     var icon=Resources.Load<Texture2D>("ui/class_screen/abilities/"+id);if(icon){var img=Rect(mask,"Icon",-4,-4,58,58).gameObject.AddComponent<RawImage>();img.texture=icon;img.raycastTarget=false;}
     Art(page,"ui/kit/ring_hollow",cx-3,y-2,80,79);
-    KeyCap(page,key,cx+92,y+22,32);
-    float tx=cx+92+KeyWidth(key,32)+18;
+    InputCap(page,input,cx+92,y+22,32);
+    float tx=cx+92+CapWidth(input,32)+18;
     Label(page,ability.S("name").ToUpperInvariant(),tx,y+8,cx+cw-tx,28,17,true).color=ink;
     Label(page,ability.S("description"),tx,y+34,cx+cw-tx,42,14).color=new Color(.74f,.7f,.66f);
     if(i<2)Plate(page,"Ability rule",cx,y+76,cw,1,new Color(.78f,.72f,.66f,.14f));
    }
    KitButton(page,"BEGIN THE HUNT",px+40,py+ph-96,pw-80,66,()=>BeginCharacterIntro(SelectedClass));
    MenuItem(page,"BACK",44,826,160,46,20,()=>Screen="menu");
-  }
-  void DrawMaps()
-  {
-   int i=0;foreach(var map in GameData.Maps["maps"]){float y=200+i++*500;Art(page,"ui/maps/"+map.S("id"),160,y,710,455);Frame(page,145,y-15,740,485,false);Label(page,map.S("name"),940,y+40,490,100,38,true);Label(page,map.S("description"),940,y+160,490,140,23);Button(page,"ENTER DISTRICT",940,y+340,490,68,()=>BeginCharacterIntro(Run.ClassId,map));}Back("hub");
   }
   void DrawUpgrades()
   {
@@ -119,7 +117,8 @@ namespace Bloodwake
   void DrawSettings()
   {
    Label(page,$"MASTER VOLUME  {AudioListener.volume*100:0}%",500,250,600,50,28);Button(page,"−",500,315,140,55,()=>{AudioListener.volume=Mathf.Max(0,AudioListener.volume-.1f);PlayerPrefs.SetFloat("volume",AudioListener.volume);});Button(page,"+",940,315,140,55,()=>{AudioListener.volume=Mathf.Min(1,AudioListener.volume+.1f);PlayerPrefs.SetFloat("volume",AudioListener.volume);});
-   Button(page,"FULLSCREEN / WINDOWED",500,420,580,60,()=>UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen);Button(page,"CAMERA DISTANCE · "+Cam.orthographicSize.ToString("0.0"),500,520,580,60,()=>{Cam.orthographicSize=Cam.orthographicSize>=8.6f?DefaultZoom-1:Cam.orthographicSize+1.2f;PlayerPrefs.SetFloat("zoom",Cam.orthographicSize);});Back(Run==null?"menu":"pause");
+   Button(page,"FULLSCREEN / WINDOWED",500,420,580,60,()=>UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen);Button(page,"CAMERA DISTANCE · "+Cam.orthographicSize.ToString("0.0"),500,520,580,60,()=>{Cam.orthographicSize=Cam.orthographicSize>=8.6f?DefaultZoom-1:Cam.orthographicSize+1.2f;PlayerPrefs.SetFloat("zoom",Cam.orthographicSize);});Button(page,"VIBRATION · "+(RumbleEnabled?"ON":"OFF"),500,620,580,60,()=>{PlayerPrefs.SetInt("rumble",RumbleEnabled?0:1);if(RumbleEnabled)Rumble(.4f,.6f,.18f);});
+   Back(Run==null?"menu":"pause");
   }
  }
 }

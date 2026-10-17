@@ -21,7 +21,7 @@ namespace Bloodwake
   }
   // Drop-in art: Resources/ui/npc/<model>.png, a transparent bust, face near (.5,.82) unless "portraitFace" says otherwise.
   static Texture2D PaintedPortrait(JToken host)=>Resources.Load<Texture2D>("ui/npc/"+host.S("model"));
-  void AdvanceDialogue(){if(dialogueHost==null)return;if(dialogueLine<DialogueCount-1){dialogueLine++;Sound("ui_click");drawnScreen=null;}else{var host=dialogueHost;EndDialogue();Screen=HostScreen(host);}}
+  void AdvanceDialogue(){if(dialogueHost==null)return;if(dialogueLine<DialogueCount-1){dialogueLine++;Sound("dialogue_advance");drawnScreen=null;}else{var host=dialogueHost;EndDialogue();OpenHost(host);}}
   void CloseDialogue(){EndDialogue();Screen="playing";}
   void EndDialogue(){dialogueHost=null;if(dialoguePortrait)Destroy(dialoguePortrait.gameObject);dialoguePortrait=null;}
   void DialogueInput(UnityEngine.InputSystem.Keyboard keys,UnityEngine.InputSystem.Gamepad pad)
@@ -49,13 +49,13 @@ namespace Bloodwake
    Label(page,(string)dialogueHost["lines"][dialogueLine],x+110,y+92,w2-240,100,26).color=ink;
    // Key prompts, bottom right; both are clickable.
    string next=last?dialogueHost.S("verb"):"Continue";
-   void Prompt(string key,string text,float px,System.Action action)
+   void Prompt(string input,string text,float px,System.Action action)
    {
-    var hit=Plate(page,text,px,y+h2-74,KeyWidth(key)+14+text.Length*11,32,Color.clear);hit.raycastTarget=true;var b=hit.gameObject.AddComponent<Button>();b.transition=Selectable.Transition.None;b.onClick.AddListener(()=>action());
-    KeyCap(page,key,px,y+h2-74);Label(page,text,px+KeyWidth(key)+12,y+h2-74,text.Length*12+20,32,19,false,TextAnchor.MiddleLeft).color=new Color(.78f,.74f,.7f);
+    var hit=Plate(page,text,px,y+h2-74,CapWidth(input)+14+text.Length*11,32,Color.clear);hit.raycastTarget=true;var b=hit.gameObject.AddComponent<Button>();b.transition=Selectable.Transition.None;b.onClick.AddListener(()=>action());
+    InputCap(page,input,px,y+h2-74);Label(page,text,px+CapWidth(input)+12,y+h2-74,text.Length*12+20,32,19,false,TextAnchor.MiddleLeft).color=new Color(.78f,.74f,.7f);
    }
-   float escX=x+w2-250;Prompt("ESC","Leave",escX,CloseDialogue);
-   Prompt("F",next.Length>0?char.ToUpper(next[0])+next.Substring(1).ToLowerInvariant():"Continue",escX-60-next.Length*12-KeyWidth("F"),AdvanceDialogue);
+   float escX=x+w2-250;Prompt("back","Leave",escX,CloseDialogue);
+   Prompt("confirm",next.Length>0?char.ToUpper(next[0])+next.Substring(1).ToLowerInvariant():"Continue",escX-60-next.Length*12-CapWidth("confirm"),AdvanceDialogue);
    Kit(page,"diamond",x+w2-112,y+h2-76,16,27);
   }
  }

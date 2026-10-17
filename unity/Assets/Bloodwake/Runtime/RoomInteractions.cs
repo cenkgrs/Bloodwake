@@ -32,12 +32,15 @@ namespace Bloodwake
    if(locked)return;var exit=Point(room["doors"]["exit"]["at"]);var d=Player.transform.position-exit;
    bool vertical=Mathf.Abs(exit.z)>=half.y-.5f;if(vertical?Mathf.Abs(d.x)<3&&Mathf.Abs(d.z)<1.2f:Mathf.Abs(d.z)<3&&Mathf.Abs(d.x)<1.2f)NextRoom();
   }
-  string InteractionHint()
+  bool RewardInReach=>RewardReady&&Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))<2.4f;
+  bool InteractInRange=>NearbyHost()!=null||RewardInReach;
+  // The hint text; interact is true when the interact button would act on it.
+  (string text,bool interact) InteractionHint()
   {
-   var host=NearbyHost();if(host!=null)return "F  ·  "+host.S("verb")+" — "+host.S("name");
-   if(RewardReady&&Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))<2.4f)return "F  ·  CLAIM REWARD";
-   if(room.S("type")=="safehouse")return "APPROACH THE WAR TABLE, QUARTERMASTER OR BLOOD SAGE";
-   return roomClear?(room.S("type")=="boss"&&RewardReady?"CLAIM THE SPOILS TO OPEN THE GATE":"THE WAY ON IS OPEN"):"";
+   var host=NearbyHost();if(host!=null)return (host.S("verb")+" — "+host.S("name"),true);
+   if(RewardInReach)return ("CLAIM REWARD",true);
+   if(room.S("type")=="safehouse")return ("APPROACH THE WAR TABLE, QUARTERMASTER OR BLOOD SAGE",false);
+   return (roomClear?(room.S("type")=="boss"&&RewardReady?"CLAIM THE SPOILS TO OPEN THE GATE":"THE WAY ON IS OPEN"):"",false);
   }
  }
 }

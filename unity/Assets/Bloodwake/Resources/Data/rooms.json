@@ -41,7 +41,7 @@
             "Choose carefully. An oath shaped in haste breaks at the worst moment."
           ]
         },
-        {"role": "maps", "name": "THE WAR TABLE", "verb": "CHOOSE A HUNT", "at": [0, -8.6], "kind": "war_table"}
+        {"role": "maps", "name": "THE WAR TABLE", "verb": "ENTER THE DISTRICT", "at": [0, -8.6], "kind": "war_table"}
       ]
     },
     {

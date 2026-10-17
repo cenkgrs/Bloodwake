@@ -86,10 +86,15 @@ namespace Bloodwake
    string kind=primary?"button_primary":"button_secondary";
    var image=Kit(parent,kind,x,y,w,h,84f/h);image.name=text;image.raycastTarget=true;
    var button=image.gameObject.AddComponent<Button>();button.targetGraphic=image;button.transition=Selectable.Transition.SpriteSwap;
-   button.spriteState=new SpriteState{highlightedSprite=KitSprite(kind+"_hover"),selectedSprite=KitSprite(kind),pressedSprite=KitSprite(primary?"button_primary_pressed":kind)};
+   button.spriteState=new SpriteState{highlightedSprite=KitSprite(kind+"_hover"),selectedSprite=KitSprite(kind+"_hover"),pressedSprite=KitSprite(primary?"button_primary_pressed":kind)};
    var label=Label(image.transform,text,w*.14f,2,w*.72f,h-4,Mathf.RoundToInt(Mathf.Min(24,h*.4f)),true,TextAnchor.MiddleCenter);label.color=primary?new Color(.96f,.9f,.84f):ink;
-   button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});return button;
+   image.gameObject.AddComponent<MenuHover>().Entered=HoverSound;
+   button.onClick.AddListener(()=>{ClickSound(text);action();drawnScreen=null;});return button;
   }
+  // A click rebuilds the page under a still pointer, which would fire a hover right after it.
+  float lastUiClick;
+  void ClickSound(string text){lastUiClick=Time.unscaledTime;Sound(text is "BACK" or "CLOSE"?"ui_back":text=="BEGIN THE HUNT"?"ui_begin_hunt":text=="ENTER THE DISTRICT"?"ui_enter_district":"ui_click");}
+  void HoverSound(){if(Time.unscaledTime-lastUiClick>.35f)Sound("ui_hover");}
   // Text-only menu entry; hovering turns it red and shows the sigil, like the title screen frames.
   void MenuItem(Transform parent,string text,float x,float y,float w,float h,int size,Action action)
   {
@@ -97,8 +102,8 @@ namespace Bloodwake
    var marker=Rect(hit.transform,"Hover",0,0,w+70,h).gameObject;
    Kit(marker.transform,"diamond",22,h/2-14,17,28);
    var label=Label(hit.transform,text,70,0,w,h,size,true,TextAnchor.MiddleLeft);
-   var hover=hit.gameObject.AddComponent<MenuHover>();hover.Label=label;hover.Marker=marker;hover.Normal=new Color(.78f,.74f,.7f);hover.Hot=new Color(.93f,.24f,.22f);marker.SetActive(false);label.color=hover.Normal;
-   var button=hit.gameObject.AddComponent<Button>();button.targetGraphic=hit;button.transition=Selectable.Transition.None;button.onClick.AddListener(()=>{Sound("ui_click");action();drawnScreen=null;});
+   var hover=hit.gameObject.AddComponent<MenuHover>();hover.Label=label;hover.Marker=marker;hover.Normal=new Color(.78f,.74f,.7f);hover.Hot=new Color(.93f,.24f,.22f);hover.Entered=HoverSound;marker.SetActive(false);label.color=hover.Normal;
+   var button=hit.gameObject.AddComponent<Button>();button.targetGraphic=hit;button.transition=Selectable.Transition.None;button.onClick.AddListener(()=>{ClickSound(text);action();drawnScreen=null;});
   }
   static Shader softEdgeShader;
   // Painting whose rectangle melts into the backdrop; feather is (left, bottom, right, top) fractions.
@@ -114,10 +119,16 @@ namespace Bloodwake
   void LateUpdate()
   {
    RebuildCargoNavigation();SyncEnemyAgents();
-   EnsureUI();if(drawnScreen!=Screen||(Screen=="playing"&&drawnClass!=Run?.ClassId)){if(page)Destroy(page.gameObject);page=Rect(uiRoot,"Screen "+Screen,0,0,1600,900);drawnScreen=Screen;drawnClass=Run?.ClassId;DrawScreen();}
+   EnsureUI();if(drawnScreen!=Screen||drawnPad!=ShowPad||(Screen=="playing"&&drawnClass!=Run?.ClassId)){if(page)Destroy(page.gameObject);page=Rect(uiRoot,"Screen "+Screen,0,0,1600,900);drawnScreen=Screen;drawnPad=ShowPad;drawnClass=Run?.ClassId;DrawScreen();}
    if(Screen=="playing"&&Run!=null)UpdateHUD();
+   UpdateMenuFocus();
   }
-  void UpdateInteractionPrompt(){if(Screen=="playing"&&Run!=null&&promptLabel)promptLabel.text=InteractionHint();}
+  void UpdateInteractionPrompt()
+  {
+   if(Screen!="playing"||Run==null||!promptLabel)return;var (text,interact)=InteractionHint();promptLabel.text=text;
+   if(!promptKey)return;promptKey.gameObject.SetActive(interact&&text.Length>0);
+   if(interact)promptKey.anchoredPosition=new Vector2(800-Mathf.Min(900,promptLabel.preferredWidth)/2-promptKey.sizeDelta.x-14,-700);
+  }
   void DrawScreen()
   {
    if(Screen=="loading"||Screen=="dying")return;
@@ -135,8 +146,7 @@ namespace Bloodwake
    Label(page,Screen.ToUpperInvariant(),70,48,1460,90,44,true,TextAnchor.MiddleCenter);Rule(page,560,143,480);
    switch(Screen)
    {
-    case "hub":Button(page,"WAR TABLE — THE CURSED TOWN",420,240,760,70,()=>Screen="maps");Button(page,"OATHS / SKILL TREE",420,335,760,70,()=>Screen="progression");Button(page,"ARMORY / LOADOUTS",420,430,760,70,()=>Screen="armory");Back("playing");break;
-    case "maps":DrawMaps();break;
+    case "hub":Button(page,"ENTER THE DISTRICT",420,240,760,70,EnterDistrict);Button(page,"OATHS / SKILL TREE",420,335,760,70,()=>Screen="progression");Button(page,"ARMORY / LOADOUTS",420,430,760,70,()=>Screen="armory");Back("playing");break;
     case "pause":Button(page,"RESUME",520,300,560,70,()=>Screen="playing");Button(page,"SETTINGS",520,400,560,70,()=>Screen="settings");Button(page,"RETURN TO TITLE",520,500,560,70,ReturnToMenu);break;
     case "upgrade":DrawUpgrades();break;
     case "merchant":DrawMerchant();break;
@@ -144,6 +154,7 @@ namespace Bloodwake
     case "armory":DrawArmory();break;
     case "settings":DrawSettings();break;
     case "dead":Label(page,$"Kills  {Run.Kills}    Rooms cleared  {Run.RoomsCleared}\nEssence  {Meta.Essence}",300,260,1000,130,30,false,TextAnchor.MiddleCenter);Button(page,"RETURN TO SAFEHOUSE",450,470,700,70,()=>StartRun(SelectedClass));Button(page,"RETURN TO TITLE",450,570,700,70,ReturnToMenu);break;
+    case "victory":Label(page,"THE BLACK BELL FALLS SILENT",200,190,1200,60,30,true,TextAnchor.MiddleCenter).color=gold;Label(page,$"Kills  {Run.Kills}    Rooms cleared  {Run.RoomsCleared}\nEssence  {Meta.Essence}",300,280,1000,130,30,false,TextAnchor.MiddleCenter);Button(page,"RETURN TO SAFEHOUSE",450,470,700,70,()=>StartRun(SelectedClass));Button(page,"RETURN TO TITLE",450,570,700,70,ReturnToMenu);break;
    }
   }
   void Back(string target){Button(page,"BACK",70,800,250,55,()=>Screen=target);}
