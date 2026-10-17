@@ -1,5 +1,24 @@
 # Bloodwake Unity devir raporu — 15 Ekim 2026
 
+## 17 Ekim akşam — gamepad, performans, vuruş hissi, Blood Sage ağacı (kullanıcı testi bekliyor)
+
+- **Kontroller:** R1/sol tık düz saldırı, R2/sağ tık ağır saldırı (Warrior; Vesper ağaçtan açar), kare/Shift dash,
+  △ ○ ✕ = Q E Space, ✕ yakında NPC/ödül varsa etkileşim. Sağ çubuk nişanı ve otomatik saldırı yok; yön sol çubuk.
+  Menüler gamepad ile gezilir, DualSense simgeleri ve titreşim var. L1/L2 boş (L1+R1 yalnız Tethered Blade).
+- **Kasma:** asıl yük M2 GPU'su. MSAA kapandı (SMAA var), gölge tek kademe/35 m, Ayarlar'da render kalitesi
+  (varsayılan %85). Editörde 25.4 → 17.9 ms. Ayrıca köprü bir `StartRun`ı edit modunda çalıştırıp sahnede görünmez
+  oda kopyaları bırakmıştı; sahne temizlendi, `call/get/set` artık yalnız Play'de çalışır.
+- **Düşman tepkileri:** vurulan düşmanın saldırısı sendeleme + 0.6 sn bekler (kombo kesilmez); kombo sonu/ağır vuruş
+  savurur; Vesper ateşi tutuşturur: yanan düşman ~1.5 sn kıvranır, sonra yavaş; yerde kalan alev tutuşturur.
+- **Vesper:** dash → R1 kayarak yükselen kesik + dikey alev yarım ayı (temel hamle). Ağaç hareketleri: Heavy Cleave,
+  Second Step, Falling Star (R1 R1 R2), Crescent Fan (R2 R2), Tethered Blade (L1+R1). Mevcut kliplerle + kodla.
+- **Blood Sage ağacı:** her sınıfa Güç (pasif, rütbeli) ve Hareket dalı. Essence run boyunca taşınır, **boss ölünce**
+  kasaya geçer, boss'tan önce ölünce kaybolur. Eski ortak pasifler bir kez iade edildi.
+- **Dekor/ses:** kenarlara yoğun yığınlar, zemin çatlak/yosun/çamur/saman, kül ve kıvılcım parçacıkları. Ayak sesi,
+  düşman sesleri, ortam döngüleri, konumlu ateş sesi, müzik varyantları bağlandı; dosyalar gelene kadar sessiz.
+  İstenen sesler, müzik ve 3D modeller: `art/ASSET_REQUESTS.md`.
+- Gerçek DualSense ile ve gözle/elle oynanış onayı henüz yok.
+
 ## 16 Ekim 18:20 — sığınak, training alanı ve rigli NPC'ler canlıda PASS
 
 - Dört kullanıcı GLB'si birleşik `Sanctuary/sanctuary_environment.prefab`
