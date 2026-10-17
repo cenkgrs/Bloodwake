@@ -17,7 +17,7 @@ namespace Bloodwake
   public IEnumerator CharacterIntro(string id,JToken map=null)
   {
    EnsureUI();var overlay=Rect(uiRoot,"Character cinematic",0,0,1600,900);var group=overlay.gameObject.AddComponent<CanvasGroup>();
-   var curtain=Plate(overlay,"Curtain",0,0,1600,900,new Color(.03f,.035f,.055f));curtain.raycastTarget=true;
+   var curtain=Bleed(Plate(overlay,"Curtain",0,0,1600,900,new Color(.03f,.035f,.055f)));curtain.raycastTarget=true;
    var a=Resources.Load<Texture2D>("ui/loading_cinematics/"+id+"_triptych");var b=Resources.Load<Texture2D>("ui/loading_cinematics/"+id+"_triptych_2");
    var shader=Resources.Load<Shader>("CharacterCinematic");Material material=null;
    if(a&&b&&shader){material=new Material(shader);material.SetTexture("_AtlasA",a);material.SetTexture("_AtlasB",b);var picture=Rect(overlay,"Six frame sequence",0,0,1600,900).gameObject.AddComponent<RawImage>();picture.texture=a;picture.material=material;picture.raycastTarget=false;}
@@ -42,8 +42,8 @@ namespace Bloodwake
    if(map!=null)
    {
     foreach(Transform child in overlay)Destroy(child.gameObject);yield return null;
-    group.alpha=1;var shade=Plate(overlay,"Arrival curtain",0,0,1600,900,Color.black);
-    var top=Plate(overlay,"Arrival top",0,0,1600,108,Color.black);var bottom=Plate(overlay,"Arrival bottom",0,792,1600,108,Color.black);
+    group.alpha=1;var shade=Bleed(Plate(overlay,"Arrival curtain",0,0,1600,900,Color.black));
+    var top=Plate(overlay,"Arrival top",-400,-400,2400,508,Color.black);var bottom=Plate(overlay,"Arrival bottom",-400,792,2400,508,Color.black);
     var title=Label(overlay,room.S("name"),250,808,1100,60,28,true,TextAnchor.MiddleCenter);
     var stop=Player.transform.position;var entry=Point(room["markers"]["EntranceDoor"]);entry.x=Mathf.Clamp(entry.x,-half.x+.45f,half.x-.45f);entry.z=Mathf.Clamp(entry.z,-half.y+.45f,half.y-.45f);
     var heading=(stop-entry).normalized;if(heading.sqrMagnitude>.01f)Player.transform.rotation=Quaternion.LookRotation(heading);

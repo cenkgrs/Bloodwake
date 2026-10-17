@@ -16,14 +16,19 @@ namespace Bloodwake
    if(uiRoot)return;
    var go=new GameObject("Bloodwake UI",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));uiRoot=(RectTransform)go.transform;
    go.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
-   var scaler=go.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new Vector2(1600,900);scaler.matchWidthOrHeight=.5f;
+   var scaler=go.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new Vector2(1600,900);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.Expand;
    if(EventSystem.current==null)new GameObject("UI Input",typeof(EventSystem),typeof(InputSystemUIInputModule));
    titleFont=Resources.Load<Font>("art/title");bodyFont=Resources.Load<Font>("fonts/spectral");if(!bodyFont)bodyFont=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");if(!titleFont)titleFont=bodyFont;
   }
   RectTransform Rect(Transform parent,string name,float x,float y,float w,float h)
   {
-   var r=(RectTransform)new GameObject(name,typeof(RectTransform)).transform;r.SetParent(parent,false);r.anchorMin=r.anchorMax=new Vector2(0,1);r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);r.sizeDelta=new Vector2(w,h);return r;
+   var r=(RectTransform)new GameObject(name,typeof(RectTransform)).transform;r.SetParent(parent,false);r.anchorMin=r.anchorMax=new Vector2(0,1);r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);r.sizeDelta=new Vector2(w,h);
+   // Screen roots keep the 1600x900 layout whole and centred; the canvas expands around it on non-16:9 screens.
+   if(parent==uiRoot){r.anchorMin=r.anchorMax=r.pivot=new Vector2(.5f,.5f);r.anchoredPosition=Vector2.zero;}
+   return r;
   }
+  // Full-screen backgrounds reach past the 1600x900 layout to the real screen edges.
+  T Bleed<T>(T graphic) where T:Graphic{var r=graphic.rectTransform;r.anchorMin=r.anchorMax=r.pivot=new Vector2(.5f,.5f);r.anchoredPosition=Vector2.zero;r.sizeDelta=uiRoot.rect.size+new Vector2(4,4);return graphic;}
   Image Plate(Transform parent,string name,float x,float y,float w,float h,Color color)
   {var r=Rect(parent,name,x,y,w,h);var image=r.gameObject.AddComponent<Image>();image.color=color;image.raycastTarget=false;return image;}
   Text Label(Transform parent,string text,float x,float y,float w,float h,int size=22,bool title=false,TextAnchor align=TextAnchor.UpperLeft)
@@ -64,7 +69,7 @@ namespace Bloodwake
    if(Screen=="loading"||Screen=="dying")return;
    if(Screen=="death_transition")
    {
-    Plate(page,"Death veil",0,0,1600,900,new Color(.015f,.01f,.015f,.65f));
+    Bleed(Plate(page,"Death veil",0,0,1600,900,new Color(.015f,.01f,.015f,.65f)));
     Label(page,"YOU DIED",200,345,1200,120,76,true,TextAnchor.MiddleCenter).color=new Color(.78f,.26f,.29f);
     Label(page,"THE NIGHT CLAIMED YOU",350,485,900,60,26,true,TextAnchor.MiddleCenter);return;
    }
@@ -73,10 +78,10 @@ namespace Bloodwake
    if(Screen=="menu"||Screen=="classes")
    {
     // Cover-crop the square backdrop instead of stretching it to 16:9.
-    var bg=Resources.Load<Texture2D>("art/arena");if(bg){var img=Rect(page,"Backdrop",0,0,1600,900).gameObject.AddComponent<RawImage>();img.texture=bg;img.raycastTarget=false;float v=(900f/1600f)*bg.width/bg.height;img.uvRect=new UnityEngine.Rect(0,(1-v)*.5f,1,v);}
-    Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,Screen=="classes"?.9f:.8f));
+    var bg=Resources.Load<Texture2D>("art/arena");if(bg){var img=Bleed(Rect(page,"Backdrop",0,0,1600,900).gameObject.AddComponent<RawImage>());img.texture=bg;img.raycastTarget=false;var size=img.rectTransform.sizeDelta;float v=Mathf.Min(1,size.y/size.x*bg.width/bg.height);img.uvRect=new UnityEngine.Rect(0,(1-v)*.5f,1,v);}
+    Bleed(Plate(page,"Scrim",0,0,1600,900,new Color(.02f,.015f,.02f,Screen=="classes"?.9f:.8f)));
    }
-   else Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.9f));
+   else Bleed(Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.9f)));
    if(Screen=="classes"){Label(page,"CHOOSE YOUR OATH",640,48,880,70,40,true);Plate(page,"Heading rule",640,118,880,2,gold);}
    else{Label(page,Screen=="menu"?"BLOODWAKE":Screen.ToUpperInvariant(),70,48,1460,90,Screen=="menu"?74:44,true,TextAnchor.MiddleCenter);Plate(page,"Heading rule",560,143,480,2,gold);}
    switch(Screen)

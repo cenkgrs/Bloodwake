@@ -2,16 +2,21 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 
 namespace Bloodwake
 {
  // Gameplay presentation is independent of the Godot VFX/animation reference.
  public sealed class GameplayLighting:MonoBehaviour
  {
-  Material sky,previousSky;VolumeProfile profile;
+  Material sky,previousSky,sharpen;VolumeProfile profile;SharpenPass sharpenPass;Camera gameCamera;
+  public static float Sharpness=.6f;
   public void Configure(Camera camera)
   {
-   camera.allowHDR=true;
+   camera.allowHDR=true;gameCamera=camera;
+   sharpen=new Material(Resources.Load<Shader>("Presentation/Sharpen")){name="Sharpen"};sharpenPass=new SharpenPass(sharpen);
+   RenderPipelineManager.beginCameraRendering+=QueueSharpen;
    var data=camera.GetUniversalAdditionalCameraData();data.renderPostProcessing=true;
    data.antialiasing=AntialiasingMode.SubpixelMorphologicalAntiAliasing;
    data.antialiasingQuality=AntialiasingQuality.High;
@@ -48,8 +53,28 @@ namespace Bloodwake
    lamp.type=LightType.Directional;lamp.transform.rotation=Quaternion.Euler(angles);lamp.color=color;lamp.intensity=intensity;
    lamp.shadows=shadows?LightShadows.Soft:LightShadows.None;lamp.shadowStrength=.85f;return lamp;
   }
+  void QueueSharpen(ScriptableRenderContext context,Camera camera)
+  {
+   if(camera!=gameCamera||Sharpness<=0)return;
+   sharpen.SetFloat("_Sharpness",Sharpness);camera.GetUniversalAdditionalCameraData().scriptableRenderer.EnqueuePass(sharpenPass);
+  }
+  // Runs on the post-processed frame, before the screen-space UI is drawn on top.
+  sealed class SharpenPass:ScriptableRenderPass
+  {
+   readonly Material material;
+   public SharpenPass(Material material){this.material=material;renderPassEvent=RenderPassEvent.AfterRenderingPostProcessing;requiresIntermediateTexture=true;}
+   public override void RecordRenderGraph(RenderGraph renderGraph,ContextContainer frameData)
+   {
+    var resources=frameData.Get<UniversalResourceData>();if(resources.isActiveTargetBackBuffer)return;
+    var source=resources.activeColorTexture;var desc=renderGraph.GetTextureDesc(source);desc.name="Bloodwake sharpen";desc.clearBuffer=false;
+    var target=renderGraph.CreateTexture(desc);
+    renderGraph.AddBlitPass(new RenderGraphUtils.BlitMaterialParameters(source,target,material,0),"Bloodwake sharpen");
+    resources.cameraColor=target;
+   }
+  }
   void OnDestroy()
   {
+   RenderPipelineManager.beginCameraRendering-=QueueSharpen;if(sharpen)Destroy(sharpen);
    if(RenderSettings.skybox==sky)RenderSettings.skybox=previousSky;
    if(sky)Destroy(sky);if(profile){foreach(var component in profile.components)Destroy(component);Destroy(profile);}
   }
