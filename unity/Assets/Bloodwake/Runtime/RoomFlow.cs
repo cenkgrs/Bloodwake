@@ -23,7 +23,7 @@ namespace Bloodwake
    }
    EnvironmentDressing.Apply(roomRoot,half,room["layout"]);
    EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);
-   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else DressRoom(id);ConfigureBreakableCargo();
+   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else{DressRoom(id);DressEdges(id);}ConfigureBreakableCargo();
    roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
    SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);RevFx.HandMagic(Player);if(id=="town_safehouse")SpawnTrainingWarrior();
