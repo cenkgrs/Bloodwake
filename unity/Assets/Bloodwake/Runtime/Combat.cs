@@ -41,7 +41,7 @@ namespace Bloodwake
     if(Time.time>comboExpires)combo=0;combo=combo%(Run.ClassId=="warrior"?4:3)+1;
     string clip=Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper"?"Attack"+combo:"Attack";
     // Vesper finishes the combo with the upward greatsword thrust.
-    if(Run.ClassId=="vesper"&&combo==3)clip="DashAttack";
+    if(Run.ClassId=="vesper"&&combo==3){clip="DashAttack";StartCoroutine(VesperLunge(Player.transform.forward,2.4f,.18f));}
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
     bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
@@ -80,6 +80,12 @@ namespace Bloodwake
    for(int i=0;i<count;i++){var e=Enemies.Where(x=>!x.Emerging&&!hit.Contains(x)&&Vector3.Distance(origin,x.View.transform.position)<radius).OrderBy(x=>Vector3.Distance(origin,x.View.transform.position)).FirstOrDefault();if(e==null)break;var end=e.View.transform.position;var beam=new GameObject("Chain lightning").AddComponent<LineRenderer>();beam.transform.SetParent(actorRoot);beam.positionCount=2;beam.SetPosition(0,origin+Vector3.up);beam.SetPosition(1,end+Vector3.up);beam.startWidth=beam.endWidth=.05f;beam.material=Effects.Mat(new Color(.65f,.81f,1));Destroy(beam.gameObject,.16f);hit.Add(e);DamageEnemy(e,damage);if(e.Hp>0){e.Burn=2;e.BurnDps=4;}origin=end;}
   }
   IEnumerator ReleaseWeapon(JToken row,JToken slot,Vector3 dir,float damage,float range,float delay,string hand="R",bool finisher=false){yield return Delay(delay);Sound(Run.ClassId=="mage"?"orb_cast":"gun_rifle");int count=(int)row.N("projectileCount",1);for(int i=0;i<count;i++)StartCoroutine(Projectile(Player.transform.position,Quaternion.Euler(0,(i-(count-1)*.5f)*8,0)*dir,damage,row.N("projectileSpeed",500)*.02f,range,false,(int)(row.N("pierceCount")+slot.N("pierce")),false,hand,finisher));}
+  // Vesper's finisher drives forward like Ember Dash, through the game's collision.
+  IEnumerator VesperLunge(Vector3 dir,float distance,float time)
+  {
+   dir.y=0;dir.Normalize();float age=0,done=0;
+   while(age<time){if(Screen=="playing"&&hitStop<=0){age=Mathf.Min(time,age+Time.deltaTime);float want=distance*Mathf.SmoothStep(0,1,age/time);Player.transform.position=Move(Player.transform.position,dir*(want-done));done=want;}yield return null;}
+  }
   int markChain;
   void DamageEnemy(Enemy e,float damage,bool effects=true)
   {
