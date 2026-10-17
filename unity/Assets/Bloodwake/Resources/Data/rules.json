@@ -434,13 +434,52 @@
       ],
       "voices": 1
     },
-    "vesper_bloodfire_rite": {
-      "db": 0.0,
+    "vesper_attack_1": {
+      "db": -4.0,
       "files": [
-        "revenant_space_blood_burst"
+        "vesper_attack_1"
       ],
       "gap": 0.0,
-      "impact": 0.827,
+      "impact": 0.2,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "vesper_attack_2": {
+      "db": -4.0,
+      "files": [
+        "vesper_attack_2"
+      ],
+      "gap": 0.0,
+      "impact": 0.1,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "vesper_attack_3": {
+      "db": -4.0,
+      "files": [
+        "vesper_attack_3"
+      ],
+      "gap": 0.0,
+      "impact": 0.22,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "vesper_bloodfire_rite": {
+      "db": -2.0,
+      "files": [
+        "vesper_bloodfire_rite"
+      ],
+      "gap": 0.0,
+      "impact": 0.22,
       "pitch": [
         1.0,
         1.0
@@ -448,15 +487,69 @@
       "voices": 1
     },
     "vesper_cinder_ward": {
-      "db": 0.0,
+      "db": -2.0,
       "files": [
-        "revenant_e_blood_bomb"
+        "vesper_cinder_ward"
       ],
       "gap": 0.0,
-      "impact": 0.442,
+      "impact": 0.22,
       "pitch": [
         1.0,
         1.0
+      ],
+      "voices": 1
+    },
+    "vesper_dash": {
+      "db": -5.0,
+      "files": [
+        "vesper_dash"
+      ],
+      "gap": 0.0,
+      "impact": 0.0,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "vesper_death": {
+      "db": -3.0,
+      "files": [
+        "vesper_death"
+      ],
+      "gap": 0.0,
+      "impact": 0.0,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "vesper_ember_dash": {
+      "db": -4.0,
+      "files": [
+        "vesper_ember_dash"
+      ],
+      "gap": 0.0,
+      "impact": 0.21,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "voices": 1
+    },
+    "vesper_hit_flesh": {
+      "db": -6.0,
+      "files": [
+        "vesper_hit_flesh_1",
+        "vesper_hit_flesh_2",
+        "vesper_hit_flesh_3"
+      ],
+      "gap": 0.03,
+      "impact": 0.0,
+      "pitch": [
+        0.95,
+        1.05
       ],
       "voices": 1
     },

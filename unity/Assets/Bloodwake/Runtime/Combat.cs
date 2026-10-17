@@ -51,7 +51,7 @@ namespace Bloodwake
     if(Run.ClassId=="revenant")duration=Player.ClipLength(clip)/Mathf.Sqrt(Mathf.Max(.5f,Run.Stats.N("attackSpeed")/GameData.Stats("revenant").N("attackSpeed")*slot.N("speed")));
     if(Run.ClassId=="warrior"&&combo==4)duration=.9f;
     if(heavy){clip="SpinAttack";duration=Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,1.5f));attackCd*=2.6f;combo=0;}
-    if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
+    if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId=="vesper")SoundOnContact("vesper_attack_"+combo,contact);else if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
      else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?1.65f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,combo==(Run.ClassId=="warrior"?4:3)));}
     else StartCoroutine(ReleaseWeapon(row,slot,dir,damage,range,duration*.55f,"R",combo==3));
     Player.Play(clip,duration);if(contactEvent!=null)Player.OnMarker("DAMAGE",contactEvent);attackCd=Mathf.Max(attackCd,duration*(heavy?.85f:.62f));comboExpires=Time.time+duration+.5f;
@@ -86,13 +86,13 @@ namespace Bloodwake
    if(e.Training)
    {
     if(e.Emerging)return;e.Hp-=damage;
-    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("d9dce2"));e.Stagger=.5f+PostImpactRecovery;hitStop=Mathf.Max(hitStop,NormalHitStop);Sound("sword_hit_flesh");Blood(e.View.transform.position);e.ImpactVersion++;StartRecoil(e);e.View.FlashHit(false);e.View.Play("Hit",.5f);}
+    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("d9dce2"));e.Stagger=.5f+PostImpactRecovery;hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);e.ImpactVersion++;StartRecoil(e);e.View.FlashHit(false);e.View.Play("Hit",.5f);}
     if(e.Hp<=0){e.Hp=e.MaxHp;e.RecoilRemaining=e.RecoilTime=0;e.View.transform.position=e.TrainingHome;e.View.transform.rotation=Quaternion.LookRotation(Vector3.forward);}
     return;
    }
    if(e.Hp<=0||e.Emerging)return;bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
-   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound("sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
+   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
    if(effects&&actual>0)e.View.FlashHit(false);
    if(e.Hp>0){if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}
@@ -110,7 +110,7 @@ namespace Bloodwake
     if(Run.ClassId=="revenant"&&Run.Stats.N("hp")>0)Player.HitOverlay();
    }
    invulnerable=.25f;
-   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Screen="dying";SetMusic("");Sound("player_death");StartCoroutine(DeathTransition());if(!Run.Awarded){Run.Awarded=true;Meta.Essence+=Mathf.Clamp(Run.Wave*2+Run.Kills/5,2,100000);Meta.Save();}}
+   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Screen="dying";SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());if(!Run.Awarded){Run.Awarded=true;Meta.Essence+=Mathf.Clamp(Run.Wave*2+Run.Kills/5,2,100000);Meta.Save();}}
   }
  }
 }

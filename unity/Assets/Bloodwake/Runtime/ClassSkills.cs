@@ -41,9 +41,9 @@ namespace Bloodwake
    if(behavior=="dash"&&Run.ClassId=="vesper")
    {
     var heading=dir.sqrMagnitude>.001f?dir.normalized:Player.transform.forward;target=Move(start,heading*range*.8f);
-    Player.Play("Run",Player.ClipLength("Run"));invulnerable=.34f;RevFx.VesperDash(start,target);
+    Player.Play("Run",Player.ClipLength("Run"));invulnerable=.34f;RevFx.VesperDash(start,target);SoundOnContact("vesper_ember_dash",.16f+.25f);
     float age=0;while(age<.16f){if(Screen=="playing"&&hitStop<=0){age+=Time.deltaTime;Player.transform.position=Vector3.Lerp(start,target,Mathf.SmoothStep(0,1,age/.16f));}yield return null;}
-    Player.transform.position=target;Player.transform.rotation=Quaternion.LookRotation(heading);Player.Play("DashAttack",.6f);Sound("sword_swing");
+    Player.transform.position=target;Player.transform.rotation=Quaternion.LookRotation(heading);Player.Play("DashAttack",.6f);
     yield return Delay(.25f);yield return MeleeContact(heading,radius*1.25f,damage,0,false,0,0,true);yield break;
    }
    if(behavior!="bloodTeleport"&&behavior!="bloodBurst")Player.Play(ultimate?"Ultimate":behavior=="bloodTeleport"?"Teleport":behavior=="whirl"?"SpinAttack":behavior=="voidLeap"?"SunderLeap":"Attack",.8f);

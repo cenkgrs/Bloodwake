@@ -27,7 +27,7 @@ namespace Bloodwake
    revenantDashDirection=direction.normalized;revenantDashAge=dashWakeDistance=dashTravelled=thrustWindow=0;thrustQueued=false;
    revenantDashing=true;dashCd=combatPractice?0:RevenantDashCooldown;attackCd=0;
    Player.transform.rotation=Quaternion.LookRotation(revenantDashDirection);Player.BeginRevenantDashPose(RevenantDashDuration);
-   bool fire=Run.ClassId=="vesper";RevFx.DashCloud(Player,revenantDashDirection,fire);RevFx.DashWake(Player.transform.position,revenantDashDirection,fire);return true;
+   bool fire=Run.ClassId=="vesper";if(fire)Sound("vesper_dash");RevFx.DashCloud(Player,revenantDashDirection,fire);RevFx.DashWake(Player.transform.position,revenantDashDirection,fire);return true;
   }
   // Game-clock state machine: pause and hit-stop freeze movement, pose and combo window together.
   void TickRevenantDash(float dt)

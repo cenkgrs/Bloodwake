@@ -46,6 +46,18 @@ namespace Bloodwake
     cards.Add(card.transform);cardScale.Add(Mathf.Lerp(.85f,1.15f,Mathf.Sin(CardStops[i]*Mathf.PI)));
    }
   }
+  Animator animator;
+  // Mixamo's thrust is an upward stab; Vesper drives the greatsword straight ahead, so during
+  // DashAttack the grip bone swings the blade level with the character's facing, eased in and out.
+  void LevelThrust()
+  {
+   if(!animator)animator=GetComponentInChildren<Animator>();if(!animator)return;
+   var state=animator.IsInTransition(0)?animator.GetNextAnimatorStateInfo(0):animator.GetCurrentAnimatorStateInfo(0);
+   if(!state.IsName("DashAttack"))return;float t=state.normalizedTime%1,weight=Mathf.SmoothStep(0,1,t/.22f)*(1-Mathf.SmoothStep(0,1,(t-.82f)/.18f));
+   var blade=(tip.position-grip.position).normalized;var forward=transform.forward;forward.y=0;if(forward.sqrMagnitude<.001f)return;
+   var target=(forward.normalized+Vector3.down*.06f).normalized;
+   grip.rotation=Quaternion.Slerp(Quaternion.identity,Quaternion.FromToRotation(blade,target),weight)*grip.rotation;
+  }
   TrailRenderer CreateTrail(string title,Color color,float width,float life)
   {
    var go=new GameObject(title);go.transform.SetParent(transform,false);var trail=go.AddComponent<TrailRenderer>();trail.time=life;trail.minVertexDistance=.035f;trail.startWidth=width;trail.endWidth=0;trail.numCapVertices=4;trail.numCornerVertices=3;trail.sharedMaterial=FlameMaterial(title,color);trail.shadowCastingMode=ShadowCastingMode.Off;trail.receiveShadows=false;trail.emitting=false;
@@ -53,7 +65,7 @@ namespace Bloodwake
   }
   void LateUpdate()
   {
-   if(!grip||!tip)return;Vector3 start=Vector3.Lerp(grip.position,mid.position,.13f),end=tip.position;var axis=end-start;if(axis.sqrMagnitude<.001f)return;axis.Normalize();
+   if(!grip||!tip)return;LevelThrust();Vector3 start=Vector3.Lerp(grip.position,mid.position,.13f),end=tip.position;var axis=end-start;if(axis.sqrMagnitude<.001f)return;axis.Normalize();
    var view=Camera.main?Camera.main.transform.forward:Vector3.forward;var side=Vector3.Cross(axis,view);if(side.sqrMagnitude<.001f)side=Vector3.Cross(axis,Vector3.up);side.Normalize();var lift=Vector3.Cross(side,axis).normalized;float now=Time.time;
    foreach(var line in flames)
    {
