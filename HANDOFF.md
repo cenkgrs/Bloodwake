@@ -46,7 +46,29 @@ Senden beklenen ses, müzik ve 3D model istekleri `art/ASSET_REQUESTS.md` içind
 - **Ses:** ayak sesleri, düşman saldırı/acı/ölüm sesleri, ortam döngüleri, konumlu ateş sesi, savaşta dönüşümlü müzik bağlı.
   Dosyalar `Resources/audio/` içine `art/ASSET_REQUESTS.md`'deki adlarla girene kadar sessiz.
 
+## 18 Ekim (Windows) — eklenenler
+
+- **Akış:** ilk NEW RUN'da Vesper ile prolog (story.json) → doğrudan ilk bölge; sonrakilerde oath ekranı. Sığınakta **Ashen Mirror** ile karakter değişimi.
+  Blood Sage ve Quartermaster her dönüşte son run'a göre 50'şer satırdan birini söyler. Bölgeye giriş kapıdan içeri yürür.
+- **Dalgalar:** her savaş odası bölgenin havuzundan rastgele 2 turlu kombinasyon çeker (story.json `waveCombos` / `districtPools`). Aynı anda en çok 8 düşman.
+- **Boss:** 10 bölgede 10 Bellwarden varyantı (isim, desen, tempo, çağırdıkları). Giriş kartı, ekranın tepesinde can barı.
+  Vuruşlarımız onu sendeletmez/saldırısını kesmez, saldırılar arası bekleme ~yok, zemin uyarısı yok. Yürüyüşü ayak izine göre kalibre.
+- **Dev kit:** F1 / Select. God mode, cooldown yok, tek vuruş, oda/boss/bölge atlama, essence/altın.
+- **Vurma hissi:** titreme + ezilme (HitShake), güçlü flaş, daha uzun hit stop, daha fazla savrulma.
+- **Vesper:** dash→R1 çubuğa göre; L1+R1 kılıç gerçekten uçar; R2 R2 beklemesiz; **L1+R2 sol elden alev püskürtme** (≤1 sn).
+- **Mage (oyuncu):** R1 ×3 (sağ el küre, sol el ters küre, 30° buz kırıkları), R2 90° kuvvet halkası, R1 R1 R2 buz kuyruklu yıldızı,
+  L1+R1 yakala-çek-fırlat, kare = havada süzülme. Ters/zemin klipleri düşman büyücünün Mixamo kliplerinden (MageKitImport).
+- **Warlock (yeni düşman):** teal büyücü, 30°'lik 5'li yay atışı ve 1 sn hapseden mühür. 3. bölgeden itibaren.
+- **Revenant:** dash→R1 önden saplanır ve yumuşak toparlanır; yürüyüş/koşuda daha dik duruş (RevenantPosture).
+  Hareket dalı: Crimson Rend (R2), Mist Chain, Hemorrhage (R1 R1 R2), Blood Lance (L1+R1), Sanguine Siphon (L1+R2).
+- **Warrior:** saldırılar arası geçişler daha uzun blend.
+- Varlık istekleri: `art/ASSET_REQUESTS.md` bölüm 0 (boss Mixamo seti, VFX dokuları, yeni sesler).
+
 ## Sıradaki işler (öncelik sırasıyla)
+
+0. **Gelen varlıkları bağla** (`art/ASSET_REQUESTS.md` bölüm 0): boss Mixamo klipleri → MageKitImport gibi kemik adıyla
+   enemy_boss controller'a ekle, yürüyüşü koşudan ayır; `art/vfx-incoming/` dokularını alfa'ya çevirip ilgili efektlere bağla.
+   Sesler adıyla kendiliğinden çalar.
 
 1. **Vesper'ın yeni hareketleri için gerçek animasyon klipleri (Blender).**
    Kullanıcı bunları istedi ve henüz **yapılmadı**: hareketler şu an mevcut kliplerle ve kodla verilen hareketle çalışıyor.

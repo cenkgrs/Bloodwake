@@ -1,4 +1,4 @@
-# Bloodwake — senden istenen varlıklar (17 Ekim 2026)
+# Bloodwake — senden istenen varlıklar (17–18 Ekim 2026)
 
 Kodda hepsinin yeri hazır: dosya doğru adla doğru klasöre girdiği anda oyun onu kullanır.
 Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya devam eder.
@@ -9,6 +9,64 @@ Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya d
   ölçeklemeyi ve odalara dağıtmayı ben yapacağım.
 
 Öncelik sırası: **1) ayak sesleri ve düşman sesleri → 2) ortam döngüleri → 3) 3D dekor → 4) müzik varyasyonları → 5) Vesper'ın yeni hareket sesleri.**
+
+---
+
+## 0. YENİ — 18 Ekim gece işinden çıkanlar (önce bunlar)
+
+Sıra: **A) boss animasyonları → B) VFX dokuları → C) yeni hareket sesleri.**
+
+### A. Boss animasyonları — Mixamo (en önemlisi)
+
+Boss şu an tek koşu klibiyle yürüyor (adımlarını kodla zemine oturttum, ama gerçek bir yürüyüş/ağır saldırı seti yok).
+Mixamo'da boss karakterini aç (gerekirse `art/enemies/mixamo_upload/boss_mixamo.zip`'i yeniden yükle) ve şunları indir:
+**FBX Binary, Without Skin, 30 fps, Keyframe Reduction: none.** Yürüyüş ve dönüşte **In Place açık**, saldırılarda kapalı.
+Dosyaları `art/enemies/mixamo/boss/new/` içine aşağıdaki adlarla koy; Unity'ye aktarmayı ben yaparım.
+
+| Dosya adı | Mixamo'da ara | Ne için |
+|---|---|---|
+| `boss_walk.fbx` | "Great Sword Walk" (In Place) | Yavaş, ağır yaklaşma (koşu yerine çoğu zaman bu) |
+| `boss_turn.fbx` | "Great Sword 180 Turn" (In Place) | Arkasına geçince dönme |
+| `boss_slash_combo.fbx` | "Great Sword Slash" (birden fazla varsa ikisini de: `_2`) | Amansız kombo saldırısı |
+| `boss_jump_attack.fbx` | "Great Sword Jump Attack" | Uzaktan üstüne atlama |
+| `boss_kick.fbx` | "Great Sword Kick" | Çok yakındayken itme |
+| `boss_taunt.fbx` | "Standing Taunt Battlecry" ya da "Mutant Roaring" | Boss giriş ekranındaki kükreme |
+
+### B. VFX dokuları — görsel üretici (Midjourney / DALL·E / benzeri)
+
+Hepsi **siyah arka plan üzerinde** (ben alfa'ya çeviririm), kare, **2048×2048** PNG. Sprite sheet'lerde kareler eşit ızgara olsun, kare numarasını yazma.
+`art/vfx-incoming/` içine aşağıdaki adlarla bırak.
+
+| Dosya | Nerede kullanılacak | Prompt |
+|---|---|---|
+| `blood_slash_sheet.png` | Revenant pençe izleri, Crimson Rend | 4x4 sprite sheet of a single curved claw slash streak animating from thin to full to dissolving, deep arterial crimson with a hot pink-white core, wet glossy blood droplets breaking off the edge, pure black background, game VFX flipbook, no text |
+| `blood_splatter_decals.png` | Yere düşen kan lekeleri | 2x2 grid of four different top-down blood splatter stains on pure black, dark crimson to near-black, sharp droplet spray edges, realistic, game decal texture, no text |
+| `blood_mist_sheet.png` | Kan sisi, dash, Siphon | 4x4 sprite sheet of a puff of crimson blood mist expanding and fading, soft volumetric, dark red with brighter core, pure black background, game VFX flipbook |
+| `arcane_energy_noise.png` | Mage halkası (R2), tether, glide izi | Seamless tileable turbulent arcane energy noise, wispy violet and indigo filaments, grayscale-friendly high contrast, pure black background, game shader texture |
+| `rune_circle.png` | Warlock ve düşman büyücü mühürleri | A single ornate occult rune circle seen from directly above, thin glowing white lines, concentric rings with angular runes between them, symmetrical, pure black background, game decal |
+| `chain_link_strip.png` | Warlock'un hapseden zincirleri | Seamless horizontal strip of glowing spectral iron chain links, teal-white glow, side view, pure black background, tileable game VFX texture |
+| `frost_ground_decal.png` | Buz kuyruklu yıldız, buz kırıkları | Top-down frost and ice crystal bloom on stone seen from above, radial cracks of pale blue ice, white hoarfrost edges, pure black background, game decal |
+| `fire_jet_sheet.png` | Vesper alev püskürtme (L1+R2) | 4x4 sprite sheet of a horizontal jet of roaring fire streaming left to right, bright yellow-white core, orange and deep red edges, curling smoke tips, pure black background, game VFX flipbook |
+
+### C. Yeni hareket sesleri — ElevenLabs Sound Effects
+
+Hepsi tek dosya, **adı tam olarak tablodaki gibi** (`_1` ekleme). Gelene kadar ortak sesler çalıyor.
+
+| Dosya | Hareket | Süre | Prompt |
+|---|---|---|---|
+| `vesper_flame_breath` | Vesper L1+R2 alev püskürtme | 1.2 sn | A roaring jet of fire blasting out of a hand like a flamethrower, steady whooshing burn with crackles, ends with a fiery puff |
+| `mage_force_ring` | Mage R2 90° halka | 0.9 sn | A deep magical force wave released in a sweep, low thump then a rushing violet energy whoosh spreading outward |
+| `mage_ice_shards` | Mage 3. R1 buz kırıkları | 1.0 sn | Rows of ice crystals bursting up out of stone in quick succession, sharp cracking and shattering, cold glassy chimes |
+| `mage_ice_comet` | Mage R1 R1 R2 | 1.6 sn | A huge boulder of ice whistling down from the sky and smashing into the ground, deep impact, explosion of shattering ice |
+| `mage_grip` | Mage L1+R1 yakala-fırlat | 1.0 sn | A crackling magical tether snapping onto a body and yanking it, electric hum, then a heavy whoosh as it is hurled |
+| `mage_glide` | Mage kare (süzülme) | 0.5 sn | A soft magical levitation whoosh, airy shimmer, quick glide through the air |
+| `warlock_attack` | Warlock 5'li yay atışı | 0.7 sn | A sinister sorcerer casting a fan of bolts, raspy whispered syllables without words, five quick hissing magic shots |
+| `warlock_bind_cast` | Warlock mühür çizimi | 1.0 sn | Eerie occult chanting without words and a rising ghostly hum as a rune circle draws itself on the ground |
+| `warlock_bind_snap` | Mühür kapanınca | 0.6 sn | Spectral chains snapping taut around a body, metallic clank and an echoing magical lock |
+| `revenant_rend` | Revenant R2 Crimson Rend | 0.8 sn | Two vicious claw slashes tearing flesh in an X, wet ripping and a spray of blood |
+| `revenant_hemorrhage` | Revenant R1 R1 R2 | 1.0 sn | A sharp hand clap followed by several wet blood bursts popping around the listener |
+| `revenant_blood_lance` | Revenant L1+R1 | 0.7 sn | A spear of liquid blood launched with a sharp whoosh and a wet piercing impact |
+| `revenant_siphon` | Revenant L1+R2 | 1.2 sn | A dark draining hum with wet blood being pulled through the air in streams, heartbeat underneath |
 
 ---
 

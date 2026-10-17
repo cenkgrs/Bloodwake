@@ -20,7 +20,7 @@ namespace Bloodwake
   IEnumerator CrimsonRend()
   {
    vesperMoveActive=true;var dir=Player.transform.forward;dir.y=0;dir.Normalize();float damage=RevenantBasicDamage();
-   const float hold=.62f;Player.Play("Attack3",hold);Sound("revenant_swing");float contact=hold*.42f;
+   const float hold=.62f;Player.Play("Attack3",hold);Sound(Voice("revenant_rend","revenant_swing"));float contact=hold*.42f;
    yield return Delay(contact);
    if(Screen=="playing"&&Run.Stats.N("hp")>0)
    {
@@ -73,7 +73,7 @@ namespace Bloodwake
   IEnumerator BloodLanceRoutine()
   {
    vesperMoveActive=true;var dir=Player.transform.forward;dir.y=0;dir.Normalize();float damage=RevenantBasicDamage();
-   const float hold=.44f;Player.Play("Attack2",hold);Sound("revenant_swing");attackCd=.5f;yield return Delay(hold*.45f);
+   const float hold=.44f;Player.Play("Attack2",hold);Sound(Voice("revenant_blood_lance","revenant_swing"));attackCd=.5f;yield return Delay(hold*.45f);
    if(Screen=="playing"&&Run.Stats.N("hp")>0)
    {
     var start=Player.transform.position;start.y=0;float reach=8.5f;var end=Move(start,dir*reach,.15f);reach=Vector3.Distance(start,end);
