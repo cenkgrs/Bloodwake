@@ -97,6 +97,7 @@ namespace Bloodwake
  public sealed class TetherFx:MonoBehaviour
  {
   LineRenderer line;Func<Vector3> from,to;RevenantVfx owner;float fade=1;bool released;MaterialPropertyBlock block;
+  public Color Tone=new(.75f,.38f,1.6f,1);
   public void Init(LineRenderer l,Func<Vector3> a,Func<Vector3> b,RevenantVfx fx){line=l;from=a;to=b;owner=fx;block=new MaterialPropertyBlock();Update();}
   public void Release(){released=true;}
   void Update()
@@ -104,7 +105,7 @@ namespace Bloodwake
    if(released){fade-=Time.deltaTime/.12f;if(fade<=0){Destroy(gameObject);return;}}
    Vector3 a=from(),b=to();var side=Vector3.Cross((b-a).normalized,Vector3.up);if(side.sqrMagnitude<.001f)side=Vector3.right;side.Normalize();
    for(int i=0;i<line.positionCount;i++){float t=i/(line.positionCount-1f),wobble=Mathf.Sin(t*Mathf.PI)*(Mathf.PerlinNoise(Time.time*18,i*.7f)-.5f)*.35f;line.SetPosition(i,Vector3.Lerp(a,b,t)+side*wobble+Vector3.up*wobble*.5f);}
-   block.SetColor("_Tone",new Color(.75f,.38f,1.6f,1));block.SetFloat("_Opacity",fade);line.SetPropertyBlock(block);
+   block.SetColor("_Tone",Tone);block.SetFloat("_Opacity",fade);line.SetPropertyBlock(block);
    if(owner&&UnityEngine.Random.value<.25f)owner.TetherSpark(b);
   }
  }

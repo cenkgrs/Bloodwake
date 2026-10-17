@@ -727,7 +727,7 @@
 	  "name": "Crimson Arrival · Revenant",
 	  "description": "Unlock blood damage on Shift dash arrival. 65% basic damage in a small area. Applies next run.",
 	  "class": "revenant",
-	  "branch": "revenant",
+	  "branch": "motion",
 	  "baseCost": 15,
 	  "maxLevel": 1
 	},
@@ -1135,6 +1135,59 @@
 	  "baseCost": 130,
 	  "maxLevel": 1,
 	  "requires": "vesper_double_dash",
+	  "move": true
+	},
+	{
+	  "id": "revenant_rend",
+	  "name": "Crimson Rend",
+	  "description": "R2 / right mouse: both claws tear across the front in a wide X; foes are thrown back and left bleeding.",
+	  "class": "revenant",
+	  "branch": "motion",
+	  "baseCost": 60,
+	  "maxLevel": 1,
+	  "move": true
+	},
+	{
+	  "id": "revenant_mist_chain",
+	  "name": "Mist Chain",
+	  "description": "Dash again while the first dash is still mist, or right after the thrust lands.",
+	  "class": "revenant",
+	  "branch": "motion",
+	  "baseCost": 70,
+	  "maxLevel": 1,
+	  "move": true
+	},
+	{
+	  "id": "revenant_hemorrhage",
+	  "name": "Hemorrhage",
+	  "description": "R1, R1, then R2: a clap that bursts the blood of every bleeding foe nearby; each burst heals you.",
+	  "class": "revenant",
+	  "branch": "motion",
+	  "baseCost": 110,
+	  "maxLevel": 1,
+	  "requires": "revenant_rend",
+	  "move": true
+	},
+	{
+	  "id": "revenant_blood_lance",
+	  "name": "Blood Lance",
+	  "description": "Hold L1 and press R1: hurl a lance of blood that pierces the line ahead and drags what it skewers toward you.",
+	  "class": "revenant",
+	  "branch": "motion",
+	  "baseCost": 120,
+	  "maxLevel": 1,
+	  "requires": "revenant_mist_chain",
+	  "move": true
+	},
+	{
+	  "id": "revenant_siphon",
+	  "name": "Sanguine Siphon",
+	  "description": "Hold L1 and press R2: draw blood out of everything in front of you for up to a second, healing on every drop.",
+	  "class": "revenant",
+	  "branch": "motion",
+	  "baseCost": 130,
+	  "maxLevel": 1,
+	  "requires": "revenant_rend",
 	  "move": true
 	}
   ]

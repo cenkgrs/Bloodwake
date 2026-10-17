@@ -31,7 +31,7 @@ namespace Bloodwake
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
   }
   // Warrior is born with the heavy blow; Vesper learns Heavy Cleave from the Blood Sage.
-  bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="mage"||Run.ClassId=="vesper"&&Owns("vesper_heavy"));
+  bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="mage"||Run.ClassId=="vesper"&&Owns("vesper_heavy")||Run.ClassId=="revenant"&&Owns("revenant_rend"));
   void Attack(bool heavyAttack=false)
   {
    CancelThrustRecovery();
@@ -42,6 +42,7 @@ namespace Bloodwake
    if(Player.Locked>0&&attackCd>0)return;
    PadFacing();
    if(heavyAttack&&Run.ClassId=="vesper"&&HeavyUnlocked){VesperHeavy();return;}
+   if(heavyAttack&&Run.ClassId=="revenant"&&HeavyUnlocked){RevenantHeavy();return;}
    if(Run.ClassId=="mage"){if(!usingPad&&aim.sqrMagnitude>.01f)Player.transform.rotation=Quaternion.LookRotation(new Vector3(aim.x,0,aim.z));if(heavyAttack)MageHeavy();else MageLight();return;}
    foreach(var entry in Run.Weapons){var row=GameData.Row("weapons",entry.Key);var slot=entry.Value;float rate=row.N("attacksPerSecond")*Run.Stats.N("attackSpeed")*slot.N("speed");attackCd=Mathf.Max(.15f,1/rate);
     System.Action contactEvent=null;bool melee=row.S("behavior")=="melee";Vector3 dir=melee&&(Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper")?Player.transform.forward:aim;
@@ -78,7 +79,7 @@ namespace Bloodwake
    float arc=Run.ClassId=="warrior"?150:Run.ClassId=="revenant"?180:Run.ClassId=="vesper"?200:105;
    var hit=new System.Collections.Generic.HashSet<Enemy>();Vector3 origin=Player.transform.position;
    DamageCargo(origin,range,dir,wide?360:arc);
-   foreach(var e in Enemies.ToArray()){if(e.Emerging)continue;var d=e.View.transform.position-origin;d.y=0;float bodyRadius=Mathf.Max(.45f,e.Data.N("radius",16)*.02f*CombatActorScale);float tolerance=Mathf.Asin(Mathf.Clamp01(bodyRadius/Mathf.Max(bodyRadius,d.magnitude)))*Mathf.Rad2Deg;if(d.magnitude<=range+bodyRadius&&(wide||Vector3.Angle(dir,d)<=arc*.5f+tolerance)){hit.Add(e);DamageEnemy(e,damage);if(e.Hp>0&&slot.N("bleed")>0){e.Bleed=3;e.BleedDps=slot.N("bleed");}}}
+   foreach(var e in Enemies.ToArray()){if(e.Emerging)continue;var d=e.View.transform.position-origin;d.y=0;float bodyRadius=Mathf.Max(.45f,e.Data.N("radius",16)*.02f*CombatActorScale);float tolerance=Mathf.Asin(Mathf.Clamp01(bodyRadius/Mathf.Max(bodyRadius,d.magnitude)))*Mathf.Rad2Deg;if(d.magnitude<=range+bodyRadius&&(wide||Vector3.Angle(dir,d)<=arc*.5f+tolerance)){hit.Add(e);DamageEnemy(e,damage);if(revenantSwing>0&&e.Hp>0&&Owns("revenant_hemorrhage"))Bleed(e,2.5f,damage*.12f);if(e.Hp>0&&slot.N("bleed")>0){e.Bleed=3;e.BleedDps=slot.N("bleed");}}}
    if(hit.Count>0)
    {
     bool heavy=revenantSwing==3||finisher;hitStop=Mathf.Max(hitStop,heavy?FinisherHitStop:MeleeHitStop);

@@ -39,6 +39,9 @@ namespace Bloodwake
    bool skillPressed=pad!=null&&(pad.buttonNorth.wasPressedThisFrame||pad.buttonEast.wasPressedThisFrame||pad.buttonSouth.wasPressedThisFrame)||keys!=null&&(keys.qKey.wasPressedThisFrame||keys.eKey.wasPressedThisFrame||keys.spaceKey.wasPressedThisFrame);
    if(flameBreathing&&fresh&&(lightPressed||dashPressed||skillPressed||heavyPressed&&!offHandHeld))StopFlameBreath();
    if(fresh&&Run.ClassId=="vesper"&&offHandHeld&&heavyPressed&&!flameBreathing){BeginFlameBreath();heavyPressed=false;}
+   if(fresh&&Run.ClassId=="revenant"&&offHandHeld&&heavyPressed&&!flameBreathing&&Owns("revenant_siphon")){BeginSiphon();heavyPressed=false;}
+   bool lanceHeld=Run.ClassId=="revenant"&&offHandHeld&&Owns("revenant_blood_lance");
+   if(fresh&&lanceHeld&&lightPressed){BloodLance();lightPressed=false;}
    if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true)){var dashDir=move.sqrMagnitude>.01f?move:aim;if(!TryRevenantDash(dashDir))TryMageGlide(dashDir);}
    if(fresh&&revenantDashing&&lightPressed)thrustQueued=true;
    bool actionFrame=RevenantActionActive;TickRevenantDash(dt);
@@ -60,7 +63,7 @@ namespace Bloodwake
    if(fresh&&Run.ClassId=="mage"&&offHandHeld&&lightPressed){MageGrip();lightPressed=false;}
    if(fresh&&tetherHeld&&lightPressed&&attackCd<=0&&!vesperMoveActive&&!bladeThrown&&!RevenantActionActive)StartCoroutine(TetheredBlade());
    else if(fresh&&heavyBuffer>0&&attackCd<=0&&!vesperMoveActive){heavyBuffer=0;Attack(true);}
-   else if(fresh&&lightHeld&&!tetherHeld&&!(Run.ClassId=="mage"&&offHandHeld)&&attackCd<=0)Attack();
+   else if(fresh&&lightHeld&&!tetherHeld&&!lanceHeld&&!(Run.ClassId=="mage"&&offHandHeld)&&attackCd<=0)Attack();
    UpdateNavigation(dt);TickEnemies(dt);TickWaves(dt);TickPickups(dt);CheckRoomExit();
   }
   void TickWaves(float dt)
