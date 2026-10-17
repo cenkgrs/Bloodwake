@@ -64,7 +64,7 @@ namespace Bloodwake
     if(e.Casting){HoldEnemyAgent(e);e.View.Tick(dt,false);continue;}
     if(e.Stagger>0||e.View.Locked>0){if(e.Id=="grunt")e.Intent=e.View.ContactPending?WarriorIntent.Attack:WarriorIntent.Recover;HoldEnemyAgent(e);e.View.Tick(dt,false);continue;}
     if(e.Id=="assassin"&&distance<3.2f&&e.Cooldown<=0){StartCoroutine(AssassinStrike(e));continue;}
-    float speed=e.Data.N("moveSpeed")*.02f*(e.Id=="boss"?2.5f:1)*(e.Slow>0?1-e.SlowAmount:1)*(e.Aura>0?1.22f:1)*(e.Burn>0?.6f:1);bool ranged=e.Id=="archer"||e.Id=="mage"||e.Id=="healer";float reach=ranged?7:1.25f;
+    float speed=e.Data.N("moveSpeed")*.02f*(e.Id=="boss"?2.5f:1)*(e.Slow>0?1-e.SlowAmount:1)*(e.Aura>0?1.22f:1)*(e.Burn>0?.6f:1);bool ranged=e.Id=="archer"||e.Id=="mage"||e.Id=="warlock"||e.Id=="healer";float reach=ranged?7:1.25f;
     if(e.Id=="boss"){var pattern=BossPattern;string next=pattern[e.Pattern%pattern.Length];reach=next=="attack"||next=="sweep"||next=="slam"?GameData.Rules["boss"][next].N("radius")-.3f:12;}
     var before=e.View.transform.position;Vector3 wish=Vector3.zero;
     if(distance>reach)wish=ChaseDirection(before);else if(ranged&&distance<4)wish=-dir;
@@ -106,6 +106,7 @@ namespace Bloodwake
      e.Pattern++;if(e.Pattern%2==0&&e.RuneCooldown<=0){e.RuneCooldown=e.Data.N("runeCooldown",6.5f);StartCoroutine(EnemyArea(e,Player.transform.position,e.Data.N("runeRadius",150)*.02f,e.Data.N("runeFuse",1.4f)));}
      else StartCoroutine(EnemyShot(e,dir));
     }
+    else if(e.Id=="warlock")WarlockCast(e,dir,distance);
     else if(e.Id=="archer")StartCoroutine(EnemyShot(e,dir));
     else StartCoroutine(EnemyMelee(e,dir));
    }

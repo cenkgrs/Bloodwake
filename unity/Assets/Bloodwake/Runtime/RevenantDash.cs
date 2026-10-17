@@ -26,7 +26,7 @@ namespace Bloodwake
    // Second Step: Vesper may dash again during, or just after, the first.
    CancelThrustRecovery();
    bool chain=Run?.ClassId=="vesper"&&Time.time<secondDashUntil&&!revenantThrusting;
-   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||vesperMoveActive||bladeThrown||Player.IsCasting||Player.ContactPending)return false;
+   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Rooted||Screen!="playing"||Run.Stats.N("hp")<=0||vesperMoveActive||bladeThrown||Player.IsCasting||Player.ContactPending)return false;
    if(!chain&&(RevenantActionActive||dashCd>0))return false;
    if(chain){secondDashUntil=0;if(revenantDashing)Player.EndRevenantPose();}
    else if(Run.ClassId=="vesper"&&Owns("vesper_double_dash"))secondDashUntil=Time.time+RevenantDashDuration+.45f;

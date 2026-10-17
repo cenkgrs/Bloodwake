@@ -179,22 +179,22 @@
     "arrowstorm":       [["archer", "archer", "archer", "archer"], ["archer", "archer", "commander", "tank", "tank"]],
     "horde":            [["grunt", "grunt", "grunt", "grunt", "grunt", "grunt", "grunt", "grunt"], ["grunt", "grunt", "mage", "mage", "mage", "mage", "mage"]],
     "knives":           [["assassin", "assassin", "assassin"], ["assassin", "assassin", "archer", "archer", "archer"]],
-    "choir":            [["mage", "mage", "mage", "healer"], ["grunt", "grunt", "grunt", "grunt", "healer", "mage"]],
+    "choir":            [["mage", "warlock", "mage", "healer"], ["grunt", "grunt", "grunt", "grunt", "healer", "warlock"]],
     "shieldline":       [["grunt", "grunt", "grunt", "grunt", "tank"], ["archer", "archer", "archer", "commander"]],
     "vanguard":         [["grunt", "grunt", "grunt", "grunt", "grunt"], ["tank", "grunt", "grunt", "grunt", "healer"]],
     "ambush":           [["assassin", "assassin", "grunt", "grunt", "grunt"], ["assassin", "assassin", "assassin", "assassin"]],
     "siege":            [["archer", "archer", "archer", "tank", "tank"], ["mage", "mage", "archer", "archer", "archer", "commander"]],
     "warband":          [["commander", "grunt", "grunt", "grunt", "grunt"], ["commander", "tank", "grunt", "grunt", "grunt"]],
-    "coven":            [["mage", "mage", "mage", "mage"], ["mage", "mage", "healer", "healer", "tank"]],
+    "coven":            [["mage", "warlock", "mage", "warlock"], ["warlock", "mage", "healer", "healer", "tank"]],
     "pikewall":         [["tank", "tank", "tank"], ["grunt", "grunt", "grunt", "grunt", "archer", "archer"]],
     "bleeders":         [["assassin", "assassin", "healer"], ["assassin", "assassin", "assassin", "mage", "mage"]],
     "rabble":           [["grunt", "grunt", "grunt", "grunt", "grunt", "grunt"], ["grunt", "grunt", "grunt", "archer", "archer", "archer"]],
     "hunters":          [["archer", "archer", "assassin", "assassin"], ["archer", "archer", "archer", "archer", "assassin"]],
     "bulwark":          [["tank", "tank", "healer", "healer"], ["tank", "tank", "commander", "mage", "mage"]],
     "crusade":          [["commander", "commander", "grunt", "grunt", "grunt"], ["tank", "tank", "archer", "archer", "healer"]],
-    "nightmass":        [["mage", "mage", "mage", "archer", "archer", "archer"], ["assassin", "assassin", "assassin", "healer", "commander"]],
+    "nightmass":        [["warlock", "mage", "warlock", "archer", "archer", "archer"], ["assassin", "assassin", "assassin", "healer", "commander"]],
     "butchers":         [["tank", "assassin", "assassin", "assassin"], ["tank", "tank", "grunt", "grunt", "grunt", "grunt"]],
-    "last_rites":       [["grunt", "grunt", "grunt", "grunt", "mage", "mage", "healer"], ["commander", "tank", "tank", "assassin", "assassin", "archer"]]
+    "last_rites":       [["grunt", "grunt", "grunt", "grunt", "warlock", "mage", "healer"], ["commander", "tank", "tank", "assassin", "assassin", "archer"]]
   },
 
   "districtPools": [

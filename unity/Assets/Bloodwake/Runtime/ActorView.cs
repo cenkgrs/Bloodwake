@@ -62,7 +62,7 @@ namespace Bloodwake
   }
   public static ActorView Create(string id,bool enemy,float height,Transform parent)
   {
-   string name=enemy?"enemy_"+(id=="grunt"?"warrior":id):id+"_player";
+   string name=enemy?"enemy_"+(id=="grunt"?"warrior":id=="warlock"?"mage":id):id+"_player";
    if(!enemy&&id=="revenant")name="revenant_noble";
    var prefab=Resources.Load<GameObject>("Actors/"+name);
    if(prefab==null)throw new System.InvalidOperationException("Missing actor prefab: "+name);
@@ -74,6 +74,7 @@ namespace Bloodwake
    foreach(var renderer in model.GetComponentsInChildren<Renderer>())renderer.renderingLayerMask|=2u;
    view.HitFlash=go.AddComponent<HitFlash>();view.HitFlash.Initialize(model.GetComponentsInChildren<Renderer>());
    view.Shake=go.AddComponent<HitShake>();view.Shake.Initialize(model.transform);
+   if(enemy&&id=="warlock")WarlockSkin(model);
    if(!enemy&&id=="vesper")model.AddComponent<VesperBladeVfx>();
    if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_ShieldWalk"))
    {

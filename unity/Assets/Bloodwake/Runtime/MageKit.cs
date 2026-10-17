@@ -192,7 +192,7 @@ namespace Bloodwake
   // ---- Square: a short glide through the air.
   bool TryMageGlide(Vector3 direction)
   {
-   if(Run?.ClassId!="mage"||Screen!="playing"||dashCd>0||vesperMoveActive||Player.Locked>.15f||Run.Stats.N("hp")<=0)return false;
+   if(Run?.ClassId!="mage"||Rooted||Screen!="playing"||dashCd>0||vesperMoveActive||Player.Locked>.15f||Run.Stats.N("hp")<=0)return false;
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Player.transform.forward;StartCoroutine(MageGlide(direction.normalized));return true;
   }
   IEnumerator MageGlide(Vector3 dir)
