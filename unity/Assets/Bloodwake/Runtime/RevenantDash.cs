@@ -22,7 +22,7 @@ namespace Bloodwake
   }
   bool TryRevenantDash(Vector3 direction)
   {
-   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||RevenantActionActive||dashCd>0||Player.IsCasting||Player.ContactPending)return false;
+   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||RevenantActionActive||vesperMoveActive||dashCd>0||Player.IsCasting||Player.ContactPending)return false;
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Player.transform.forward;
    revenantDashDirection=direction.normalized;revenantDashAge=dashWakeDistance=dashTravelled=thrustWindow=0;thrustQueued=false;
    revenantDashing=true;dashCd=combatPractice?0:RevenantDashCooldown;attackCd=0;
@@ -49,9 +49,9 @@ namespace Bloodwake
     bool blocked=travel>.001f&&Vector3.Dot(Player.transform.position-from,revenantDashDirection)<travel*.35f;
     if(revenantDashAge>=RevenantDashDuration||blocked)
     {
-     revenantDashing=false;Player.EndRevenantPose();thrustWindow=Player.HasRevenantThrust?RevenantThrustWindow:0;
+     revenantDashing=false;Player.EndRevenantPose();thrustWindow=Player.HasRevenantThrust||Run.ClassId=="vesper"?RevenantThrustWindow:0;
      if(DashImpactUnlocked&&dashTravelled>.1f)DashLandingImpact();
-     if(thrustQueued){thrustQueued=false;if(!BeginRevenantThrust())Attack();}
+     if(thrustQueued){thrustQueued=false;if(!BeginRevenantThrust()&&!BeginVesperRisingSlash())Attack();}
     }
    }
    else if(revenantThrusting)

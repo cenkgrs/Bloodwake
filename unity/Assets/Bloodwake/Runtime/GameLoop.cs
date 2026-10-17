@@ -39,7 +39,7 @@ namespace Bloodwake
    // Measured planted-foot stride: new Sneak Walk 1.962 m/s, legacy Swagger .89.
    // Match that stride to the displayed body size; upgrades scale speed and playback together.
    bool walking=Run.ClassId=="revenant"&&(keys?.leftCtrlKey.isPressed==true||(pad!=null&&input.sqrMagnitude>.01f&&input.magnitude<.65f));float walkStride=Player.NobleRevenant?1.96218f:.89f;float locomotionScale=walking?(walkStride*Player.Height/1.8f)/(GameData.Stats("revenant").N("moveSpeed")*.02f):1;
-   bool canMove=!actionFrame&&!RevenantActionActive&&(Run.ClassId=="revenant"?!Player.IsCasting:Player.Locked<=.15f);
+   bool canMove=!actionFrame&&!RevenantActionActive&&!vesperMoveActive&&(Run.ClassId=="revenant"?!Player.IsCasting:Player.Locked<=.15f);
    if(canMove){Player.transform.position=Move(Player.transform.position,move*Run.Stats.N("moveSpeed")*.02f*dt*locomotionScale);if(move.sqrMagnitude>.01f&&!(Run.ClassId=="revenant"&&Player.ContactPending))Player.transform.rotation=Quaternion.Slerp(Player.transform.rotation,Quaternion.LookRotation(move),dt*16);}
    float motionRate=Run.Stats.N("moveSpeed")/GameData.Stats(Run.ClassId).N("moveSpeed");if(Player.NobleRevenant&&!walking)motionRate=Run.Stats.N("moveSpeed")*.02f/(4.08527f*Player.Height/1.8f);
    Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);

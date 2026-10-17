@@ -33,7 +33,8 @@ namespace Bloodwake
   void Attack(bool heavyAttack=false)
   {
    if(RevenantActionActive)return;
-   if(BeginRevenantThrust())return;
+   if(BeginRevenantThrust()||BeginVesperRisingSlash())return;
+   if(vesperMoveActive)return;
    if(Player.IsCasting)return;
    if(Player.Locked>0&&attackCd>0)return;
    PadFacing();
