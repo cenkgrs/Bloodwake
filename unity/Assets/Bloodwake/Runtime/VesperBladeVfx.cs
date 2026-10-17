@@ -13,10 +13,9 @@ namespace Bloodwake
   {
    var bones=GetComponentsInChildren<Transform>(true);grip=bones.FirstOrDefault(t=>t.name=="VesperSwordGrip");mid=bones.FirstOrDefault(t=>t.name=="VesperSwordMid");tip=bones.FirstOrDefault(t=>t.name=="VesperSwordTip");
    if(!grip||!mid||!tip){Debug.LogError("Vesper sword flame sockets are missing");enabled=false;return;}
-   CreateFlame("Black flame silhouette",Shadow,.22f,0,.022f,1.25f);
-   CreateFlame("Crimson flame tongue",Ember,.145f,1.7f,.042f,2.2f);
-   CreateFlame("Gold flame tongue",Gold,.095f,3.4f,.031f,2.9f);
+   // Painted flame flipbook cards rise from the blade; a thin hot core keeps the edge glowing.
    CreateFlame("Hot blade core",Core,.036f,5.1f,.012f,3.7f);
+   CreateFlameCards();
    goldTrail=CreateTrail("Gold slash trail",Gold,.105f,.13f);
    shadowTrail=CreateTrail("Black slash wake",Shadow,.15f,.16f);
   }
@@ -31,6 +30,22 @@ namespace Bloodwake
    line.widthCurve=new AnimationCurve(new Keyframe(0,.2f),new Keyframe(.12f,.72f),new Keyframe(.58f,1),new Keyframe(1,.05f));line.widthMultiplier=width;
    var driver=go.AddComponent<VesperFlameLine>();driver.Phase=phase;driver.Flutter=flutter;driver.Speed=speed;flames.Add(line);
   }
+  static readonly float[] CardStops={.12f,.26f,.4f,.54f,.68f,.82f,.95f};
+  readonly List<Transform> cards=new();readonly List<float> cardScale=new();
+  void CreateFlameCards()
+  {
+   var shader=Resources.Load<Shader>("Vfx/vesper_flame_flipbook");var atlas=Resources.Load<Texture2D>("Vfx/vesper_flame_flipbook");
+   if(!shader||!atlas){Debug.LogError("Vesper flame flipbook missing");return;}
+   var material=new Material(shader){name="Vesper flame flipbook"};material.SetTexture("_MainTex",atlas);material.SetColor("_Tint",new Color(1,.86f,.7f));materials.Add(material);
+   var block=new MaterialPropertyBlock();
+   for(int i=0;i<CardStops.Length;i++)
+   {
+    var card=GameObject.CreatePrimitive(PrimitiveType.Quad);card.name="Flame card "+i;Destroy(card.GetComponent<Collider>());card.transform.SetParent(transform,false);
+    var r=card.GetComponent<MeshRenderer>();r.sharedMaterial=material;r.shadowCastingMode=ShadowCastingMode.Off;r.receiveShadows=false;
+    block.SetFloat("_Offset",i*5.3f);block.SetFloat("_Fps",14+i%3*2.5f);block.SetFloat("_Intensity",i<2?1.1f:1.55f);r.SetPropertyBlock(block);
+    cards.Add(card.transform);cardScale.Add(Mathf.Lerp(.85f,1.15f,Mathf.Sin(CardStops[i]*Mathf.PI)));
+   }
+  }
   TrailRenderer CreateTrail(string title,Color color,float width,float life)
   {
    var go=new GameObject(title);go.transform.SetParent(transform,false);var trail=go.AddComponent<TrailRenderer>();trail.time=life;trail.minVertexDistance=.035f;trail.startWidth=width;trail.endWidth=0;trail.numCapVertices=4;trail.numCornerVertices=3;trail.sharedMaterial=FlameMaterial(title,color);trail.shadowCastingMode=ShadowCastingMode.Off;trail.receiveShadows=false;trail.emitting=false;
@@ -44,6 +59,10 @@ namespace Bloodwake
    {
     var driver=line.GetComponent<VesperFlameLine>();for(int i=0;i<line.positionCount;i++){float p=i/(line.positionCount-1f),body=Mathf.Sin(p*Mathf.PI);float wave=Mathf.Sin(now*driver.Speed*4+p*17+driver.Phase)*driver.Flutter*body;float curl=Mathf.Sin(now*driver.Speed*2.7f+p*11+driver.Phase*.7f)*driver.Flutter*.55f*body;line.SetPosition(i,Vector3.Lerp(start,end,p)+side*wave+lift*curl);}
    }
+   // Cards stand upright and face the camera: fire rises in world space whatever angle the blade holds.
+   var cameraForward=Camera.main?Camera.main.transform.forward:Vector3.forward;var flat=new Vector3(cameraForward.x,0,cameraForward.z);if(flat.sqrMagnitude<.001f)flat=Vector3.forward;
+   var facing=Quaternion.LookRotation(flat.normalized,Vector3.up);
+   for(int i=0;i<cards.Count;i++){float h=.5f*cardScale[i],w=h*.75f;cards[i].SetPositionAndRotation(Vector3.Lerp(start,end,CardStops[i])+Vector3.up*h*.42f,facing);cards[i].localScale=Vector3.one;cards[i].localScale=new Vector3(w/cards[i].lossyScale.x,h/cards[i].lossyScale.y,1);}
    var shadowPosition=Vector3.Lerp(mid.position,end,.9f);
    if(!trailReady)
    {
