@@ -13,7 +13,7 @@ namespace Bloodwake
   void Ignite(Enemy e,float seconds,float dps)
   {
    if(e==null||e.Hp<=0||e.Emerging||!e.View)return;
-   bool caught=e.Burn<=0;e.Burn=Mathf.Max(e.Burn,seconds);e.BurnDps=Mathf.Max(e.BurnDps,dps);
+   dps*=1+Run.Stats.N("burnBonus");bool caught=e.Burn<=0;e.Burn=Mathf.Max(e.Burn,seconds);e.BurnDps=Mathf.Max(e.BurnDps,dps);
    if(!caught||e.Training)return;
    float panic=e.Id=="boss"?0:e.Id=="tank"?.8f:1.5f;
    if(panic>0&&e.PanicCooldown<=0)

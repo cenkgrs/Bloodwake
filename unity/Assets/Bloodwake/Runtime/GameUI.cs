@@ -143,17 +143,17 @@ namespace Bloodwake
    if(Screen=="menu"){DrawMainMenu();return;}
    if(Screen=="classes"){DrawClasses();return;}
    if(Run==null)Backdrop("ui/kit/menu_backdrop",.82f);else Bleed(Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.86f)));
-   Label(page,Screen.ToUpperInvariant(),70,48,1460,90,44,true,TextAnchor.MiddleCenter);Rule(page,560,143,480);
+   Label(page,Screen=="progression"?"THE BLOOD SAGE":Screen.ToUpperInvariant(),70,48,1460,90,44,true,TextAnchor.MiddleCenter);Rule(page,560,143,480);
    switch(Screen)
    {
     case "hub":Button(page,"ENTER THE DISTRICT",420,240,760,70,EnterDistrict);Button(page,"OATHS / SKILL TREE",420,335,760,70,()=>Screen="progression");Button(page,"ARMORY / LOADOUTS",420,430,760,70,()=>Screen="armory");Back("playing");break;
     case "pause":Button(page,"RESUME",520,300,560,70,()=>Screen="playing");Button(page,"SETTINGS",520,400,560,70,()=>Screen="settings");Button(page,"RETURN TO TITLE",520,500,560,70,ReturnToMenu);break;
     case "upgrade":DrawUpgrades();break;
     case "merchant":DrawMerchant();break;
-    case "progression":DrawProgression();break;
+    case "progression":DrawSkillTree();break;
     case "armory":DrawArmory();break;
     case "settings":DrawSettings();break;
-    case "dead":Label(page,$"Kills  {Run.Kills}    Rooms cleared  {Run.RoomsCleared}\nEssence  {Meta.Essence}",300,260,1000,130,30,false,TextAnchor.MiddleCenter);Button(page,"RETURN TO SAFEHOUSE",450,470,700,70,()=>StartRun(SelectedClass));Button(page,"RETURN TO TITLE",450,570,700,70,ReturnToMenu);break;
+    case "dead":Label(page,$"Kills  {Run.Kills}    Rooms cleared  {Run.RoomsCleared}\nEssence  {Meta.Essence}"+(Run.EssencePending>0?$"    ·    Lost with you  {Run.EssencePending}":""),300,260,1000,130,30,false,TextAnchor.MiddleCenter);Button(page,"RETURN TO SAFEHOUSE",450,470,700,70,()=>StartRun(SelectedClass));Button(page,"RETURN TO TITLE",450,570,700,70,ReturnToMenu);break;
     case "victory":Label(page,"THE BLACK BELL FALLS SILENT",200,190,1200,60,30,true,TextAnchor.MiddleCenter).color=gold;Label(page,$"Kills  {Run.Kills}    Rooms cleared  {Run.RoomsCleared}\nEssence  {Meta.Essence}",300,280,1000,130,30,false,TextAnchor.MiddleCenter);Button(page,"RETURN TO SAFEHOUSE",450,470,700,70,()=>StartRun(SelectedClass));Button(page,"RETURN TO TITLE",450,570,700,70,ReturnToMenu);break;
    }
   }

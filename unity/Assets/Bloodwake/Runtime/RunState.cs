@@ -10,7 +10,7 @@ namespace Bloodwake
   public readonly Dictionary<string,int> Upgrades=new(); public readonly Dictionary<string,float> ItemGrades=new();
   public readonly Dictionary<string,float> Cooldowns=new(); public readonly HashSet<string> Claimed=new();
   public int Wave=1,Kills,Gold,Level=1,Xp,PendingLevels,Night=1,RoomIndex,Fights,RoomsCleared,LevelAwardedWave=-1;
-  public bool Awarded; public List<string> Plan=new(); public string MapId="cursed_town";
+  public bool Awarded; public int EssencePending; public List<string> Plan=new(); public string MapId="cursed_town";
   public RunState(string id,Progression meta=null){ClassId=id;Stats=GameData.Stats(id);meta?.Apply(Stats,id);Stats["hp"]=Stats["maxHp"].DeepClone();AddWeapon(GameData.Rules["classes"][id].S("weapon"));}
   public bool AddWeapon(string id){if(Weapons.ContainsKey(id)||Weapons.Count>=4||GameData.Row("weapons",id)==null)return false;Weapons[id]=new JObject{["damage"]=1f,["speed"]=1f,["range"]=1f,["pierce"]=0,["chain"]=0,["shockwave"]=0,["burn"]=0,["bleed"]=0};return true;}
   public int XpNeeded=>80+30*(Level-1)+5*(Level-1)*(Level-1);

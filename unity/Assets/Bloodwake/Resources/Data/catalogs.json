@@ -709,6 +709,7 @@
 	},
 	{
 	  "id": "might",
+	  "retired": true,
 	  "name": "Might",
 	  "description": "+2% damage / level",
 	  "branch": "offense",
@@ -717,6 +718,7 @@
 	},
 	{
 	  "id": "precision",
+	  "retired": true,
 	  "name": "Precision",
 	  "description": "+1% crit chance / level",
 	  "branch": "offense",
@@ -726,6 +728,7 @@
 	},
 	{
 	  "id": "fury",
+	  "retired": true,
 	  "name": "Fury",
 	  "description": "+2% attack speed / level",
 	  "branch": "offense",
@@ -735,6 +738,7 @@
 	},
 	{
 	  "id": "execution",
+	  "retired": true,
 	  "name": "Execution",
 	  "description": "+3% crit damage / level",
 	  "branch": "offense",
@@ -744,6 +748,7 @@
 	},
 	{
 	  "id": "reach",
+	  "retired": true,
 	  "name": "Reach",
 	  "description": "+2% attack range / level",
 	  "branch": "offense",
@@ -753,6 +758,7 @@
 	},
 	{
 	  "id": "vigor",
+	  "retired": true,
 	  "name": "Vigor",
 	  "description": "+4 max HP / level",
 	  "branch": "defense",
@@ -761,6 +767,7 @@
 	},
 	{
 	  "id": "plate",
+	  "retired": true,
 	  "name": "Plate",
 	  "description": "+0.5% armor / level",
 	  "branch": "defense",
@@ -770,6 +777,7 @@
 	},
 	{
 	  "id": "renewal",
+	  "retired": true,
 	  "name": "Renewal",
 	  "description": "+0.15 HP/s / level",
 	  "branch": "defense",
@@ -779,6 +787,7 @@
 	},
 	{
 	  "id": "drain",
+	  "retired": true,
 	  "name": "Drain",
 	  "description": "+0.3% lifesteal / level",
 	  "branch": "defense",
@@ -788,6 +797,7 @@
 	},
 	{
 	  "id": "last_stand",
+	  "retired": true,
 	  "name": "Last Stand",
 	  "description": "Second Wind at level 3",
 	  "branch": "defense",
@@ -797,6 +807,7 @@
 	},
 	{
 	  "id": "stride",
+	  "retired": true,
 	  "name": "Stride",
 	  "description": "+3 movement speed / level",
 	  "branch": "mobility",
@@ -805,6 +816,7 @@
 	},
 	{
 	  "id": "reflex",
+	  "retired": true,
 	  "name": "Reflex",
 	  "description": "+0.5% dodge / level",
 	  "branch": "mobility",
@@ -814,6 +826,7 @@
 	},
 	{
 	  "id": "magnet",
+	  "retired": true,
 	  "name": "Magnet",
 	  "description": "+5 pickup radius / level",
 	  "branch": "mobility",
@@ -823,6 +836,7 @@
 	},
 	{
 	  "id": "insight",
+	  "retired": true,
 	  "name": "Insight",
 	  "description": "+2% XP / level",
 	  "branch": "mobility",
@@ -832,12 +846,272 @@
 	},
 	{
 	  "id": "scavenger",
+	  "retired": true,
 	  "name": "Scavenger",
 	  "description": "+1 gold per kill / level",
 	  "branch": "mobility",
 	  "baseCost": 10,
 	  "requires": "reflex",
 	  "apply": "_gold"
+	},
+	{
+	  "id": "vesper_edge",
+	  "name": "Ember Edge",
+	  "description": "+6% damage per rank.",
+	  "class": "vesper",
+	  "branch": "power",
+	  "baseCost": 25,
+	  "maxLevel": 3
+	},
+	{
+	  "id": "vesper_thirst",
+	  "name": "Blood Thirst",
+	  "description": "+1.5% of damage dealt returns as health per rank.",
+	  "class": "vesper",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "vesper_edge"
+	},
+	{
+	  "id": "vesper_plate",
+	  "name": "Cinder Plate",
+	  "description": "+4% armor per rank.",
+	  "class": "vesper",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "vesper_edge"
+	},
+	{
+	  "id": "vesper_vital",
+	  "name": "Vital Flame",
+	  "description": "+15 max health per rank.",
+	  "class": "vesper",
+	  "branch": "power",
+	  "baseCost": 35,
+	  "maxLevel": 3,
+	  "requires": "vesper_plate"
+	},
+	{
+	  "id": "vesper_eye",
+	  "name": "Duelist's Eye",
+	  "description": "+4% critical chance per rank.",
+	  "class": "vesper",
+	  "branch": "power",
+	  "baseCost": 40,
+	  "maxLevel": 3,
+	  "requires": "vesper_thirst"
+	},
+	{
+	  "id": "vesper_searing",
+	  "name": "Searing Blood",
+	  "description": "Burns you set deal +25% damage per rank.",
+	  "class": "vesper",
+	  "branch": "power",
+	  "baseCost": 45,
+	  "maxLevel": 2,
+	  "requires": "vesper_thirst"
+	},
+	{
+	  "id": "revenant_edge",
+	  "name": "Keen Edge",
+	  "description": "+6% damage per rank.",
+	  "class": "revenant",
+	  "branch": "power",
+	  "baseCost": 25,
+	  "maxLevel": 3
+	},
+	{
+	  "id": "revenant_thirst",
+	  "name": "Blood Thirst",
+	  "description": "+1.5% of damage dealt returns as health per rank.",
+	  "class": "revenant",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "revenant_edge"
+	},
+	{
+	  "id": "revenant_plate",
+	  "name": "Hardened Plate",
+	  "description": "+4% armor per rank.",
+	  "class": "revenant",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "revenant_edge"
+	},
+	{
+	  "id": "revenant_vital",
+	  "name": "Deep Vitality",
+	  "description": "+15 max health per rank.",
+	  "class": "revenant",
+	  "branch": "power",
+	  "baseCost": 35,
+	  "maxLevel": 3,
+	  "requires": "revenant_plate"
+	},
+	{
+	  "id": "revenant_eye",
+	  "name": "Hunter's Eye",
+	  "description": "+4% critical chance per rank.",
+	  "class": "revenant",
+	  "branch": "power",
+	  "baseCost": 40,
+	  "maxLevel": 3,
+	  "requires": "revenant_thirst"
+	},
+	{
+	  "id": "warrior_edge",
+	  "name": "Keen Edge",
+	  "description": "+6% damage per rank.",
+	  "class": "warrior",
+	  "branch": "power",
+	  "baseCost": 25,
+	  "maxLevel": 3
+	},
+	{
+	  "id": "warrior_thirst",
+	  "name": "Blood Thirst",
+	  "description": "+1.5% of damage dealt returns as health per rank.",
+	  "class": "warrior",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "warrior_edge"
+	},
+	{
+	  "id": "warrior_plate",
+	  "name": "Hardened Plate",
+	  "description": "+4% armor per rank.",
+	  "class": "warrior",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "warrior_edge"
+	},
+	{
+	  "id": "warrior_vital",
+	  "name": "Deep Vitality",
+	  "description": "+15 max health per rank.",
+	  "class": "warrior",
+	  "branch": "power",
+	  "baseCost": 35,
+	  "maxLevel": 3,
+	  "requires": "warrior_plate"
+	},
+	{
+	  "id": "warrior_eye",
+	  "name": "Hunter's Eye",
+	  "description": "+4% critical chance per rank.",
+	  "class": "warrior",
+	  "branch": "power",
+	  "baseCost": 40,
+	  "maxLevel": 3,
+	  "requires": "warrior_thirst"
+	},
+	{
+	  "id": "mage_edge",
+	  "name": "Keen Edge",
+	  "description": "+6% damage per rank.",
+	  "class": "mage",
+	  "branch": "power",
+	  "baseCost": 25,
+	  "maxLevel": 3
+	},
+	{
+	  "id": "mage_thirst",
+	  "name": "Blood Thirst",
+	  "description": "+1.5% of damage dealt returns as health per rank.",
+	  "class": "mage",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "mage_edge"
+	},
+	{
+	  "id": "mage_plate",
+	  "name": "Hardened Plate",
+	  "description": "+4% armor per rank.",
+	  "class": "mage",
+	  "branch": "power",
+	  "baseCost": 30,
+	  "maxLevel": 3,
+	  "requires": "mage_edge"
+	},
+	{
+	  "id": "mage_vital",
+	  "name": "Deep Vitality",
+	  "description": "+15 max health per rank.",
+	  "class": "mage",
+	  "branch": "power",
+	  "baseCost": 35,
+	  "maxLevel": 3,
+	  "requires": "mage_plate"
+	},
+	{
+	  "id": "mage_eye",
+	  "name": "Hunter's Eye",
+	  "description": "+4% critical chance per rank.",
+	  "class": "mage",
+	  "branch": "power",
+	  "baseCost": 40,
+	  "maxLevel": 3,
+	  "requires": "mage_thirst"
+	},
+	{
+	  "id": "vesper_heavy",
+	  "name": "Heavy Cleave",
+	  "description": "R2 / right mouse: a slow two-handed cleave that hits twice as hard and throws foes clear.",
+	  "class": "vesper",
+	  "branch": "motion",
+	  "baseCost": 60,
+	  "maxLevel": 1,
+	  "move": true
+	},
+	{
+	  "id": "vesper_double_dash",
+	  "name": "Second Step",
+	  "description": "Dash again while the first dash is still burning.",
+	  "class": "vesper",
+	  "branch": "motion",
+	  "baseCost": 70,
+	  "maxLevel": 1,
+	  "move": true
+	},
+	{
+	  "id": "vesper_falling_star",
+	  "name": "Falling Star",
+	  "description": "R1, R1, then R2: leap, spin in the air and drive the blade into the ground in a burst of fire.",
+	  "class": "vesper",
+	  "branch": "motion",
+	  "baseCost": 110,
+	  "maxLevel": 1,
+	  "requires": "vesper_heavy",
+	  "move": true
+	},
+	{
+	  "id": "vesper_crescent_fan",
+	  "name": "Crescent Fan",
+	  "description": "R2, R2: the second cleave throws a flat half-moon of fire across the 90 degrees ahead.",
+	  "class": "vesper",
+	  "branch": "motion",
+	  "baseCost": 120,
+	  "maxLevel": 1,
+	  "requires": "vesper_heavy",
+	  "move": true
+	},
+	{
+	  "id": "vesper_tethered_blade",
+	  "name": "Tethered Blade",
+	  "description": "Hold L1 and press R1: hurl the greatsword ahead and wrench it back, cutting both ways.",
+	  "class": "vesper",
+	  "branch": "motion",
+	  "baseCost": 130,
+	  "maxLevel": 1,
+	  "requires": "vesper_double_dash",
+	  "move": true
 	}
   ]
 }

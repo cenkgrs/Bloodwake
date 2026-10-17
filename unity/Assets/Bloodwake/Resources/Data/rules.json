@@ -251,23 +251,38 @@
     },
     "revenant_e_blood_bomb": {
       "db": 0.0,
-      "files": ["revenant_e_blood_bomb"],
+      "files": [
+        "revenant_e_blood_bomb"
+      ],
       "gap": 0.0,
-      "pitch": [1.0, 1.0],
+      "pitch": [
+        1.0,
+        1.0
+      ],
       "voices": 1
     },
     "revenant_space_blood_burst": {
       "db": 0.0,
-      "files": ["revenant_space_blood_burst"],
+      "files": [
+        "revenant_space_blood_burst"
+      ],
       "gap": 0.0,
-      "pitch": [1.0, 1.0],
+      "pitch": [
+        1.0,
+        1.0
+      ],
       "voices": 1
     },
     "revenant_q_mist_claw": {
       "db": 0.0,
-      "files": ["revenant_q_mist_claw"],
+      "files": [
+        "revenant_q_mist_claw"
+      ],
       "gap": 0.0,
-      "pitch": [1.0, 1.0],
+      "pitch": [
+        1.0,
+        1.0
+      ],
       "voices": 1
     },
     "revenant_swing": {
@@ -938,7 +953,6 @@
       ]
     ],
     "last_stand": [],
-    "revenant_crimson_arrival": [["revenantDashImpact",1,"set"]],
     "leech_pendant": [
       [
         "lifesteal",
@@ -953,6 +967,41 @@
       [
         "xpMultiplier",
         0.2
+      ]
+    ],
+    "mage_edge": [
+      [
+        "damage",
+        1.06,
+        "mul"
+      ]
+    ],
+    "mage_eye": [
+      [
+        "criticalChance",
+        0.04
+      ]
+    ],
+    "mage_plate": [
+      [
+        "armor",
+        0.04
+      ]
+    ],
+    "mage_thirst": [
+      [
+        "lifesteal",
+        0.015
+      ]
+    ],
+    "mage_vital": [
+      [
+        "maxHp",
+        15
+      ],
+      [
+        "hp",
+        15
       ]
     ],
     "magnet": [
@@ -1035,6 +1084,48 @@
       [
         "regenPerSecond",
         0.15
+      ]
+    ],
+    "revenant_crimson_arrival": [
+      [
+        "revenantDashImpact",
+        1,
+        "set"
+      ]
+    ],
+    "revenant_edge": [
+      [
+        "damage",
+        1.06,
+        "mul"
+      ]
+    ],
+    "revenant_eye": [
+      [
+        "criticalChance",
+        0.04
+      ]
+    ],
+    "revenant_plate": [
+      [
+        "armor",
+        0.04
+      ]
+    ],
+    "revenant_thirst": [
+      [
+        "lifesteal",
+        0.015
+      ]
+    ],
+    "revenant_vital": [
+      [
+        "maxHp",
+        15
+      ],
+      [
+        "hp",
+        15
       ]
     ],
     "rifle_caliber": [],
@@ -1124,6 +1215,52 @@
         0.02
       ]
     ],
+    "vesper_crescent_fan": [],
+    "vesper_double_dash": [],
+    "vesper_edge": [
+      [
+        "damage",
+        1.06,
+        "mul"
+      ]
+    ],
+    "vesper_eye": [
+      [
+        "criticalChance",
+        0.04
+      ]
+    ],
+    "vesper_falling_star": [],
+    "vesper_heavy": [],
+    "vesper_plate": [
+      [
+        "armor",
+        0.04
+      ]
+    ],
+    "vesper_searing": [
+      [
+        "burnBonus",
+        0.25
+      ]
+    ],
+    "vesper_tethered_blade": [],
+    "vesper_thirst": [
+      [
+        "lifesteal",
+        0.015
+      ]
+    ],
+    "vesper_vital": [
+      [
+        "maxHp",
+        15
+      ],
+      [
+        "hp",
+        15
+      ]
+    ],
     "vigor": [
       [
         "maxHp",
@@ -1156,6 +1293,41 @@
       [
         "armor",
         0.08
+      ]
+    ],
+    "warrior_edge": [
+      [
+        "damage",
+        1.06,
+        "mul"
+      ]
+    ],
+    "warrior_eye": [
+      [
+        "criticalChance",
+        0.04
+      ]
+    ],
+    "warrior_plate": [
+      [
+        "armor",
+        0.04
+      ]
+    ],
+    "warrior_thirst": [
+      [
+        "lifesteal",
+        0.015
+      ]
+    ],
+    "warrior_vital": [
+      [
+        "maxHp",
+        15
+      ],
+      [
+        "hp",
+        15
       ]
     ]
   }

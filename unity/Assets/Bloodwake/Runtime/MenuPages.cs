@@ -101,12 +101,6 @@ namespace Bloodwake
    int refreshCost=Mathf.RoundToInt(20*Run.Grade);Button(page,$"NEW STOCK · {refreshCost} GOLD ({merchantRefreshes}/3)",130,700,600,55,()=>{if(merchantRefreshes>=3||Run.Gold<refreshCost)return;Run.Gold-=refreshCost;merchantRefreshes++;merchantStock=Run.MerchantOffers();});
    Label(page,$"GOLD {Run.Gold}  ·  GRADE {Run.Grade:0.0}",650,800,600,50);Button(page,"LEAVE THE STALL",1200,800,300,55,()=>Screen="playing");
   }
-  void DrawProgression()
-  {
-   var rows=GameData.Rows("skills").Where(r=>r.S("class")==""||r.S("class")== (Run?.ClassId??SelectedClass)).ToArray();var levels=(JObject)Meta.Data["levels"];var content=ScrollBody(Mathf.Ceil(rows.Length/3f)*165);
-   for(int i=0;i<rows.Length;i++){var row=rows[i];string id=row.S("id");int level=(int?)levels[id]??0,cost=(int)row.N("baseCost")*(level+1),max=(int)row.N("maxLevel",3);float x=i%3*440,y=i/3*165;Label(content,row.S("name")+$"  {level}/{max}",x,y,420,40,26,true);Label(content,row.S("description"),x,y+42,410,55,18);Button(content,level>=max?"MASTERED":$"UNLOCK · {cost} ESSENCE",x,y+100,400,50,()=>{if(level>=max||Meta.Essence<cost)return;if(row["requires"]!=null&&((int?)levels[row.S("requires")]??0)<=0)return;Meta.Essence-=cost;levels[id]=level+1;Meta.Save();});}
-   Label(page,$"ESSENCE {Meta.Essence}",650,810,600,45);Back(Run==null?"menu":"hub");
-  }
   void DrawArmory()
   {
    for(int i=0;i<3;i++){int index=i;Button(page,$"LOADOUT {i+1}"+((int)Meta.Data["activeLoadout"]==i?" · ACTIVE":""),420+i*280,150,260,45,()=>{Meta.Data["activeLoadout"]=index;Meta.Save();});}

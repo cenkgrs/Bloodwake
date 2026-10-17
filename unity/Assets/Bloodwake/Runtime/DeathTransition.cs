@@ -13,14 +13,13 @@ namespace Bloodwake
    yield return new WaitForSeconds(2.7f);
    if(Screen=="death_transition")Screen="dead";
   }
-  int RunEssence=>Mathf.Clamp(Run.Wave*2+Run.Kills/5,2,100000);
-  // The last district's boss falls: let the room settle, then end the run with double essence.
+  // The last district's boss falls: let the room settle, then end the run (its essence was secured by the kill).
   IEnumerator VictoryTransition()
   {
    yield return new WaitForSeconds(2.5f);
    if(Screen!="playing")yield break;
    Screen="victory";SetMusic("music_menu");
-   if(!Run.Awarded){Run.Awarded=true;Meta.Essence+=RunEssence*2;Meta.Save();}
+   if(!Run.Awarded){Run.Awarded=true;SecureEssence();}
   }
  }
 }

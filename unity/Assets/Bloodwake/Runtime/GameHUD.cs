@@ -26,6 +26,7 @@ namespace Bloodwake
    roomLabel=Label(topRight,"",1000,46,580,26,16,false,TextAnchor.UpperRight);roomLabel.color=new Color(.78f,.74f,.7f);
    Rule(topRight,1390,80,190,.3f);
    promptLabel=Label(bottom,"",350,690,900,50,22,false,TextAnchor.MiddleCenter);
+   toastLabel=Label(Corner(.5f,1),"",300,120,1000,50,30,true,TextAnchor.MiddleCenter);
    promptKey=Rect(bottom,"Prompt key",0,700,CapWidth("interact"),30);InputCap(promptKey,"interact",0,0);promptKey.gameObject.SetActive(false);
    var cls=GameData.Rules["classes"][Run.ClassId];bool dash=Run.ClassId=="revenant"||Run.ClassId=="vesper";
    int count=dash?4:3;const float size=80,gap=22;float x0=800-(count*size+(count-1)*gap)/2;
@@ -74,7 +75,8 @@ namespace Bloodwake
   {
    float hp=Run.Stats.N("hp"),max=Run.Stats.N("maxHp");healthLabel.text=$"{hp:0} / {max:0}";
    float f=Mathf.Clamp01(hp/max);healthFill.rectTransform.sizeDelta=new Vector2(Mathf.Max(f>0?12:0,HealthWidth*f),16);healthFill.enabled=f>0;
-   runLabel.text=$"{(room?.S("type")=="safehouse"?room.S("name"):DistrictName)}  ·  LEVEL {Run.Level}  ·  GOLD {Run.Gold}";
+   runLabel.text=$"{(room?.S("type")=="safehouse"?room.S("name"):DistrictName)}  ·  LEVEL {Run.Level}  ·  GOLD {Run.Gold}"+(Run.EssencePending>0?$"  ·  ESSENCE {Run.EssencePending}":"");
+   if(toastLabel){hudToastTime-=Time.unscaledDeltaTime;toastLabel.text=hudToastTime>0?hudToast:"";toastLabel.color=new Color(.93f,.78f,.45f,Mathf.Clamp01(hudToastTime/.6f));}
    roomLabel.text=$"{room.S("name")}  ·  {Enemies.Count} {(Enemies.Count==1?"enemy":"enemies")}";
    UpdateWorldBars();UpdateSkillLabels();
   }

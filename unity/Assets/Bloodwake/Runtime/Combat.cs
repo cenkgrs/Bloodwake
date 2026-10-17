@@ -29,7 +29,7 @@ namespace Bloodwake
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
   }
-  bool HeavyUnlocked=>Run!=null&&Run.ClassId=="warrior";
+  bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="vesper"&&Owns("vesper_heavy"));
   void Attack(bool heavyAttack=false)
   {
    if(RevenantActionActive)return;
@@ -124,7 +124,7 @@ namespace Bloodwake
    if(effects&&actual>0)e.View.FlashHit(false);
    if(e.Hp>0){if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}
-   if(e.View.transform.Find("RuinMark"))Destroy(e.View.transform.Find("RuinMark").gameObject);Run.Kills++;Run.Gold+=(int)e.Data.N("goldReward")+(int)Run.Stats.N("bonusGoldPerKill");Drop(e.View.transform.position,"xp",(int)e.Data.N("xpReward"));if(e.Id=="boss"||Random.value<.08f)Drop(e.View.transform.position,"health",e.Id=="boss"?70:18);float length=e.View.Play("Death");Destroy(e.View.gameObject,Mathf.Max(1,length)+1);Sound(e.Id=="boss"?"boss_death":"enemy_death");
+   if(e.View.transform.Find("RuinMark"))Destroy(e.View.transform.Find("RuinMark").gameObject);Run.Kills++;OnEnemyKilled(e);Run.Gold+=(int)e.Data.N("goldReward")+(int)Run.Stats.N("bonusGoldPerKill");Drop(e.View.transform.position,"xp",(int)e.Data.N("xpReward"));if(e.Id=="boss"||Random.value<.08f)Drop(e.View.transform.position,"health",e.Id=="boss"?70:18);float length=e.View.Play("Death");Destroy(e.View.gameObject,Mathf.Max(1,length)+1);Sound(e.Id=="boss"?"boss_death":"enemy_death");
   }
   void HurtPlayer(float damage)
   {
@@ -138,7 +138,7 @@ namespace Bloodwake
     if(Run.ClassId=="revenant"&&Run.Stats.N("hp")>0)Player.HitOverlay();
    }
    invulnerable=.25f;
-   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Rumble(1,.6f,.55f);Screen="dying";SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());if(!Run.Awarded){Run.Awarded=true;Meta.Essence+=RunEssence;Meta.Save();}}
+   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Rumble(1,.6f,.55f);Screen="dying";SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());Run.Awarded=true;}
   }
  }
 }

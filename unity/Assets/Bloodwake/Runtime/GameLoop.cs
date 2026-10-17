@@ -63,7 +63,7 @@ namespace Bloodwake
     else if(!TrySurroundSpawn(id,out pos)){spawnTimer=.4f;return;}
     SpawnEnemy(id,pos);spawnCursor++;spawnTimer=.55f;
    }
-   if(spawnCursor>=total&&Enemies.Count==0){if(++waveIndex<waves.Count){spawnCursor=0;spawnTimer=1.6f;Run.Wave++;}else{roomClear=true;Run.RoomsCleared++;Sound(room.S("type")=="boss"?"boss_slain":"wave_clear");if(room.S("type")=="boss"&&Run.Night>=FinalDistrict)StartCoroutine(VictoryTransition());}}
+   if(spawnCursor>=total&&Enemies.Count==0){if(++waveIndex<waves.Count){spawnCursor=0;spawnTimer=1.6f;Run.Wave++;}else{roomClear=true;Run.RoomsCleared++;OnRoomCleared();Sound(room.S("type")=="boss"?"boss_slain":"wave_clear");if(room.S("type")=="boss"&&Run.Night>=FinalDistrict)StartCoroutine(VictoryTransition());}}
   }
  }
 }
