@@ -124,9 +124,9 @@ namespace Bloodwake
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
    if(effects&&actual>0)e.View.FlashHit(false);
-   if(e.Hp>0){if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
+   if(e.Hp>0){if(effects){Sound(e.Id=="boss"?"boss_hurt":e.Id+"_hurt");if(e.Id=="grunt"||e.Id=="tank"||e.Id=="boss")Sound("sword_hit_armor");}if(effects&&e.AreaRecovery<=0)e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}
-   if(e.View.transform.Find("RuinMark"))Destroy(e.View.transform.Find("RuinMark").gameObject);Run.Kills++;OnEnemyKilled(e);Run.Gold+=(int)e.Data.N("goldReward")+(int)Run.Stats.N("bonusGoldPerKill");Drop(e.View.transform.position,"xp",(int)e.Data.N("xpReward"));if(e.Id=="boss"||Random.value<.08f)Drop(e.View.transform.position,"health",e.Id=="boss"?70:18);float length=e.View.Play("Death");Destroy(e.View.gameObject,Mathf.Max(1,length)+1);Sound(e.Id=="boss"?"boss_death":"enemy_death");
+   if(e.View.transform.Find("RuinMark"))Destroy(e.View.transform.Find("RuinMark").gameObject);Run.Kills++;OnEnemyKilled(e);Run.Gold+=(int)e.Data.N("goldReward")+(int)Run.Stats.N("bonusGoldPerKill");Drop(e.View.transform.position,"xp",(int)e.Data.N("xpReward"));if(e.Id=="boss"||Random.value<.08f)Drop(e.View.transform.position,"health",e.Id=="boss"?70:18);float length=e.View.Play("Death");Destroy(e.View.gameObject,Mathf.Max(1,length)+1);Sound(e.Id=="boss"?"boss_death":"enemy_death");Sound(e.Id+"_death");
   }
   void HurtPlayer(float damage)
   {

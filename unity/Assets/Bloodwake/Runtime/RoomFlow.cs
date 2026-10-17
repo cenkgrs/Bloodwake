@@ -31,6 +31,7 @@ namespace Bloodwake
    roomClear=room.S("type")=="merchant"||room.S("type")=="safehouse";waves=room["encounter"]?["waves"] as JArray;
    if(room.S("type")=="boss")waves=new JArray{new JArray("boss")};
    waveIndex=0;spawnCursor=0;spawnTimer=1.5f;attackCd=0;dashCd=0;
+   SetAmbience(room.S("type"));PlaceFireSounds();
    if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(room.S("type")=="boss"?"music_boss":roomClear?"music_menu":"music_combat");
   }
   static Vector3 Point(JToken v)=>v is JArray a&&a.Count>=2?new Vector3(-(float)a[0],0,(float)a[1]):Vector3.zero;

@@ -14,7 +14,7 @@ namespace Bloodwake
    if(id==track)return;track=id;
    for(int i=0;i<2;i++)startDb[i]=Mathf.Lerp(startDb[i],endDb[i],Mathf.Clamp01(age/1.2f));
    if(clip){active=1-active;voices[active].Stop();voices[active].clip=clip;startDb[active]=-60;voices[active].volume=0;voices[active].Play();}
-   for(int i=0;i<2;i++)endDb[i]=clip&&i==active?(id=="music_combat"?-15:-13):-60;
+   for(int i=0;i<2;i++)endDb[i]=clip&&i==active?(id.StartsWith("music_combat")?-15:-13):-60;
    age=0;
   }
   void Update()

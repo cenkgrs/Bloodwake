@@ -42,7 +42,7 @@ namespace Bloodwake
    bool canMove=!actionFrame&&!RevenantActionActive&&!vesperMoveActive&&(Run.ClassId=="revenant"?!Player.IsCasting:Player.Locked<=.15f);
    if(canMove){Player.transform.position=Move(Player.transform.position,move*Run.Stats.N("moveSpeed")*.02f*dt*locomotionScale);if(move.sqrMagnitude>.01f&&!(Run.ClassId=="revenant"&&Player.ContactPending))Player.transform.rotation=Quaternion.Slerp(Player.transform.rotation,Quaternion.LookRotation(move),dt*16);}
    float motionRate=Run.Stats.N("moveSpeed")/GameData.Stats(Run.ClassId).N("moveSpeed");if(Player.NobleRevenant&&!walking)motionRate=Run.Stats.N("moveSpeed")*.02f/(4.08527f*Player.Height/1.8f);
-   Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
+   Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking);TickAudioWorld(dt,canMove&&move.sqrMagnitude>.01f,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
    if(fresh&&keys!=null){if(keys.qKey.wasPressedThisFrame)Cast(0);if(keys.eKey.wasPressedThisFrame)Cast(1);if(keys.spaceKey.wasPressedThisFrame)Cast(2);if(keys.fKey.wasPressedThisFrame)Interact();}
    // Skills: Triangle, Circle, Cross. Cross talks or claims instead when something is in reach. L1 / L2 are free.
    if(fresh&&pad!=null){if(pad.buttonNorth.wasPressedThisFrame)Cast(0);if(pad.buttonEast.wasPressedThisFrame)Cast(1);if(pad.buttonSouth.wasPressedThisFrame){if(InteractInRange)Interact();else Cast(2);}}

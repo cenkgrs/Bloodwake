@@ -100,7 +100,7 @@ namespace Bloodwake
     if(e.Id=="boss"){StartCoroutine(BossCast(e));continue;}
     if(!warriorSteering)e.View.transform.rotation=Quaternion.LookRotation(dir.sqrMagnitude>.001f?dir:Vector3.forward);
     if(e.Id=="grunt"&&e.View.HasWarriorSlashes){WarriorMelee(e,warriorSteering?e.View.transform.forward:dir);continue;}
-    e.View.Play("Attack",.6f);
+    e.View.Play("Attack",.6f);Sound(e.Id+"_attack");
     if(e.Id=="healer"||e.Id=="commander")StartCoroutine(SupportCast(e));
     else if(e.Id=="mage"){
      e.Pattern++;if(e.Pattern%2==0&&e.RuneCooldown<=0){e.RuneCooldown=e.Data.N("runeCooldown",6.5f);StartCoroutine(EnemyArea(e,Player.transform.position,e.Data.N("runeRadius",150)*.02f,e.Data.N("runeFuse",1.4f)));}
@@ -115,7 +115,7 @@ namespace Bloodwake
    // Advance only when an attack starts, never on a hit/miss or animation event.
    string clip=(e.Pattern&1)==0?"Warrior_OutwardSlash":"Warrior_InwardSlash";
    e.Pattern=(e.Pattern+1)&1;
-   e.AttackCount++;e.Intent=WarriorIntent.Attack;e.StepPending=Enemies.Count>1&&e.AttackCount%2==0;
+   e.AttackCount++;e.Intent=WarriorIntent.Attack;Sound("grunt_attack");e.StepPending=Enemies.Count>1&&e.AttackCount%2==0;
    int impact=e.ImpactVersion;
    // Default hold uses the source length at 1x, instead of squeezing to 0.6 s.
    e.View.Play(clip);
@@ -146,7 +146,7 @@ namespace Bloodwake
   IEnumerator EnemyArea(Enemy e,Vector3 pos,float radius,float delay){var warning=RevFx.ThreatWarning(pos,Vector3.forward,radius,360,0,delay,RevenantVfx.Tone("dc68ba"));yield return Delay(delay);if(warning)Destroy(warning);if(e.Hp>0){RevFx.HostileRuneImpact(pos,radius);if(Vector3.Distance(Player.transform.position,pos)<radius)HurtPlayer(e.Damage*1.7f);}}
   IEnumerator BossCast(Enemy e)
   {
-   int impact=e.ImpactVersion;e.Casting=true;string[] pattern={"attack","sweep","cast","charge","slam","summon"};string attack=pattern[e.Pattern++%pattern.Length];var spec=GameData.Rules["boss"][attack];var origin=e.View.transform.position;var dir=(Player.transform.position-origin).normalized;float radius=spec.N("radius"),windup=spec.N("windup"),recovery=spec.N("recovery");string clip=char.ToUpper(attack[0])+attack.Substring(1);float contact=spec.N("contact",.5f);e.View.Play(clip,windup/contact);var warning=BossWarning(origin,dir,radius,spec.N("arc",360),attack,windup);float preparation=0;while(preparation<windup&&e.Hp>0&&impact==e.ImpactVersion){if(Screen=="playing"&&hitStop<=0)preparation+=Time.deltaTime;yield return null;}if(warning)Destroy(warning);if(e.Hp<=0||impact!=e.ImpactVersion){e.Casting=false;yield break;}
+   int impact=e.ImpactVersion;e.Casting=true;Sound("boss_roar");string[] pattern={"attack","sweep","cast","charge","slam","summon"};string attack=pattern[e.Pattern++%pattern.Length];var spec=GameData.Rules["boss"][attack];var origin=e.View.transform.position;var dir=(Player.transform.position-origin).normalized;float radius=spec.N("radius"),windup=spec.N("windup"),recovery=spec.N("recovery");string clip=char.ToUpper(attack[0])+attack.Substring(1);float contact=spec.N("contact",.5f);e.View.Play(clip,windup/contact);var warning=BossWarning(origin,dir,radius,spec.N("arc",360),attack,windup);float preparation=0;while(preparation<windup&&e.Hp>0&&impact==e.ImpactVersion){if(Screen=="playing"&&hitStop<=0)preparation+=Time.deltaTime;yield return null;}if(warning)Destroy(warning);if(e.Hp<=0||impact!=e.ImpactVersion){e.Casting=false;yield break;}
    e.View.PlaybackRate=e.View.ClipLength(clip)*(1-contact)/(recovery+(attack=="charge"?.6f:0));e.View.Locked=recovery+(attack=="charge"?.6f:0);
    RevFx.BossContact(attack,origin,dir,radius,spec.N("arc",360));
    if(attack=="summon"){for(int i=Enemies.Count;i<5;i++){var spawn=Move(origin,Quaternion.Euler(0,i*72,0)*Vector3.forward*4);SpawnEnemy("grunt",spawn);}}

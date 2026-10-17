@@ -50,10 +50,12 @@ namespace Bloodwake
   void SoundFrom(string id,float startSeconds)
   {
    var data=GameData.Rules["audio"]?[id];if(soundTimes.TryGetValue(id,out float last)&&Time.unscaledTime-last<data.N("gap"))return;
-   var files=data?["files"] as JArray;string name=files==null?id:(string)files[UnityEngine.Random.Range(0,files.Count)];if(!sounds.TryGetValue(name,out var clip))return;
+   var files=(data?["files"] as JArray)?.Select(f=>(string)f).Where(sounds.ContainsKey).ToArray();string name=files==null||files.Length==0?id:files[UnityEngine.Random.Range(0,files.Length)];if(!sounds.TryGetValue(name,out var clip))return;
    var voice=soundVoices.FirstOrDefault(s=>!s.isPlaying);if(voice==null){if(soundVoices.Count>=32)return;voice=gameObject.AddComponent<AudioSource>();soundVoices.Add(voice);}
    voice.clip=clip;voice.volume=Mathf.Clamp01(Mathf.Pow(10,data.N("db",-5)/20))*(id=="revenant_swing"?.72f:1);voice.pitch=data?["pitch"] is JArray pitch?UnityEngine.Random.Range((float)pitch[0],(float)pitch[1]):1;voice.time=Mathf.Clamp(startSeconds,0,Mathf.Max(0,clip.length-.001f));voice.Play();soundTimes[id]=Time.unscaledTime;
   }
-  void SetMusic(string id){if(id=="")musicBlend.Set("",null);else if(sounds.TryGetValue(id,out var clip))musicBlend.Set(id,clip);}
+  // music_combat may have variants (music_combat_2, _3 ...): each fight room starts a different one than the last.
+  string musicPlaying;
+  void SetMusic(string id){if(id==""){musicBlend.Set("",null);musicPlaying=null;return;}var clip=PickVariant(id,musicPlaying);if(!clip)return;if(id=="music_combat"||clip.name!=musicPlaying){musicBlend.Set(clip.name,clip);musicPlaying=clip.name;}}
  }
 }

@@ -1,5 +1,123 @@
 {
   "audio": {
+    "amb_boss_square": {
+      "db": -14
+    },
+    "amb_fire_crackle": {
+      "db": -18
+    },
+    "amb_market_night": {
+      "db": -15
+    },
+    "amb_sanctuary": {
+      "db": -17
+    },
+    "amb_town_night": {
+      "db": -15
+    },
+    "archer_attack": {
+      "db": -10,
+      "files": [
+        "archer_attack_1",
+        "archer_attack_2",
+        "archer_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "archer_death": {
+      "db": -8,
+      "files": [
+        "archer_death_1",
+        "archer_death_2",
+        "archer_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "archer_hurt": {
+      "db": -11,
+      "files": [
+        "archer_hurt_1",
+        "archer_hurt_2",
+        "archer_hurt_3",
+        "archer_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "armored_step": {
+      "db": -21,
+      "files": [
+        "armored_step_1",
+        "armored_step_2",
+        "armored_step_3",
+        "armored_step_4",
+        "armored_step_5",
+        "armored_step_6"
+      ],
+      "gap": 0.09,
+      "pitch": [
+        0.92,
+        1.08
+      ],
+      "voices": 3
+    },
+    "assassin_attack": {
+      "db": -10,
+      "files": [
+        "assassin_attack_1",
+        "assassin_attack_2",
+        "assassin_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "assassin_death": {
+      "db": -8,
+      "files": [
+        "assassin_death_1",
+        "assassin_death_2",
+        "assassin_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "assassin_hurt": {
+      "db": -11,
+      "files": [
+        "assassin_hurt_1",
+        "assassin_hurt_2",
+        "assassin_hurt_3",
+        "assassin_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
     "boss_death": {
       "db": 1.0,
       "files": [
@@ -9,6 +127,47 @@
       "pitch": [
         1.0,
         1.0
+      ],
+      "voices": 1
+    },
+    "boss_hurt": {
+      "db": -9,
+      "files": [
+        "boss_hurt_1",
+        "boss_hurt_2",
+        "boss_hurt_3",
+        "boss_hurt_4"
+      ],
+      "gap": 0.4,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "boss_phase": {
+      "db": -1.0,
+      "files": [
+        "boss_phase"
+      ],
+      "gap": 0.3,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
+    "boss_roar": {
+      "db": -6,
+      "files": [
+        "boss_roar_1",
+        "boss_roar_2",
+        "boss_roar_3"
+      ],
+      "gap": 1.5,
+      "pitch": [
+        0.97,
+        1.03
       ],
       "voices": 1
     },
@@ -24,17 +183,63 @@
       ],
       "voices": 1
     },
-    "boss_phase": {
-      "db": -1.0,
+    "boss_step": {
+      "db": -11,
       "files": [
-        "boss_phase"
+        "boss_step_1",
+        "boss_step_2",
+        "boss_step_3",
+        "boss_step_4"
       ],
       "gap": 0.3,
       "pitch": [
-        0.98,
-        1.02
+        0.95,
+        1.03
       ],
-      "voices": 1
+      "voices": 2
+    },
+    "commander_attack": {
+      "db": -10,
+      "files": [
+        "commander_attack_1",
+        "commander_attack_2",
+        "commander_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "commander_death": {
+      "db": -8,
+      "files": [
+        "commander_death_1",
+        "commander_death_2",
+        "commander_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "commander_hurt": {
+      "db": -11,
+      "files": [
+        "commander_hurt_1",
+        "commander_hurt_2",
+        "commander_hurt_3",
+        "commander_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
     },
     "dagger_hit": {
       "db": -6.0,
@@ -50,6 +255,18 @@
       ],
       "voices": 3
     },
+    "dialogue_advance": {
+      "db": -10.0,
+      "files": [
+        "dialogue_advance"
+      ],
+      "gap": 0.03,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "voices": 1
+    },
     "enemy_death": {
       "db": -5.0,
       "files": [
@@ -63,6 +280,66 @@
         1.08
       ],
       "voices": 4
+    },
+    "enemy_step": {
+      "db": -23,
+      "files": [
+        "enemy_step_1",
+        "enemy_step_2",
+        "enemy_step_3",
+        "enemy_step_4",
+        "enemy_step_5",
+        "enemy_step_6"
+      ],
+      "gap": 0.09,
+      "pitch": [
+        0.92,
+        1.08
+      ],
+      "voices": 3
+    },
+    "grunt_attack": {
+      "db": -10,
+      "files": [
+        "grunt_attack_1",
+        "grunt_attack_2",
+        "grunt_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "grunt_death": {
+      "db": -8,
+      "files": [
+        "grunt_death_1",
+        "grunt_death_2",
+        "grunt_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "grunt_hurt": {
+      "db": -11,
+      "files": [
+        "grunt_hurt_1",
+        "grunt_hurt_2",
+        "grunt_hurt_3",
+        "grunt_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
     },
     "gun_pistol": {
       "db": -5.0,
@@ -101,6 +378,49 @@
       "pitch": [
         0.96,
         1.04
+      ],
+      "voices": 2
+    },
+    "healer_attack": {
+      "db": -10,
+      "files": [
+        "healer_attack_1",
+        "healer_attack_2",
+        "healer_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "healer_death": {
+      "db": -8,
+      "files": [
+        "healer_death_1",
+        "healer_death_2",
+        "healer_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "healer_hurt": {
+      "db": -11,
+      "files": [
+        "healer_hurt_1",
+        "healer_hurt_2",
+        "healer_hurt_3",
+        "healer_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
       ],
       "voices": 2
     },
@@ -171,6 +491,49 @@
       ],
       "voices": 3
     },
+    "mage_attack": {
+      "db": -10,
+      "files": [
+        "mage_attack_1",
+        "mage_attack_2",
+        "mage_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "mage_death": {
+      "db": -8,
+      "files": [
+        "mage_death_1",
+        "mage_death_2",
+        "mage_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "mage_hurt": {
+      "db": -11,
+      "files": [
+        "mage_hurt_1",
+        "mage_hurt_2",
+        "mage_hurt_3",
+        "mage_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
     "orb_cast": {
       "db": -4.0,
       "files": [
@@ -237,6 +600,40 @@
       ],
       "voices": 2
     },
+    "player_step": {
+      "db": -16,
+      "files": [
+        "player_step_1",
+        "player_step_2",
+        "player_step_3",
+        "player_step_4",
+        "player_step_5",
+        "player_step_6"
+      ],
+      "gap": 0.12,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "voices": 2
+    },
+    "player_step_walk": {
+      "db": -19,
+      "files": [
+        "player_step_walk_1",
+        "player_step_walk_2",
+        "player_step_walk_3",
+        "player_step_walk_4",
+        "player_step_walk_5",
+        "player_step_walk_6"
+      ],
+      "gap": 0.2,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "voices": 2
+    },
     "purchase": {
       "db": -4.0,
       "files": [
@@ -261,10 +658,10 @@
       ],
       "voices": 1
     },
-    "revenant_space_blood_burst": {
+    "revenant_q_mist_claw": {
       "db": 0.0,
       "files": [
-        "revenant_space_blood_burst"
+        "revenant_q_mist_claw"
       ],
       "gap": 0.0,
       "pitch": [
@@ -273,10 +670,10 @@
       ],
       "voices": 1
     },
-    "revenant_q_mist_claw": {
+    "revenant_space_blood_burst": {
       "db": 0.0,
       "files": [
-        "revenant_q_mist_claw"
+        "revenant_space_blood_burst"
       ],
       "gap": 0.0,
       "pitch": [
@@ -348,18 +745,18 @@
       "voices": 2
     },
     "sword_hit_armor": {
-      "db": -5.0,
+      "db": -12,
       "files": [
         "sword_hit_armor_1",
         "sword_hit_armor_2",
         "sword_hit_armor_3"
       ],
-      "gap": 0.02,
+      "gap": 0.05,
       "pitch": [
         0.94,
         1.06
       ],
-      "voices": 3
+      "voices": 2
     },
     "sword_hit_flesh": {
       "db": -4.0,
@@ -389,10 +786,53 @@
       ],
       "voices": 3
     },
-    "dialogue_advance": {
-      "db": -10.0,
+    "tank_attack": {
+      "db": -10,
       "files": [
-        "dialogue_advance"
+        "tank_attack_1",
+        "tank_attack_2",
+        "tank_attack_3"
+      ],
+      "gap": 0.25,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "tank_death": {
+      "db": -8,
+      "files": [
+        "tank_death_1",
+        "tank_death_2",
+        "tank_death_3"
+      ],
+      "gap": 0.1,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "tank_hurt": {
+      "db": -11,
+      "files": [
+        "tank_hurt_1",
+        "tank_hurt_2",
+        "tank_hurt_3",
+        "tank_hurt_4"
+      ],
+      "gap": 0.18,
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "voices": 2
+    },
+    "ui_back": {
+      "db": -12.0,
+      "files": [
+        "ui_back"
       ],
       "gap": 0.03,
       "pitch": [
@@ -410,18 +850,6 @@
       "pitch": [
         1.0,
         1.0
-      ],
-      "voices": 1
-    },
-    "ui_back": {
-      "db": -12.0,
-      "files": [
-        "ui_back"
-      ],
-      "gap": 0.03,
-      "pitch": [
-        0.98,
-        1.02
       ],
       "voices": 1
     },
