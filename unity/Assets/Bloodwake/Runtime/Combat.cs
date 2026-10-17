@@ -43,8 +43,9 @@ namespace Bloodwake
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
     bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
-    // Vesper's Mixamo swings are authored at combat tempo; the generic 1.5x made them twitch.
-    if(Run.ClassId=="vesper")duration=Player.ClipLength(clip)/Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f);
+    // Vesper's Mixamo swings are already quick; play them slightly slower than authored so each
+    // reads, and let only attack speed gained above the class base shorten them.
+    if(Run.ClassId=="vesper")duration=Player.ClipLength(clip)*1.1f/Mathf.Clamp(Run.Stats.N("attackSpeed")/GameData.Stats("vesper").N("attackSpeed"),.8f,1.6f);
     if(Run.ClassId=="revenant")duration=Player.ClipLength(clip)/Mathf.Sqrt(Mathf.Max(.5f,Run.Stats.N("attackSpeed")/GameData.Stats("revenant").N("attackSpeed")*slot.N("speed")));
     if(Run.ClassId=="warrior"&&combo==4)duration=.9f;
     if(heavy){clip="SpinAttack";duration=Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,1.5f));attackCd*=2.6f;combo=0;}

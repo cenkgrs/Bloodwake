@@ -130,7 +130,7 @@ namespace Bloodwake
    if(anim==null){clip=Clip("Attack");anim=Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==clip);}
    if(anim==null)return 0;
    float start=ActionStartTime(clip),duration=anim.length-start;
-   if(state!=clip||hold!=0){CancelAction();PlaybackRate=hold>0?duration/hold:1;Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,.09f,0,start);state=clip;}
+   if(state!=clip||hold!=0){CancelAction();PlaybackRate=hold>0?duration/hold:1;Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,Kind=="vesper"?.16f:.09f,0,start);state=clip;}
    Locked=hold==0?0:hold>0?hold:duration;return Locked;
   }
   public float ClipLength(string key)=>Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==Clip(key))?.length??.6f;
