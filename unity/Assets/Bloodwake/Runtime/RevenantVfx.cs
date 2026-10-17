@@ -47,7 +47,7 @@ namespace Bloodwake
   }
   public VfxLifetime Glow(Vector3 pos,Color tone,float size,float energy,float life)
   {
-   var fx=Sheet("Blood glow",pos,Vector3.one*size,"glow",life,tone);fx.Block.SetFloat("_Energy",energy);fx.Apply();
+   var fx=Sheet("Blood glow",pos,Vector3.one*size,"glow",life,tone);fx.Block.SetFloat("_Energy",energy);fx.Apply();fx.transform.rotation=Game.Cam.transform.rotation;
    fx.Tick=(p,dt)=>{fx.transform.rotation=Game.Cam.transform.rotation;};return fx;
   }
   VfxLifetime Authored(string asset,Vector3 pos,Vector3 scale,float life)
@@ -240,7 +240,7 @@ namespace Bloodwake
   }
   public void DamageText(Vector3 pos,float amount,Color color)
   {
-   var go=new GameObject("Damage number");go.transform.SetParent(transform);var start=pos+new Vector3(UnityEngine.Random.Range(-.2f,.2f),2,0);go.transform.position=start;
+   var go=new GameObject("Damage number");go.transform.SetParent(transform);var start=pos+new Vector3(UnityEngine.Random.Range(-.2f,.2f),2,0);go.transform.SetPositionAndRotation(start,Game.Cam.transform.rotation);
    var label=go.AddComponent<TextMesh>();label.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");label.fontSize=38;label.characterSize=.08f;label.anchor=TextAnchor.MiddleCenter;label.alignment=TextAlignment.Center;label.text=Mathf.RoundToInt(amount).ToString();label.color=color;
    label.font.RequestCharactersInTexture("0123456789",38);var m=Material("damage_text");m.SetTexture("_MainTex",label.font.material.mainTexture);go.GetComponent<MeshRenderer>().sharedMaterial=m;
    Life(go,.55f).Tick=(p,dt)=>{go.transform.position=start+Vector3.up*.6f*p;go.transform.rotation=Game.Cam.transform.rotation;label.color=new Color(color.r,color.g,color.b,1-p);m.SetTexture("_MainTex",label.font.material.mainTexture);};

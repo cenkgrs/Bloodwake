@@ -103,6 +103,7 @@ namespace Bloodwake
      // Double the previous thrust push (now 4x basic); damage is unchanged.
      e.RecoilDirection=thrustDirection;e.RecoilRemaining=BasicRecoilDistance(e)*4;e.RecoilTime=.36f;
      e.View.ImpactPose(start,e.Id=="boss"?3:e.Id=="tank"?6:11,.36f);
+     ShakeCamera(.55f,thrustDirection);
     }
     RevFx.Splatter(e.View.transform.position+Vector3.up*.9f,thrustDirection);
     RevFx.ThrustClawImpact(e.View);

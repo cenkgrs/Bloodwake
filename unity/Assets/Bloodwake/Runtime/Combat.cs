@@ -18,7 +18,7 @@ namespace Bloodwake
  {
   int combo;float comboExpires;
   const float CombatActorScale=1.173f;
-  const float NormalHitStop=.05f,FinisherHitStop=.07f;
+  const float NormalHitStop=.05f,MeleeHitStop=.075f,FinisherHitStop=.12f;
   public void SpawnEnemy(string id,Vector3 pos)
   {
    var data=GameData.Row("enemies",id);float n=Run.Wave-1,t=Run.Night-1;
@@ -41,7 +41,7 @@ namespace Bloodwake
     if(Time.time>comboExpires)combo=0;combo=combo%(Run.ClassId=="warrior"?4:3)+1;
     string clip=Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper"?"Attack"+combo:"Attack";
     // Vesper finishes the combo with the upward greatsword thrust.
-    if(Run.ClassId=="vesper"&&combo==3){clip="DashAttack";StartCoroutine(VesperLunge(Player.transform.forward,2.4f,.18f));}
+    if(Run.ClassId=="vesper"&&combo==3){clip="DashAttack";StartCoroutine(VesperLunge(Player.transform.forward,LungeDistance(Player.transform.forward,2.4f),.18f));}
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
     bool heavy=Run.ClassId=="warrior"&&(Keyboard.current?.leftShiftKey.isPressed==true||Mouse.current?.rightButton.isPressed==true||Gamepad.current?.leftShoulder.isPressed==true);
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
@@ -52,7 +52,7 @@ namespace Bloodwake
     if(Run.ClassId=="warrior"&&combo==4)duration=.9f;
     if(heavy){clip="SpinAttack";duration=Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,1.5f));attackCd*=2.6f;combo=0;}
     if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId=="vesper")SoundOnContact("vesper_attack_"+combo,contact);else if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
-     else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?2.1f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,combo==(Run.ClassId=="warrior"?4:3)));}
+     else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?2.1f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,heavy||combo==(Run.ClassId=="warrior"?4:3)));}
     else StartCoroutine(ReleaseWeapon(row,slot,dir,damage,range,duration*.55f,"R",combo==3));
     Player.Play(clip,duration);if(contactEvent!=null)Player.OnMarker("DAMAGE",contactEvent);attackCd=Mathf.Max(attackCd,duration*(heavy?.85f:.62f));comboExpires=Time.time+duration+.5f;
    }
@@ -69,7 +69,12 @@ namespace Bloodwake
    var hit=new System.Collections.Generic.HashSet<Enemy>();Vector3 origin=Player.transform.position;
    DamageCargo(origin,range,dir,wide?360:arc);
    foreach(var e in Enemies.ToArray()){if(e.Emerging)continue;var d=e.View.transform.position-origin;d.y=0;float bodyRadius=Mathf.Max(.45f,e.Data.N("radius",16)*.02f*CombatActorScale);float tolerance=Mathf.Asin(Mathf.Clamp01(bodyRadius/Mathf.Max(bodyRadius,d.magnitude)))*Mathf.Rad2Deg;if(d.magnitude<=range+bodyRadius&&(wide||Vector3.Angle(dir,d)<=arc*.5f+tolerance)){hit.Add(e);DamageEnemy(e,damage);if(e.Hp>0&&slot.N("bleed")>0){e.Bleed=3;e.BleedDps=slot.N("bleed");}}}
-   if(hit.Count>0&&(revenantSwing==3||finisher))hitStop=Mathf.Max(hitStop,FinisherHitStop);
+   if(hit.Count>0)
+   {
+    bool heavy=revenantSwing==3||finisher;hitStop=Mathf.Max(hitStop,heavy?FinisherHitStop:MeleeHitStop);
+    ShakeCamera(heavy?.6f:.42f,dir);
+    foreach(var e in hit){MeleeKnockback(e,dir,heavy);if(revenantSwing==0&&e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);}
+   }
    if(hit.Count>0&&slot.N("chain")>0)ChainStrike(hit.First().View.transform.position,damage*.5f,(int)slot.N("chain"),2.4f,hit);
    if(revenantSwing>0){RevFx.Claws(origin,dir,sourceRadius,revenantSwing==2,wide||revenantSwing==3);foreach(var e in hit)if(e.View)RevFx.Impact(e.View.transform.position+Vector3.up*.9f);}
    else if(Run.ClassId=="vesper")RevFx.VesperBladeArc(origin,dir,range,wide?360:arc);
@@ -80,6 +85,18 @@ namespace Bloodwake
    for(int i=0;i<count;i++){var e=Enemies.Where(x=>!x.Emerging&&!hit.Contains(x)&&Vector3.Distance(origin,x.View.transform.position)<radius).OrderBy(x=>Vector3.Distance(origin,x.View.transform.position)).FirstOrDefault();if(e==null)break;var end=e.View.transform.position;var beam=new GameObject("Chain lightning").AddComponent<LineRenderer>();beam.transform.SetParent(actorRoot);beam.positionCount=2;beam.SetPosition(0,origin+Vector3.up);beam.SetPosition(1,end+Vector3.up);beam.startWidth=beam.endWidth=.05f;beam.material=Effects.Mat(new Color(.65f,.81f,1));Destroy(beam.gameObject,.16f);hit.Add(e);DamageEnemy(e,damage);if(e.Hp>0){e.Burn=2;e.BurnDps=4;}origin=end;}
   }
   IEnumerator ReleaseWeapon(JToken row,JToken slot,Vector3 dir,float damage,float range,float delay,string hand="R",bool finisher=false){yield return Delay(delay);Sound(Run.ClassId=="mage"?"orb_cast":"gun_rifle");int count=(int)row.N("projectileCount",1);for(int i=0;i<count;i++)StartCoroutine(Projectile(Player.transform.position,Quaternion.Euler(0,(i-(count-1)*.5f)*8,0)*dir,damage,row.N("projectileSpeed",500)*.02f,range,false,(int)(row.N("pierceCount")+slot.N("pierce")),false,hand,finisher));}
+  // Stop the lunge in front of the first body ahead, so the thrust lands on it instead of passing through.
+  float LungeDistance(Vector3 dir,float distance)
+  {
+   dir.y=0;dir.Normalize();var origin=Player.transform.position;
+   foreach(var e in Enemies)
+   {
+    if(e.Emerging||e.Hp<=0||!e.View)continue;var d=e.View.transform.position-origin;d.y=0;float along=Vector3.Dot(d,dir);
+    float bodyRadius=Mathf.Max(.45f,e.Data.N("radius",16)*.02f*CombatActorScale);
+    if(along>0&&along<distance+1.2f&&(d-dir*along).magnitude<bodyRadius+.5f)distance=Mathf.Min(distance,Mathf.Max(0,along-bodyRadius-.6f));
+   }
+   return distance;
+  }
   // Vesper's finisher drives forward like Ember Dash, through the game's collision.
   IEnumerator VesperLunge(Vector3 dir,float distance,float time)
   {
