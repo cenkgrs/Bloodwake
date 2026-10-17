@@ -46,8 +46,13 @@ namespace Bloodwake
    if(fresh&&keys!=null){if(keys.qKey.wasPressedThisFrame)Cast(0);if(keys.eKey.wasPressedThisFrame)Cast(1);if(keys.spaceKey.wasPressedThisFrame)Cast(2);if(keys.fKey.wasPressedThisFrame)Interact();}
    // Skills: Triangle, Circle, Cross. Cross talks or claims instead when something is in reach. L1 / L2 are free.
    if(fresh&&pad!=null){if(pad.buttonNorth.wasPressedThisFrame)Cast(0);if(pad.buttonEast.wasPressedThisFrame)Cast(1);if(pad.buttonSouth.wasPressedThisFrame){if(InteractInRange)Interact();else Cast(2);}}
-   if(fresh&&heavyPressed&&HeavyUnlocked&&attackCd<=0)Attack(true);
-   else if(fresh&&lightHeld&&attackCd<=0)Attack();
+   // R2 is remembered briefly, so R1, R1, R2 lands even when pressed during the second swing.
+   if(fresh&&heavyPressed&&HeavyUnlocked)heavyBuffer=.45f;else heavyBuffer-=dt;
+   // Tethered Blade: hold L1 (or left Alt) and press R1 (or left mouse).
+   bool tetherHeld=Run.ClassId=="vesper"&&Owns("vesper_tethered_blade")&&(pad?.leftShoulder.isPressed==true||keys?.leftAltKey.isPressed==true);
+   if(fresh&&tetherHeld&&lightPressed&&attackCd<=0&&!vesperMoveActive&&!bladeThrown&&!RevenantActionActive)StartCoroutine(TetheredBlade());
+   else if(fresh&&heavyBuffer>0&&attackCd<=0&&!vesperMoveActive){heavyBuffer=0;Attack(true);}
+   else if(fresh&&lightHeld&&!tetherHeld&&attackCd<=0)Attack();
    UpdateNavigation(dt);TickEnemies(dt);TickWaves(dt);TickPickups(dt);CheckRoomExit();
   }
   void TickWaves(float dt)

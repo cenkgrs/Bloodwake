@@ -22,7 +22,12 @@ namespace Bloodwake
   }
   bool TryRevenantDash(Vector3 direction)
   {
-   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||RevenantActionActive||vesperMoveActive||dashCd>0||Player.IsCasting||Player.ContactPending)return false;
+   // Second Step: Vesper may dash again during, or just after, the first.
+   bool chain=Run?.ClassId=="vesper"&&Time.time<secondDashUntil&&!revenantThrusting;
+   if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||vesperMoveActive||bladeThrown||Player.IsCasting||Player.ContactPending)return false;
+   if(!chain&&(RevenantActionActive||dashCd>0))return false;
+   if(chain){secondDashUntil=0;if(revenantDashing)Player.EndRevenantPose();}
+   else if(Run.ClassId=="vesper"&&Owns("vesper_double_dash"))secondDashUntil=Time.time+RevenantDashDuration+.45f;
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Player.transform.forward;
    revenantDashDirection=direction.normalized;revenantDashAge=dashWakeDistance=dashTravelled=thrustWindow=0;thrustQueued=false;
    revenantDashing=true;dashCd=combatPractice?0:RevenantDashCooldown;attackCd=0;

@@ -32,7 +32,7 @@ namespace Bloodwake
   }
   public void StartRun(string id)
   {
-   ResetRevenantDash();practiceDashImpact=false;
+   ResetRevenantDash();RestoreThrownBlade();practiceDashImpact=false;
    StopAllCoroutines();if(actorRoot)Destroy(actorRoot.gameObject);if(roomRoot)Destroy(roomRoot.gameObject);Enemies.Clear();
    attackCd=dashCd=invulnerable=hitStop=0;combo=0;markChain=0;comboExpires=0;bossReward=false;merchantVisit="";merchantStock=null;pickups.Clear();fireZones.Clear();
    Run=new RunState(id,Meta);SelectedClass=id;actorRoot=new GameObject("Actors").transform;

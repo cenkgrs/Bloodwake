@@ -8,7 +8,7 @@ namespace Bloodwake
   void EnterRoom(string id)
   {
    ResetRevenantDash();
-   StopAllCoroutines();Player.CancelAction();revenantFx=null;foreach(Transform child in actorRoot)if(child!=Player.transform)Destroy(child.gameObject);Enemies.Clear();pickups.Clear();fireZones.Clear();if(roomRoot)Destroy(roomRoot.gameObject);
+   StopAllCoroutines();RestoreThrownBlade();Player.CancelAction();revenantFx=null;foreach(Transform child in actorRoot)if(child!=Player.transform)Destroy(child.gameObject);Enemies.Clear();pickups.Clear();fireZones.Clear();if(roomRoot)Destroy(roomRoot.gameObject);
    roomRoot=new GameObject(id).transform;blockers.Clear();room=(JObject)GameData.Rooms["rooms"].First(r=>r.S("id")==id);half=new Vector2((float)room["size"][0],(float)room["size"][1])*.5f;
    ColorUtility.TryParseHtmlString("#"+room["light"].S("ground","43434a"),out var ground);
    Box("Courtyard",new Vector3(0,-.15f,0),new Vector3(half.x*2,.3f,half.y*2),ground,false);

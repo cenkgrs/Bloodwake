@@ -29,15 +29,17 @@ namespace Bloodwake
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
   }
+  // Warrior is born with the heavy blow; Vesper learns Heavy Cleave from the Blood Sage.
   bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="vesper"&&Owns("vesper_heavy"));
   void Attack(bool heavyAttack=false)
   {
    if(RevenantActionActive)return;
    if(BeginRevenantThrust()||BeginVesperRisingSlash())return;
-   if(vesperMoveActive)return;
+   if(vesperMoveActive||bladeThrown)return;
    if(Player.IsCasting)return;
    if(Player.Locked>0&&attackCd>0)return;
    PadFacing();
+   if(heavyAttack&&Run.ClassId=="vesper"&&HeavyUnlocked){VesperHeavy();return;}
    foreach(var entry in Run.Weapons){var row=GameData.Row("weapons",entry.Key);var slot=entry.Value;float rate=row.N("attacksPerSecond")*Run.Stats.N("attackSpeed")*slot.N("speed");attackCd=Mathf.Max(.15f,1/rate);
     System.Action contactEvent=null;bool melee=row.S("behavior")=="melee";Vector3 dir=melee&&(Run.ClassId=="warrior"||Run.ClassId=="revenant"||Run.ClassId=="vesper")?Player.transform.forward:aim;
     if(!melee)Player.transform.rotation=Quaternion.LookRotation(dir);
