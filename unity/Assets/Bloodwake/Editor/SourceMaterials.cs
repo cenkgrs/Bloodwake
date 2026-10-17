@@ -51,7 +51,7 @@ namespace Bloodwake.Editor
    ConfigureTexture(importer,normal,!normal,folder.Contains("/Models/"));
    material.SetTexture(property,AssetDatabase.LoadAssetAtPath<Texture2D>(path));if(normal)material.EnableKeyword("_NORMALMAP");
   }
-  static void ConfigureTexture(TextureImporter importer,bool normal,bool srgb,bool character)
+  internal static void ConfigureTexture(TextureImporter importer,bool normal,bool srgb,bool character)
   {
    var type=normal?TextureImporterType.NormalMap:TextureImporterType.Default;
    bool changed=importer.textureType!=type||importer.sRGBTexture!=srgb;

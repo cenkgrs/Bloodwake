@@ -37,6 +37,8 @@ namespace Bloodwake.Editor
    foreach(var required in Required)if(!imported.Any(c=>c.name==required))throw new Exception("Vesper clip missing: "+required+". Found: "+string.Join(", ",imported.Select(c=>c.name)));
    string controllerPath=Root+"Controllers/vesper_player.controller";var controller=AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath)??AnimatorController.CreateAnimatorControllerAtPath(controllerPath);var machine=controller.layers[0].stateMachine;
    foreach(var clip in imported){var state=machine.states.FirstOrDefault(s=>s.state.name==clip.name).state??machine.AddState(clip.name);state.motion=clip;if(clip.name=="Idle")machine.defaultState=state;}
+   // Albedos go through the character texture path: full source resolution, high-quality compression.
+   foreach(var albedo in new[]{"Vesper_Armor_Albedo.png","Vesper_Sword_Albedo.png"})SourceMaterials.ConfigureTexture((TextureImporter)AssetImporter.GetAtPath(Root+"Models/vesper_player/"+albedo),false,true,true);
    Directory.CreateDirectory(Root+"Actors");var source=AssetDatabase.LoadAssetAtPath<GameObject>(Model);var instance=(GameObject)PrefabUtility.InstantiatePrefab(source);
    try
    {
