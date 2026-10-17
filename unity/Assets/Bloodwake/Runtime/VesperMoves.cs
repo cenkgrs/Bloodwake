@@ -22,7 +22,7 @@ namespace Bloodwake
   {
    vesperMoveActive=true;dir.y=0;dir.Normalize();Player.transform.rotation=Quaternion.LookRotation(dir);
    const float hold=.62f;float contact=.52f*hold;
-   Player.Play("DashAttack",hold);invulnerable=Mathf.Max(invulnerable,.25f);SoundOnContact("vesper_attack_3",contact);
+   Player.Play("DashAttack",hold);invulnerable=Mathf.Max(invulnerable,.25f);SoundOnContact(Voice("vesper_rising_crescent","vesper_attack_3"),contact);
    StartCoroutine(VesperLunge(dir,LungeDistance(dir,1.7f),.24f));
    // Sparks scrape off the stone as the blade drags through the slide.
    for(float t=0;t<contact;t+=.06f)StartCoroutine(DelayedCall(t,()=>RevFx.VesperTrailBurn(Player.transform.position+dir*.9f,dir,1)));
@@ -61,7 +61,7 @@ namespace Bloodwake
    vesperMoveActive=true;var dir=Player.transform.forward;dir.y=0;dir.Normalize();
    // A deliberate two-handed cut: the authored swing at three quarters speed.
    float hold=Player.ClipLength("Attack2")*1.45f,contact=.40f*hold;
-   Player.Play("Attack2",hold);SoundOnContact("vesper_attack_2",contact);StartCoroutine(VesperLunge(dir,LungeDistance(dir,.9f),contact*.8f));
+   Player.Play("Attack2",hold);SoundOnContact(fan?Voice("vesper_crescent_fan",Voice("vesper_heavy_cleave","vesper_attack_2")):Voice("vesper_heavy_cleave","vesper_attack_2"),contact);StartCoroutine(VesperLunge(dir,LungeDistance(dir,.9f),contact*.8f));
    yield return Delay(contact);
    if(Screen=="playing"&&Run.Stats.N("hp")>0)
    {
@@ -78,7 +78,7 @@ namespace Bloodwake
    vesperMoveActive=true;combo=0;var dir=Player.transform.forward;dir.y=0;dir.Normalize();var start=Player.transform.position;
    const float air=.62f;float clip=Player.ClipLength("Ultimate"),hold=air*clip/.50f;
    // The Ultimate clip drives the blade into the ground at 0.50 s; time it to land with the body.
-   Player.Play("Ultimate",hold);SoundOnContact("vesper_bloodfire_rite",air);invulnerable=Mathf.Max(invulnerable,air+.1f);
+   Player.Play("Ultimate",hold);SoundOnContact(Voice("vesper_falling_star","vesper_bloodfire_rite"),air);invulnerable=Mathf.Max(invulnerable,air+.1f);
    var landing=start+dir*LungeDistance(dir,1.6f);float age=0;var facing=Quaternion.LookRotation(dir);
    while(age<air)
    {
@@ -105,7 +105,7 @@ namespace Bloodwake
   IEnumerator TetheredBlade()
   {
    vesperMoveActive=true;PadFacing();var dir=Player.transform.forward;dir.y=0;dir.Normalize();
-   Player.Play("Attack1",.5f);SoundOnContact("vesper_attack_1",.18f);
+   Player.Play("Attack1",.5f);SoundOnContact(Voice("vesper_blade_throw","vesper_attack_1"),.18f);
    yield return Delay(.18f);
    var bones=Player.GetComponentsInChildren<Transform>(true);var grip=System.Array.Find(bones,t=>t.name=="VesperSwordGrip");
    var sword=Player.GetComponentsInChildren<SkinnedMeshRenderer>(true).FirstOrDefault(r=>r.name.Contains("Sword"));
@@ -137,7 +137,7 @@ namespace Bloodwake
     }
     yield return null;
    }
-   RestoreThrownBlade();Sound("vesper_hit_flesh");attackCd=.05f;
+   RestoreThrownBlade();Sound(Voice("vesper_blade_catch","vesper_hit_flesh"));attackCd=.05f;
   }
   IEnumerator DelayedCall(float delay,System.Action action){yield return Delay(delay);if(Screen=="playing")action();}
 

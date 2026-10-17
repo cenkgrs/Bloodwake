@@ -53,6 +53,9 @@ namespace Bloodwake
     src.volume=light.name.Contains("Lantern")?.25f:.5f;src.time=(i++*1.37f)%Mathf.Max(.1f,crackle.length);src.Play();
    }
   }
+  bool HasSound(string id)=>sounds.ContainsKey(id)||((GameData.Rules["audio"]?[id]?["files"] as Newtonsoft.Json.Linq.JArray)?.Any(f=>sounds.ContainsKey((string)f))??false);
+  // A move's own sound once it is delivered, the shared one until then.
+  string Voice(string own,string fallback)=>HasSound(own)?own:fallback;
   // name, or any of name_1, name_2 ... that exist.
   AudioClip PickVariant(string id,string avoid=null)
   {
