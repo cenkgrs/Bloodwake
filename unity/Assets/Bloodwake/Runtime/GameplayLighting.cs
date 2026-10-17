@@ -12,9 +12,15 @@ namespace Bloodwake
  {
   Material sky,previousSky,sharpen;VolumeProfile profile;SharpenPass sharpenPass;Camera gameCamera;
   public static float Sharpness=.6f;
+  // Render quality from Settings: the fraction of screen pixels the 3D view is drawn at; the sharpen pass recovers detail.
+  // The pipeline asset's own value is restored on exit so the editor never saves a player's choice into the project.
+  public static readonly float[] RenderScales={1,.85f,.7f};public static readonly string[] RenderScaleNames={"HIGH","BALANCED","PERFORMANCE"};
+  static float assetScale=-1;
+  public static int RenderQuality{get=>Mathf.Clamp(PlayerPrefs.GetInt("renderQuality",1),0,RenderScales.Length-1);set{PlayerPrefs.SetInt("renderQuality",value);ApplyRenderQuality();}}
+  public static void ApplyRenderQuality(){if(UniversalRenderPipeline.asset is not {} asset)return;if(assetScale<0)assetScale=asset.renderScale;asset.renderScale=RenderScales[RenderQuality];}
   public void Configure(Camera camera)
   {
-   camera.allowHDR=true;gameCamera=camera;
+   camera.allowHDR=true;gameCamera=camera;ApplyRenderQuality();
    sharpen=new Material(Resources.Load<Shader>("Presentation/Sharpen")){name="Sharpen"};sharpenPass=new SharpenPass(sharpen);
    RenderPipelineManager.beginCameraRendering+=QueueSharpen;
    var data=camera.GetUniversalAdditionalCameraData();data.renderPostProcessing=true;
@@ -75,6 +81,7 @@ namespace Bloodwake
   void OnDestroy()
   {
    RenderPipelineManager.beginCameraRendering-=QueueSharpen;if(sharpen)Destroy(sharpen);
+   if(assetScale>=0&&UniversalRenderPipeline.asset is {} asset){asset.renderScale=assetScale;assetScale=-1;}
    if(RenderSettings.skybox==sky)RenderSettings.skybox=previousSky;
    if(sky)Destroy(sky);if(profile){foreach(var component in profile.components)Destroy(component);Destroy(profile);}
   }
