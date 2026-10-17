@@ -52,7 +52,7 @@ namespace Bloodwake
     if(Run.ClassId=="warrior"&&combo==4)duration=.9f;
     if(heavy){clip="SpinAttack";duration=Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,1.5f));attackCd*=2.6f;combo=0;}
     if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId=="vesper")SoundOnContact("vesper_attack_"+combo,contact);else if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
-     else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?1.65f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,combo==(Run.ClassId=="warrior"?4:3)));}
+     else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?2.1f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,combo==(Run.ClassId=="warrior"?4:3)));}
     else StartCoroutine(ReleaseWeapon(row,slot,dir,damage,range,duration*.55f,"R",combo==3));
     Player.Play(clip,duration);if(contactEvent!=null)Player.OnMarker("DAMAGE",contactEvent);attackCd=Mathf.Max(attackCd,duration*(heavy?.85f:.62f));comboExpires=Time.time+duration+.5f;
    }
@@ -65,7 +65,7 @@ namespace Bloodwake
    if(Run.ClassId=="warrior")Sound("warrior_sword_clash_user");
    string weapon="sword";Run.Weapons.TryGetValue(weapon,out var slot);
    if(slot!=null){slot["swings"]=slot.N("swings")+1;if(slot.N("shockwave")>0&&(int)slot.N("swings")%3==0){wide=true;float extra=slot.N("shockwave")*.02f;range+=extra*(revenantSwing>0?1.8f:1);sourceRadius+=extra;}}
-   float arc=Run.ClassId=="warrior"?150:Run.ClassId=="revenant"?180:Run.ClassId=="vesper"?155:105;
+   float arc=Run.ClassId=="warrior"?150:Run.ClassId=="revenant"?180:Run.ClassId=="vesper"?200:105;
    var hit=new System.Collections.Generic.HashSet<Enemy>();Vector3 origin=Player.transform.position;
    DamageCargo(origin,range,dir,wide?360:arc);
    foreach(var e in Enemies.ToArray()){if(e.Emerging)continue;var d=e.View.transform.position-origin;d.y=0;float bodyRadius=Mathf.Max(.45f,e.Data.N("radius",16)*.02f*CombatActorScale);float tolerance=Mathf.Asin(Mathf.Clamp01(bodyRadius/Mathf.Max(bodyRadius,d.magnitude)))*Mathf.Rad2Deg;if(d.magnitude<=range+bodyRadius&&(wide||Vector3.Angle(dir,d)<=arc*.5f+tolerance)){hit.Add(e);DamageEnemy(e,damage);if(e.Hp>0&&slot.N("bleed")>0){e.Bleed=3;e.BleedDps=slot.N("bleed");}}}

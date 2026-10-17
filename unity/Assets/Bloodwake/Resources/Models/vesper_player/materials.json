@@ -10,7 +10,8 @@
     "metallic": 0.2,
     "roughness": 0.48,
     "albedo": "Vesper_Armor_Albedo.png",
-    "normal": "Vesper_Armor_Normal.png"
+    "normal": "Vesper_Armor_Normal.png",
+    "metallicRoughness": "Vesper_Armor_MetallicRoughness.png"
   },
   "Vesper Sword PBR": {
     "color": [
