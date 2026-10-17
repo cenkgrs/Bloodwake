@@ -13,7 +13,7 @@ namespace Bloodwake
  {
   public RunState Run;public readonly Progression Meta=new();public ActorView Player;public Camera Cam;
   public readonly List<Enemy> Enemies=new();Transform roomRoot,actorRoot;JObject room;
-  public string Screen="menu",SelectedClass="warrior";Vector3 aim=Vector3.forward;Vector2 half;
+  public string Screen="menu",SelectedClass="vesper";Vector3 aim=Vector3.forward;Vector2 half;
   float attackCd,dashCd,invulnerable,hitStop,spawnTimer;int waveIndex,spawnCursor;JArray waves;
   bool roomClear;readonly List<Bounds> blockers=new();readonly List<JToken> offers=new();
   MusicBlend musicBlend;Light playerFill;readonly Dictionary<string,AudioClip> sounds=new();

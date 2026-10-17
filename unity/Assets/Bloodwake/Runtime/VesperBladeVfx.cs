@@ -7,11 +7,16 @@ namespace Bloodwake
 {
  public sealed class VesperBladeVfx:MonoBehaviour
  {
-  Transform grip,mid,tip;readonly List<LineRenderer> flames=new();readonly List<Material> materials=new();TrailRenderer goldTrail,shadowTrail;Vector3 previousTip,previousShadow;bool trailReady;
+  Transform grip,mid,tip,boneGrip,boneMid,boneTip;
+  // Tethered Blade: while the sword is in flight the flames follow the flying copy's sockets, not the hand.
+  public void Ride(Transform g,Transform m,Transform t){grip=g;mid=m;tip=t;trailReady=false;}
+  public void Release(){grip=boneGrip;mid=boneMid;tip=boneTip;trailReady=false;}
+  readonly List<LineRenderer> flames=new();readonly List<Material> materials=new();TrailRenderer goldTrail,shadowTrail;Vector3 previousTip,previousShadow;bool trailReady;
   static readonly Color Gold=new(1f,.72f,.08f,.92f),Ember=new(1f,.19f,.025f,.78f),Shadow=new(.015f,.008f,.012f,.72f),Core=new(1f,.94f,.55f,.96f);
   void Start()
   {
    var bones=GetComponentsInChildren<Transform>(true);grip=bones.FirstOrDefault(t=>t.name=="VesperSwordGrip");mid=bones.FirstOrDefault(t=>t.name=="VesperSwordMid");tip=bones.FirstOrDefault(t=>t.name=="VesperSwordTip");
+   boneGrip=grip;boneMid=mid;boneTip=tip;
    if(!grip||!mid||!tip){Debug.LogError("Vesper sword flame sockets are missing");enabled=false;return;}
    // Painted flame flipbook cards rise from the blade; a thin hot core keeps the edge glowing.
    CreateFlame("Hot blade core",Core,.036f,5.1f,.012f,3.7f);
@@ -70,6 +75,7 @@ namespace Bloodwake
   // DashAttack the grip bone swings the blade level with the character's facing, eased in and out.
   void LevelThrust()
   {
+   if(grip!=boneGrip)return;
    if(!animator)animator=GetComponentInChildren<Animator>();if(!animator)return;
    var state=animator.IsInTransition(0)?animator.GetNextAnimatorStateInfo(0):animator.GetCurrentAnimatorStateInfo(0);
    if(!state.IsName("DashAttack"))return;float t=state.normalizedTime%1,weight=Mathf.SmoothStep(0,1,t/.22f)*(1-Mathf.SmoothStep(0,1,(t-.82f)/.18f));

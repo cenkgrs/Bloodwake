@@ -142,6 +142,7 @@ namespace Bloodwake
    if(Screen=="dialogue"){DrawDialogue();return;}
    if(Screen=="menu"){DrawMainMenu();return;}
    if(Screen=="classes"){DrawClasses();return;}
+   if(Screen=="devkit"){DrawDevKit();return;}
    if(Run==null)Backdrop("ui/kit/menu_backdrop",.82f);else Bleed(Plate(page,"Dim world",0,0,1600,900,new Color(.015f,.01f,.015f,.86f)));
    Label(page,Screen=="progression"?"THE BLOOD SAGE":Screen.ToUpperInvariant(),70,48,1460,90,44,true,TextAnchor.MiddleCenter);Rule(page,560,143,480);
    switch(Screen)

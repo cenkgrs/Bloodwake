@@ -26,7 +26,7 @@ namespace Bloodwake
    EarnEssence(Mathf.Max(1,Mathf.RoundToInt(e.Data.N("xpReward")/10)));
    if(e.Id=="boss")SecureEssence();
   }
-  void OnRoomCleared(){EarnEssence(room.S("type")=="boss"?10:3);if(room.S("type")=="boss")SecureEssence();}
+  void OnRoomCleared(){EarnEssence(room.S("type")=="boss"?10:3);if(room.S("type")=="boss"){SecureEssence();slainThisRun=BossVariant.S("name");slainDistrict=DistrictName;}}
 
   // ---- The tree page.
   static readonly string[] branches={"power","motion"};

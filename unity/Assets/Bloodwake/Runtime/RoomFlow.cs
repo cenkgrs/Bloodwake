@@ -28,11 +28,13 @@ namespace Bloodwake
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
    SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);RevFx.HandMagic(Player);if(id=="town_safehouse")SpawnTrainingWarrior();
    float maxSize=Mathf.Min((half.x*2+10)/Cam.aspect,(half.y*2+11)*cameraOffset.normalized.y)/2;Cam.orthographicSize=Mathf.Min(PlayerPrefs.GetFloat("zoom",DefaultZoom),maxSize);PositionCamera(true);
-   roomClear=room.S("type")=="merchant"||room.S("type")=="safehouse";waves=room["encounter"]?["waves"] as JArray;
+   roomClear=room.S("type")=="merchant"||room.S("type")=="safehouse";rolledWaves=room.S("type")=="combat"&&Run!=null;waves=rolledWaves?RollWaves():room["encounter"]?["waves"] as JArray;
    if(room.S("type")=="boss")waves=new JArray{new JArray("boss")};
    waveIndex=0;spawnCursor=0;spawnTimer=1.5f;attackCd=0;dashCd=0;
    SetAmbience(room.S("type"));PlaceFireSounds();
    if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(room.S("type")=="boss"?"music_boss":room.S("type")=="safehouse"?Voice("music_safehouse","music_menu"):room.S("type")=="merchant"?Voice("music_market","music_menu"):"music_combat");
+   // A warden's square opens on the warden (skipped by the batch smoke run, which drives the fight itself).
+   if(room.S("type")=="boss"&&Run!=null&&!smokeRunning)BeginBossIntro();
   }
   static Vector3 Point(JToken v)=>v is JArray a&&a.Count>=2?new Vector3(-(float)a[0],0,(float)a[1]):Vector3.zero;
   void SpawnSanctuaryCargo()
@@ -61,7 +63,7 @@ namespace Bloodwake
   bool bossReward;
   string HostScreen(JToken host)=>host.S("role") switch{"builds"=>"armory","skills"=>"progression","merchant"=>"merchant",_=>"hub"};
   // There is one district chain, so the war table sends the hunter straight into it instead of offering a choice.
-  void OpenHost(JToken host){if(host.S("role")=="maps"){Sound("ui_enter_district");EnterDistrict();}else Screen=HostScreen(host);}
+  void OpenHost(JToken host){if(host.S("role")=="mirror"){OpenMirror();return;}if(host.S("role")=="maps"){Sound("ui_enter_district");EnterDistrict();}else Screen=HostScreen(host);}
   void EnterDistrict()=>BeginCharacterIntro(Run.ClassId,GameData.Maps["maps"][0]);
   // Each pass through the route and its boss is one district; beating the last district's boss wins the run.
   JArray Districts=>(JArray)GameData.Maps["maps"][0]["districts"];
@@ -70,6 +72,6 @@ namespace Bloodwake
   string DistrictName=>(string)Districts[Mathf.Clamp(Run.Night-1,0,Districts.Count-1)];
   void Interact(){var host=NearbyHost();if(host!=null){if(!OpenDialogue(host))OpenHost(host);return;}if(!RewardReady||Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))>=2.4f)return;bossReward=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);PrepareReward();}
   void PrepareReward(){offers.Clear();offers.AddRange(GameData.Rows("upgrades").Where(r=>Run.Available(r,"upgrades")&&(Run.PendingLevels>0||r.S("rarity")!="common")).OrderBy(_=>Random.value).Take(3));Screen=offers.Count>0?"upgrade":"playing";if(offers.Count==0){Run.PendingLevels=0;bossReward=false;Run.Claimed.Add(Run.Night+":"+Run.RoomIndex);}}
-  public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.RoomIndex=0;Run.Night++;Sound("ui_enter_district");}EnterRoom(Run.Plan[Run.RoomIndex]);Screen="playing";}
+  public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.RoomIndex=0;Run.Night++;Sound("ui_enter_district");}Screen="playing";EnterRoom(Run.Plan[Run.RoomIndex]);}
  }
 }

@@ -41,6 +41,7 @@
             "Choose carefully. An oath shaped in haste breaks at the worst moment."
           ]
         },
+        {"role": "mirror", "name": "THE ASHEN MIRROR", "verb": "CHANGE OATH", "at": [-10.3, 0.6], "kind": "mirror"},
         {"role": "maps", "name": "THE WAR TABLE", "verb": "ENTER THE DISTRICT", "at": [0, -8.6], "kind": "war_table"}
       ]
     },

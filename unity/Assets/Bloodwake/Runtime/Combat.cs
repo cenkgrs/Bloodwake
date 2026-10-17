@@ -22,8 +22,8 @@ namespace Bloodwake
   public void SpawnEnemy(string id,Vector3 pos)
   {
    var data=GameData.Row("enemies",id);float n=Run.Wave-1,t=Run.Night-1;
-   float power=id=="boss"?1+.65f*t+.2f*t*t:1+.25f*n+.035f*n*n;
-   float height=id=="boss"?3.5f:id=="tank"?2.3f:id=="commander"?2.225f:id=="grunt"?2.15f:1.8f;
+   float power=id=="boss"?(1+.65f*t+.2f*t*t)*BossVariant.N("hp",1):1+.25f*n+.035f*n*n;
+   float height=id=="boss"?3.5f*BossVariant.N("scale",1):id=="tank"?2.3f:id=="commander"?2.225f:id=="grunt"?2.15f:1.8f;
    var view=ActorView.Create(id,true,height*CombatActorScale,actorRoot);view.transform.position=FreeEnemySpawn(pos,id=="boss"?.8f:id=="tank"||id=="grunt"?.65f:.56f);RevFx.HandMagic(view,true);
    var enemy=new Enemy{Id=id,Data=data,View=view,Hp=data.N("maxHp")*power,MaxHp=data.N("maxHp")*power,Damage=data.N("damage")*(id=="boss"?1+.25f*t:1+.09f*n+.002f*n*n),Cooldown=.9f};Enemies.Add(enemy);AttachEnemyAgent(enemy);
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
@@ -120,7 +120,7 @@ namespace Bloodwake
     if(e.Hp<=0){e.Hp=e.MaxHp;e.RecoilRemaining=e.RecoilTime=0;e.View.transform.position=e.TrainingHome;e.View.transform.rotation=Quaternion.LookRotation(Vector3.forward);}
     return;
    }
-   if(e.Hp<=0||e.Emerging)return;bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
+   if(e.Hp<=0||e.Emerging)return;if(DevOneHit)damage=Mathf.Max(damage,e.Hp*4);bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0){e.ImpactVersion++;StartRecoil(e);}}
    if(effects&&actual>0)e.View.FlashHit(false);
@@ -130,7 +130,7 @@ namespace Bloodwake
   }
   void HurtPlayer(float damage)
   {
-   if(invulnerable>0||damage<=0||Run.Stats.N("hp")<=0)return;
+   if(invulnerable>0||damage<=0||Run.Stats.N("hp")<=0||DevGod)return;
    float beforeHp=Run.Stats.N("hp");if(!combatPractice)Run.Hurt(damage,Random.value);
    bool struck=combatPractice||Run.Stats.N("hp")<beforeHp;
    if(struck)
@@ -140,7 +140,7 @@ namespace Bloodwake
     if(Run.ClassId=="revenant"&&Run.Stats.N("hp")>0)Player.HitOverlay();
    }
    invulnerable=.25f;
-   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Rumble(1,.6f,.55f);Screen="dying";SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());Run.Awarded=true;}
+   if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Rumble(1,.6f,.55f);Screen="dying";RecordRunEnd(RunEndCategory());SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());Run.Awarded=true;}
   }
  }
 }

@@ -18,7 +18,7 @@ namespace Bloodwake
   {
    yield return new WaitForSeconds(2.5f);
    if(Screen!="playing")yield break;
-   Screen="victory";SetMusic("music_menu");
+   Screen="victory";SetMusic("music_menu");RecordRunEnd("victory");
    if(!Run.Awarded){Run.Awarded=true;SecureEssence();}
   }
  }

@@ -45,7 +45,7 @@ namespace Bloodwake
     group.alpha=1;var shade=Bleed(Plate(overlay,"Arrival curtain",0,0,1600,900,Color.black));
     var top=Plate(overlay,"Arrival top",-400,-400,2400,508,Color.black);var bottom=Plate(overlay,"Arrival bottom",-400,792,2400,508,Color.black);
     var title=Label(overlay,room.S("name"),250,808,1100,60,28,true,TextAnchor.MiddleCenter);
-    var stop=Player.transform.position;var entry=Point(room["markers"]["EntranceDoor"]);entry.x=Mathf.Clamp(entry.x,-half.x+.45f,half.x-.45f);entry.z=Mathf.Clamp(entry.z,-half.y+.45f,half.y-.45f);
+    var stop=Player.transform.position;var entry=Point(room["doors"]?["entrance"]?["at"]??room["markers"]["EntranceDoor"]);if(entry==Vector3.zero)entry=stop+Vector3.forward*4;entry.x=Mathf.Clamp(entry.x,-half.x+.45f,half.x-.45f);entry.z=Mathf.Clamp(entry.z,-half.y+.45f,half.y-.45f);
     var heading=(stop-entry).normalized;if(heading.sqrMagnitude>.01f)Player.transform.rotation=Quaternion.LookRotation(heading);
     float normalZoom=Cam.orthographicSize;arrivalActive=true;float age=0;
     while(age<3.8f)

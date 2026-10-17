@@ -87,5 +87,12 @@ namespace Bloodwake.Editor
    Debug.Log("BLOODWAKE_LINUX_BUILD_READY");
   }
   public static void BuildAndLinux(){Build();BuildLinux();}
+  public static void BuildWindows()
+  {
+   Validate();Directory.CreateDirectory("Builds/Windows");
+   var report=BuildPipeline.BuildPlayer(new[]{"Assets/Bloodwake/Scenes/Bloodwake.unity"},"Builds/Windows/Bloodwake.exe",BuildTarget.StandaloneWindows64,BuildOptions.Development);
+   if(report.summary.result!=UnityEditor.Build.Reporting.BuildResult.Succeeded)throw new Exception("Windows player build failed");
+   Debug.Log("BLOODWAKE_WINDOWS_BUILD_READY");
+  }
  }
 }

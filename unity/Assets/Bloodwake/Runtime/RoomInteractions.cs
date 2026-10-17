@@ -9,6 +9,7 @@ namespace Bloodwake
   void SpawnHosts()
   {
    var entry=Point(room["markers"]["EntrySpawn"]);
+   foreach(var host in room["hosts"]??new JArray())if(host.S("kind")=="mirror")BuildMirror(host);
    foreach(var host in room["hosts"]??new JArray())if(host["model"]!=null)
    {
     var view=ActorView.Create(host.S("model"),true,2*CombatActorScale,roomRoot);view.name="Host · "+host.S("name");view.transform.position=Point(host["at"]);
@@ -39,7 +40,7 @@ namespace Bloodwake
   {
    var host=NearbyHost();if(host!=null)return (host.S("verb")+" — "+host.S("name"),true);
    if(RewardInReach)return ("CLAIM REWARD",true);
-   if(room.S("type")=="safehouse")return ("APPROACH THE WAR TABLE, QUARTERMASTER OR BLOOD SAGE",false);
+   if(room.S("type")=="safehouse")return ("APPROACH THE WAR TABLE, QUARTERMASTER, BLOOD SAGE OR ASHEN MIRROR",false);
    return (roomClear?(room.S("type")=="boss"&&RewardReady?"CLAIM THE SPOILS TO OPEN THE GATE":"THE WAY ON IS OPEN"):"",false);
   }
  }

@@ -15,7 +15,7 @@ namespace Bloodwake
    Art(page,"ui/kit/logo",78,40,672,187);
    Label(page,"SURVIVE THE NIGHT.  CLAIM THE DAWN.",120,228,580,32,19,true,TextAnchor.MiddleCenter).color=new Color(.8f,.76f,.72f);
    Rule(page,150,272,520,.35f);
-   string[] names={"NEW RUN","SETTINGS","EXIT"};System.Action[] actions={()=>Screen="classes",()=>Screen="settings",Application.Quit};
+   string[] names={"NEW RUN","SETTINGS","EXIT"};System.Action[] actions={NewRun,()=>Screen="settings",Application.Quit};
    for(int i=0;i<names.Length;i++)
    {
     float y=330+i*66;MenuItem(page,names[i],136,y,260,54,27,actions[i]);
@@ -81,8 +81,9 @@ namespace Bloodwake
     Label(page,ability.S("description"),tx,y+34,cx+cw-tx,42,14).color=new Color(.74f,.7f,.66f);
     if(i<2)Plate(page,"Ability rule",cx,y+76,cw,1,new Color(.78f,.72f,.66f,.14f));
    }
-   KitButton(page,"BEGIN THE HUNT",px+40,py+ph-96,pw-80,66,()=>BeginCharacterIntro(SelectedClass));
-   MenuItem(page,"BACK",44,826,160,46,20,()=>Screen="menu");
+   // From the Ashen Mirror the oath is taken in the hall; from the title it starts the hunt.
+   if(mirrorMode){KitButton(page,"TAKE THIS OATH",px+40,py+ph-96,pw-80,66,TakeMirrorOath);MenuItem(page,"BACK",44,826,160,46,20,LeaveMirror);}
+   else{KitButton(page,"BEGIN THE HUNT",px+40,py+ph-96,pw-80,66,()=>BeginCharacterIntro(SelectedClass));MenuItem(page,"BACK",44,826,160,46,20,()=>Screen="menu");}
   }
   void DrawUpgrades()
   {

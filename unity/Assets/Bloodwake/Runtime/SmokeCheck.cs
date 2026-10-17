@@ -5,10 +5,10 @@ namespace Bloodwake
 {
  public sealed partial class BloodwakeGame
  {
-  bool smokeFailed;
+  bool smokeFailed,smokeRunning;
   IEnumerator Smoke()
   {
-   Application.logMessageReceived+=OnSmokeLog;
+   Application.logMessageReceived+=OnSmokeLog;smokeRunning=true;
    foreach(string id in new[]{"warrior","revenant","vesper","mage"})
    {
     // The driver runs on a separate object because room changes cancel combat coroutines.

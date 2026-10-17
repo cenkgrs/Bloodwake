@@ -13,14 +13,14 @@ namespace Bloodwake
    var keys=Keyboard.current;var pad=Gamepad.current;
    if(keys?.f11Key.wasPressedThisFrame==true)UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen;
    if(keys?.escapeKey.wasPressedThisFrame==true||pad?.startButton.wasPressedThisFrame==true){if(Screen=="playing"){Screen="pause";Sound("ui_pause_open");}else if(Screen=="pause"){Screen="playing";Sound("ui_back");}}
-   MenuInput(keys,pad);
+   MenuInput(keys,pad);DevKitInput(keys,pad);
    if(Screen=="dialogue")DialogueInput(keys,pad);
    PositionCamera(false);if(playerFill&&Player)playerFill.transform.position=Player.transform.position+new Vector3(-1.8f,2.4f,2.4f);
    bool paused=Screen!="playing"&&Screen!="dead"&&Screen!="dying"&&Screen!="death_transition";if(Player)Player.Animator.speed=paused?0:Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=paused?0:e.View.PlaybackRate;
    if(Screen!="playing"||Run==null||Run.Stats.N("hp")<=0)return;
    float dt=Time.deltaTime;if(hitStop>0){comboExpires+=dt;hitStop=Mathf.Max(0,hitStop-dt);Player.Animator.speed=0;foreach(var e in Enemies)e.View.Animator.speed=0;return;}
    Player.Animator.speed=Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=e.View.PlaybackRate;
-   attackCd-=dt;dashCd-=dt;invulnerable-=dt;foreach(string id in Run.Cooldowns.Keys.ToArray())Run.Cooldowns[id]=Mathf.Max(0,Run.Cooldowns[id]-dt);
+   attackCd-=dt;dashCd-=dt;invulnerable-=dt;foreach(string id in Run.Cooldowns.Keys.ToArray())Run.Cooldowns[id]=Mathf.Max(0,Run.Cooldowns[id]-dt);TickDevKit();
    bool fresh=FreshGameplayInput;
    if(combatPractice&&keys?.f8Key.wasPressedThisFrame==true)TogglePracticeCrowd();
    if(combatPractice&&Run.ClassId=="revenant"&&keys?.f9Key.wasPressedThisFrame==true)practiceDashImpact=!practiceDashImpact;
@@ -58,17 +58,17 @@ namespace Bloodwake
   void TickWaves(float dt)
   {
    if(roomClear||waves==null||waves.Count==0)return;spawnTimer-=dt;
-   var roster=(JArray)waves[waveIndex];int total=roster.Count+Mathf.Max(0,Run.Night-1)*((room["encounter"]?["perNight"] as JArray)?.Count??0);
-   if(spawnCursor<total&&Enemies.Count<5&&spawnTimer<=0)
+   var roster=(JArray)waves[waveIndex];int total=rolledWaves?roster.Count:roster.Count+Mathf.Max(0,Run.Night-1)*((room["encounter"]?["perNight"] as JArray)?.Count??0);
+   if(spawnCursor<total&&Enemies.Count<(rolledWaves?RolledAliveCap:5)&&spawnTimer<=0)
    {
-    string id=spawnCursor<roster.Count?(string)roster[spawnCursor]:(string)room["encounter"]["perNight"][(spawnCursor-roster.Count)%((JArray)room["encounter"]["perNight"]).Count];
+    string id=spawnCursor<roster.Count||rolledWaves?(string)roster[spawnCursor%roster.Count]:(string)room["encounter"]["perNight"][(spawnCursor-roster.Count)%((JArray)room["encounter"]["perNight"]).Count];
     Vector3 pos;
     if(id=="boss") // Keep the authored boss entrance; ordinary waves surround the player.
     {var points=room["markers"]["EnemySpawn"] as JArray;pos=points!=null?Point(points[spawnCursor%points.Count]):Vector3.zero;}
     else if(!TrySurroundSpawn(id,out pos)){spawnTimer=.4f;return;}
     SpawnEnemy(id,pos);spawnCursor++;spawnTimer=.55f;
    }
-   if(spawnCursor>=total&&Enemies.Count==0){if(++waveIndex<waves.Count){spawnCursor=0;spawnTimer=1.6f;Run.Wave++;}else{roomClear=true;Run.RoomsCleared++;OnRoomCleared();if(room.S("type")!="boss"&&HasSound("music_explore"))SetMusic("music_explore");Sound(room.S("type")=="boss"?"boss_slain":"wave_clear");if(room.S("type")=="boss"&&Run.Night>=FinalDistrict)StartCoroutine(VictoryTransition());}}
+   if(spawnCursor>=total&&Enemies.Count==0){if(++waveIndex<waves.Count){spawnCursor=0;bool newCombo=!rolledWaves||comboStarts.Contains(waveIndex);spawnTimer=newCombo?1.6f:.9f;if(newCombo)Run.Wave++;}else{roomClear=true;Run.RoomsCleared++;OnRoomCleared();if(room.S("type")!="boss"&&HasSound("music_explore"))SetMusic("music_explore");Sound(room.S("type")=="boss"?"boss_slain":"wave_clear");if(room.S("type")=="boss"&&Run.Night>=FinalDistrict)StartCoroutine(VictoryTransition());}}
   }
  }
 }

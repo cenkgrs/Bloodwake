@@ -60,10 +60,10 @@ namespace Bloodwake
   void OnApplicationQuit()=>InputSystem.ResetHaptics();
 
   // ---- Menus: something is always focused while the gamepad drives them.
-  static readonly HashSet<string> menuScreens=new(){"menu","classes","hub","maps","pause","upgrade","merchant","progression","armory","settings","dead","victory"};
+  static readonly HashSet<string> menuScreens=new(){"menu","classes","hub","maps","pause","upgrade","merchant","progression","armory","settings","dead","victory","devkit"};
   bool MenuScreen=>menuScreens.Contains(Screen);
   string focusScreen;int focusIndex=-1;GameObject focused;
-  static readonly string[] preferredFocus={"BEGIN THE HUNT","RESUME","NEW RUN","CLAIM","ENTER THE DISTRICT","ENTER DISTRICT","RETURN TO SAFEHOUSE"};
+  static readonly string[] preferredFocus={"BEGIN THE HUNT","TAKE THIS OATH","RESUME","NEW RUN","CLAIM","ENTER THE DISTRICT","ENTER DISTRICT","RETURN TO SAFEHOUSE"};
   Selectable[] PageSelectables()=>page?page.GetComponentsInChildren<Selectable>().Where(s=>s.interactable&&s.gameObject.activeInHierarchy).ToArray():new Selectable[0];
   void UpdateMenuFocus()
   {

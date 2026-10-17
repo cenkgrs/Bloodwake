@@ -9,7 +9,7 @@ namespace Bloodwake
  public static class GameData
  {
   public const float Unit=.02f;
-  public static readonly JObject Catalog=Read("catalogs"), Rules=Read("rules"), Rooms=Read("rooms"), Maps=Read("maps");
+  public static readonly JObject Catalog=Read("catalogs"), Rules=Read("rules"), Rooms=Read("rooms"), Maps=Read("maps"), Story=Read("story");
   static JObject Read(string name)=>JObject.Parse(Resources.Load<TextAsset>("Data/"+name).text);
   public static JArray Rows(string kind)=>(JArray)Catalog[kind];
   public static JObject Row(string kind,string id)=>(JObject)Rows(kind).FirstOrDefault(r=>(string)r["id"]==id);
@@ -53,7 +53,9 @@ namespace Bloodwake
     }
     Data["levels"]=levels;Essence=Mathf.Clamp(Essence+refunded,0,1000000000);
     var owned=new JArray();foreach(var id in src["ownedEquipment"] as JArray??new JArray())if(id.Type==JTokenType.String&&GameData.Row("equipment",(string)id)!=null&&!owned.Any(x=>JToken.DeepEquals(x,id)))owned.Add(id.DeepClone());Data["ownedEquipment"]=owned;
-    var loadouts=new JArray();for(int i=0;i<3;i++){var build=new JObject();foreach(string slot in new[]{"armor","boots","charm"}){var list=src["loadouts"] as JArray;string id=list!=null&&i<list.Count?list[i].S(slot):"";if(owned.Any(x=>(string)x==id)&&GameData.Row("equipment",id).S("slot")==slot)build[slot]=id;}loadouts.Add(build);}Data["loadouts"]=loadouts;Data["activeLoadout"]=Mathf.Clamp((int?)src["activeLoadout"]??0,0,2);return true;
+    var loadouts=new JArray();for(int i=0;i<3;i++){var build=new JObject();foreach(string slot in new[]{"armor","boots","charm"}){var list=src["loadouts"] as JArray;string id=list!=null&&i<list.Count?list[i].S(slot):"";if(owned.Any(x=>(string)x==id)&&GameData.Row("equipment",id).S("slot")==slot)build[slot]=id;}loadouts.Add(build);}Data["loadouts"]=loadouts;Data["activeLoadout"]=Mathf.Clamp((int?)src["activeLoadout"]??0,0,2);
+    // Story progress: prologue seen, how the last run ended, and the host lines already spoken.
+    Data["story"]=src["story"] is JObject story?story.DeepClone():new JObject();return true;
    }catch(Exception e){Data=previous;Debug.LogWarning("Save import rejected: "+e.Message);return false;}
   }
   public int Level(string id)=>(int?)Data["levels"]?[id]??0;

@@ -13,6 +13,8 @@ namespace Bloodwake
   // Hosts with authored lines talk first; the last page hands over to their service.
   bool OpenDialogue(JToken host)
   {
+   // The hall's hosts speak a line picked from the story pools rather than their fixed lines.
+   if(GameData.Story["hostLines"]?[host.S("role")]!=null){host=host.DeepClone();host["lines"]=HostLines(host);}
    if(!(host["lines"] is JArray lines)||lines.Count==0)return false;
    dialogueHost=host;dialogueLine=0;Screen="dialogue";Sound("ui_select");
    // Painted art wins; otherwise a live bust of the host's own rig stands in.
@@ -21,8 +23,9 @@ namespace Bloodwake
   }
   // Drop-in art: Resources/ui/npc/<model>.png, a transparent bust, face near (.5,.82) unless "portraitFace" says otherwise.
   static Texture2D PaintedPortrait(JToken host)=>Resources.Load<Texture2D>("ui/npc/"+host.S("model"));
-  void AdvanceDialogue(){if(dialogueHost==null)return;if(dialogueLine<DialogueCount-1){dialogueLine++;Sound("dialogue_advance");drawnScreen=null;}else{var host=dialogueHost;EndDialogue();OpenHost(host);}}
-  void CloseDialogue(){EndDialogue();Screen="playing";}
+  void AdvanceDialogue(){if(dialogueHost==null)return;if(dialogueLine<DialogueCount-1){dialogueLine++;Sound("dialogue_advance");drawnScreen=null;}else{var host=dialogueHost;if(host.S("role")=="prologue"){FinishPrologue();return;}EndDialogue();OpenHost(host);}}
+  // Skipping the prologue still starts the first hunt.
+  void CloseDialogue(){if(dialogueHost?.S("role")=="prologue"){FinishPrologue();return;}EndDialogue();Screen="playing";}
   void EndDialogue(){dialogueHost=null;if(dialoguePortrait)Destroy(dialoguePortrait.gameObject);dialoguePortrait=null;}
   void DialogueInput(UnityEngine.InputSystem.Keyboard keys,UnityEngine.InputSystem.Gamepad pad)
   {
@@ -32,8 +35,12 @@ namespace Bloodwake
   void DrawDialogue()
   {
    if(dialogueHost==null){Screen="playing";return;}
-   Texture portrait=PaintedPortrait(dialogueHost);UnityEngine.Rect faceUv=default;bool last=dialogueLine>=DialogueCount-1;
-   if(portrait){var at=dialogueHost["portraitFace"] as JArray;float cx=at!=null?(float)at[0]:.5f,cy=at!=null?(float)at[1]:.82f,cw=.36f,ch=cw*portrait.width/portrait.height;faceUv=new UnityEngine.Rect(cx-cw*.5f,cy-ch*.5f,cw,ch);}
+   // A line may name its own speaker (the prologue is a conversation); otherwise the host speaks.
+   var entry=dialogueHost["lines"][dialogueLine];var speaker=entry is JObject?GameData.Story["speakers"]?[entry.S("who")]:null;
+   string speakerName=speaker!=null?speaker.S("name"):dialogueHost.S("name"),lineText=entry is JObject?entry.S("text"):(string)entry;
+   Texture portrait=speaker!=null?Resources.Load<Texture2D>(speaker.S("portrait")):PaintedPortrait(dialogueHost);UnityEngine.Rect faceUv=default;bool last=dialogueLine>=DialogueCount-1;
+   if(speaker!=null){}
+   else if(portrait){var at=dialogueHost["portraitFace"] as JArray;float cx=at!=null?(float)at[0]:.5f,cy=at!=null?(float)at[1]:.82f,cw=.36f,ch=cw*portrait.width/portrait.height;faceUv=new UnityEngine.Rect(cx-cw*.5f,cy-ch*.5f,cw,ch);}
    else if(dialoguePortrait){portrait=dialoguePortrait.Texture;faceUv=dialoguePortrait.FaceUv;}
    // Layout follows art/ui-concepts/dialogue.webp: the speaker's bust on the left, a wide box along the bottom.
    Bleed(Plate(page,"Dialogue veil",0,0,1600,900,new Color(.015f,.01f,.015f,.62f)));
@@ -45,8 +52,8 @@ namespace Bloodwake
    }
    const float x=124,y=598,w2=1354,h2=250;
    var box=Kit(page,"dialogue_box",x,y,w2,h2,.82f);box.raycastTarget=true;var advance=box.gameObject.AddComponent<Button>();advance.transition=Selectable.Transition.None;advance.onClick.AddListener(AdvanceDialogue);
-   Label(page,dialogueHost.S("name").ToUpperInvariant(),x+58,y+10,330,52,25,true,TextAnchor.MiddleLeft).color=new Color(.88f,.8f,.72f);
-   Label(page,(string)dialogueHost["lines"][dialogueLine],x+110,y+92,w2-240,100,26).color=ink;
+   Label(page,speakerName.ToUpperInvariant(),x+58,y+10,330,52,25,true,TextAnchor.MiddleLeft).color=new Color(.88f,.8f,.72f);
+   Label(page,lineText,x+110,y+92,w2-240,100,26).color=ink;
    // Key prompts, bottom right; both are clickable.
    string next=last?dialogueHost.S("verb"):"Continue";
    void Prompt(string input,string text,float px,System.Action action)

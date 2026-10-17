@@ -1,0 +1,212 @@
+{
+  "speakers": {
+    "sage": {"name": "THE BLOOD SAGE", "portrait": "ui/npc/mentor"},
+    "quartermaster": {"name": "THE QUARTERMASTER", "portrait": "ui/npc/merchant"},
+    "vesper": {"name": "VESPER", "portrait": "ui/portraits/vesper"},
+    "warrior": {"name": "THE WARRIOR", "portrait": "ui/portraits/warrior"},
+    "revenant": {"name": "THE REVENANT", "portrait": "ui/portraits/revenant"},
+    "mage": {"name": "THE MAGE", "portrait": "ui/portraits/mage"}
+  },
+
+  "prologue": [
+    {"who": "sage", "text": "Three hundred nights. Three hundred nights since Hollowmere last saw a dawn, and the Black Bell has rung every one of them back."},
+    {"who": "sage", "text": "The dead of this town were never buried. When the plague came, the founders cast a bell to drown out the screaming. It worked. It drowned out everything. Even endings."},
+    {"who": "quartermaster", "text": "So nobody here stays dead. Not the townsfolk, not the things wearing them, and not us. Die out there and you wake up in this hall at dusk, a little emptier than before."},
+    {"who": "revenant", "text": "I have woken in this hall more times than I can count. Every time, the bell keeps something. A name. A face. The taste of wine. I no longer remember what I am trying to get back."},
+    {"who": "warrior", "text": "Then stop counting. Steel does not need a memory. Point me at the next street and I will walk through it again."},
+    {"who": "mage", "text": "Walking through it is not the problem. Ten districts stand between this hall and the tower, and each one has a Bellwarden who rings the bell's tongue for its street. Kill one and the bell remembers. Kill all ten and it may finally forget."},
+    {"who": "vesper", "text": "It will not forget. It was cast to remember. My family poured their own blood into that bronze. Whatever the Black Bell is now, it is still an Ashgrave."},
+    {"who": "sage", "text": "Which is why you are here, Vesper. Your blood made the bell. Only your blood can crack it. The others can carry you to the tower. Only you can end what is inside."},
+    {"who": "vesper", "text": "And if I fall on the way?"},
+    {"who": "sage", "text": "Then you wake here, and you try again. I bound every oath in this hall to the bell's own loop. The night cannot keep you. It can only take a little more each time."},
+    {"who": "quartermaster", "text": "Which is my cue. Gold you find out there buys steel in here. Essence you bleed out of the wardens, the Sage turns into something worth keeping. Lose your nerve and you lose both."},
+    {"who": "warrior", "text": "The gate at Ashgate is open. The first warden is waiting. We have done this before. We will do it until it stays done."},
+    {"who": "vesper", "text": "Then ring, you old bronze. Ring as loud as you like. An Ashgrave is coming to answer you."},
+    {"who": "sage", "text": "Go, hunter. Ashgate first. And Vesper... try to come back with more than you leave behind."}
+  ],
+
+  "hostLines": {
+    "skills": {
+      "first": [
+        "So the first night is behind you. Sit, if you can still feel your legs. Every hunter's first return feels like waking from a drowning.",
+        "You came back. They always come back the first time, and they always look at their hands as if they belong to someone else. They are yours. For now.",
+        "The bell rang you home, Ashgrave. Remember that sound. You will hear it every time you fail, and one day you will make it stop."
+      ],
+      "fell_early": [
+        "Ashgate again, and not even the second street. The bell barely had to try. Steady your breath before you steady your blade.",
+        "You died within sight of the gate. Do not be ashamed of it. Be angry. Shame makes hunters slow. Anger makes them careful.",
+        "The first streets are the cruelest. They teach you that the dead do not tire. Next time, neither will you.",
+        "I felt you fall almost before you had left. The night is testing whether you will keep coming. Show it.",
+        "A short hunt still teaches. What did the first pack do that you did not expect? Answer that, and the gate is yours.",
+        "Your blood barely warmed the cobbles before the bell took you back. Rest a moment. Then go and make it work harder.",
+        "Some hunters spend a hundred nights at Ashgate. Most of them stopped coming back. You did not. That is the only lesson that matters today.",
+        "Early deaths are cheap, Vesper. Cheap lessons are the best kind. Spend them while you can."
+      ],
+      "fell_deep": [
+        "You went deep this time. I could feel the streets thinning around you. {district} has teeth, but you made it bleed.",
+        "Further than before. The bell noticed. It rang a little slower when you fell, as if it was tired of you. Good.",
+        "You reached {district} and the night had to send everything it had. That is not failure. That is pressure.",
+        "Every street you take from the bell stays taken in here, in your hands and in your oath. The town forgets. You do not.",
+        "I watched your thread run long before it snapped. Long threads are hard to cut, hunter. Keep spinning them.",
+        "So close to a warden I could smell the bronze on you. The way there is learned now. Next time it will be shorter.",
+        "You carried essence far before the night took it from you. Next time, carry it to a warden and make it yours.",
+        "The deeper streets remember you now. The dead flinch a little before they rise. Use that."
+      ],
+      "fell_boss": [
+        "{boss}. You stood in front of it and it rang you home. Tell me everything. How it moved. When it breathed. We will find the crack.",
+        "The warden of {district} put you down. Every warden is a ringer who never stopped pulling the rope. It is strong, but it is also tired. Outlast it.",
+        "You reached {boss} and fell. Do you know how many hunters never see a warden at all? Hold on to that, and to its rhythm.",
+        "I felt the bell lurch when you struck {boss}. It is afraid of you, Vesper. Fear makes even bronze crack.",
+        "{boss} has killed you once. It will not get to do it forever. Watch its wind-up. The bell always warns before it rings.",
+        "That warden was cast from the same bronze as your blood. When you face {boss} again, do not fight it like a stranger. Fight it like family.",
+        "You fell in the warden's square, and the essence you carried went with you. Hard lesson. Next time, end it before it ends you.",
+        "A warden does not hunt. It waits. {boss} will be waiting in {district} when you return, and you will know more than it does.",
+        "Your blade found {boss} more than once. I could hear it in the bell, a cracked note. One more hunt like that and the note will break.",
+        "Do not look at the floor, hunter. Wardens kill. That is what they are for. You are for something else.",
+        "{boss} learned your face tonight. Good. Let it remember you. Let it hesitate the next time an Ashgrave walks into its square.",
+        "The bell rang twice when you fell to {boss}: once for you, once in triumph. It will not have the second ring forever."
+      ],
+      "slew_boss": [
+        "You broke {boss}. I heard one of the bell's tongues go silent. Three hundred nights, and tonight it rang a little quieter.",
+        "A warden is dead because of you. The essence you brought back is yours now, sealed in the oath. Let us spend it well.",
+        "The bell will ring you back again, but it will ring with one voice fewer. That is how it ends. One voice at a time.",
+        "I felt {district} go still. For the first time in a long time, someone in this town is truly resting.",
+        "You returned with a warden's essence still warm. Kneel. Your oath can carry more weight now.",
+        "Do not celebrate yet. The bell will send something worse to replace what you broke. But it will have to search harder each time."
+      ],
+      "victory": [
+        "Silence. Do you hear it? No bell. Whatever happens next, Vesper, you made the night stop for a moment.",
+        "The Black Bell fell silent and still the hall remains. Perhaps the bronze is not the only thing that remembers. Go again, and make sure.",
+        "You ended it once. Hollowmere will try to remember how it was before. Let us see if it can forgive you for making it forget."
+      ],
+      "any": [
+        "Blood is memory. Every drop you spill out there writes something into your oath. Come, let me read it.",
+        "The bell took something from you tonight. I can see it in your eyes. Do not ask me what. Some losses are kinder unnamed.",
+        "Another dusk. Another chance. The town wakes the same way every night. You do not have to.",
+        "Your oath is warm. That means it is still yours. The day it goes cold, stop coming back.",
+        "I have bound many hunters to this hall. Few of them asked why the bell was cast. You never have to ask, Ashgrave. You already know.",
+        "There is a rhythm to every death you suffer. Learn it, and you will start to hear the bell's rhythm too.",
+        "Sit with the pain a moment before you shape anything. An oath shaped in haste breaks at the worst moment.",
+        "Your ancestors bled into that bell to save this town. You bleed into it to free them. There is a symmetry in that I do not much like.",
+        "The dead out there are not your enemies. They are prisoners who forgot they are in a cell. Free them quickly.",
+        "Again, then. We will keep doing this until the night runs out of ways to stop you."
+      ]
+    },
+
+    "builds": {
+      "first": [
+        "Welcome back from the other side. First trip is always the worst. You get used to the smell of your own blood eventually.",
+        "So the bell spat you out. Good. My ledger hates blank lines. Let us see what you need before you go out to die properly.",
+        "First return, Ashgrave? Check your pockets. Gold stays with you. Pride, apparently, does not."
+      ],
+      "fell_early": [
+        "Back already? Gate's barely a hundred paces from here. I have had longer walks to the privy.",
+        "Ashgate claimed you again. Those dead are slow, but they never stop. Neither do my prices. Let us talk.",
+        "Two streets. You made it two streets. I will write that down as progress, because I am feeling generous.",
+        "Your boots are not even muddy. Whatever got you, it got you fast. Want something that stops that happening?",
+        "Early grave, early return. At least you had time to come and shop.",
+        "The gate grunts love a fresh hunter. Next time do not give them the satisfaction. Pick a better edge.",
+        "You keep dying in the same three streets and I keep selling you the same three things. One of us should change.",
+        "Quick death, quick lesson. Here is a cheaper one: armour."
+      ],
+      "fell_deep": [
+        "{district}. You got all the way to {district}. I have sold kit to fifty hunters who never saw it.",
+        "Good run, that. Shame about the ending. The middle bits were very impressive, from what I hear.",
+        "You came back from deep in the town. The bell sounded almost annoyed. I like you more already.",
+        "You went far enough that the gold should be heavy. Empty it on the counter. Let us make the next run longer.",
+        "Long hunt, bad finish. That is the business. Better finishes cost a little more.",
+        "Most hunters crawl back from the first streets. You crawled back from {district}. That is a nicer kind of crawl.",
+        "The deeper you go, the meaner they get, and the better my wares look. Funny how that works.",
+        "You smell like a burnt street and you look worse. Means you were somewhere that matters."
+      ],
+      "fell_boss": [
+        "{boss}, was it? Big thing. Loud. I sold a sword to the last hunter who called it easy. He never came back for a refund.",
+        "So you met the warden of {district}. Do not tell me how it went. Your face is doing it already.",
+        "You reached the warden. You lost to the warden. Two things most hunters cannot say. Now let us make it one.",
+        "That bell-ringer flattened you, then. Happens. Spend a little on something that does not flatten.",
+        "{boss} hits like a cathedral falling, they say. Ever thought of standing somewhere the cathedral is not?",
+        "You carried essence all the way to {boss} and dropped it on the floor. The Sage will sulk. I will just sell you better boots.",
+        "Wardens are patient. Patient things hate getting hurried. Bring something fast next time.",
+        "Next time you see {boss}, I want you to be wearing more of my stock than your own blood.",
+        "I have heard {boss} has a tell before it charges. I have also heard it kills everyone who looks for it. Look harder.",
+        "Lost to a warden. No shame. Plenty of debt, though. Let us fix the debt first.",
+        "You hurt it. I can tell. The bell sounded off-key when you came back. Next time, finish the song.",
+        "{district}'s warden is still standing and you are still standing. That is a draw, if you squint."
+      ],
+      "slew_boss": [
+        "A warden down! Drinks are on the house. The house has no drinks. Gold is also on the house, within reason.",
+        "You killed {boss}? Well. My prices just went up, because clearly you can afford them.",
+        "The whole hall felt that one. Even the rats sat up. Here, pick something. You have earned the good shelf.",
+        "One bell-tongue fewer. I will mark it in the ledger in red. I am out of red ink. I will use yours.",
+        "You came back from a warden's square with your essence and your head. That is a rare pair. Spend wisely.",
+        "Good. Now do it nine more times and I can finally close this shop."
+      ],
+      "victory": [
+        "Quiet out there. Never heard Hollowmere this quiet. Do not like it much, if I am honest. Bad for business.",
+        "The bell stopped. I kept the shop open anyway. Old habits. And something tells me you are not done.",
+        "You did it, Ashgrave. Now the question is whether the night agrees. Better take a sword, just in case."
+      ],
+      "any": [
+        "Steel, charms, a spare edge for a bad night. I stock what the hunt needs, not what it wants.",
+        "Bring me gold and I will make sure the next thing that bites you regrets it.",
+        "Every hunter who walks out that door thinks this is the run. Some nights they are right.",
+        "I keep a list of everyone who never came back. It is a short list. The bell is very good at its job. So am I.",
+        "Dead hunters settle no debts. Living ones settle them slowly. I prefer living.",
+        "You look like a person who could use a heavier blade. Or a lighter heart. I only sell one of those.",
+        "Another dusk, another customer. Same customer, mind you. That is loyalty.",
+        "The Sage talks about blood and memory. I talk about armour ratings. One of us has kept more hunters alive.",
+        "Whatever you lost out there tonight, it was not your coin purse. Small mercies.",
+        "Go on then. Let us see what you are carrying."
+      ]
+    }
+  },
+
+  "bossVariants": [
+    {"name": "ORVEN, THE GATE-WARDEN", "title": "First of the Ten Tongues", "pattern": ["attack", "sweep", "attack", "charge", "slam"], "tempo": 1.1, "summon": ["grunt"], "summonCount": 3, "castCount": 3, "hp": 0.85, "scale": 0.92},
+    {"name": "MOTHER TALLOW", "title": "Keeper of the Weighed Dead", "pattern": ["cast", "attack", "summon", "cast", "sweep"], "tempo": 1.05, "summon": ["archer", "grunt"], "summonCount": 3, "castCount": 5, "hp": 0.95, "scale": 0.95},
+    {"name": "THE HANGED CANTOR", "title": "Who Sings Through a Broken Neck", "pattern": ["sweep", "slam", "sweep", "summon", "charge"], "tempo": 1.0, "summon": ["assassin"], "summonCount": 3, "castCount": 3, "hp": 1.0, "scale": 1.0},
+    {"name": "SISTER WICKLOW", "title": "The Candle That Drinks", "pattern": ["cast", "cast", "summon", "slam", "cast"], "tempo": 0.95, "summon": ["healer", "mage"], "summonCount": 3, "castCount": 7, "hp": 1.0, "scale": 0.98},
+    {"name": "THE BLOATED DEACON", "title": "Risen From the Flooded Nave", "pattern": ["slam", "charge", "slam", "attack", "summon"], "tempo": 1.0, "summon": ["mage", "grunt"], "summonCount": 4, "castCount": 3, "hp": 1.15, "scale": 1.08},
+    {"name": "SIR CALDER OF THE OSSUARY", "title": "Armour of a Thousand Ribs", "pattern": ["attack", "attack", "sweep", "charge", "attack", "slam"], "tempo": 0.88, "summon": ["tank"], "summonCount": 2, "castCount": 3, "hp": 1.2, "scale": 1.05},
+    {"name": "SAINT VAEL, UNMADE", "title": "The Martyr Who Refused Heaven", "pattern": ["cast", "summon", "sweep", "cast", "slam", "charge"], "tempo": 0.9, "summon": ["commander", "healer"], "summonCount": 3, "castCount": 6, "hp": 1.2, "scale": 1.0},
+    {"name": "THE WEEPING HERALD", "title": "Whose Tears Ring Like Iron", "pattern": ["charge", "attack", "charge", "sweep", "charge", "summon"], "tempo": 0.85, "summon": ["archer", "assassin"], "summonCount": 4, "castCount": 4, "hp": 1.25, "scale": 1.02},
+    {"name": "THE CINDER ABBOT", "title": "Who Burned His Flock to Keep It Warm", "pattern": ["slam", "cast", "sweep", "summon", "charge", "attack"], "tempo": 0.8, "summon": ["mage", "tank"], "summonCount": 4, "castCount": 6, "hp": 1.3, "scale": 1.1},
+    {"name": "THE BLACK BELL", "title": "It Remembers Everything", "pattern": ["attack", "sweep", "cast", "charge", "slam", "summon", "sweep", "cast"], "tempo": 0.75, "summon": ["commander", "tank", "assassin", "mage"], "summonCount": 4, "castCount": 7, "hp": 1.45, "scale": 1.18}
+  ],
+
+  "waveCombos": {
+    "iron_wall":        [["tank", "tank"], ["tank", "tank", "mage", "mage", "mage"]],
+    "arrowstorm":       [["archer", "archer", "archer", "archer"], ["archer", "archer", "commander", "tank", "tank"]],
+    "horde":            [["grunt", "grunt", "grunt", "grunt", "grunt", "grunt", "grunt", "grunt"], ["grunt", "grunt", "mage", "mage", "mage", "mage", "mage"]],
+    "knives":           [["assassin", "assassin", "assassin"], ["assassin", "assassin", "archer", "archer", "archer"]],
+    "choir":            [["mage", "mage", "mage", "healer"], ["grunt", "grunt", "grunt", "grunt", "healer", "mage"]],
+    "shieldline":       [["grunt", "grunt", "grunt", "grunt", "tank"], ["archer", "archer", "archer", "commander"]],
+    "vanguard":         [["grunt", "grunt", "grunt", "grunt", "grunt"], ["tank", "grunt", "grunt", "grunt", "healer"]],
+    "ambush":           [["assassin", "assassin", "grunt", "grunt", "grunt"], ["assassin", "assassin", "assassin", "assassin"]],
+    "siege":            [["archer", "archer", "archer", "tank", "tank"], ["mage", "mage", "archer", "archer", "archer", "commander"]],
+    "warband":          [["commander", "grunt", "grunt", "grunt", "grunt"], ["commander", "tank", "grunt", "grunt", "grunt"]],
+    "coven":            [["mage", "mage", "mage", "mage"], ["mage", "mage", "healer", "healer", "tank"]],
+    "pikewall":         [["tank", "tank", "tank"], ["grunt", "grunt", "grunt", "grunt", "archer", "archer"]],
+    "bleeders":         [["assassin", "assassin", "healer"], ["assassin", "assassin", "assassin", "mage", "mage"]],
+    "rabble":           [["grunt", "grunt", "grunt", "grunt", "grunt", "grunt"], ["grunt", "grunt", "grunt", "archer", "archer", "archer"]],
+    "hunters":          [["archer", "archer", "assassin", "assassin"], ["archer", "archer", "archer", "archer", "assassin"]],
+    "bulwark":          [["tank", "tank", "healer", "healer"], ["tank", "tank", "commander", "mage", "mage"]],
+    "crusade":          [["commander", "commander", "grunt", "grunt", "grunt"], ["tank", "tank", "archer", "archer", "healer"]],
+    "nightmass":        [["mage", "mage", "mage", "archer", "archer", "archer"], ["assassin", "assassin", "assassin", "healer", "commander"]],
+    "butchers":         [["tank", "assassin", "assassin", "assassin"], ["tank", "tank", "grunt", "grunt", "grunt", "grunt"]],
+    "last_rites":       [["grunt", "grunt", "grunt", "grunt", "mage", "mage", "healer"], ["commander", "tank", "tank", "assassin", "assassin", "archer"]]
+  },
+
+  "districtPools": [
+    ["horde", "shieldline", "vanguard", "rabble", "iron_wall", "arrowstorm"],
+    ["arrowstorm", "knives", "ambush", "rabble", "hunters", "shieldline"],
+    ["iron_wall", "choir", "siege", "warband", "pikewall", "butchers"],
+    ["choir", "coven", "bleeders", "bulwark", "nightmass", "horde"],
+    ["knives", "ambush", "pikewall", "hunters", "crusade", "last_rites"],
+    ["iron_wall", "warband", "pikewall", "bulwark", "butchers", "siege"],
+    ["choir", "coven", "crusade", "nightmass", "last_rites", "bleeders"],
+    ["arrowstorm", "siege", "hunters", "nightmass", "knives", "warband"],
+    ["bulwark", "crusade", "butchers", "last_rites", "coven", "ambush"],
+    ["iron_wall", "arrowstorm", "horde", "knives", "choir", "shieldline", "vanguard", "ambush", "siege", "warband", "coven", "pikewall", "bleeders", "rabble", "hunters", "bulwark", "crusade", "nightmass", "butchers", "last_rites"]
+  ]
+}
