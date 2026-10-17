@@ -51,6 +51,7 @@ namespace Bloodwake
   public HitShake Shake {get;private set;}
   public void FlashHit(bool player)=>HitFlash.Pulse(player);
   [System.Serializable]class StrideCalibration {public float referenceSpeed,referenceHeight;}
+  public string CurrentClip=>state;
   public float ActionStartTime(string key)=>NobleRevenant&&Clip(key)=="REV_BloodBurst"?ClipLength(key)*.15f:0;
   public float MarkerTime(string key,string marker)=>Mathf.Max(0,Animator.runtimeAnimatorController.animationClips.First(c=>c.name==Clip(key)).events.First(e=>e.stringParameter==marker).time-ActionStartTime(key));
   public bool IsDead=>state==Clip("Death");
@@ -75,6 +76,7 @@ namespace Bloodwake
    view.HitFlash=go.AddComponent<HitFlash>();view.HitFlash.Initialize(model.GetComponentsInChildren<Renderer>());
    view.Shake=go.AddComponent<HitShake>();view.Shake.Initialize(model.transform);
    if(enemy&&id=="warlock")WarlockSkin(model);
+   if(!enemy&&id=="revenant")view.Animator.gameObject.AddComponent<RevenantPosture>().Owner=view;
    if(!enemy&&id=="vesper")model.AddComponent<VesperBladeVfx>();
    if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_ShieldWalk"))
    {
