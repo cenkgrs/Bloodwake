@@ -33,7 +33,9 @@ namespace Bloodwake
    }
    if(behavior=="vesperWard"||behavior=="vesperRite")
    {
-    bool major=behavior=="vesperRite";float hold=major?1.32f:1.15f,contact=major?.72f:.48f;
+    bool major=behavior=="vesperRite";float hold=major?1.32f:1.15f;
+    // Contact = the frame the blade meets the ground (measured on the clips: Ultimate 0.50 s, CastQ 1.17 s), scaled to the hold.
+    float contact=(major?.50f:1.17f)*hold/Player.ClipLength(major?"Ultimate":"CastQ");
     Player.Play(major?"Ultimate":"CastQ",hold);SoundOnContact(major?"vesper_bloodfire_rite":"vesper_cinder_ward",contact);
     RevFx.VesperCastWarning(start,radius,contact,major);
     yield return Delay(contact);Area(start,radius,damage,false,true);RevFx.VesperGroundCast(start,radius,major);if(major)RevFx.VesperBodyBurn(Player,2.5f);yield break;
