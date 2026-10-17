@@ -8,7 +8,8 @@ namespace Bloodwake
   public const float RevenantThrustWindow=.42f;
   float thrustDuration,thrustContact;
   float revenantDashAge,revenantThrustAge,thrustWindow,dashWakeDistance,dashTravelled;
-  bool revenantDashing,revenantThrusting,thrustContactDone,thrustQueued,practiceDashImpact;
+  bool revenantDashing,revenantThrusting,thrustContactDone,thrustQueued,practiceDashImpact,thrustRecovering;float thrustRecoveryAge;
+  const float ThrustRecoveryTime=.22f;
   Vector3 revenantDashDirection,thrustDirection;
   public bool RevenantActionActive=>revenantDashing||revenantThrusting;
   public bool RevenantDashActive=>revenantDashing;
@@ -16,13 +17,14 @@ namespace Bloodwake
   void ResetRevenantDash()
   {
    revenantDashing=revenantThrusting=thrustQueued=thrustContactDone=false;
-   thrustWindow=revenantDashAge=revenantThrustAge=dashWakeDistance=dashTravelled=0;
+   thrustWindow=revenantDashAge=revenantThrustAge=dashWakeDistance=dashTravelled=0;thrustRecovering=false;
    if(Player)Player.EndRevenantPose();
    if(revenantFx)revenantFx.CancelDashMist();
   }
   bool TryRevenantDash(Vector3 direction)
   {
    // Second Step: Vesper may dash again during, or just after, the first.
+   CancelThrustRecovery();
    bool chain=Run?.ClassId=="vesper"&&Time.time<secondDashUntil&&!revenantThrusting;
    if((Run?.ClassId!="revenant"&&Run?.ClassId!="vesper")||Screen!="playing"||Run.Stats.N("hp")<=0||vesperMoveActive||bladeThrown||Player.IsCasting||Player.ContactPending)return false;
    if(!chain&&(RevenantActionActive||dashCd>0))return false;
@@ -47,12 +49,15 @@ namespace Bloodwake
     if(RevenantDashDuration-revenantDashAge<.00001f)revenantDashAge=RevenantDashDuration;
     float a=previous/RevenantDashDuration,b=revenantDashAge/RevenantDashDuration;
     float travel=RevenantDashDistance*((1-(1-b)*(1-b))-(1-(1-a)*(1-a)));
+    // With R1 queued the dash is an attack: it pulls up in front of the first body on its line instead of
+    // ending inside it. Without one it stays an escape and passes through.
+    bool stopShort=false;if(thrustQueued&&travel>0){float allowed=LungeDistance(revenantDashDirection,travel);if(allowed<travel-.001f){travel=allowed;stopShort=true;}}
     var from=Player.transform.position;Player.transform.position=Move(from,revenantDashDirection*travel);
     float actual=Vector3.Distance(from,Player.transform.position);dashTravelled+=actual;dashWakeDistance+=actual;
     for(float d=.45f;dashWakeDistance>=d;dashWakeDistance-=d){var wake=Player.transform.position-revenantDashDirection*(dashWakeDistance-d);RevFx.DashWake(wake,revenantDashDirection,Run.ClassId=="vesper");if(Run.ClassId=="vesper")AddFireZone(wake,.45f,1.5f,RevenantBasicDamage()*.1f);}
     Player.RevenantPosePhase=b;
     bool blocked=travel>.001f&&Vector3.Dot(Player.transform.position-from,revenantDashDirection)<travel*.35f;
-    if(revenantDashAge>=RevenantDashDuration||blocked)
+    if(revenantDashAge>=RevenantDashDuration||blocked||stopShort)
     {
      revenantDashing=false;Player.EndRevenantPose();thrustWindow=Player.HasRevenantThrust||Run.ClassId=="vesper"?RevenantThrustWindow:0;
      if(DashImpactUnlocked&&dashTravelled>.1f)DashLandingImpact();
@@ -67,11 +72,19 @@ namespace Bloodwake
     {
      Player.ApplyRevenantPose();thrustContactDone=true;RevenantThrustHit();
     }
-    // Briefly show the fully extended contact silhouette; no recovery frames.
-    if(revenantThrustAge>=thrustContact+.07f-.00001f){revenantThrusting=false;attackCd=0;Player.EndRevenantPose();}
+    // Hold the extended contact silhouette briefly, then run the rest of the clip quickly back to stance;
+    // attacking, dashing or moving cuts that recovery short.
+    if(revenantThrustAge>=thrustContact+.07f-.00001f){revenantThrusting=false;attackCd=0;thrustRecovering=true;thrustRecoveryAge=0;}
+   }
+   else if(thrustRecovering)
+   {
+    thrustRecoveryAge+=dt;float from=(thrustContact+.07f)/thrustDuration;
+    Player.RevenantPosePhase=Mathf.Lerp(from,1,Mathf.SmoothStep(0,1,thrustRecoveryAge/ThrustRecoveryTime));
+    if(thrustRecoveryAge>=ThrustRecoveryTime||moveIntent.sqrMagnitude>.01f)CancelThrustRecovery();
    }
    else thrustWindow=Mathf.Max(0,thrustWindow-dt);
   }
+  void CancelThrustRecovery(){if(!thrustRecovering)return;thrustRecovering=false;Player.EndRevenantPose();}
   float RevenantBasicDamage()
   {
    var weapon=Run.Weapons.FirstOrDefault(w=>GameData.Row("weapons",w.Key).S("behavior")=="melee");
@@ -82,6 +95,8 @@ namespace Bloodwake
    if(Run?.ClassId!="revenant"||!Player.HasRevenantThrust||thrustWindow<=0||revenantDashing||revenantThrusting||Run.Stats.N("hp")<=0)return false;
    thrustWindow=0;thrustQueued=false;revenantThrusting=true;revenantThrustAge=0;thrustContactDone=false;
    thrustDuration=Player.ClipLength("REV_ClawThrust");thrustContact=Player.MarkerTime("REV_ClawThrust","DAMAGE");
+   var aimAt=!usingPad?aim:moveIntent.sqrMagnitude>.01f?moveIntent:revenantDashDirection.sqrMagnitude>.01f?revenantDashDirection:Player.transform.forward;aimAt.y=0;
+   if(aimAt.sqrMagnitude>.001f)Player.transform.rotation=Quaternion.LookRotation(aimAt.normalized);PadFacing();
    thrustDirection=Player.transform.forward;attackCd=thrustContact+.07f;combo=0;
    Player.BeginRevenantThrustPose(thrustDuration);Sound("revenant_swing");return true;
   }

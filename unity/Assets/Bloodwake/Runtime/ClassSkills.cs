@@ -8,6 +8,7 @@ namespace Bloodwake
  {
   void Cast(int index)
   {
+   CancelThrustRecovery();
    if(RevenantActionActive)return;
    if(Player.Locked>.15f)return;var cls=GameData.Rules["classes"][Run.ClassId];string id=index==2?cls.S("ability"):(string)cls["skills"][index];
    if(!combatPractice&&Run.Cooldowns.TryGetValue(id,out float cd)&&cd>0)return;var data=GameData.Row("abilities",id);Run.Cooldowns[id]=combatPractice?0:data.N("cooldown");StartCoroutine(CastRoutine(data,index==2));

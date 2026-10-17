@@ -132,9 +132,12 @@ namespace Bloodwake
    if(anim==null){clip=Clip("Attack");anim=Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==clip);}
    if(anim==null)return 0;
    float start=ActionStartTime(clip),duration=anim.length-start;
-   if(state!=clip||hold!=0){CancelAction();PlaybackRate=hold>0?duration/hold:1;Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,Kind=="vesper"?.16f:.09f,0,start);state=clip;}
+   if(state!=clip||hold!=0){CancelAction();PlaybackRate=hold>0?duration/hold:1;Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,BlendTime(key),0,start);state=clip;}
    Locked=hold==0?0:hold>0?hold:duration;return Locked;
   }
+  // The Warrior's swings end and begin in very different poses (deep lunge, overhead, spin); a short
+  // blend snaps between them, so his attacks and their settle back to stance blend longer.
+  float BlendTime(string key)=>Kind=="vesper"?.16f:Kind=="warrior"?(key.StartsWith("Attack")||key=="Ultimate"?.2f:state.StartsWith("Attack")||state=="Ultimate"?.24f:.12f):.09f;
   public float ClipLength(string key)=>Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==Clip(key))?.length??.6f;
   public void Tick(float dt,bool moving,float rate=1,bool walking=false){if(RevenantPoseActive){Locked=Mathf.Max(.03f,Locked-dt);Animator.speed=0;TickImpact(dt);return;}Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?(Kind=="revenant"&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
  }

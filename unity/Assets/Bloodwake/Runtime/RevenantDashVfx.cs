@@ -110,15 +110,21 @@ namespace Bloodwake
   public void ThrustStrike(Vector3 hand,Vector3 direction,float reach)
   {
    var side=Vector3.Cross(Vector3.up,direction);
+   var axis=Vector3.ProjectOnPlane(direction,Game.Cam.transform.forward).normalized;
+   if(axis.sqrMagnitude<.01f)axis=Game.Cam.transform.up;
+   // Four claw rakes, wide and bright enough to read at gameplay zoom, driven out past the hand...
    for(int i=0;i<4;i++)
    {
-    float offset=(i-1.5f)*.12f;var start=hand+side*offset;
-    var fx=Sheet("Straight claw thrust trail",start,new Vector3(.14f,reach*.65f,1),"claw_cut",.16f,Tone("95112b"));
-    var axis=Vector3.ProjectOnPlane(direction,Game.Cam.transform.forward).normalized;
-    if(axis.sqrMagnitude<.01f)axis=Game.Cam.transform.up;
+    float offset=(i-1.5f)*.16f;var start=hand+side*offset;
+    var fx=Sheet("Straight claw thrust trail",start,new Vector3(.24f,reach*.8f,1),"claw_cut",.24f,Tone(i==1||i==2?"e0203f":"a5122e"));
     fx.transform.rotation=Quaternion.LookRotation(Game.Cam.transform.forward,axis);
-    fx.Tick=(p,dt)=>{fx.transform.position=start+direction*(reach*(.25f+.25f*p));};
+    fx.Tick=(p,dt)=>{fx.transform.position=start+direction*(reach*(.2f+.35f*p));};
    }
+   // ...around a hot blood-red core that shoots the full reach and thins out.
+   var core=Sheet("Thrust core",hand,new Vector3(.32f,reach*1.1f,1),"claw_cut",.18f,Tone("ff5a6e"));
+   core.transform.rotation=Quaternion.LookRotation(Game.Cam.transform.forward,axis);
+   core.Tick=(p,dt)=>{core.transform.position=hand+direction*(reach*(.35f+.3f*p));core.transform.localScale=new Vector3(.32f*(1-p*.8f),reach*1.1f,1);};
+   Flash(hand+direction*reach*.6f,Tone("ff2a45"),1.4f,2.4f,.12f);
   }
   public void ThrustClawImpact(ActorView target)
   {

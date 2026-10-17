@@ -34,6 +34,7 @@ namespace Bloodwake
   bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="vesper"&&Owns("vesper_heavy"));
   void Attack(bool heavyAttack=false)
   {
+   CancelThrustRecovery();
    if(RevenantActionActive)return;
    if(BeginRevenantThrust()||BeginVesperRisingSlash())return;
    if(vesperMoveActive||bladeThrown)return;
