@@ -60,6 +60,8 @@ namespace Bloodwake
    var fx=Authored("revenant_claws",pos+Vector3.up*.15f,new Vector3(sourceRadius*2,2.8f,sourceRadius*2),.42f);
    fx.transform.rotation=Quaternion.LookRotation(direction.sqrMagnitude>.001f?direction:Vector3.forward);
    fx.Block.SetFloat("_ReverseSweep",backhand?1:0);fx.Apply();
+   // The rake lights the ground and whatever it tears: a short arterial-red flash out along the swing.
+   var swing=direction.sqrMagnitude>.001f?direction.normalized:Vector3.forward;Flash(pos+swing*sourceRadius*.6f,Tone(wide?"ff2442":"e01834"),wide?2.2f:1.4f,sourceRadius*1.6f+1.2f,wide?.16f:.11f);
 
   }
   public void Fountain(Vector3 pos,float radius,float height,float life){var authored=Authored("revenant_burst",pos,new Vector3(radius,height,radius),life);authored.Block.SetFloat("_Opacity",.28f);authored.Apply();BloodVolume(pos,radius,height,life);}
@@ -179,12 +181,15 @@ namespace Bloodwake
   public void Splatter(Vector3 pos,Vector3 direction)
   {
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Vector3.forward;direction.Normalize();var side=Vector3.Cross(direction,Vector3.up);
-   for(int i=0;i<12;i++)
+   // A burst of red mist where the blood leaves the body.
+   var puff=Sheet("Blood mist puff",pos+direction*.2f,Vector3.one*.4f,"dust",.34f,new Color(.55f,.03f,.06f,.7f));var drift=direction*.9f+Vector3.up*.25f;
+   puff.Tick=(p,dt)=>{puff.transform.position=pos+direction*.2f+drift*puff.Age;puff.transform.localScale=Vector3.one*Mathf.Lerp(.4f,1.5f,p);puff.transform.rotation=Game.Cam.transform.rotation;};
+   for(int i=0;i<16;i++)
    {
-    var end=pos+direction*UnityEngine.Random.Range(.9f,1.9f)+side*UnityEngine.Random.Range(-.4f,.4f);end.y=.024f;
+    var end=pos+direction*UnityEngine.Random.Range(.9f,2.1f)+side*UnityEngine.Random.Range(-.4f,.4f);end.y=.024f;
     var start=pos+direction*.3f+Vector3.up*UnityEngine.Random.Range(.95f,1.4f)+side*UnityEngine.Random.Range(-.12f,.12f);
     float life=UnityEngine.Random.Range(.32f,.48f),height=UnityEngine.Random.Range(.2f,.5f);
-    var fx=Particle(start,new Vector3(.055f,.12f,.055f),Tone("6e0712"),life,false,true);
+    float size=UnityEngine.Random.Range(.045f,.11f);var fx=Particle(start,new Vector3(size,size*2.2f,size),Tone(UnityEngine.Random.value<.4f?"b0102a":"6e0712"),life,false,true);
     fx.Tick=(p,dt)=>{fx.transform.position=Vector3.Lerp(start,end,p)+Vector3.up*(4*p*(1-p)*height);var velocity=(end-start)+Vector3.up*(4*(1-2*p)*height);fx.transform.rotation=Quaternion.FromToRotation(Vector3.up,velocity.normalized);};
     fx.Completed=()=>Stain(end,UnityEngine.Random.Range(.12f,.3f),UnityEngine.Random.Range(4,6),1.25f);
    }
