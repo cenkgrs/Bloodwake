@@ -46,7 +46,27 @@ namespace Bloodwake
     cards.Add(card.transform);cardScale.Add(Mathf.Lerp(.85f,1.15f,Mathf.Sin(CardStops[i]*Mathf.PI)));
    }
   }
-  Animator animator;
+  Animator animator;float castGlow;
+  // Swept ribbon: the blade's segment over the last ~0.2 s, rebuilt each frame from history.
+  struct Sample{public Vector3 a,b;public float time;}
+  readonly List<Sample> history=new();Mesh ribbon;Material ribbonMaterial;GameObject ribbonObject;
+  void SweepRibbon(Vector3 start,Vector3 end)
+  {
+   const float span=.2f;float now=Time.time;
+   if(!ribbon)
+   {
+    ribbon=new Mesh{name="Vesper blade flame ribbon"};ribbon.MarkDynamic();var go=ribbonObject=new GameObject("Blade flame ribbon");go.AddComponent<MeshFilter>().sharedMesh=ribbon;
+    var r=go.AddComponent<MeshRenderer>();ribbonMaterial=new Material(Resources.Load<Shader>("Vfx/vesper_blade_streak")){name="Vesper blade streak"};materials.Add(ribbonMaterial);r.sharedMaterial=ribbonMaterial;r.shadowCastingMode=ShadowCastingMode.Off;r.receiveShadows=false;
+   }
+   history.Insert(0,new Sample{a=start,b=end,time=now});while(history.Count>2&&now-history[history.Count-1].time>span)history.RemoveAt(history.Count-1);
+   // Only a real swing leaves fire: average tip speed across the window.
+   float travel=0;for(int i=1;i<history.Count;i++)travel+=Vector3.Distance(history[i-1].b,history[i].b);float age=Mathf.Max(.016f,now-history[history.Count-1].time);
+   float strength=Mathf.SmoothStep(0,1,(travel/age-2.5f)/4f);
+   int n=history.Count;var verts=new Vector3[n*2];var uv=new Vector2[n*2];var col=new Color[n*2];var tris=new int[(n-1)*6];
+   for(int i=0;i<n;i++){float u=Mathf.Clamp01((now-history[i].time)/span);verts[i*2]=history[i].a;verts[i*2+1]=history[i].b;uv[i*2]=new Vector2(u,0);uv[i*2+1]=new Vector2(u,1);col[i*2]=col[i*2+1]=new Color(1,1,1,strength);}
+   for(int i=0;i<n-1;i++){int k=i*6,v=i*2;tris[k]=v;tris[k+1]=v+1;tris[k+2]=v+2;tris[k+3]=v+1;tris[k+4]=v+3;tris[k+5]=v+2;}
+   ribbon.Clear();ribbon.vertices=verts;ribbon.uv=uv;ribbon.colors=col;ribbon.triangles=tris;ribbon.RecalculateBounds();
+  }MaterialPropertyBlock cardBlock;
   // Mixamo's thrust is an upward stab; Vesper drives the greatsword straight ahead, so during
   // DashAttack the grip bone swings the blade level with the character's facing, eased in and out.
   void LevelThrust()
@@ -74,7 +94,13 @@ namespace Bloodwake
    // Cards stand upright and face the camera: fire rises in world space whatever angle the blade holds.
    var cameraForward=Camera.main?Camera.main.transform.forward:Vector3.forward;var flat=new Vector3(cameraForward.x,0,cameraForward.z);if(flat.sqrMagnitude<.001f)flat=Vector3.forward;
    var facing=Quaternion.LookRotation(flat.normalized,Vector3.up);
-   for(int i=0;i<cards.Count;i++){float h=.5f*cardScale[i],w=h*.75f;cards[i].SetPositionAndRotation(Vector3.Lerp(start,end,CardStops[i])+Vector3.up*h*.42f,facing);cards[i].localScale=Vector3.one;cards[i].localScale=new Vector3(w/cards[i].lossyScale.x,h/cards[i].lossyScale.y,1);}
+   // Casting (blade raised in CastQ/Ultimate wind-up) makes the blade blaze; swinging sheds fire that hangs in the air behind it.
+   var st=animator?(animator.IsInTransition(0)?animator.GetNextAnimatorStateInfo(0):animator.GetCurrentAnimatorStateInfo(0)):default;
+   bool casting=animator&&(st.IsName("CastQ")||st.IsName("Ultimate"));float glow=Mathf.MoveTowards(castGlow,casting?1:0,Time.deltaTime*4);castGlow=glow;
+   if(castGlow>.01f){cardBlock??=new MaterialPropertyBlock();foreach(var c in cards){var rr=c.GetComponent<MeshRenderer>();rr.GetPropertyBlock(cardBlock);cardBlock.SetFloat("_Intensity",1.55f+2.6f*castGlow);rr.SetPropertyBlock(cardBlock);}}
+   float speed=trailReady?Vector3.Distance(previousTip,end)/Mathf.Max(Time.deltaTime,.001f):0;
+   SweepRibbon(start,end);
+   for(int i=0;i<cards.Count;i++){float h=.5f*cardScale[i]*(1+.6f*castGlow),w=h*.75f;cards[i].SetPositionAndRotation(Vector3.Lerp(start,end,CardStops[i])+Vector3.up*h*.42f,facing);cards[i].localScale=Vector3.one;cards[i].localScale=new Vector3(w/cards[i].lossyScale.x,h/cards[i].lossyScale.y,1);}
    var shadowPosition=Vector3.Lerp(mid.position,end,.9f);
    if(!trailReady)
    {
@@ -86,7 +112,7 @@ namespace Bloodwake
    if(snapped){goldTrail.Clear();shadowTrail.Clear();}
    goldTrail.transform.position=end;shadowTrail.transform.position=shadowPosition;previousTip=end;previousShadow=shadowPosition;
   }
-  void OnDestroy(){foreach(var material in materials)if(material)Destroy(material);}
+  void OnDestroy(){if(ribbonObject)Destroy(ribbonObject);if(ribbon)Destroy(ribbon);foreach(var material in materials)if(material)Destroy(material);}
  }
  public sealed class VesperFlameLine:MonoBehaviour{public float Phase,Flutter,Speed;}
 }
