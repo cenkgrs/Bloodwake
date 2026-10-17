@@ -138,6 +138,13 @@ namespace Bloodwake
   // The Warrior's swings end and begin in very different poses (deep lunge, overhead, spin); a short
   // blend snaps between them, so his attacks and their settle back to stance blend longer.
   float BlendTime(string key)=>Kind=="vesper"?.16f:Kind=="warrior"?(key.StartsWith("Attack")||key=="Ultimate"?.2f:state.StartsWith("Attack")||state=="Ultimate"?.24f:.12f):.09f;
+  // Plays only part of a clip (start..end seconds) squeezed into hold: borrowed clips carry long idle
+  // lead-ins and tails around the motion we want.
+  public float PlayWindow(string key,float start,float end,float hold)
+  {
+   string clip=Clip(key);if(!Animator.runtimeAnimatorController.animationClips.Any(c=>c.name==clip))return Play("Attack",hold);
+   CancelAction();PlaybackRate=Mathf.Max(.05f,(end-start)/Mathf.Max(.01f,hold));Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,.1f,0,start);state=clip;Locked=hold;return hold;
+  }
   public float ClipLength(string key)=>Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==Clip(key))?.length??.6f;
   public void Tick(float dt,bool moving,float rate=1,bool walking=false){if(RevenantPoseActive){Locked=Mathf.Max(.03f,Locked-dt);Animator.speed=0;TickImpact(dt);return;}Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?(Kind=="revenant"&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
  }

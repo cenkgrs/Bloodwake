@@ -39,7 +39,7 @@ namespace Bloodwake
    bool skillPressed=pad!=null&&(pad.buttonNorth.wasPressedThisFrame||pad.buttonEast.wasPressedThisFrame||pad.buttonSouth.wasPressedThisFrame)||keys!=null&&(keys.qKey.wasPressedThisFrame||keys.eKey.wasPressedThisFrame||keys.spaceKey.wasPressedThisFrame);
    if(flameBreathing&&fresh&&(lightPressed||dashPressed||skillPressed||heavyPressed&&!offHandHeld))StopFlameBreath();
    if(fresh&&Run.ClassId=="vesper"&&offHandHeld&&heavyPressed&&!flameBreathing){BeginFlameBreath();heavyPressed=false;}
-   if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true))TryRevenantDash(move.sqrMagnitude>.01f?move:aim);
+   if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true)){var dashDir=move.sqrMagnitude>.01f?move:aim;if(!TryRevenantDash(dashDir))TryMageGlide(dashDir);}
    if(fresh&&revenantDashing&&lightPressed)thrustQueued=true;
    bool actionFrame=RevenantActionActive;TickRevenantDash(dt);
    // Measured planted-foot stride: new Sneak Walk 1.962 m/s, legacy Swagger .89.
@@ -56,9 +56,11 @@ namespace Bloodwake
    if(fresh&&heavyPressed&&HeavyUnlocked)heavyBuffer=.45f;else heavyBuffer-=dt;
    // Tethered Blade: hold L1 (or left Alt) and press R1 (or left mouse).
    bool tetherHeld=Run.ClassId=="vesper"&&Owns("vesper_tethered_blade")&&(pad?.leftShoulder.isPressed==true||keys?.leftAltKey.isPressed==true);
+   // Mage L1 + R1 (left Alt + left mouse): seize a foe and hurl it.
+   if(fresh&&Run.ClassId=="mage"&&offHandHeld&&lightPressed){MageGrip();lightPressed=false;}
    if(fresh&&tetherHeld&&lightPressed&&attackCd<=0&&!vesperMoveActive&&!bladeThrown&&!RevenantActionActive)StartCoroutine(TetheredBlade());
    else if(fresh&&heavyBuffer>0&&attackCd<=0&&!vesperMoveActive){heavyBuffer=0;Attack(true);}
-   else if(fresh&&lightHeld&&!tetherHeld&&attackCd<=0)Attack();
+   else if(fresh&&lightHeld&&!tetherHeld&&!(Run.ClassId=="mage"&&offHandHeld)&&attackCd<=0)Attack();
    UpdateNavigation(dt);TickEnemies(dt);TickWaves(dt);TickPickups(dt);CheckRoomExit();
   }
   void TickWaves(float dt)
