@@ -37,6 +37,24 @@ namespace Bloodwake
     block.SetFloat("_Intensity",intensity*grow*fade);r.SetPropertyBlock(block);
    };
   }
+  // One card of the painted fire jet: the sheet's nozzle (left edge) at the palm, its stream laid along the
+  // jet on screen, flipbook running, flaring in and dying out over its short life.
+  public void FlameJetCard(Vector3 origin,Vector3 dir,float length,float life)
+  {
+   var material=FlameMaterial("jet");if(!material)return;
+   var go=GameObject.CreatePrimitive(PrimitiveType.Quad);go.name="Flame jet";Object.Destroy(go.GetComponent<Collider>());go.transform.SetParent(transform,false);
+   var r=go.GetComponent<MeshRenderer>();r.sharedMaterial=material;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.receiveShadows=false;
+   var block=new MaterialPropertyBlock();block.SetFloat("_Offset",Random.Range(0,16f));block.SetFloat("_Fps",Random.Range(18,24));block.SetFloat("_OneShot",0);block.SetFloat("_Start",Time.time);
+   block.SetColor("_Tint",new Color(1,.92f,.82f));block.SetFloat("_Intensity",0);r.SetPropertyBlock(block);
+   Life(go,life).Tick=(p,dt)=>
+   {
+    float grow=Mathf.SmoothStep(0,1,p/.2f),fade=1-Mathf.SmoothStep(0,1,(p-.6f)/.4f);float l=length*Mathf.Lerp(.75f,1.05f,grow);
+    var facing=JetFacing(dir);go.transform.rotation=facing;
+    // The quad is centred; push it out so its left edge sits on the palm.
+    go.transform.position=origin+facing*Vector3.right*l*.46f;go.transform.localScale=new Vector3(l,l,1);
+    block.SetFloat("_Intensity",2.6f*grow*fade);r.SetPropertyBlock(block);
+   };
+  }
   // Space sets Vesper herself alight: thin flames ride her limbs and back for a few seconds.
   public void VesperBodyBurn(ActorView actor,float duration)
   {
