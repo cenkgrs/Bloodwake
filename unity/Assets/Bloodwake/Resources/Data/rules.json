@@ -1,5 +1,25 @@
 {
   "audio": {
+    "vesper_flame_breath": {"db": -4, "files": ["vesper_flame_breath"], "gap": 0.2, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
+    "vesper_falling_star": {"db": -3, "files": ["vesper_falling_star"], "gap": 0.3, "impact": 0.62, "pitch": [0.97, 1.03], "voices": 1},
+    "vesper_rising_crescent": {"db": -4, "files": ["vesper_rising_crescent"], "gap": 0.1, "impact": 0.32, "pitch": [0.97, 1.03], "voices": 1},
+    "vesper_heavy_cleave": {"db": -4, "files": ["vesper_heavy_cleave"], "gap": 0.1, "impact": 0.45, "pitch": [0.97, 1.03], "voices": 1},
+    "vesper_crescent_fan": {"db": -4, "files": ["vesper_crescent_fan"], "gap": 0.1, "impact": 0.45, "pitch": [0.97, 1.03], "voices": 1},
+    "vesper_blade_throw": {"db": -5, "files": ["vesper_blade_throw"], "gap": 0.1, "impact": 0.18, "pitch": [0.97, 1.03], "voices": 1},
+    "vesper_blade_catch": {"db": -5, "files": ["vesper_blade_catch"], "gap": 0.1, "impact": 0.02, "pitch": [0.97, 1.03], "voices": 1},
+    "boss_grunt": {"db": -5, "files": ["boss_grunt"], "gap": 0.4, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
+    "boss_attack_hit": {"db": -3, "files": ["boss_attack_hit"], "gap": 0.1, "impact": 0.4, "pitch": [0.97, 1.03], "voices": 2},
+    "boss_sweep_hit": {"db": -3, "files": ["boss_sweep_hit"], "gap": 0.1, "impact": 0.5, "pitch": [0.97, 1.03], "voices": 2},
+    "boss_slam_hit": {"db": -2, "files": ["boss_slam_hit"], "gap": 0.1, "impact": 0.6, "pitch": [0.97, 1.03], "voices": 2},
+    "boss_charge_hit": {"db": -3, "files": ["boss_charge_hit"], "gap": 0.1, "impact": 0.3, "pitch": [0.97, 1.03], "voices": 2},
+    "boss_cast_hit": {"db": -4, "files": ["boss_cast_hit"], "gap": 0.1, "impact": 0.5, "pitch": [0.97, 1.03], "voices": 2},
+    "boss_summon_hit": {"db": -3, "files": ["boss_summon_hit"], "gap": 0.3, "impact": 0.3, "pitch": [0.97, 1.03], "voices": 1},
+    "boss_death_cry": {"db": -1, "files": ["boss_death_cry"], "gap": 1.0, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
+    "mage_bomb_throw": {"db": -6, "files": ["mage_bomb_throw"], "gap": 0.2, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 2},
+    "mage_bomb_fuse": {"db": -8, "files": ["mage_bomb_fuse"], "gap": 0.1, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 3},
+    "mage_bomb_blast": {"db": -3, "files": ["mage_bomb_blast"], "gap": 0.1, "impact": 0.05, "pitch": [0.97, 1.03], "voices": 3},
+    "healer_cast": {"db": -7, "files": ["healer_cast"], "gap": 0.3, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 2},
+    "healer_bloom": {"db": -6, "files": ["healer_bloom"], "gap": 0.3, "impact": 0.1, "pitch": [0.97, 1.03], "voices": 2},
     "amb_boss_square": {
       "db": -14
     },

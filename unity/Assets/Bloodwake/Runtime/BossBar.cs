@@ -8,7 +8,7 @@ namespace Bloodwake
  public sealed partial class BloodwakeGame
  {
   RectTransform bossBarRoot;Image bossBarFill,bossBarTrail;Text bossBarName;float bossTrail=1,bossTrailHold;
-  const float BossBarX=330,BossBarY=172,BossBarWidth=940,BossFillInset=128,BossFillWidth=BossBarWidth-BossFillInset-52;
+  const float BossBarX=330,BossBarY=118,BossBarWidth=940,BossFillInset=128,BossFillWidth=BossBarWidth-BossFillInset-52;
   void UpdateBossBar()
   {
    var boss=Enemies.FirstOrDefault(e=>e.Id=="boss"&&e.Hp>0&&e.View&&!e.Emerging);
@@ -19,10 +19,11 @@ namespace Bloodwake
     bossBarRoot=Rect(page,"Boss health",0,0,1600,900);bossBarRoot.anchorMin=bossBarRoot.anchorMax=bossBarRoot.pivot=new Vector2(.5f,1);bossBarRoot.anchoredPosition=Vector2.zero;
     bossBarName=Label(bossBarRoot,"",BossBarX,BossBarY-4,BossBarWidth,34,26,true,TextAnchor.MiddleCenter);bossBarName.color=gold;
     var frameY=BossBarY+30;
+    // Frame first: the fill must sit on top of it (full red, draining to black), not behind it.
+    Kit(bossBarRoot,"bar_frame",BossBarX,frameY,BossBarWidth,62,1.45f);
     Plate(bossBarRoot,"Boss bar back",BossBarX+BossFillInset,frameY+21,BossFillWidth,20,new Color(.05f,.02f,.025f,.92f));
     bossBarTrail=Plate(bossBarRoot,"Boss bar trail",BossBarX+BossFillInset,frameY+21,BossFillWidth,20,new Color(.95f,.86f,.7f,.85f));
     bossBarFill=Kit(bossBarRoot,"bar_fill_blood",BossBarX+BossFillInset,frameY+21,BossFillWidth,20,1.7f);
-    Kit(bossBarRoot,"bar_frame",BossBarX,frameY,BossBarWidth,62,1.45f);
    }
    bossBarRoot.gameObject.SetActive(true);bossBarName.text=BossVariant.S("name");
    float f=Mathf.Clamp01(boss.Hp/boss.MaxHp);

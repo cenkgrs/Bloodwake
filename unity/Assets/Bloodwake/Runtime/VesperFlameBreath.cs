@@ -23,7 +23,7 @@ namespace Bloodwake
    var arm=Player.GetComponentInChildren<VesperFlameArm>();if(!arm)arm=Player.Animator.gameObject.AddComponent<VesperFlameArm>();arm.Raised=true;
    var hand=Player.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name.EndsWith("LeftHand"));
    Sound(Voice("vesper_flame_breath","vesper_bloodfire_rite"));
-   float age=0,tick=0,emit=0,glow=0;float damage=VesperBasicDamage()*.32f;
+   float age=0,tick=0,emit=0,glow=0;float damage=VesperBasicDamage()*.32f;string jetKind=RevenantVfx.JetKind;
    while(flameBreathing&&age<FlameBreathMax&&Run.Stats.N("hp")>0)
    {
     if(Screen!="playing"||hitStop>0){yield return null;continue;}
@@ -40,7 +40,7 @@ namespace Bloodwake
      // Big overlapping tongues so the stream reads as one jet, fanning a little as it travels.
      var side=Vector3.Cross(Vector3.up,dir);float spread=Random.Range(-1f,1f);
      var drift=dir*Random.Range(10f,13f)+side*spread*2.2f+Vector3.up*Random.Range(-.2f,.5f);
-     RevFx.FlameCard(origin-Vector3.up*.45f,Random.Range(.75f,1.15f),Random.Range(.26f,.34f)*Mathf.Max(.4f,ramp),drift,0,3.2f,"flame");
+     RevFx.FlameCard(origin-Vector3.up*.45f,Random.Range(.75f,1.15f),Random.Range(.26f,.34f)*Mathf.Max(.4f,ramp),drift,0,3.2f,jetKind);
     }
     if(Random.value<dt*18)RevFx.FlameCard(origin-Vector3.up*.2f,Random.Range(.4f,.55f),.14f,dir*2,0,4f,"burst",hand);
     if((glow-=dt)<=0){glow=.08f;RevFx.Flash(origin+dir*1.6f,RevenantVfx.Tone("ff9a3c"),1.1f,3.2f,.1f);}

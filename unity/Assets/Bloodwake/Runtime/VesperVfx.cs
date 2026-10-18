@@ -8,12 +8,16 @@ namespace Bloodwake
   static readonly System.Collections.Generic.Dictionary<string,Material> flameMaterials=new();
   // Flipbooks: "flame" all-purpose tongue, "body" thin flame that sits on a limb, "ground" low wide
   // burning patch, "burst" one-shot impact explosion.
+  // A jet card faces the camera but rolls so the texture's left-to-right stream follows the jet on screen.
+  Quaternion JetFacing(Vector3 drift){var cam=Game.Cam.transform;var along=Vector3.ProjectOnPlane(drift,cam.forward);if(along.sqrMagnitude<.0001f)return cam.rotation;return Quaternion.LookRotation(cam.forward,Vector3.Cross(cam.forward,along.normalized));}
+  // Vesper's flame breath uses its own sheet (Resources/Vfx/vesper_flame_jet, 4x4 frames on black) once it exists.
+  public static string JetKind=>Resources.Load<Texture2D>("Vfx/vesper_flame_jet")?"jet":"flame";
   public static Material FlameMaterial(string kind)
   {
    if(flameMaterials.TryGetValue(kind,out var m)&&m)return m;var shader=Resources.Load<Shader>("Vfx/vesper_flame_flipbook");if(!shader)return null;
    m=new Material(shader){name="Vesper "+kind+" flame"};m.SetTexture("_MainTex",Resources.Load<Texture2D>(kind=="flame"?"Vfx/vesper_flame_flipbook":"Vfx/vesper_flame_"+kind));m.SetColor("_Tint",new Color(1,.86f,.7f));flameMaterials[kind]=m;return m;
   }
-  static float FlameAspect(string kind)=>kind=="body"?.5f:kind=="ground"||kind=="burst"?1.25f:.75f;
+  static float FlameAspect(string kind)=>kind=="jet"?1.7f:kind=="body"?.5f:kind=="ground"||kind=="burst"?1.25f:.75f;
   // Flipbook card: rises, swells and burns out. Additive, camera-facing. follow keeps it on a bone.
   public void FlameCard(Vector3 pos,float height,float life,Vector3 drift,float delay=0,float intensity=2.2f,string kind="flame",Transform follow=null)
   {
@@ -29,7 +33,7 @@ namespace Bloodwake
     float age=p*(life+delay)-delay;if(age<0)return;float q=age/life;
     float grow=once?1:Mathf.SmoothStep(0,1,q/.18f),fade=once?1-Mathf.SmoothStep(0,1,(q-.75f)/.25f):1-Mathf.SmoothStep(0,1,(q-.45f)/.55f);
     float h=once?height:height*Mathf.Lerp(.55f,1.15f,grow);var anchor=follow?follow.position+offset:pos;
-    go.transform.position=anchor+drift*age+Vector3.up*h*(kind=="ground"||once?.38f:.45f);go.transform.rotation=Game.Cam.transform.rotation;go.transform.localScale=new Vector3(h*aspect*stretch*mirror,h,1);
+    go.transform.position=anchor+drift*age+Vector3.up*h*(kind=="ground"||once?.38f:.45f);go.transform.rotation=kind=="jet"?JetFacing(drift):Game.Cam.transform.rotation;go.transform.localScale=new Vector3(h*aspect*stretch*(kind=="jet"?1:mirror),h,1);
     block.SetFloat("_Intensity",intensity*grow*fade);r.SetPropertyBlock(block);
    };
   }

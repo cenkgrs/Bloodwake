@@ -25,12 +25,12 @@ namespace Bloodwake
    yield return Delay(.35f);
    if(e.Hp<=0||impact!=e.ImpactVersion){e.Casting=false;yield break;}
    // The mending orb arcs over to the spot.
-   const float flight=.4f;RevFx.HealOrb(palm,best,flight,HealTone);
+   const float flight=.4f;Sound("healer_cast");RevFx.HealOrb(palm,best,flight,HealTone);
    yield return Delay(flight);e.Casting=false;
    if(Screen!="playing")yield break;
    float amount=e.Data.N("healAmount",20)*1.5f;
    foreach(var a in Enemies)if(a.Hp>0&&a.View&&!a.Emerging&&Vector3.Distance(a.View.transform.position,best)<=HealRadius){a.Hp=Mathf.Min(a.MaxHp,a.Hp+amount);RevFx.DamageText(a.View.transform.position,amount,HealTone);RevFx.Glow(a.View.transform.position+Vector3.up,HealTone,.9f,2,.3f);}
-   RevFx.HealBloom(best,HealRadius,HealTone);
+   Sound("healer_bloom");RevFx.HealBloom(best,HealRadius,HealTone);
   }
  }
  public sealed partial class RevenantVfx

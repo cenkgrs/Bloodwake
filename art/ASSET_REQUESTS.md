@@ -12,6 +12,39 @@ Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya d
 
 ---
 
+## 00. YENİ — 19 Ekim: ses paketi (ElevenLabs Sound Effects)
+
+Hepsi `unity/Assets/Bloodwake/Resources/audio/` içine, **adı tam olarak tablodaki gibi** (WAV ya da OGG, `_1` ekleme).
+Kodda hepsi bağlı: dosya girdiği anda çalar. "Darbe anı", sesin zirve yapması gereken saniye; o zamanlamayla üret.
+Gerçekçi, kuru (az yankı), oyun içi SFX, müzik yok.
+
+| Dosya | Ne zaman | Süre | Darbe anı | Prompt |
+|---|---|---|---|---|
+| `vesper_dash` (değiştir) | Vesper dash | 0.5 sn | 0.05 | A fast fiery dash, a sharp burst of flame whooshing past with crackling embers trailing behind, cloth flapping |
+| `vesper_death` (değiştir) | Vesper ölünce | 2.0 sn | 0.1 | A young nobleman's dying gasp and groan, no words, a greatsword clattering onto stone, flames guttering out |
+| `vesper_flame_breath` | L1+R2 alev püskürtme | 1.2 sn | 0.0 | A roaring jet of fire pouring from a hand like a flamethrower, steady whooshing burn with crackles and pops, ends with a fiery puff |
+| `vesper_falling_star` | R1 R1 R2 | 1.4 sn | 0.62 | A leap with a spinning blade whoosh, then a greatsword slammed into stone with a huge fiery explosion and falling rubble |
+| `mage_bomb_throw` | Düşman büyücü bombayı atınca | 0.6 sn | 0.0 | A dark sorcerer flinging a sphere of crackling magenta energy, a warbling magical whoosh |
+| `mage_bomb_fuse` | Bomba yerde tik-tak atarken | 1.2 sn | 0.0 | A humming magical bomb pulsing faster and faster, rising whine with electric crackles, building to the edge of exploding, no explosion |
+| `mage_bomb_blast` | Bomba patlayınca | 1.2 sn | 0.05 | A violent arcane explosion, deep magical boom with shattering crystal and a spray of crackling sparks |
+| `healer_cast` | Şifacı orb'u atınca | 0.7 sn | 0.0 | A soft holy chime and a gentle airy whoosh as a glowing healing orb is tossed |
+| `healer_bloom` | Şifa yere inip iyileştirince | 1.2 sn | 0.1 | A warm magical healing bloom, shimmering bells and a soft rising choir swell, no words |
+| `boss_grunt` | Boss her saldırıya başlarken | 0.6 sn | 0.1 | A colossal armored demon's short guttural effort grunt, deep and metallic, no words |
+| `boss_attack_hit` | Boss tek kılıç vuruşu | 1.0 sn | 0.4 | A massive greatsword swung by a giant, heavy whoosh then a brutal metal impact |
+| `boss_sweep_hit` | Boss dönerek savurma | 1.2 sn | 0.5 | A giant spinning with a huge blade, long circular whoosh ending in a heavy cleaving impact |
+| `boss_slam_hit` | Boss yere vurma | 1.4 sn | 0.6 | A giant greatsword raised and slammed into stone, ground-shaking boom, cracking rock and debris |
+| `boss_charge_hit` | Boss hücum | 1.0 sn | 0.3 | A giant armored creature charging forward, thundering heavy footsteps and a rushing body slam |
+| `boss_cast_hit` | Boss büyü atışı | 1.0 sn | 0.5 | A demonic creature hurling bolts of dark magic, deep warbling energy release, three quick magical shots |
+| `boss_summon_hit` | Boss yardımcı çağırma | 1.5 sn | 0.3 | A colossal demon roaring to summon minions, bell-like ringing inside the roar, ghostly whispers rising |
+| `boss_death_cry` | Boss ölürken | 2.5 sn | 0.1 | A colossal bell-bound demon's dying roar fading into a cracked church bell's last toll |
+
+Önceki listeden hâlâ bekleyenler: `boss_roar_1..3` (giriş ekranı), `boss_step_1..4`, `boss_hurt_1..4`, ayak sesleri ve düşman sesleri (bölüm 1).
+
+**Doku:** Vesper alev püskürtme için `fire_jet_sheet.png` (bölüm 0-B'deki prompt) geldiğinde doğrudan
+`unity/Assets/Bloodwake/Resources/Vfx/vesper_flame_jet.png` olarak koyabilirsin; oyun onu otomatik kullanır.
+
+---
+
 ## 0. YENİ — 18 Ekim gece işinden çıkanlar (önce bunlar)
 
 Sıra: **A) boss animasyonları → B) VFX dokuları → C) yeni hareket sesleri.**
