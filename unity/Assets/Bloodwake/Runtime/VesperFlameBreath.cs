@@ -11,7 +11,8 @@ namespace Bloodwake
   const float FlameBreathMax=1f,FlameBreathRange=4.6f,FlameBreathCone=34f,FlameBreathTick=.1f;
   void BeginFlameBreath()
   {
-   if(Run?.ClassId!="vesper"||flameBreathing||vesperMoveActive||bladeThrown||RevenantActionActive||Run.Stats.N("hp")<=0)return;
+   // The left hand is free while the greatsword is in flight, so the breath works then too.
+   if(Run?.ClassId!="vesper"||flameBreathing||vesperMoveActive||RevenantActionActive||Run.Stats.N("hp")<=0)return;
    StartCoroutine(FlameBreath());
   }
   // Any other action ends the jet at once and goes ahead the same frame.

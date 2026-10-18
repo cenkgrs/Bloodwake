@@ -28,7 +28,7 @@ namespace Bloodwake
    promptLabel=Label(bottom,"",350,690,900,50,22,false,TextAnchor.MiddleCenter);
    toastLabel=Label(Corner(.5f,1),"",300,120,1000,50,30,true,TextAnchor.MiddleCenter);
    promptKey=Rect(bottom,"Prompt key",0,700,CapWidth("interact"),30);InputCap(promptKey,"interact",0,0);promptKey.gameObject.SetActive(false);
-   var cls=GameData.Rules["classes"][Run.ClassId];bool dash=Run.ClassId=="revenant"||Run.ClassId=="vesper";
+   var cls=GameData.Rules["classes"][Run.ClassId];bool dash=Run.ClassId=="revenant"||Run.ClassId=="vesper"||Run.ClassId=="mage";
    int count=dash?4:3;const float size=80,gap=22;float x0=800-(count*size+(count-1)*gap)/2;
    for(int i=0;i<count;i++)
    {

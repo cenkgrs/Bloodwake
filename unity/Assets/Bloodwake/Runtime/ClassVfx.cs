@@ -94,6 +94,7 @@ namespace Bloodwake
   public GameObject ProjectileVisual(Vector3 pos,Vector3 dir,bool magic,bool hostile)
   {
    if(magic){var orb=Orb(pos,hostile,true);orb.transform.rotation=Quaternion.LookRotation(dir);return orb.gameObject;}
+   if(hostile)return Arrow(pos,dir);
    var go=new GameObject(hostile?"Hostile projectile":"Player projectile");go.transform.SetParent(transform);go.transform.position=pos;go.transform.rotation=Quaternion.LookRotation(dir);
    var trail=go.AddComponent<LineRenderer>();trail.useWorldSpace=false;trail.positionCount=3;trail.SetPositions(new[]{Vector3.back*.22f,Vector3.back*.035f,Vector3.forward*.025f});trail.widthMultiplier=.012f;
    trail.widthCurve=new AnimationCurve(new Keyframe(0,0),new Keyframe(.85f,1),new Keyframe(1,.2f));trail.sharedMaterial=Material("arcane_energy");trail.shadowCastingMode=ShadowCastingMode.Off;

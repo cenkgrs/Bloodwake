@@ -47,7 +47,7 @@ namespace Bloodwake
   void RestoreThrownBlade()
   {
    if(thrownSword)thrownSword.enabled=true;if(thrownFlames)thrownFlames.Release();if(thrownPivot)Destroy(thrownPivot.gameObject);
-   thrownPivot=null;thrownSword=null;thrownFlames=null;bladeThrown=false;vesperMoveActive=false;
+   thrownPivot=null;thrownSword=null;thrownFlames=null;bladeThrown=false;if(!flameBreathing)vesperMoveActive=false;
   }
   float VesperReach()
   {

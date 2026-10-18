@@ -44,6 +44,13 @@ namespace Bloodwake
     if(e.Emerging||e.Hp<=0||!e.View)continue;var to=e.View.transform.position-from;to.y=0;float distance=to.magnitude,angle=Vector3.Angle(ahead,to);
     if(distance<.01f||distance>range||angle>cone)continue;float score=distance*(1+angle/45f);if(score<bestScore){bestScore=score;best=e;}
    }
+   // Nobody in the cone, but a foe right beside the hunter (within two strides, up to well off to the
+   // side): swing at that one rather than at the air.
+   if(best==null&&melee)foreach(var e in Enemies)
+   {
+    if(e.Emerging||e.Hp<=0||!e.View)continue;var to=e.View.transform.position-from;to.y=0;float distance=to.magnitude,angle=Vector3.Angle(ahead,to);
+    if(distance<.01f||distance>2.8f||angle>115)continue;float score=distance*(1+angle/60f);if(score<bestScore){bestScore=score;best=e;}
+   }
    if(best!=null){var to=best.View.transform.position-from;to.y=0;ahead=to.normalized;}
    if(ahead.sqrMagnitude<.01f)return;aim=ahead;Player.transform.rotation=Quaternion.LookRotation(ahead);
   }

@@ -18,6 +18,8 @@ namespace Bloodwake
  {
   int combo;float comboExpires;
   const float CombatActorScale=1.173f;
+  // Health on top of the data tables: the hunters' kits outgrew the old numbers.
+  const float EnemyToughness=1.8f,EnemyBossToughness=1.5f;
   const float NormalHitStop=.06f,MeleeHitStop=.11f,FinisherHitStop=.19f;
   public void SpawnEnemy(string id,Vector3 pos)
   {
@@ -26,7 +28,7 @@ namespace Bloodwake
    float height=id=="boss"?3.5f*BossVariant.N("scale",1):id=="tank"?2.3f:id=="commander"?2.225f:id=="grunt"?2.15f:1.8f;
    var view=ActorView.Create(id,true,height*CombatActorScale,actorRoot);view.transform.position=FreeEnemySpawn(pos,id=="boss"?.8f:id=="tank"||id=="grunt"?.65f:.56f);RevFx.HandMagic(view,true);if(id=="warlock")TintWarlockHands(view);
    if(id=="boss")view.CalibrateRunFromFeet();
-   var enemy=new Enemy{Id=id,Data=data,View=view,Hp=data.N("maxHp")*power,MaxHp=data.N("maxHp")*power,Damage=data.N("damage")*(id=="boss"?1+.25f*t:1+.09f*n+.002f*n*n),Cooldown=.9f};Enemies.Add(enemy);AttachEnemyAgent(enemy);
+   float toughness=id=="boss"?EnemyBossToughness:EnemyToughness;var enemy=new Enemy{Id=id,Data=data,View=view,Hp=data.N("maxHp")*power*toughness,MaxHp=data.N("maxHp")*power*toughness,Damage=data.N("damage")*(id=="boss"?1+.25f*t:1+.09f*n+.002f*n*n),Cooldown=.9f};Enemies.Add(enemy);AttachEnemyAgent(enemy);
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
   }

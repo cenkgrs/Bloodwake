@@ -8,14 +8,15 @@ namespace Bloodwake
  public sealed partial class BloodwakeGame
  {
   RectTransform bossBarRoot;Image bossBarFill,bossBarTrail;Text bossBarName;float bossTrail=1,bossTrailHold;
-  const float BossBarX=330,BossBarY=34,BossBarWidth=940,BossFillInset=128,BossFillWidth=BossBarWidth-BossFillInset-52;
+  const float BossBarX=330,BossBarY=172,BossBarWidth=940,BossFillInset=128,BossFillWidth=BossBarWidth-BossFillInset-52;
   void UpdateBossBar()
   {
    var boss=Enemies.FirstOrDefault(e=>e.Id=="boss"&&e.Hp>0&&e.View&&!e.Emerging);
    if(boss==null||arrivalActive){if(bossBarRoot)bossBarRoot.gameObject.SetActive(false);bossTrail=1;return;}
    if(!bossBarRoot)
    {
-    bossBarRoot=Rect(page,"Boss health",0,0,1600,140);
+    // Pinned to the top centre like the other HUD groups, below the vitals so the two never overlap.
+    bossBarRoot=Rect(page,"Boss health",0,0,1600,900);bossBarRoot.anchorMin=bossBarRoot.anchorMax=bossBarRoot.pivot=new Vector2(.5f,1);bossBarRoot.anchoredPosition=Vector2.zero;
     bossBarName=Label(bossBarRoot,"",BossBarX,BossBarY-4,BossBarWidth,34,26,true,TextAnchor.MiddleCenter);bossBarName.color=gold;
     var frameY=BossBarY+30;
     Plate(bossBarRoot,"Boss bar back",BossBarX+BossFillInset,frameY+21,BossFillWidth,20,new Color(.05f,.02f,.025f,.92f));
