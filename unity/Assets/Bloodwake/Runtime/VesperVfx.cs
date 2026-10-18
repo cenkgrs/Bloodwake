@@ -51,8 +51,8 @@ namespace Bloodwake
     float grow=Mathf.SmoothStep(0,1,p/.2f),fade=1-Mathf.SmoothStep(0,1,(p-.6f)/.4f);float l=length*Mathf.Lerp(.75f,1.05f,grow);
     var facing=JetFacing(dir);go.transform.rotation=facing;
     // The quad is centred; push it out so its left edge sits on the palm.
-    go.transform.position=origin+facing*Vector3.right*l*.46f;go.transform.localScale=new Vector3(l,l,1);
-    block.SetFloat("_Intensity",2.6f*grow*fade);r.SetPropertyBlock(block);
+    go.transform.position=origin+facing*Vector3.right*l*.46f;go.transform.localScale=new Vector3(l,l*.42f,1);
+    block.SetFloat("_Intensity",2.2f*grow*fade);r.SetPropertyBlock(block);
    };
   }
   // Space sets Vesper herself alight: thin flames ride her limbs and back for a few seconds.
