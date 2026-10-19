@@ -8,7 +8,8 @@ namespace Bloodwake.Editor
  {
   public static void Apply(GameObject instance,string modelPath)
   {
-   string folder=Path.GetDirectoryName(modelPath),manifest=folder+"/materials.json";
+   // Forward slashes: on Windows GetDirectoryName returns backslashes and the "/Models/" full-resolution check never matched.
+   string folder=Path.GetDirectoryName(modelPath).Replace('\\','/'),manifest=folder+"/materials.json";
    if(!File.Exists(manifest))throw new System.Exception("Missing source material manifest: "+manifest);
    var rows=JObject.Parse(File.ReadAllText(manifest));var converted=new System.Collections.Generic.Dictionary<string,Material>();
    foreach(var renderer in instance.GetComponentsInChildren<Renderer>(true))

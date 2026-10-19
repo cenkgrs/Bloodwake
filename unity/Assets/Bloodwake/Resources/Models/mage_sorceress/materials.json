@@ -1,0 +1,14 @@
+{
+  "Mage Sorceress": {
+    "color": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "alpha": 1,
+    "metallic": 0,
+    "roughness": 0.62,
+    "albedo": "sorceress_basecolor.jpg"
+  }
+}

@@ -57,7 +57,7 @@ Senden beklenen ses, müzik ve 3D model istekleri `art/ASSET_REQUESTS.md` içind
 - **Vurma hissi:** titreme + ezilme (HitShake), güçlü flaş, daha uzun hit stop, daha fazla savrulma.
 - **Vesper:** dash→R1 çubuğa göre; L1+R1 kılıç gerçekten uçar; R2 R2 beklemesiz; **L1+R2 sol elden alev püskürtme** (≤1 sn).
 - **Mage (oyuncu):** R1 ×3 (sağ el küre, sol el ters küre, 30° buz kırıkları), R2 90° kuvvet halkası, R1 R1 R2 buz kuyruklu yıldızı,
-  L1+R1 yakala-çek-fırlat, kare = havada süzülme. Ters/zemin klipleri düşman büyücünün Mixamo kliplerinden (MageKitImport).
+  L1+R1 yakala-çek-fırlat, kare = havada süzülme. Model: 19 Ekim sorceress (`art/mage/build_sorceress.py` → Bloodwake → Import Mage Sorceress); ters/zemin klipleri düşman büyücünün Mixamo kliplerinden aynı iskelete pişirilir.
 - **Warlock (yeni düşman):** teal büyücü, 30°'lik 5'li yay atışı ve 1 sn hapseden mühür. 3. bölgeden itibaren.
 - **Revenant:** dash→R1 önden saplanır ve yumuşak toparlanır; yürüyüş/koşuda daha dik duruş (RevenantPosture).
   Hareket dalı: Crimson Rend (R2), Mist Chain, Hemorrhage (R1 R1 R2), Blood Lance (L1+R1), Sanguine Siphon (L1+R2).
