@@ -7,7 +7,7 @@
     "vesper_crescent_fan": {"db": -4, "files": ["vesper_crescent_fan"], "gap": 0.1, "impact": 0.45, "pitch": [0.97, 1.03], "voices": 1},
     "vesper_blade_throw": {"db": -5, "files": ["vesper_blade_throw"], "gap": 0.1, "impact": 0.18, "pitch": [0.97, 1.03], "voices": 1},
     "vesper_blade_catch": {"db": -5, "files": ["vesper_blade_catch"], "gap": 0.1, "impact": 0.02, "pitch": [0.97, 1.03], "voices": 1},
-    "boss_grunt": {"db": -5, "files": ["boss_grunt"], "gap": 0.4, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
+    "boss_grunt": {"db": -5, "files": ["boss_grunt"], "gap": 5, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
     "boss_attack_hit": {"db": -3, "files": ["boss_attack_hit"], "gap": 0.1, "impact": 0.18, "pitch": [0.97, 1.03], "voices": 2},
     "boss_sweep_hit": {"db": -3, "files": ["boss_sweep_hit"], "gap": 0.1, "impact": 0.36, "pitch": [0.97, 1.03], "voices": 2},
     "boss_slam_hit": {"db": -2, "files": ["boss_slam_hit"], "gap": 0.1, "impact": 0.1, "pitch": [0.97, 1.03], "voices": 2},
@@ -18,22 +18,22 @@
     "mage_bomb_throw": {"db": -6, "files": ["mage_bomb_throw"], "gap": 0.2, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 2},
     "mage_bomb_fuse": {"db": -8, "files": ["mage_bomb_fuse"], "gap": 0.1, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 3},
     "mage_bomb_blast": {"db": -3, "files": ["mage_bomb_blast"], "gap": 0.1, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 3},
-    "healer_cast": {"db": -7, "files": ["healer_cast"], "gap": 0.3, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 2},
+    "healer_cast": {"db": -8.9, "files": ["healer_cast"], "gap": 0.3, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 2},
     "healer_bloom": {"db": -6, "files": ["healer_bloom"], "gap": 0.3, "impact": 0.1, "pitch": [0.97, 1.03], "voices": 2},
     "amb_boss_square": {
-      "db": -14
+      "db": -16
     },
     "amb_fire_crackle": {
-      "db": -18
+      "db": -16
     },
     "amb_market_night": {
-      "db": -15
+      "db": -14
     },
     "amb_sanctuary": {
-      "db": -17
+      "db": -15
     },
     "amb_town_night": {
-      "db": -15
+      "db": -14
     },
     "archer_attack": {
       "db": -10,
@@ -79,7 +79,7 @@
       "voices": 2
     },
     "armored_step": {
-      "db": -21,
+      "db": -16,
       "files": [
         "armored_step_1",
         "armored_step_2",
@@ -204,12 +204,14 @@
       "voices": 1
     },
     "boss_step": {
-      "db": -11,
+      "db": -8,
       "files": [
         "boss_step_1",
         "boss_step_2",
         "boss_step_3",
-        "boss_step_4"
+        "boss_step_4",
+        "boss_step_5",
+        "boss_step_6"
       ],
       "gap": 0.3,
       "pitch": [
@@ -302,7 +304,7 @@
       "voices": 4
     },
     "enemy_step": {
-      "db": -23,
+      "db": -18,
       "files": [
         "enemy_step_1",
         "enemy_step_2",
@@ -621,7 +623,7 @@
       "voices": 2
     },
     "player_step": {
-      "db": -16,
+      "db": -12,
       "files": [
         "player_step_1",
         "player_step_2",
@@ -638,7 +640,7 @@
       "voices": 2
     },
     "player_step_walk": {
-      "db": -19,
+      "db": -14,
       "files": [
         "player_step_walk_1",
         "player_step_walk_2",

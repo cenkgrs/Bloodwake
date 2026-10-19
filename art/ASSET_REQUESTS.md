@@ -14,6 +14,18 @@ Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya d
 
 ---
 
+## 000. YENİ — 19 Ekim akşam: Revenant L1+R2 tek el klibi (Mixamo)
+
+Sanguine Siphon (L1+R2) şu an iki eliyle çırpan `REV_BloodClap` klibini kullanıyor; tek elle çekmesi için Revenant'ta
+tek elli bir büyü klibi yok. Mixamo'da Revenant karakterini aç (`art/revenant-noble/source-20261015/` ile aynı rig) ve indir:
+**FBX Binary, Without Skin, 60 fps, In Place kapalı.** `art/revenant-noble/siphon-20261019/` içine koy; aktarmayı ben yaparım.
+
+| Dosya adı | Mixamo'da ara | Ne için |
+|---|---|---|
+| `siphon.fbx` | "Standing 1H Magic Attack 01" (yoksa "Standing 1H Cast Spell 01") | Tek kol öne uzanmış, kanı çekerken tutulan poz |
+
+---
+
 ## 00. YENİ — 19 Ekim: ses paketi (ElevenLabs Sound Effects)
 
 Hepsi `unity/Assets/Bloodwake/Resources/audio/` içine, **adı tam olarak tablodaki gibi** (WAV ya da OGG, `_1` ekleme).

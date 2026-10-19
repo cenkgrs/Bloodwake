@@ -8,7 +8,7 @@ namespace Bloodwake
  // that name (or name_1, name_2 ... for variations, see rules.json "audio") is picked up on the next run.
  public sealed partial class BloodwakeGame
  {
-  AudioSource ambienceVoice;Transform listener;float playerStep;readonly Dictionary<Enemy,float> enemySteps=new();
+  AudioSource ambienceVoice;Transform listener;float playerStep;readonly Dictionary<Enemy,float> enemySteps=new();readonly Dictionary<Enemy,Vector3> enemyLast=new();
   string ambienceId;float ambienceTarget;
 
   // The listener rides with the hunter, so fires and enemies are heard from where she stands, not from the high camera.
@@ -26,14 +26,16 @@ namespace Bloodwake
    ambienceVoice.volume=Mathf.MoveTowards(ambienceVoice.volume,ambienceTarget,dt*.5f);if(ambienceVoice.volume<=0&&ambienceTarget<=0&&ambienceVoice.isPlaying)ambienceVoice.Stop();
    if(Screen!="playing"||!Player)return;
    if(playerMoving){playerStep-=dt;if(playerStep<=0){playerStep=walking?.52f:.31f;Sound(walking?"player_step_walk":"player_step");}}else playerStep=Mathf.Min(playerStep,.08f);
-   // Enemies' steps, only for those that are actually moving and near enough to matter.
+   // Enemies' steps, only for those that are actually covering ground and near enough to matter: measured from
+   // how far the body moved, so the warden's lunges and charges thud as well as his walk.
    foreach(var e in Enemies)
    {
-    if(e.Emerging||!e.View)continue;var d=Vector3.Distance(e.View.transform.position,Player.transform.position);if(d>11)continue;
-    bool moving=e.View.Animator&&e.View.Animator.GetCurrentAnimatorClipInfo(0).Any(c=>c.clip&&(c.clip.name.Contains("Run")||c.clip.name.Contains("Walk")));
-    if(!moving)continue;enemySteps.TryGetValue(e,out float t);t-=dt;if(t<=0){t=e.Id=="tank"||e.Id=="boss"?.6f:.42f;Sound(e.Id=="boss"?"boss_step":e.Id=="tank"||e.Id=="grunt"?"armored_step":"enemy_step");}enemySteps[e]=t;
+    if(e.Emerging||!e.View||dt<=0)continue;var at=e.View.transform.position;bool seen=enemyLast.TryGetValue(e,out var last);enemyLast[e]=at;
+    if(!seen||Vector3.Distance(at,Player.transform.position)>(e.Id=="boss"?16:11))continue;
+    float speed=Vector3.Distance(at,last)/dt;if(speed<.6f)continue;
+    enemySteps.TryGetValue(e,out float t);t-=dt;if(t<=0){t=(e.Id=="tank"||e.Id=="boss"?.6f:.42f)*Mathf.Clamp(3/speed,.45f,1.3f);Sound(e.Id=="boss"?"boss_step":e.Id=="tank"||e.Id=="grunt"?"armored_step":"enemy_step");}enemySteps[e]=t;
    }
-   if(enemySteps.Count>40)foreach(var gone in enemySteps.Keys.Where(k=>!Enemies.Contains(k)).ToArray())enemySteps.Remove(gone);
+   if(enemySteps.Count>40||enemyLast.Count>40){foreach(var gone in enemyLast.Keys.Where(k=>!Enemies.Contains(k)).ToArray()){enemySteps.Remove(gone);enemyLast.Remove(gone);}}
   }
   // A room's bed: interior hearth hush in the sanctuary, wind and the restless town outside, a heavier bed for bosses.
   void SetAmbience(string roomType)

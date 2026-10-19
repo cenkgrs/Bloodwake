@@ -162,7 +162,7 @@
   },
 
   "bossVariants": [
-    {"name": "ORVEN, THE GATE-WARDEN", "title": "First of the Ten Tongues", "pattern": ["attack", "sweep", "attack", "charge", "slam"], "tempo": 1.1, "summon": ["grunt"], "summonCount": 3, "castCount": 3, "hp": 0.85, "scale": 0.92},
+    {"name": "ORVEN, THE GATE-WARDEN", "title": "First of the Ten Tongues", "pattern": ["attack", "sweep", "summon", "attack", "charge", "slam"], "tempo": 1.1, "summon": ["grunt"], "summonCount": 3, "castCount": 3, "hp": 0.85, "scale": 0.92},
     {"name": "MOTHER TALLOW", "title": "Keeper of the Weighed Dead", "pattern": ["cast", "attack", "summon", "cast", "sweep"], "tempo": 1.05, "summon": ["archer", "grunt"], "summonCount": 3, "castCount": 5, "hp": 0.95, "scale": 0.95},
     {"name": "THE HANGED CANTOR", "title": "Who Sings Through a Broken Neck", "pattern": ["sweep", "slam", "sweep", "summon", "charge"], "tempo": 1.0, "summon": ["assassin"], "summonCount": 3, "castCount": 3, "hp": 1.0, "scale": 1.0},
     {"name": "SISTER WICKLOW", "title": "The Candle That Drinks", "pattern": ["cast", "cast", "summon", "slam", "cast"], "tempo": 0.95, "summon": ["healer", "mage"], "summonCount": 3, "castCount": 7, "hp": 1.0, "scale": 0.98},

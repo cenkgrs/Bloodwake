@@ -79,7 +79,7 @@ namespace Bloodwake
     else if(!TrySurroundSpawn(id,out pos)){spawnTimer=.4f;return;}
     SpawnEnemy(id,pos);spawnCursor++;spawnTimer=.55f;
    }
-   if(spawnCursor>=total&&Enemies.Count==0){if(++waveIndex<waves.Count){spawnCursor=0;bool newCombo=!rolledWaves||comboStarts.Contains(waveIndex);spawnTimer=newCombo?1.6f:.9f;if(newCombo)Run.Wave++;}else{roomClear=true;Run.RoomsCleared++;OnRoomCleared();if(room.S("type")!="boss"&&HasSound("music_explore"))SetMusic("music_explore");Sound(room.S("type")=="boss"?"boss_slain":"wave_clear");if(room.S("type")=="boss"&&Run.Night>=FinalDistrict)StartCoroutine(VictoryTransition());}}
+   if(spawnCursor>=total&&Enemies.Count==0){if(++waveIndex<waves.Count){spawnCursor=0;bool newCombo=!rolledWaves||comboStarts.Contains(waveIndex);spawnTimer=newCombo?1.6f:.9f;if(newCombo)Run.Wave++;}else{roomClear=true;Run.RoomsCleared++;OnRoomCleared();if(room.S("type")=="boss")SetMusic(HasSound("music_explore")?"music_explore":"");else if(HasSound("music_explore"))SetMusic("music_explore");Sound(room.S("type")=="boss"?"boss_slain":"wave_clear");if(room.S("type")=="boss"&&Run.Night>=FinalDistrict)StartCoroutine(VictoryTransition());}}
   }
  }
 }

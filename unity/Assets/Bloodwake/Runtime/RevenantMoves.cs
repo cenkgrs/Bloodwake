@@ -89,15 +89,25 @@ namespace Bloodwake
    }
    yield return Delay(hold*.55f);vesperMoveActive=false;
   }
-  // L1 + R2: drains everything in front for up to a second; ends early on any other action.
+  // L1 + R2: drains everything in front for up to a second; ends early on any other action, and once nothing is left
+  // in the cone. With nobody in reach it does not start at all, so it never plays out into empty air.
+  const float SiphonRange=4.8f,SiphonCone=40;
+  bool SiphonCanReach(Enemy e,Vector3 origin,Vector3 dir,float slack)
+  {
+   if(e.Emerging||e.Hp<=0||!e.View)return false;var rel=e.View.transform.position-origin;rel.y=0;
+   return rel.magnitude<=SiphonRange+slack&&Vector3.Angle(dir,rel)<=SiphonCone*.5f+10+slack*20;
+  }
   void BeginSiphon()
   {
-   if(Run?.ClassId!="revenant"||flameBreathing||vesperMoveActive||RevenantActionActive||Run.Stats.N("hp")<=0)return;StartCoroutine(SiphonRoutine());
+   if(Run?.ClassId!="revenant"||flameBreathing||vesperMoveActive||RevenantActionActive||Run.Stats.N("hp")<=0)return;
+   var want=!usingPad?aim:moveIntent.sqrMagnitude>.01f?moveIntent:Player.transform.forward;want.y=0;if(want.sqrMagnitude<.001f)want=Player.transform.forward;
+   if(!Enemies.Any(e=>SiphonCanReach(e,Player.transform.position,want.normalized,.5f)))return;
+   StartCoroutine(SiphonRoutine());
   }
   IEnumerator SiphonRoutine()
   {
    flameBreathing=true;vesperMoveActive=true;PadFacing();Player.Play("REV_BloodClap",1.1f);Sound(Voice("revenant_siphon","revenant_swing"));
-   var tethers=new Dictionary<Enemy,TetherFx>();float age=0,tick=0,damage=RevenantBasicDamage()*.2f;const float max=1.1f,range=4.8f,cone=40;
+   var tethers=new Dictionary<Enemy,TetherFx>();float age=0,tick=0,empty=0,damage=RevenantBasicDamage()*.2f;const float max=1.1f;
    Vector3 Palms()=>Player.MagicPalmPosition();
    while(flameBreathing&&age<max&&Run.Stats.N("hp")>0)
    {
@@ -112,13 +122,15 @@ namespace Bloodwake
      foreach(var e in Enemies.ToArray())
      {
       if(e.Emerging||e.Hp<=0||!e.View)continue;var rel=e.View.transform.position-origin;rel.y=0;
-      if(rel.magnitude>range||Vector3.Angle(dir,rel)>cone*.5f+10){if(tethers.TryGetValue(e,out var t)){if(t)t.Release();tethers.Remove(e);}continue;}
+      if(!SiphonCanReach(e,origin,dir,0)){if(tethers.TryGetValue(e,out var t)){if(t)t.Release();tethers.Remove(e);}continue;}
       DamageEnemy(e,damage,false);if(!e.View)continue;drained+=damage;RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("ff6b78"));e.View.FlashHit(false);
       if(!tethers.ContainsKey(e)){var target=e;var t=RevFx.Tether(Palms,()=>target.View?target.View.transform.position+Vector3.up*target.View.Height*.6f:Palms());t.Tone=new Color(1.4f,.08f,.16f,1);tethers[e]=t;}
       if(Random.value<.5f)RevFx.Splatter(e.View.transform.position+Vector3.up*1.1f,-rel.normalized);
       if(Random.value<.4f)RevFx.BloodMistPuff(e.View.transform.position+Vector3.up*e.View.Height*.6f,Palms());
      }
-     if(drained>0){float heal=drained*.4f;Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+heal);}
+     if(drained>0){float heal=drained*.4f;Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+heal);empty=0;}
+     // Everything drained, dead or out of the cone: let go instead of miming at nothing.
+     else if((empty+=.1f)>=.2f)break;
     }
     yield return null;
    }
