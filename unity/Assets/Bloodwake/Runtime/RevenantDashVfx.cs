@@ -20,13 +20,14 @@ namespace Bloodwake
   public void DashCloud(ActorView actor,Vector3 direction,bool fire=false)
   {
    int version=++dashMistVersion;var side=Vector3.Cross(Vector3.up,direction);
-   // A body-sized moving volume, not stamps on the floor. World-space wake is separate.
-   for(int i=0;i<8;i++)
+   // A moving volume that trails the body, not stamps on the floor. World-space wake is separate. The blood version
+   // sits behind the hunter, darker and thinner, so the silhouette still reads through it instead of a red blot.
+   for(int i=0;i<(fire?8:6);i++)
    {
-    float seed=i*3.71f,size=actor.Height*(i<4?.94f:.73f);
-    var offset=Vector3.up*actor.Height*(.24f+(i%4)*.17f)+side*((i%2==0?-1:1)*.24f)-direction*(i<4?.12f:.5f);
+    float seed=i*3.71f,size=actor.Height*(fire?(i<4?.94f:.73f):(i<3?.62f:.5f));
+    var offset=Vector3.up*actor.Height*(.24f+(i%4)*.17f)+side*((i%2==0?-1:1)*.24f)-direction*(fire?(i<4?.12f:.5f):(i<3?.45f:.95f));
     var anchor=actor.transform.position;float released=-1;
-    var fog=Mist(fire,fire?"Dash moving ember cloud":"Dash moving crimson cloud",anchor+offset,Vector3.one*size,.65f,fire?new Color(.95f,.34f,.06f,.42f):new Color(.46f,.012f,.032f,.49f));
+    var fog=Mist(fire,fire?"Dash moving ember cloud":"Dash moving crimson cloud",anchor+offset,Vector3.one*size,.65f,fire?new Color(.95f,.34f,.06f,.42f):new Color(.3f,.008f,.022f,.3f));
     fog.Block.SetFloat("_Seed",seed);fog.Block.SetFloat("_Opacity",.65f);fog.Apply();
     fog.Tick=(p,dt)=>
     {
@@ -50,11 +51,12 @@ namespace Bloodwake
    trace.Block.SetFloat("_Seed",UnityEngine.Random.Range(0,20));trace.Apply();
    if(!fire)DashBloodThreads(position,direction);
    else VesperTrailBurn(position,direction,1);
-   for(int i=0;i<2;i++)
+   // Blood sheds one thin, dark wisp per step (two stacked ones pooled into a red blot around the legs).
+   for(int i=0;i<(fire?2:1);i++)
    {
-    float spread=UnityEngine.Random.Range(-.35f,.35f),fogSize=UnityEngine.Random.Range(1.25f,1.7f);
-    var start=position+Vector3.up*(.55f+i*.65f)+side*spread;
-    var fog=Mist(fire,fire?"Dash shedding ember smoke":"Dash shedding crimson mist",start,Vector3.one*fogSize,1.05f,fire?new Color(.7f,.2f,.04f,.5f):new Color(.4f,.008f,.023f,.55f));
+    float spread=UnityEngine.Random.Range(-.35f,.35f),fogSize=fire?UnityEngine.Random.Range(1.25f,1.7f):UnityEngine.Random.Range(.8f,1.05f);
+    var start=position+Vector3.up*(fire?.55f+i*.65f:.85f)+side*spread;
+    var fog=Mist(fire,fire?"Dash shedding ember smoke":"Dash shedding crimson mist",start,Vector3.one*fogSize,fire?1.05f:.7f,fire?new Color(.7f,.2f,.04f,.5f):new Color(.26f,.006f,.018f,.22f));
     fog.Block.SetFloat("_Seed",UnityEngine.Random.Range(0,50f));fog.Apply();
     fog.Tick=(p,dt)=>{fog.Block.SetFloat("_Opacity",1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.38f,1,p)));fog.transform.position=start+side*spread*fog.Age*.25f+Vector3.up*fog.Age*.16f;fog.transform.rotation=Game.Cam.transform.rotation;fog.transform.localScale=Vector3.one*fogSize*Mathf.Lerp(.9f,1.3f,p);};
    }
@@ -123,8 +125,20 @@ namespace Bloodwake
    var side=Vector3.Cross(Vector3.up,direction);
    var axis=Vector3.ProjectOnPlane(direction,Game.Cam.transform.forward).normalized;
    if(axis.sqrMagnitude<.01f)axis=Game.Cam.transform.up;
-   // Four claw rakes, wide and bright enough to read at gameplay zoom, driven out past the hand...
-   for(int i=0;i<4;i++)
+   // The painted blood slash laid along the thrust: its chord (about 43° in the cell) turned onto the screen-space
+   // line of the strike, a second thinner one mirrored across it, so the lunge reads as two claws tearing forward...
+   if(SheetTexture("blood_slash"))
+   {
+    var cam=Game.Cam.transform;float angle=Mathf.Atan2(Vector3.Dot(direction,cam.up),Vector3.Dot(direction,cam.right))*Mathf.Rad2Deg;
+    for(int i=0;i<2;i++)
+    {
+     float s=reach*(i==0?1.05f:.8f);var at=hand+direction*reach*(i==0?.5f:.62f)+side*(i==0?-.12f:.14f);
+     var slash=Textured("Thrust blood slash",at,new Vector3(s,i==0?s:-s,1),"blood_slash",i==0?.3f:.26f,new Color(1,.86f,.9f,1.2f),false,4,true);
+     slash.transform.rotation=cam.rotation*Quaternion.Euler(0,0,angle+(i==0?-43:43));
+    }
+   }
+   // ...with the old straight rakes as a fallback until the sheet is present.
+   else for(int i=0;i<4;i++)
    {
     float offset=(i-1.5f)*.16f;var start=hand+side*offset;
     var fx=Sheet("Straight claw thrust trail",start,new Vector3(.24f,reach*.8f,1),"claw_cut",.24f,Tone(i==1||i==2?"e0203f":"a5122e"));
@@ -139,7 +153,13 @@ namespace Bloodwake
   }
   public void ThrustClawImpact(ActorView target)
   {
-   // Four straight parallel cuts across the victim, following its recoil.
+   // A painted gash bursting on the body itself...
+   if(SheetTexture("blood_slash"))
+   {
+    float s=target.Height*.95f;var gash=Textured("Thrust blood gash",target.transform.position+Vector3.up*target.Height*.57f,new Vector3(s,s,1),"blood_slash",.32f,new Color(1,.86f,.9f,1.25f),false,4,true);
+    float tilt=UnityEngine.Random.Range(-25f,25f);gash.Tick=(p,dt)=>{if(!target){gash.transform.localScale=Vector3.zero;return;}var cam=Game.Cam.transform;gash.transform.position=target.transform.position+Vector3.up*target.Height*.57f-cam.forward*.5f;gash.transform.rotation=cam.rotation*Quaternion.Euler(0,0,tilt);};
+   }
+   // ...over four straight parallel cuts across the victim, following its recoil.
    for(int i=0;i<4;i++)
    {
     float offset=(i-1.5f)*.15f,length=target.Height*(i==0||i==3?.40f:.52f);
