@@ -1,6 +1,6 @@
 # Bloodwake — senden istenen varlıklar (17–19 Ekim 2026)
 
-Teslim edilenler listeden çıkarıldı (19 Ekim: ortam döngüleri, Tripo dekor, ses paketinin çoğu, alev jeti ve diğer VFX dokuları, ayak sesleri).
+Teslim edilenler listeden çıkarıldı (19 Ekim: ortam döngüleri, Tripo dekor, ses paketinin çoğu, alev jeti ve diğer VFX dokuları, ayak sesleri, Vesper yer alevi sheet'leri).
 
 Kodda hepsinin yeri hazır: dosya doğru adla doğru klasöre girdiği anda oyun onu kullanır.
 Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya devam eder.

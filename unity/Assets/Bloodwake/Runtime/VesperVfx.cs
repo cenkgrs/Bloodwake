@@ -17,15 +17,37 @@ namespace Bloodwake
    if(flameMaterials.TryGetValue(kind,out var m)&&m)return m;var shader=Resources.Load<Shader>("Vfx/vesper_flame_flipbook");if(!shader)return null;
    m=new Material(shader){name="Vesper "+kind+" flame"};m.SetTexture("_MainTex",Resources.Load<Texture2D>(kind=="flame"?"Vfx/vesper_flame_flipbook":"Vfx/vesper_flame_"+kind));m.SetColor("_Tint",new Color(1,.86f,.7f));flameMaterials[kind]=m;return m;
   }
-  static float FlameAspect(string kind)=>kind=="jet"?1.7f:kind=="body"?.5f:kind=="ground"||kind=="burst"?1.25f:.75f;
+  // Frame width/height: the first ground and burst sheets have 5:4 frames, the later ground sheets square ones.
+  static float FlameAspect(string kind)=>kind=="jet"?1.7f:kind=="body"?.5f:kind=="ground"||kind=="burst"?1.25f:kind.StartsWith("ground_")?1f:.75f;
+  // Ground fire sheets: vesper_flame_ground plus any delivered vesper_flame_ground_2, _3 ... picked at random.
+  static string[] groundKinds;
+  static string GroundKind()
+  {
+   if(groundKinds==null){var found=new System.Collections.Generic.List<string>();for(int i=1;i<=8;i++){string k=i==1?"ground":"ground_"+i;if(Resources.Load<Texture2D>("Vfx/vesper_flame_"+k))found.Add(k);}groundKinds=found.ToArray();}
+   return groundKinds.Length>0?groundKinds[Random.Range(0,groundKinds.Length)]:"ground";
+  }
+  // One patch of lingering ground fire. The single ground sheet repeats the same low silhouette, so each patch
+  // varies its size, width, lean and colour and usually raises one or two tongues from the flame/body sheets.
+  public void GroundFire(Vector3 at,float height,float life,float delay,float intensity)
+  {
+   float h=height*Random.Range(.75f,1.2f);FlameCard(at,h,life,Vector3.zero,delay,intensity,GroundKind(),null,Random.Range(-6f,6f),true);
+   int tongues=Random.value<.35f?0:Random.value<.7f?1:2;
+   for(int i=0;i<tongues;i++)
+   {
+    var offset=Random.insideUnitSphere*.3f;offset.y=0;
+    FlameCard(at+offset,h*Random.Range(.9f,1.7f),life*Random.Range(.55f,.95f),Vector3.up*Random.Range(0,.12f),delay+Random.Range(0,.35f),intensity*Random.Range(.7f,1f),Random.value<.55f?"flame":"body",null,Random.Range(-12f,12f),true);
+   }
+  }
   // Flipbook card: rises, swells and burns out. Additive, camera-facing. follow keeps it on a bone.
-  public void FlameCard(Vector3 pos,float height,float life,Vector3 drift,float delay=0,float intensity=2.2f,string kind="flame",Transform follow=null)
+  // roll leans the card; varied widens its colour (deep crimson to white-gold) and width range.
+  public void FlameCard(Vector3 pos,float height,float life,Vector3 drift,float delay=0,float intensity=2.2f,string kind="flame",Transform follow=null,float roll=0,bool varied=false)
   {
    var material=FlameMaterial(kind);if(!material)return;bool once=kind=="burst";
    var go=GameObject.CreatePrimitive(PrimitiveType.Quad);go.name="Attack flame";Object.Destroy(go.GetComponent<Collider>());go.transform.SetParent(transform,false);
    var r=go.GetComponent<MeshRenderer>();r.sharedMaterial=material;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.receiveShadows=false;
    var block=new MaterialPropertyBlock();float seed=Random.Range(0,16f),fps=once?16/life:Random.Range(18,26);block.SetFloat("_Offset",seed);block.SetFloat("_Fps",fps);block.SetFloat("_OneShot",once?1:0);block.SetFloat("_Start",Time.time+delay);
-   block.SetColor("_Tint",Color.Lerp(new Color(1,.78f,.6f),new Color(1,.95f,.8f),Random.value));float mirror=Random.value<.5f?-1:1,stretch=once?1:Random.Range(.75f,1.25f),aspect=FlameAspect(kind);
+   block.SetColor("_Tint",varied?Color.Lerp(new Color(1,.5f,.4f),new Color(1,.97f,.86f),Random.value):Color.Lerp(new Color(1,.78f,.6f),new Color(1,.95f,.8f),Random.value));
+   float mirror=Random.value<.5f?-1:1,stretch=once?1:varied?Random.Range(.7f,1.6f):Random.Range(.75f,1.25f),aspect=FlameAspect(kind);
    block.SetFloat("_Intensity",0);r.SetPropertyBlock(block);var offset=follow?pos-follow.position:Vector3.zero;
    go.transform.position=pos;go.transform.localScale=Vector3.zero;
    Life(go,life+delay).Tick=(p,dt)=>
@@ -33,7 +55,7 @@ namespace Bloodwake
     float age=p*(life+delay)-delay;if(age<0)return;float q=age/life;
     float grow=once?1:Mathf.SmoothStep(0,1,q/.18f),fade=once?1-Mathf.SmoothStep(0,1,(q-.75f)/.25f):1-Mathf.SmoothStep(0,1,(q-.45f)/.55f);
     float h=once?height:height*Mathf.Lerp(.55f,1.15f,grow);var anchor=follow?follow.position+offset:pos;
-    go.transform.position=anchor+drift*age+Vector3.up*h*(kind=="ground"||once?.38f:.45f);go.transform.rotation=kind=="jet"?JetFacing(drift):Game.Cam.transform.rotation;go.transform.localScale=new Vector3(h*aspect*stretch*(kind=="jet"?1:mirror),h,1);
+    go.transform.position=anchor+drift*age+Vector3.up*h*(kind.StartsWith("ground")||once?.38f:.45f);go.transform.rotation=kind=="jet"?JetFacing(drift):Game.Cam.transform.rotation*Quaternion.Euler(0,0,roll);go.transform.localScale=new Vector3(h*aspect*stretch*(kind=="jet"?1:mirror),h,1);
     block.SetFloat("_Intensity",intensity*grow*fade);r.SetPropertyBlock(block);
    };
   }
@@ -93,7 +115,7 @@ namespace Bloodwake
    }
    // Lingering burn across the area.
    int linger=major?18:6;
-   for(int i=0;i<linger;i++){var at=pos+Flat(Random.insideUnitSphere).normalized*radius*Mathf.Sqrt(Random.value)*(major?.95f:.7f);if(Vector3.Distance(Flat(at),Flat(pos))<auraRadius*1.2f)continue;FlameCard(at,Random.Range(.45f,.8f),Random.Range(1.2f,major?2.2f:1.4f),Vector3.zero,.2f+Random.Range(0,major?.7f:.3f),1.4f,"ground");}
+   for(int i=0;i<linger;i++){var at=pos+Flat(Random.insideUnitSphere).normalized*radius*Mathf.Sqrt(Random.value)*(major?.95f:.7f);if(Vector3.Distance(Flat(at),Flat(pos))<auraRadius*1.2f)continue;GroundFire(at,Random.Range(.45f,.8f),Random.Range(1.2f,major?2.2f:1.4f),.2f+Random.Range(0,major?.7f:.3f),1.4f);}
    Sparks(pos+Vector3.up*.18f,VesperGold,major?80:26,major?.9f:.42f,.8f,major?8f:3.6f);
    Sparks(pos+Vector3.up*.1f,VesperBlood,major?30:10,major?.85f:.52f,.45f,major?5f:2.8f);
   }
@@ -101,7 +123,7 @@ namespace Bloodwake
   public void VesperTrailBurn(Vector3 pos,Vector3 direction,int count)
   {
    var side=Vector3.Cross(Vector3.up,direction).normalized;
-   for(int i=0;i<count;i++)FlameCard(pos+side*Random.Range(-.35f,.35f)+direction.normalized*Random.Range(-.2f,.2f),Random.Range(.4f,.7f),Random.Range(1.1f,1.8f),Vector3.zero,.08f+Random.Range(0,.25f),1.4f,"ground");
+   for(int i=0;i<count;i++)GroundFire(pos+side*Random.Range(-.35f,.35f)+direction.normalized*Random.Range(-.2f,.2f),Random.Range(.4f,.7f),Random.Range(1.1f,1.8f),.08f+Random.Range(0,.25f),1.4f);
   }
   public void VesperDash(Vector3 start,Vector3 end)
   {
