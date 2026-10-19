@@ -38,8 +38,8 @@ namespace Bloodwake
     // With the painted jet sheet: big flipbook cards anchored at the palm carry the stream; fewer loose
     // tongues add volume around it.
     bool painted=jetKind=="jet";
-    if(painted&&(jetCard-=dt)<=0){jetCard=.09f;RevFx.FlameJetCard(origin,Quaternion.Euler(0,Random.Range(-3f,3f),0)*dir,Random.Range(3.4f,4f)*Mathf.Max(.45f,ramp),.28f);}
-    for(emit-=dt;emit<=0;emit+=painted?.07f:.011f)
+    if(painted&&(jetCard-=dt)<=0){jetCard=.17f;RevFx.FlameJetCard(origin,Quaternion.Euler(0,Random.Range(-2f,2f),0)*dir,Random.Range(3.6f,4f)*Mathf.Max(.45f,ramp),.34f);}
+    for(emit-=dt;emit<=0&&!painted;emit+=.011f)
     {
      // Big overlapping tongues so the stream reads as one jet, fanning a little as it travels.
      var side=Vector3.Cross(Vector3.up,dir);float spread=Random.Range(-1f,1f);
