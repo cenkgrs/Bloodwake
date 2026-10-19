@@ -10,7 +10,7 @@ namespace Bloodwake
   float revenantDashAge,revenantThrustAge,thrustWindow,dashWakeDistance,dashTravelled;
   bool revenantDashing,revenantThrusting,thrustContactDone,thrustQueued,practiceDashImpact,thrustRecovering;float thrustRecoveryAge;
   const float ThrustRecoveryTime=.22f;
-  Vector3 revenantDashDirection,thrustDirection;
+  Vector3 revenantDashDirection,thrustDirection,revenantDashStart;
   public bool RevenantActionActive=>revenantDashing||revenantThrusting;
   public bool RevenantDashActive=>revenantDashing;
   public bool DashImpactUnlocked=>Run?.ClassId=="revenant"&&(Run.Stats.N("revenantDashImpact")>0||(combatPractice&&practiceDashImpact));
@@ -31,7 +31,7 @@ namespace Bloodwake
    if(chain){secondDashUntil=0;if(revenantDashing)Player.EndRevenantPose();}
    else if(Run.ClassId=="vesper"&&Owns("vesper_double_dash")||Run.ClassId=="revenant"&&Owns("revenant_mist_chain"))secondDashUntil=Time.time+RevenantDashDuration+.45f;
    direction.y=0;if(direction.sqrMagnitude<.001f)direction=Player.transform.forward;
-   revenantDashDirection=direction.normalized;revenantDashAge=dashWakeDistance=dashTravelled=thrustWindow=0;thrustQueued=false;
+   revenantDashDirection=direction.normalized;revenantDashStart=Player.transform.position;revenantDashAge=dashWakeDistance=dashTravelled=thrustWindow=0;thrustQueued=false;
    revenantDashing=true;dashCd=combatPractice?0:RevenantDashCooldown;attackCd=0;
    Player.transform.rotation=Quaternion.LookRotation(revenantDashDirection);Player.BeginRevenantDashPose(RevenantDashDuration);
    bool fire=Run.ClassId=="vesper";if(fire)Sound("vesper_dash");RevFx.DashCloud(Player,revenantDashDirection,fire);RevFx.DashWake(Player.transform.position,revenantDashDirection,fire);return true;
@@ -100,12 +100,20 @@ namespace Bloodwake
    thrustDirection=Player.transform.forward;attackCd=thrustContact+.07f;combo=0;
    Player.BeginRevenantThrustPose(thrustDuration);Sound("revenant_swing");return true;
   }
+  // Crimson Arrival: the dash passes through bodies and ends behind them, so the wound runs the whole path it
+  // cut, not only the spot it stopped on. Everything it crossed is torn open and keeps bleeding.
   void DashLandingImpact()
   {
-   var origin=Player.transform.position;const float radius=1.25f;
-   DamageCargo(origin,radius,revenantDashDirection);
-   foreach(var e in Enemies.ToArray())if(!e.Emerging&&e.Hp>0&&Vector3.Distance(e.View.transform.position,origin)<=radius+.4f)DamageEnemy(e,RevenantBasicDamage()*.65f);
+   var origin=Player.transform.position;var start=revenantDashStart;start.y=origin.y;const float radius=1.9f;float damage=RevenantBasicDamage();
+   DamageCargoSegment(start,origin,BloodStepHalfWidth);DamageCargo(origin,radius,revenantDashDirection);bool any=false;
+   foreach(var e in Enemies.ToArray())
+   {
+    if(e.Emerging||e.Hp<=0||!e.View||!InsideBloodStep(e.View.transform.position,start,origin,radius))continue;
+    any=true;var at=e.View.transform.position;DamageEnemy(e,damage);if(!e.View||e.Hp<=0)continue;Bleed(e,3,damage*.2f);
+    e.Stagger=Mathf.Max(e.Stagger,.35f);RevFx.Splatter(at+Vector3.up*.9f,revenantDashDirection);RevFx.ThrustClawImpact(e.View);
+   }
    RevFx.DashLanding(origin);
+   if(any){Sound(Voice("revenant_crimson_arrival","vesper_hit_flesh"));hitStop=Mathf.Max(hitStop,.05f);ShakeCamera(.35f,revenantDashDirection);}
   }
   void RevenantThrustHit()
   {

@@ -7,7 +7,7 @@
     "vesper_crescent_fan": {"db": -4, "files": ["vesper_crescent_fan"], "gap": 0.1, "impact": 0.45, "pitch": [0.97, 1.03], "voices": 1},
     "vesper_blade_throw": {"db": -5, "files": ["vesper_blade_throw"], "gap": 0.1, "impact": 0.18, "pitch": [0.97, 1.03], "voices": 1},
     "vesper_blade_catch": {"db": -5, "files": ["vesper_blade_catch"], "gap": 0.1, "impact": 0.02, "pitch": [0.97, 1.03], "voices": 1},
-    "boss_grunt": {"db": -5, "files": ["boss_grunt"], "gap": 5, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
+    "boss_grunt": {"db": -5, "files": ["boss_grunt", "boss_grunt_2", "boss_grunt_3", "boss_grunt_4"], "gap": 10, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
     "boss_attack_hit": {"db": -3, "files": ["boss_attack_hit"], "gap": 0.1, "impact": 0.18, "pitch": [0.97, 1.03], "voices": 2},
     "boss_sweep_hit": {"db": -3, "files": ["boss_sweep_hit"], "gap": 0.1, "impact": 0.36, "pitch": [0.97, 1.03], "voices": 2},
     "boss_slam_hit": {"db": -2, "files": ["boss_slam_hit"], "gap": 0.1, "impact": 0.1, "pitch": [0.97, 1.03], "voices": 2},
@@ -204,7 +204,7 @@
       "voices": 1
     },
     "boss_step": {
-      "db": -8,
+      "db": -4,
       "files": [
         "boss_step_1",
         "boss_step_2",

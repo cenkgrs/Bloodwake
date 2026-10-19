@@ -725,7 +725,7 @@
 	{
 	  "id": "revenant_crimson_arrival",
 	  "name": "Crimson Arrival · Revenant",
-	  "description": "Unlock blood damage on Shift dash arrival. 65% basic damage in a small area. Applies next run.",
+	  "description": "Shift dash tears through everything on its path and where it lands: 100% basic damage, 3 s bleed, brief stagger. Applies next run.",
 	  "class": "revenant",
 	  "branch": "motion",
 	  "baseCost": 15,

@@ -24,6 +24,17 @@ tek elli bir büyü klibi yok. Mixamo'da Revenant karakterini aç (`art/revenant
 |---|---|---|
 | `siphon.fbx` | "Standing 1H Magic Attack 01" (yoksa "Standing 1H Cast Spell 01") | Tek kol öne uzanmış, kanı çekerken tutulan poz |
 
+### Boss saldırı kükremeleri — ElevenLabs Sound Effects
+
+Şu an `boss_grunt_2..4`, senin `boss_grunt` sesinden ffmpeg ile türettiğim varyasyonlar (derin, kısa/sert, çift katman).
+Gerçek alternatif istersen aynı adlarla üret, benimkilerin üzerine yaz; kod dördünü dönüşümlü çalar.
+
+| Dosya | Süre | Prompt |
+|---|---|---|
+| `boss_grunt_2` | 1.6 sn | Huge armored undead knight roaring with effort before a ground slam, deep guttural chest roar, metal armor rattle, dry, no music |
+| `boss_grunt_3` | 1.0 sn | Short savage bark of a giant monstrous warrior lunging forward, harsh throat growl cut off abruptly, dry, no music |
+| `boss_grunt_4` | 2.0 sn | Bestial cursed giant bellowing a summoning call, layered deep growl and raspy scream, distant bell resonance underneath, dry, no music |
+
 ---
 
 ## 00. YENİ — 19 Ekim: ses paketi (ElevenLabs Sound Effects)
