@@ -10,7 +10,7 @@ namespace Bloodwake.Editor
   {
    if(!assetPath.Contains("/Environment/Kit01/"))return;var t=(TextureImporter)assetImporter;
    t.textureType=assetPath.EndsWith("normal.png")?TextureImporterType.NormalMap:TextureImporterType.Default;
-   t.sRGBTexture=assetPath.EndsWith("albedo.jpg");t.mipmapEnabled=true;t.anisoLevel=8;t.maxTextureSize=2048;t.wrapMode=TextureWrapMode.Repeat;
+   t.sRGBTexture=assetPath.EndsWith("albedo.jpg");t.mipmapEnabled=true;t.anisoLevel=8;t.maxTextureSize=4096;t.wrapMode=TextureWrapMode.Repeat;
    t.isReadable=assetPath.EndsWith("roughness.jpg")||assetPath.EndsWith("metallic.jpg");t.textureCompression=TextureImporterCompression.CompressedHQ;
   }
   void OnPreprocessModel()
@@ -29,7 +29,7 @@ namespace Bloodwake.Editor
    {
     string folder=root+"/"+id;var source=AssetDatabase.LoadAssetAtPath<GameObject>(folder+"/model.fbx");if(!source)throw new System.Exception("Missing user model "+id);
     var rough=AssetDatabase.LoadAssetAtPath<Texture2D>(folder+"/roughness.jpg");var metal=AssetDatabase.LoadAssetAtPath<Texture2D>(folder+"/metallic.jpg");
-    int size=Mathf.Min(2048,rough.width);var packed=new Texture2D(size,size,TextureFormat.RGBA32,false,true);var pixels=new Color32[size*size];
+    int size=Mathf.Min(4096,rough.width);var packed=new Texture2D(size,size,TextureFormat.RGBA32,false,true);var pixels=new Color32[size*size];
     var roughPixels=rough.GetPixels32();var metalPixels=metal.GetPixels32();int rw=rough.width,rh=rough.height,mw=metal.width,mh=metal.height;
     for(int y=0;y<size;y++)for(int x=0;x<size;x++)pixels[y*size+x]=new Color32(metalPixels[(y*mh/size)*mw+x*mw/size].r,0,0,(byte)(255-roughPixels[(y*rh/size)*rw+x*rw/size].r));
     packed.SetPixels32(pixels);packed.Apply();File.WriteAllBytes(folder+"/metal-smooth.png",packed.EncodeToPNG());Object.DestroyImmediate(packed);AssetDatabase.ImportAsset(folder+"/metal-smooth.png");
@@ -37,7 +37,8 @@ namespace Bloodwake.Editor
     material.SetTexture("_BaseMap",AssetDatabase.LoadAssetAtPath<Texture2D>(folder+"/albedo.jpg"));material.SetTexture("_BumpMap",AssetDatabase.LoadAssetAtPath<Texture2D>(folder+"/normal.png"));material.SetTexture("_MetallicGlossMap",AssetDatabase.LoadAssetAtPath<Texture2D>(folder+"/metal-smooth.png"));
     material.SetColor("_BaseColor",Color.white);material.SetFloat("_Metallic",1);material.SetFloat("_Smoothness",1);material.SetFloat("_BumpScale",1);material.EnableKeyword("_NORMALMAP");material.EnableKeyword("_METALLICSPECGLOSSMAP");EditorUtility.SetDirty(material);
     var prefab=new GameObject(id);var model=Object.Instantiate(source,prefab.transform);var renderers=model.GetComponentsInChildren<Renderer>();var bounds=renderers[0].bounds;foreach(var renderer in renderers){bounds.Encapsulate(renderer.bounds);renderer.sharedMaterials=Enumerable.Repeat(material,renderer.sharedMaterials.Length).ToArray();}
-    float height=id switch{"house_haunted"=>8f,"house"=>7f,"building"=>7f,"gate"=>3.5f,"wall"=>2.4f,"brazier"=>1.3f,"barrel"=>.95f,"lantern"=>.55f,"cloth"=>.65f,"well"=>3.35f,_=>1};float scale=height/Mathf.Max(.001f,bounds.size.y);model.transform.localScale*=scale;model.transform.localPosition=-new Vector3(bounds.center.x,bounds.min.y,bounds.center.z)*scale;
+    float height=id switch{"house_haunted"=>8f,"house"=>7f,"building"=>7f,"gate"=>3.5f,"wall"=>2.4f,"brazier"=>1.3f,"barrel"=>.95f,"lantern"=>.55f,"cloth"=>.65f,"well"=>3.35f,
+     "cart"=>1.4f,"sacks"=>.75f,"hay_bale"=>.8f,"weapon_rack"=>1.7f,"rubble"=>.55f,"coffin"=>.65f,"cage"=>1.9f,"shrine_statue"=>2.6f,"candles"=>.45f,"bones"=>.25f,"banner_pole"=>3.2f,"firewood"=>.7f,_=>1};float scale=height/Mathf.Max(.001f,bounds.size.y);model.transform.localScale*=scale;model.transform.localPosition=-new Vector3(bounds.center.x,bounds.min.y,bounds.center.z)*scale;
     PrefabUtility.SaveAsPrefabAsset(prefab,folder+"/"+id+".prefab");Debug.Log("USER_ENV_IMPORTED "+id+" meshes "+renderers.Length+" raw bounds "+bounds.size+" scale "+scale);Object.DestroyImmediate(prefab);
    }
    AssetDatabase.SaveAssets();Debug.Log("BLOODWAKE_USER_ENVIRONMENT_IMPORTED "+ids.Length);

@@ -1,4 +1,6 @@
-# Bloodwake — senden istenen varlıklar (17–18 Ekim 2026)
+# Bloodwake — senden istenen varlıklar (17–19 Ekim 2026)
+
+Teslim edilenler listeden çıkarıldı (19 Ekim: ortam döngüleri, Tripo dekor, ses paketinin çoğu, alev jeti dokusu).
 
 Kodda hepsinin yeri hazır: dosya doğru adla doğru klasöre girdiği anda oyun onu kullanır.
 Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya devam eder.
@@ -8,7 +10,7 @@ Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya d
 - **3D modeller:** Tripo'dan indirdiğin zip'leri `art/environment-incoming/<id>.zip` olarak bırak. İçe aktarmayı,
   ölçeklemeyi ve odalara dağıtmayı ben yapacağım.
 
-Öncelik sırası: **1) ayak sesleri ve düşman sesleri → 2) ortam döngüleri → 3) 3D dekor → 4) müzik varyasyonları → 5) Vesper'ın yeni hareket sesleri.**
+Öncelik sırası: **1) düşman sesleri (+ ayak sesi varyasyonları) → 2) müzik varyasyonları → 3) Vesper'ın yeni hareket sesleri.**
 
 ---
 
@@ -20,28 +22,13 @@ Gerçekçi, kuru (az yankı), oyun içi SFX, müzik yok.
 
 | Dosya | Ne zaman | Süre | Darbe anı | Prompt |
 |---|---|---|---|---|
-| `vesper_dash` (değiştir) | Vesper dash | 0.5 sn | 0.05 | A fast fiery dash, a sharp burst of flame whooshing past with crackling embers trailing behind, cloth flapping |
-| `vesper_death` (değiştir) | Vesper ölünce | 2.0 sn | 0.1 | A young nobleman's dying gasp and groan, no words, a greatsword clattering onto stone, flames guttering out |
-| `vesper_flame_breath` | L1+R2 alev püskürtme | 1.2 sn | 0.0 | A roaring jet of fire pouring from a hand like a flamethrower, steady whooshing burn with crackles and pops, ends with a fiery puff |
 | `vesper_falling_star` | R1 R1 R2 | 1.4 sn | 0.62 | A leap with a spinning blade whoosh, then a greatsword slammed into stone with a huge fiery explosion and falling rubble |
-| `mage_bomb_throw` | Düşman büyücü bombayı atınca | 0.6 sn | 0.0 | A dark sorcerer flinging a sphere of crackling magenta energy, a warbling magical whoosh |
-| `mage_bomb_fuse` | Bomba yerde tik-tak atarken | 1.2 sn | 0.0 | A humming magical bomb pulsing faster and faster, rising whine with electric crackles, building to the edge of exploding, no explosion |
-| `mage_bomb_blast` | Bomba patlayınca | 1.2 sn | 0.05 | A violent arcane explosion, deep magical boom with shattering crystal and a spray of crackling sparks |
 | `healer_cast` | Şifacı orb'u atınca | 0.7 sn | 0.0 | A soft holy chime and a gentle airy whoosh as a glowing healing orb is tossed |
 | `healer_bloom` | Şifa yere inip iyileştirince | 1.2 sn | 0.1 | A warm magical healing bloom, shimmering bells and a soft rising choir swell, no words |
-| `boss_grunt` | Boss her saldırıya başlarken | 0.6 sn | 0.1 | A colossal armored demon's short guttural effort grunt, deep and metallic, no words |
-| `boss_attack_hit` | Boss tek kılıç vuruşu | 1.0 sn | 0.4 | A massive greatsword swung by a giant, heavy whoosh then a brutal metal impact |
-| `boss_sweep_hit` | Boss dönerek savurma | 1.2 sn | 0.5 | A giant spinning with a huge blade, long circular whoosh ending in a heavy cleaving impact |
-| `boss_slam_hit` | Boss yere vurma | 1.4 sn | 0.6 | A giant greatsword raised and slammed into stone, ground-shaking boom, cracking rock and debris |
-| `boss_charge_hit` | Boss hücum | 1.0 sn | 0.3 | A giant armored creature charging forward, thundering heavy footsteps and a rushing body slam |
 | `boss_cast_hit` | Boss büyü atışı | 1.0 sn | 0.5 | A demonic creature hurling bolts of dark magic, deep warbling energy release, three quick magical shots |
 | `boss_summon_hit` | Boss yardımcı çağırma | 1.5 sn | 0.3 | A colossal demon roaring to summon minions, bell-like ringing inside the roar, ghostly whispers rising |
-| `boss_death_cry` | Boss ölürken | 2.5 sn | 0.1 | A colossal bell-bound demon's dying roar fading into a cracked church bell's last toll |
 
-Önceki listeden hâlâ bekleyenler: `boss_roar_1..3` (giriş ekranı), `boss_step_1..4`, `boss_hurt_1..4`, ayak sesleri ve düşman sesleri (bölüm 1).
-
-**Doku:** Vesper alev püskürtme için `fire_jet_sheet.png` (bölüm 0-B'deki prompt) geldiğinde doğrudan
-`unity/Assets/Bloodwake/Resources/Vfx/vesper_flame_jet.png` olarak koyabilirsin; oyun onu otomatik kullanır.
+Önceki listeden hâlâ bekleyenler: `boss_roar_1..3` (giriş ekranı), `boss_hurt_1..4` ve düşman sesleri (bölüm 1).
 
 ---
 
@@ -79,7 +66,6 @@ Hepsi **siyah arka plan üzerinde** (ben alfa'ya çeviririm), kare, **2048×2048
 | `rune_circle.png` | Warlock ve düşman büyücü mühürleri | A single ornate occult rune circle seen from directly above, thin glowing white lines, concentric rings with angular runes between them, symmetrical, pure black background, game decal |
 | `chain_link_strip.png` | Warlock'un hapseden zincirleri | Seamless horizontal strip of glowing spectral iron chain links, teal-white glow, side view, pure black background, tileable game VFX texture |
 | `frost_ground_decal.png` | Buz kuyruklu yıldız, buz kırıkları | Top-down frost and ice crystal bloom on stone seen from above, radial cracks of pale blue ice, white hoarfrost edges, pure black background, game decal |
-| `fire_jet_sheet.png` | Vesper alev püskürtme (L1+R2) | 4x4 sprite sheet of a horizontal jet of roaring fire streaming left to right, bright yellow-white core, orange and deep red edges, curling smoke tips, pure black background, game VFX flipbook |
 
 ### C. Yeni hareket sesleri — ElevenLabs Sound Effects
 
@@ -87,7 +73,6 @@ Hepsi tek dosya, **adı tam olarak tablodaki gibi** (`_1` ekleme). Gelene kadar 
 
 | Dosya | Hareket | Süre | Prompt |
 |---|---|---|---|
-| `vesper_flame_breath` | Vesper L1+R2 alev püskürtme | 1.2 sn | A roaring jet of fire blasting out of a hand like a flamethrower, steady whooshing burn with crackles, ends with a fiery puff |
 | `mage_force_ring` | Mage R2 90° halka | 0.9 sn | A deep magical force wave released in a sweep, low thump then a rushing violet energy whoosh spreading outward |
 | `mage_ice_shards` | Mage 3. R1 buz kırıkları | 1.0 sn | Rows of ice crystals bursting up out of stone in quick succession, sharp cracking and shattering, cold glassy chimes |
 | `mage_ice_comet` | Mage R1 R1 R2 | 1.6 sn | A huge boulder of ice whistling down from the sky and smashing into the ground, deep impact, explosion of shattering ice |
@@ -107,7 +92,10 @@ Hepsi tek dosya, **adı tam olarak tablodaki gibi** (`_1` ekleme). Gelene kadar 
 
 Ortak kural: gerçekçi, kuru (fazla yankısız), oyun içi kısa SFX. Müzik yok. "Prompt influence" yüksek, süreyi elle ayarla.
 
-### Ayak sesleri (en büyük eksik)
+### Ayak sesleri
+
+Her birinden **1 tane geldi** (`_1`), oyunda çalıyor. Aynı adım her seferinde tekrar etmesin diye `_2`, `_3` … varyasyonları ekleyebilirsin.
+**Dikkat:** dosya adı `player_step_2.wav` gibi tek numara olmalı; `player_step_1..6.wav` adını oyun bulamaz.
 
 | Dosyalar | Ne zaman | Süre | Prompt |
 |---|---|---|---|
@@ -163,44 +151,7 @@ Tipler: `grunt`, `archer`, `tank`, `assassin`, `mage`, `healer`, `commander`, ay
 
 ---
 
-## 2. Ortam döngüleri — ElevenLabs Sound Effects (Loop açık, 30 sn)
-
-| Dosya | Nerede | Prompt |
-|---|---|---|
-| `amb_town_night` | Şehir savaş odaları | Seamless loop, cursed medieval town at night, cold wind through narrow streets, distant tolling bell, faint crows, far-off moans, dripping water, no music |
-| `amb_sanctuary` | Sığınak | Seamless loop, quiet candlelit stone hall at night, soft hearth crackle, distant wind outside thick walls, occasional creak of wood, no music |
-| `amb_boss_square` | Boss meydanı | Seamless loop, ominous open square before a great bell tower, low rumbling wind, deep resonant bell drones, distant thunder, no music |
-| `amb_market_night` | Satıcı odası | Seamless loop, abandoned night market, flapping canvas awnings, creaking signs, light wind, a lone lantern buzzing, no music |
-| `amb_fire_crackle` | Her mangal/fener kendi yerinde | Seamless loop, close burning brazier, steady crackling wood fire with occasional pops, no wind, no music |
-
----
-
-## 3. 3D dekor — Tripo
-
-Ortak ayarlar: **low poly (en fazla 5.000 üçgen)**, PBR doku (2048), tek parça obje, tabanı yerde ve ortalanmış.
-Stil: karanlık gotik ortaçağ, ıslak taş ve eski ahşap, oyunun mevcut sandık/varil modelleriyle aynı dünya.
-Her prompt'un sonuna şunu ekle: `, dark gothic medieval, weathered and grimy, game-ready low poly, PBR, isolated on plain background`
-
-| Zip adı | Boyut (m) | Prompt |
-|---|---|---|
-| `cart.zip` | 2.3 × 1.4 × 1.3 | Abandoned wooden hand cart with two spoked wheels, broken plank, a torn sack inside |
-| `sacks.zip` | 1.1 × 0.75 × 0.9 | Pile of three burlap grain sacks slumped against each other, one split open with spilled grain |
-| `hay_bale.zip` | 1.2 × 0.8 × 0.8 | Rectangular bound hay bale, loose straw sticking out, twine bindings |
-| `weapon_rack.zip` | 1.5 × 1.7 × 0.5 | Wooden weapon rack against a wall holding rusty spears, a halberd and a dented shield |
-| `rubble.zip` | 1.7 × 0.55 × 1.4 | Low pile of broken masonry, cracked stone blocks and timber splinters |
-| `coffin.zip` | 2.0 × 0.65 × 0.75 | Plain wooden coffin with a slightly ajar lid, iron nails, dried blood stain |
-| `cage.zip` | 1.0 × 1.9 × 1.0 | Tall iron gibbet cage hanging-style standing on the ground, rusted bars, open door |
-| `shrine_statue.zip` | 1.2 × 2.6 × 1.2 | Weathered stone statue of a hooded saint on a plinth, face eroded, candles melted at its feet |
-| `candles.zip` | 0.6 × 0.45 × 0.6 | Cluster of melted church candles of different heights on the ground, thick wax drips |
-| `bones.zip` | 1.0 × 0.25 × 0.8 | Scattered human bones and a skull lying on the ground |
-| `banner_pole.zip` | 0.5 × 3.2 × 0.5 | Tall iron pole with a torn crimson banner bearing a bell sigil, frayed edges |
-| `firewood.zip` | 1.3 × 0.7 × 0.8 | Stack of split firewood logs with an axe stuck in a chopping block beside it |
-
-Not: kenar dekoru bu kimlikleri zaten arıyor. Model gelince odalara kendiliğinden dağılacak.
-
----
-
-## 4. Müzik
+## 2. Müzik
 
 ElevenLabs Music ya da benzeri. Her parça **döngüye uygun** olmalı (sonu başına bağlanır), 2–3 dakika, OGG.
 Ortak üslup: karanlık gotik orkestra, düşük yaylılar, erkek koro (sözsüz), kilise çanı, savaş davulları; Bloodborne / Diablo atmosferi.
@@ -217,7 +168,7 @@ Ortak üslup: karanlık gotik orkestra, düşük yaylılar, erkek koro (sözsüz
 
 ---
 
-## 5. İsteğe bağlı: Vesper animasyonları (Mixamo)
+## 3. İsteğe bağlı: Vesper animasyonları (Mixamo)
 
 Yeni hareketler şu an mevcut kliplerle ve kodla kurulu hareketle çalışıyor:
 - Falling Star = havaya sıçrayıp dönme + Ultimate'ın yere saplanma karesi.

@@ -11,12 +11,13 @@ namespace Bloodwake
  {
   // Props that join the kit once their models are delivered (Resources/Environment/Kit01/<id>/<id>.prefab):
   // footprint in metres (width, height, depth), whether it blocks, and whether it backs onto the wall.
+  // Sizes follow each delivered model's own proportions (Piece scales per axis, so a mismatch would squash it).
   static readonly (string id,Vector3 size,bool solid,bool wall)[] deliveredProps=
   {
-   ("cart",new Vector3(2.3f,1.4f,1.3f),true,false),("sacks",new Vector3(1.1f,.75f,.9f),true,false),("hay_bale",new Vector3(1.2f,.8f,.8f),true,false),
-   ("weapon_rack",new Vector3(1.5f,1.7f,.5f),true,true),("rubble",new Vector3(1.7f,.55f,1.4f),true,false),("coffin",new Vector3(2f,.65f,.75f),true,false),
-   ("cage",new Vector3(1f,1.9f,1f),true,false),("shrine_statue",new Vector3(1.2f,2.6f,1.2f),true,true),("candles",new Vector3(.6f,.45f,.6f),false,false),
-   ("bones",new Vector3(1f,.25f,.8f),false,false),("banner_pole",new Vector3(.5f,3.2f,.5f),true,true),("firewood",new Vector3(1.3f,.7f,.8f),true,true),
+   ("cart",new Vector3(2.33f,1.12f,1.59f),true,false),("sacks",new Vector3(1.1f,.7f,.86f),true,false),("hay_bale",new Vector3(1.5f,.64f,.86f),true,false),
+   ("weapon_rack",new Vector3(1.55f,1.36f,.6f),true,true),("rubble",new Vector3(1.17f,.55f,.87f),true,false),("coffin",new Vector3(2f,.56f,.64f),true,false),
+   ("cage",new Vector3(.83f,1.85f,1f),true,false),("shrine_statue",new Vector3(.91f,2.6f,.96f),true,true),("candles",new Vector3(.6f,.42f,.52f),false,false),
+   ("bones",new Vector3(1.04f,.2f,.82f),false,false),("banner_pole",new Vector3(1.03f,2.56f,.52f),true,true),("firewood",new Vector3(1.23f,.56f,1.02f),true,true),
   };
   static readonly Dictionary<string,bool> kitPresent=new();
   static bool HasKit(string id){if(!kitPresent.TryGetValue(id,out bool has))kitPresent[id]=has=Resources.Load<GameObject>("Environment/Kit01/"+id+"/"+id);return has;}

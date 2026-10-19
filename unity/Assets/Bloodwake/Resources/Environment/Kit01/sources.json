@@ -33,5 +33,65 @@
     "id": "cloth",
     "source": "draped+table+3d+model.zip",
     "sha256": "25ed0a3592f6e9d7c45d8f32314981bc4c5ef436e362c0179a1190f0e98aff54"
+  },
+  {
+    "id": "cart",
+    "source": "cart.zip",
+    "sha256": "ce908ec235cdbc8a28b98680c3b31df71325ac00cc70fb09380b5e2bf76d5e2c"
+  },
+  {
+    "id": "sacks",
+    "source": "sacks.zip",
+    "sha256": "cb1017baeb79a45e7ade324cdbc581ada83354999396e97a6fc8a3e7db62002f"
+  },
+  {
+    "id": "hay_bale",
+    "source": "hay_bale.zip",
+    "sha256": "076601511281a0a0a5f5454b684b8b5a42625bbdb18ab52125e35a0cf1aa7018"
+  },
+  {
+    "id": "weapon_rack",
+    "source": "weapon_rack.zip",
+    "sha256": "9227188b48a9ba79441ff92c2ef7d0a07d4bf9eb01094cb1e33460ba0adc28fb"
+  },
+  {
+    "id": "rubble",
+    "source": "rubble.zip",
+    "sha256": "c4a67c49872b375036b4feab12c6a877a724dd149f17a65c216b4c03be81670f"
+  },
+  {
+    "id": "coffin",
+    "source": "coffin.zip",
+    "sha256": "538ec4109eff4bcfa0b963f1a4004b3ff4178171c39c492f02774bd20ac64e0e"
+  },
+  {
+    "id": "cage",
+    "source": "cage.zip",
+    "sha256": "04b35e45a48d158d78c2ddde141b6a8cd8694ad0aa77846347a4e9b4bc1bc50d"
+  },
+  {
+    "id": "shrine_statue",
+    "source": "shrine_statue.zip",
+    "sha256": "d3277e7a91be90058cdf8e916bcbf61da51d4665287bd17d84e96488261fadc6"
+  },
+  {
+    "id": "candles",
+    "source": "candles.zip",
+    "sha256": "6d1386a448884976cfbbb65c3773bcdccf3dbda93272b7de9c32a9020bd07db7"
+  },
+  {
+    "id": "bones",
+    "source": "bones.zip",
+    "sha256": "3b9a774e2540b4ed861837a5e333af871646ee7c9c00df8fef0e0c36a392db55"
+  },
+  {
+    "id": "banner_pole",
+    "source": "banner_pole.zip",
+    "sha256": "ad68eee978f71e477515b3c632d1727ebd303f069eeb16af17a604ebf5bfff7d"
+  },
+  {
+    "id": "firewood",
+    "source": "firewood.zip",
+    "sha256": "eb15b048b488da2af15c642c6593fc4bc2e42101c86a9a8cfc741a8bac9cb704"
   }
 ]
