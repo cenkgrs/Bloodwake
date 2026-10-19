@@ -11,7 +11,9 @@ namespace Bloodwake
   }
   void ArcaneFractures(Vector3 pos,float radius,bool ice)
   {
-   Sheet("Frozen fractured ground",pos+Vector3.up*.035f,Vector3.one*radius*2,"frost_ground",1.65f,ice?new Color(.85f,.9f,1,1):new Color(.8f,.55f,1,.75f),true);
+   // Ice leaves the painted frost bloom once delivered; the arcane (non-ice) blast keeps its violet procedural fracture.
+   if(ice&&SheetTexture("frost_ground"))Textured("Frozen fractured ground",pos+Vector3.up*.035f,Vector3.one*radius*2.1f,"frost_ground",1.65f,new Color(.8f,.88f,1,1),false,1,false,true).transform.Rotate(Vector3.forward,UnityEngine.Random.Range(0,360f),Space.Self);
+   else Sheet("Frozen fractured ground",pos+Vector3.up*.035f,Vector3.one*radius*2,"frost_ground",1.65f,ice?new Color(.85f,.9f,1,1):new Color(.8f,.55f,1,.75f),true);
    // Sparse short branches retain a directional impact without a radial wire cage.
    for(int i=0;i<6;i++)
    {

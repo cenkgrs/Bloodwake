@@ -116,6 +116,7 @@ namespace Bloodwake
       DamageEnemy(e,damage,false);if(!e.View)continue;drained+=damage;RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("ff6b78"));e.View.FlashHit(false);
       if(!tethers.ContainsKey(e)){var target=e;var t=RevFx.Tether(Palms,()=>target.View?target.View.transform.position+Vector3.up*target.View.Height*.6f:Palms());t.Tone=new Color(1.4f,.08f,.16f,1);tethers[e]=t;}
       if(Random.value<.5f)RevFx.Splatter(e.View.transform.position+Vector3.up*1.1f,-rel.normalized);
+      if(Random.value<.4f)RevFx.BloodMistPuff(e.View.transform.position+Vector3.up*e.View.Height*.6f,Palms());
      }
      if(drained>0){float heal=drained*.4f;Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+heal);}
     }

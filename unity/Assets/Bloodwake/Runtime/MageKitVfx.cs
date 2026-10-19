@@ -66,7 +66,7 @@ namespace Bloodwake
   public void IceComet(Vector3 target,float fall)
   {
    if(!crystalMaterial)crystalMaterial=Material("arcane_crystal");target.y=0;
-   var frost=Sheet("Comet frost mark",target+Vector3.up*.04f,Vector3.one*.5f,"frost_ground",fall+.5f,new Color(.55f,.75f,1,1),true);
+   var frost=SheetTexture("frost_ground")?Textured("Comet frost mark",target+Vector3.up*.04f,Vector3.one*.5f,"frost_ground",fall+.5f,new Color(.7f,.82f,1,1),false,1,false,true):Sheet("Comet frost mark",target+Vector3.up*.04f,Vector3.one*.5f,"frost_ground",fall+.5f,new Color(.55f,.75f,1,1),true);
    frost.Tick=(p,dt)=>{float t=Mathf.Clamp01(frost.Age/fall);frost.transform.localScale=Vector3.one*Mathf.Lerp(.8f,5.6f,t*t);};
    var rock=new GameObject("Ice comet");rock.transform.SetParent(transform);
    for(int i=0;i<7;i++)

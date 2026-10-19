@@ -150,7 +150,7 @@ namespace Bloodwake
   IEnumerator EnemyArea(Enemy e,Vector3 pos,float radius,float delay)
   {
    var tone=RevenantVfx.Tone("e04dc0");pos.y=0;Sound("mage_bomb_throw");
-   var bomb=RevFx.MageBomb(e.View?e.View.MagicPalmPosition():pos+Vector3.up*1.5f,pos,Mathf.Min(.45f,delay*.4f),delay,tone);
+   var bomb=RevFx.MageBomb(e.View?e.View.MagicPalmPosition():pos+Vector3.up*1.5f,pos,Mathf.Min(.45f,delay*.4f),delay,tone);RevFx.RuneCircle(pos,radius,delay,tone);
    yield return Delay(Mathf.Min(.45f,delay*.4f));Sound("mage_bomb_fuse");yield return Delay(delay-Mathf.Min(.45f,delay*.4f));if(bomb)Destroy(bomb);
    Sound("mage_bomb_blast");RevFx.HostileRuneImpact(pos,radius);RevFx.ArcaneBlast(pos,radius,false);ShakeCamera(.3f,Vector3.zero);RevFx.Flash(pos,tone,2.6f,radius*2.2f,.2f);RevFx.Sparks(pos+Vector3.up*.3f,tone,18,.45f,2,5);RevFx.Glow(pos+Vector3.up*.6f,tone,radius*1.2f,2.4f,.18f);
    if(Screen=="playing"&&Vector3.Distance(Player.transform.position,pos)<radius)HurtPlayer(e.Damage*1.7f);

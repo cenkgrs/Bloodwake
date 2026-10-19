@@ -17,7 +17,27 @@ namespace Bloodwake
   {
    if(materials.TryGetValue(name,out var m))return m;
    var shader=Resources.Load<Shader>("Vfx/"+name);if(!shader)throw new InvalidOperationException("Missing VFX shader "+name);
-   m=new Material(shader){name="Shared VFX "+name};materials.Add(name,m);return m;
+   m=new Material(shader){name="Shared VFX "+name};materials.Add(name,m);
+   // A delivered texture for this shader (Resources/Vfx/<shader>_map) switches its painted layer on.
+   var map=Resources.Load<Texture2D>("Vfx/"+name+"_map");if(map){m.SetTexture("_MainTex",map);m.SetFloat("_MapAmount",1);}
+   return m;
+  }
+  // Delivered VFX sheets (Resources/Vfx/vfx_<id>, painted on black). Callers keep their procedural look while one is missing.
+  static readonly Dictionary<string,Texture2D> sheetTextures=new();
+  public static Texture2D SheetTexture(string id){if(!sheetTextures.TryGetValue(id,out var t))sheetTextures[id]=t=Resources.Load<Texture2D>("Vfx/vfx_"+id);return t;}
+  // A card showing one of those sheets: additive for light (slashes, runes, ice), alpha for blood. grid x grid cells,
+  // played over the card's life when animate, otherwise one picked at random.
+  public VfxLifetime Textured(string name,Vector3 position,Vector3 scale,string id,float life,Color tone,bool alpha,int grid=1,bool animate=false,bool ground=false)
+  {
+   var fx=Sheet(name,position,scale,alpha?"vfx_tex_alpha":"vfx_tex_add",life,tone,ground);
+   fx.Block.SetTexture("_MainTex",SheetTexture(id));fx.Block.SetFloat("_Grid",grid);fx.Block.SetFloat("_Frames",animate?grid*grid:0);
+   fx.Block.SetFloat("_Cell",animate?0:UnityEngine.Random.Range(0,grid*grid));fx.Apply();return fx;
+  }
+  // The same sheet as a shared material, for line renderers (Warlock chains).
+  internal Material TexturedMaterial(string id)
+  {
+   string key="sheet "+id;if(materials.TryGetValue(key,out var m))return m;
+   m=new Material(Resources.Load<Shader>("Vfx/vfx_tex_add")){name="VFX sheet "+id};m.SetTexture("_MainTex",SheetTexture(id));m.SetFloat("_Progress",.5f);materials.Add(key,m);return m;
   }
   void OnDestroy(){foreach(var m in materials.Values)if(m)Destroy(m);}
   static Mesh Quad()
@@ -62,7 +82,12 @@ namespace Bloodwake
    fx.Block.SetFloat("_ReverseSweep",backhand?1:0);fx.Apply();
    // The rake lights the ground and whatever it tears: a short arterial-red flash out along the swing.
    var swing=direction.sqrMagnitude>.001f?direction.normalized:Vector3.forward;Flash(pos+swing*sourceRadius*.6f,Tone(wide?"ff2442":"e01834"),wide?2.2f:1.4f,sourceRadius*1.6f+1.2f,wide?.16f:.11f);
-
+   // The painted slash streak plays over the rake, facing the camera, mirrored for a backhand.
+   if(SheetTexture("blood_slash"))
+   {
+    float s=sourceRadius*(wide?1.35f:1.15f);var slash=Textured("Claw slash streak",pos+swing*sourceRadius*.55f+Vector3.up*1f,new Vector3(backhand?-s:s,s,1),"blood_slash",.34f,new Color(1,.86f,.9f,1.15f),false,4,true);
+    slash.transform.rotation=Game.Cam.transform.rotation*Quaternion.Euler(0,0,UnityEngine.Random.Range(-18f,18f));
+   }
   }
   public void Fountain(Vector3 pos,float radius,float height,float life){var authored=Authored("revenant_burst",pos,new Vector3(radius,height,radius),life);authored.Block.SetFloat("_Opacity",.28f);authored.Apply();BloodVolume(pos,radius,height,life);}
   public void Gate(Vector3 pos,float radius)
@@ -155,9 +180,11 @@ namespace Bloodwake
   }
   public void Stain(Vector3 pos,float size,float hold,float dry)
   {
-   pos.y=.025f;var fx=Sheet("Blood stain",pos,Vector3.one*size,"revenant_blood",hold+dry,Color.white,true);
+   pos.y=.025f;bool painted=SheetTexture("blood_splatter");
+   var fx=painted?Textured("Blood stain",pos,Vector3.one*size*1.5f,"blood_splatter",hold+dry,new Color(.8f,.8f,.8f,.95f),true,2,false,true):Sheet("Blood stain",pos,Vector3.one*size,"revenant_blood",hold+dry,Color.white,true);
    fx.transform.Rotate(Vector3.forward,UnityEngine.Random.Range(0,360),Space.Self);
-   fx.Tick=(p,dt)=>fx.Block.SetFloat("_Progress",Mathf.Clamp01((fx.Age-hold)/dry));
+   // The painted stain is fully there from the moment it lands (its card fades in below .06), then dries away.
+   fx.Tick=(p,dt)=>{float dried=Mathf.Clamp01((fx.Age-hold)/dry);fx.Block.SetFloat("_Progress",painted?Mathf.Lerp(.1f,1,dried):dried);};
   }
   static Mesh ParticleMesh(bool spike)
   {

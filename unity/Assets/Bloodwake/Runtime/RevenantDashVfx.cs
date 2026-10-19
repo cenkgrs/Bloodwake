@@ -5,6 +5,17 @@ namespace Bloodwake
  {
   int dashMistVersion;
   public void CancelDashMist()=>dashMistVersion++;
+  // Crimson dash mist uses the painted blood mist sheet once delivered (its own red, so only the tone's alpha carries over);
+  // Vesper's ember smoke keeps the procedural cloud.
+  VfxLifetime Mist(bool fire,string name,Vector3 at,Vector3 scale,float life,Color tone)=>!fire&&SheetTexture("blood_mist")
+   ?Textured(name,at,scale*1.15f,"blood_mist",life,new Color(.85f,.78f,.8f,Mathf.Min(1,tone.a*1.6f)),true,4,true):Sheet(name,at,scale,"dash_mist",life,tone);
+  // A puff of blood mist torn out of a drained body (Sanguine Siphon), drifting toward the hunter.
+  public void BloodMistPuff(Vector3 at,Vector3 toward)
+  {
+   if(!SheetTexture("blood_mist"))return;var drift=(toward-at).normalized*.8f+Vector3.up*.25f;
+   var puff=Textured("Siphon blood mist",at,Vector3.one*.9f,"blood_mist",.6f,new Color(.9f,.8f,.82f,.85f),true,4,true);
+   puff.Tick=(p,dt)=>{puff.transform.position=at+drift*puff.Age;puff.transform.rotation=Game.Cam.transform.rotation;};
+  }
   // fire: Vesper's version of the same dash, ember mist and flame sparks instead of blood.
   public void DashCloud(ActorView actor,Vector3 direction,bool fire=false)
   {
@@ -15,7 +26,7 @@ namespace Bloodwake
     float seed=i*3.71f,size=actor.Height*(i<4?.94f:.73f);
     var offset=Vector3.up*actor.Height*(.24f+(i%4)*.17f)+side*((i%2==0?-1:1)*.24f)-direction*(i<4?.12f:.5f);
     var anchor=actor.transform.position;float released=-1;
-    var fog=Sheet(fire?"Dash moving ember cloud":"Dash moving crimson cloud",anchor+offset,Vector3.one*size,"dash_mist",.65f,fire?new Color(.95f,.34f,.06f,.42f):new Color(.46f,.012f,.032f,.49f));
+    var fog=Mist(fire,fire?"Dash moving ember cloud":"Dash moving crimson cloud",anchor+offset,Vector3.one*size,.65f,fire?new Color(.95f,.34f,.06f,.42f):new Color(.46f,.012f,.032f,.49f));
     fog.Block.SetFloat("_Seed",seed);fog.Block.SetFloat("_Opacity",.65f);fog.Apply();
     fog.Tick=(p,dt)=>
     {
@@ -43,7 +54,7 @@ namespace Bloodwake
    {
     float spread=UnityEngine.Random.Range(-.35f,.35f),fogSize=UnityEngine.Random.Range(1.25f,1.7f);
     var start=position+Vector3.up*(.55f+i*.65f)+side*spread;
-    var fog=Sheet(fire?"Dash shedding ember smoke":"Dash shedding crimson mist",start,Vector3.one*fogSize,"dash_mist",1.05f,fire?new Color(.7f,.2f,.04f,.5f):new Color(.4f,.008f,.023f,.55f));
+    var fog=Mist(fire,fire?"Dash shedding ember smoke":"Dash shedding crimson mist",start,Vector3.one*fogSize,1.05f,fire?new Color(.7f,.2f,.04f,.5f):new Color(.4f,.008f,.023f,.55f));
     fog.Block.SetFloat("_Seed",UnityEngine.Random.Range(0,50f));fog.Apply();
     fog.Tick=(p,dt)=>{fog.Block.SetFloat("_Opacity",1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.38f,1,p)));fog.transform.position=start+side*spread*fog.Age*.25f+Vector3.up*fog.Age*.16f;fog.transform.rotation=Game.Cam.transform.rotation;fog.transform.localScale=Vector3.one*fogSize*Mathf.Lerp(.9f,1.3f,p);};
    }

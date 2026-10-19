@@ -1,6 +1,6 @@
 # Bloodwake — senden istenen varlıklar (17–19 Ekim 2026)
 
-Teslim edilenler listeden çıkarıldı (19 Ekim: ortam döngüleri, Tripo dekor, ses paketinin çoğu, alev jeti dokusu).
+Teslim edilenler listeden çıkarıldı (19 Ekim: ortam döngüleri, Tripo dekor, ses paketinin çoğu, alev jeti ve diğer VFX dokuları, ayak sesleri).
 
 Kodda hepsinin yeri hazır: dosya doğru adla doğru klasöre girdiği anda oyun onu kullanır.
 Eksik olan şey oyunda sessiz kalır ya da mevcut ortak sesi/modeli kullanmaya devam eder.
@@ -23,10 +23,6 @@ Gerçekçi, kuru (az yankı), oyun içi SFX, müzik yok.
 | Dosya | Ne zaman | Süre | Darbe anı | Prompt |
 |---|---|---|---|---|
 | `vesper_falling_star` | R1 R1 R2 | 1.4 sn | 0.62 | A leap with a spinning blade whoosh, then a greatsword slammed into stone with a huge fiery explosion and falling rubble |
-| `healer_cast` | Şifacı orb'u atınca | 0.7 sn | 0.0 | A soft holy chime and a gentle airy whoosh as a glowing healing orb is tossed |
-| `healer_bloom` | Şifa yere inip iyileştirince | 1.2 sn | 0.1 | A warm magical healing bloom, shimmering bells and a soft rising choir swell, no words |
-| `boss_cast_hit` | Boss büyü atışı | 1.0 sn | 0.5 | A demonic creature hurling bolts of dark magic, deep warbling energy release, three quick magical shots |
-| `boss_summon_hit` | Boss yardımcı çağırma | 1.5 sn | 0.3 | A colossal demon roaring to summon minions, bell-like ringing inside the roar, ghostly whispers rising |
 
 Önceki listeden hâlâ bekleyenler: `boss_roar_1..3` (giriş ekranı), `boss_hurt_1..4` ve düşman sesleri (bölüm 1).
 
@@ -34,7 +30,7 @@ Gerçekçi, kuru (az yankı), oyun içi SFX, müzik yok.
 
 ## 0. YENİ — 18 Ekim gece işinden çıkanlar (önce bunlar)
 
-Sıra: **A) boss animasyonları → B) VFX dokuları → C) yeni hareket sesleri.**
+Sıra: **A) boss animasyonları → C) yeni hareket sesleri.** (B, VFX dokuları, 19 Ekim'de geldi ve bağlandı.)
 
 ### A. Boss animasyonları — Mixamo (en önemlisi)
 
@@ -51,21 +47,6 @@ Dosyaları `art/enemies/mixamo/boss/new/` içine aşağıdaki adlarla koy; Unity
 | `boss_jump_attack.fbx` | "Great Sword Jump Attack" | Uzaktan üstüne atlama |
 | `boss_kick.fbx` | "Great Sword Kick" | Çok yakındayken itme |
 | `boss_taunt.fbx` | "Standing Taunt Battlecry" ya da "Mutant Roaring" | Boss giriş ekranındaki kükreme |
-
-### B. VFX dokuları — görsel üretici (Midjourney / DALL·E / benzeri)
-
-Hepsi **siyah arka plan üzerinde** (ben alfa'ya çeviririm), kare, **2048×2048** PNG. Sprite sheet'lerde kareler eşit ızgara olsun, kare numarasını yazma.
-`art/vfx-incoming/` içine aşağıdaki adlarla bırak.
-
-| Dosya | Nerede kullanılacak | Prompt |
-|---|---|---|
-| `blood_slash_sheet.png` | Revenant pençe izleri, Crimson Rend | 4x4 sprite sheet of a single curved claw slash streak animating from thin to full to dissolving, deep arterial crimson with a hot pink-white core, wet glossy blood droplets breaking off the edge, pure black background, game VFX flipbook, no text |
-| `blood_splatter_decals.png` | Yere düşen kan lekeleri | 2x2 grid of four different top-down blood splatter stains on pure black, dark crimson to near-black, sharp droplet spray edges, realistic, game decal texture, no text |
-| `blood_mist_sheet.png` | Kan sisi, dash, Siphon | 4x4 sprite sheet of a puff of crimson blood mist expanding and fading, soft volumetric, dark red with brighter core, pure black background, game VFX flipbook |
-| `arcane_energy_noise.png` | Mage halkası (R2), tether, glide izi | Seamless tileable turbulent arcane energy noise, wispy violet and indigo filaments, grayscale-friendly high contrast, pure black background, game shader texture |
-| `rune_circle.png` | Warlock ve düşman büyücü mühürleri | A single ornate occult rune circle seen from directly above, thin glowing white lines, concentric rings with angular runes between them, symmetrical, pure black background, game decal |
-| `chain_link_strip.png` | Warlock'un hapseden zincirleri | Seamless horizontal strip of glowing spectral iron chain links, teal-white glow, side view, pure black background, tileable game VFX texture |
-| `frost_ground_decal.png` | Buz kuyruklu yıldız, buz kırıkları | Top-down frost and ice crystal bloom on stone seen from above, radial cracks of pale blue ice, white hoarfrost edges, pure black background, game decal |
 
 ### C. Yeni hareket sesleri — ElevenLabs Sound Effects
 

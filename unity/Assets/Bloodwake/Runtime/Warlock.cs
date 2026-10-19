@@ -86,7 +86,7 @@ namespace Bloodwake
   // A ring of turning runes on the stone that tightens as its fuse runs out.
   public VfxLifetime BindingSigil(Vector3 at,float radius,float fuse,Color tone)
   {
-   var ring=Surface(at,radius,tone,fuse+.15f,2,1.6f);
+   var ring=Surface(at,radius,tone,fuse+.15f,2,1.6f);RuneCircle(at,radius,fuse,tone);
    var runes=new List<VfxLifetime>();
    for(int i=0;i<6;i++){var rune=Glow(at,tone,.22f,2.2f,fuse+.1f);runes.Add(rune);}
    ring.Tick=(p,dt)=>
@@ -97,26 +97,41 @@ namespace Bloodwake
    };
    return ring;
   }
+  // The painted rune circle on the ground, turning faster and burning brighter as its fuse runs out.
+  // It is a warning, so it stays at full strength until the fuse ends and only then fades (over .25 s).
+  public VfxLifetime RuneCircle(Vector3 at,float radius,float fuse,Color tone)
+  {
+   if(!SheetTexture("rune_circle"))return null;at.y=.06f;
+   var rune=Textured("Rune circle",at,Vector3.one*radius*2.15f,"rune_circle",fuse+.25f,new Color(tone.r,tone.g,tone.b,1),false,1,false,true);
+   rune.Tick=(p,dt)=>
+   {
+    float t=Mathf.Clamp01(rune.Age/fuse);rune.transform.rotation=Quaternion.Euler(90,rune.Age*Mathf.Lerp(25,140,t*t),0);
+    rune.Block.SetFloat("_Opacity",Mathf.Lerp(.9f,2.2f,t));rune.Block.SetFloat("_Progress",rune.Age<fuse?.5f:.7f+.3f*(rune.Age-fuse)/.25f);
+   };
+   return rune;
+  }
   // Chains of light lash up from the ring to the hunter and hold while the bind lasts, then shatter.
   public void BindingChains(ActorView target,Vector3 at,float radius,float seconds,Color tone)
   {
-   var go=new GameObject("Binding chains");go.transform.SetParent(transform);var chains=go.AddComponent<BindChains>();chains.Init(this,target,at,radius,seconds,tone,Material("arcane_energy"));
+   var go=new GameObject("Binding chains");go.transform.SetParent(transform);var chains=go.AddComponent<BindChains>();bool painted=SheetTexture("chain_strip");chains.Init(this,target,at,radius,seconds,tone,painted?TexturedMaterial("chain_strip"):Material("arcane_energy"),painted);
    Flash(target.transform.position,tone,2.4f,3.5f,.25f);Glow(target.transform.position+Vector3.up,tone,1.2f,2.6f,.2f);
   }
   internal void ChainShatter(Vector3 at,Color tone){Sparks(at,tone,14,.4f,2,5);Glow(at,tone,.6f,2,.15f);}
  }
  public sealed class BindChains:MonoBehaviour
  {
-  RevenantVfx owner;ActorView target;Vector3 at;float radius,seconds,age;Color tone;readonly List<LineRenderer> links=new();readonly List<Vector3> anchors=new();MaterialPropertyBlock block;Transform chest;
-  public void Init(RevenantVfx fx,ActorView t,Vector3 centre,float r,float s,Color c,Material material)
+  RevenantVfx owner;ActorView target;Vector3 at;float radius,seconds,age;Color tone;bool painted;readonly List<LineRenderer> links=new();readonly List<Vector3> anchors=new();MaterialPropertyBlock block;Transform chest;
+  public void Init(RevenantVfx fx,ActorView t,Vector3 centre,float r,float s,Color c,Material material,bool paintedChain)
   {
-   owner=fx;target=t;at=centre;radius=r;seconds=s;tone=c;block=new MaterialPropertyBlock();
+   owner=fx;painted=paintedChain;target=t;at=centre;radius=r;seconds=s;tone=c;block=new MaterialPropertyBlock();
    chest=t.Animator.GetComponentsInChildren<Transform>().FirstOrDefault(b=>b.name.EndsWith("Spine2"))??t.transform;
    for(int i=0;i<6;i++)
    {
     float a=i*60*Mathf.Deg2Rad+.3f;anchors.Add(at+new Vector3(Mathf.Cos(a),0,Mathf.Sin(a))*radius);
     var line=new GameObject("Chain").AddComponent<LineRenderer>();line.transform.SetParent(transform);line.positionCount=12;line.useWorldSpace=true;line.sharedMaterial=material;
     line.widthCurve=new AnimationCurve(new Keyframe(0,.1f),new Keyframe(1,.05f));line.shadowCastingMode=ShadowCastingMode.Off;line.numCapVertices=2;links.Add(line);
+    // The painted chain strip (about 3.2:1) repeats along the line once per link-length instead of stretching.
+    if(painted){line.numCapVertices=0;line.widthCurve=new AnimationCurve(new Keyframe(0,.2f),new Keyframe(1,.14f));line.textureMode=LineTextureMode.Tile;line.textureScale=new Vector2(1/(.17f*3.2f),1);}
    }
    Update();
   }
@@ -129,8 +144,8 @@ namespace Bloodwake
    for(int c=0;c<links.Count;c++)
    {
     var line=links[c];var start=anchors[c];var end=Vector3.Lerp(start,top,reach);
-    for(int i=0;i<line.positionCount;i++){float t=i/(line.positionCount-1f);var sag=Vector3.down*Mathf.Sin(t*Mathf.PI)*.18f;var link=((i&1)==0?1:-1)*.03f*Vector3.Cross((end-start).normalized,Vector3.up);line.SetPosition(i,Vector3.Lerp(start,end,t)+sag+link);}
-    block.SetColor("_Tone",new Color(tone.r*1.6f,tone.g*1.6f,tone.b*1.6f,1));block.SetFloat("_Opacity",flicker);line.SetPropertyBlock(block);
+    for(int i=0;i<line.positionCount;i++){float t=i/(line.positionCount-1f);var sag=Vector3.down*Mathf.Sin(t*Mathf.PI)*.18f;var link=(painted?0:(i&1)==0?1:-1)*.03f*Vector3.Cross((end-start).normalized,Vector3.up);line.SetPosition(i,Vector3.Lerp(start,end,t)+sag+link);}
+    block.SetColor("_Tone",painted?new Color(1.2f,1.25f,1.25f,1):new Color(tone.r*1.6f,tone.g*1.6f,tone.b*1.6f,1));block.SetFloat("_Opacity",flicker);line.SetPropertyBlock(block);
    }
   }
  }
