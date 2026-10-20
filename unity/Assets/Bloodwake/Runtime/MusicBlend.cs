@@ -14,8 +14,15 @@ namespace Bloodwake
    if(id==track)return;track=id;
    for(int i=0;i<2;i++)startDb[i]=Mathf.Lerp(startDb[i],endDb[i],Mathf.Clamp01(age/1.2f));
    if(clip){active=1-active;voices[active].Stop();voices[active].clip=clip;startDb[active]=-60;voices[active].volume=0;voices[active].Play();}
-   for(int i=0;i<2;i++)endDb[i]=clip&&i==active?(id.StartsWith("music_combat")?-15:-13):-60;
+   for(int i=0;i<2;i++)endDb[i]=clip&&i==active?Level(id):-60;
    age=0;
+  }
+  // Each track's level comes from rules.json "audio" (music_combat_2 reads music_combat): the files are mastered
+  // at different loudness, so one fixed level let the menu theme bury everything.
+  static float Level(string id)
+  {
+   int cut=id.LastIndexOf('_');string family=cut>0&&int.TryParse(id.Substring(cut+1),out _)?id.Substring(0,cut):id;
+   return GameData.Rules["audio"]?[family]?["db"] is Newtonsoft.Json.Linq.JToken db?(float)db:-18;
   }
   void Update()
   {

@@ -21,6 +21,8 @@ namespace Bloodwake.Editor
      if(row==null)throw new System.Exception("Source material not mapped: "+modelPath+" / "+name);
      var material=new Material(Shader.Find("Universal Render Pipeline/Lit")){name=name};
      var rgba=(JArray)row["color"];var tint=new Color((float)rgba[0],(float)rgba[1],(float)rgba[2],row.N("alpha",1));material.SetColor("_BaseColor",tint.gamma);
+     // Single-sided hair cards (the Mage's swapped-in head) vanish from behind unless both faces render.
+     if(row.N("doubleSided",0)>0){material.SetFloat("_Cull",(float)UnityEngine.Rendering.CullMode.Off);material.doubleSidedGI=true;}
      material.SetFloat("_Metallic",row.N("metallic"));material.SetFloat("_Smoothness",1-row.N("roughness",.8f));
      SetTexture(material,row,folder,"albedo","_BaseMap",false);
      SetTexture(material,row,folder,"normal","_BumpMap",true);

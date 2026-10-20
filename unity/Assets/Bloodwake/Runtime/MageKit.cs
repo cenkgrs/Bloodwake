@@ -27,18 +27,18 @@ namespace Bloodwake
    {
     float hold=.42f/rate;Player.Play("Attack",hold);Sound("orb_cast");
     StartCoroutine(DelayedCall(hold*.45f,()=>StartCoroutine(MageBolt(Player.MagicPalmPosition(),Player.transform.forward,damage,22,10,1,3,false))));
-    attackCd=.3f/rate;comboExpires=Time.time+hold+.6f;
+    attackCd=.3f/rate;comboExpires=Time.time+hold+.3f;
    }
    else if(combo==2)
    {
     // The back of the left hand flings a heavier orb.
-    float hold=.46f/rate;Player.PlayWindow("Mage_Backhand",.45f,1.15f,hold);Sound("orb_cast");
+    float hold=.46f/rate;Player.Play("Mage_Backhand",hold);Sound("orb_cast");
     StartCoroutine(DelayedCall(hold*.53f,()=>StartCoroutine(MageBolt(MageLeftPalm(),Player.transform.forward,damage*1.2f,26,10,1.35f,3,false))));
-    attackCd=.34f/rate;comboExpires=Time.time+hold+.6f;
+    attackCd=.34f/rate;comboExpires=Time.time+hold+.3f;
    }
    else
    {
-    float hold=.6f/rate;Player.PlayWindow("Mage_GroundCast",.65f,1.6f,hold);
+    float hold=.6f/rate;Player.Play("Mage_GroundCast",hold);
     StartCoroutine(DelayedCall(hold*.62f,()=>StartCoroutine(IceShards(Player.transform.position,Player.transform.forward,damage*1.5f))));
     attackCd=.55f/rate;comboExpires=Time.time+hold+.3f;
    }
@@ -127,7 +127,7 @@ namespace Bloodwake
    var dir=Player.transform.forward;dir.y=0;dir.Normalize();var origin=Player.transform.position;
    var foe=Enemies.Where(e=>!e.Emerging&&e.Hp>0&&e.View).Select(e=>(e,rel:Vector3.ProjectOnPlane(e.View.transform.position-origin,Vector3.up))).Where(x=>x.rel.magnitude<9.5f&&Vector3.Angle(dir,x.rel)<40).OrderBy(x=>x.rel.magnitude).Select(x=>x.e).FirstOrDefault();
    var target=foe!=null?foe.View.transform.position:Move(origin,dir*5);target.y=0;
-   float hold=.75f/MageSpeed;Player.Play("Ultimate",hold);attackCd=.8f/MageSpeed;vesperMoveActive=true;
+   float hold=.75f/MageSpeed;Player.Play("Mage_Comet",hold);attackCd=.8f/MageSpeed;vesperMoveActive=true;
    const float fall=.5f;RevFx.IceComet(target,fall+.18f);Sound(Voice("mage_ice_comet","skill_meteor_blast"));
    yield return Delay(.18f+fall);vesperMoveActive=false;
    if(Screen!="playing")yield break;
@@ -145,8 +145,9 @@ namespace Bloodwake
   {
    if(vesperMoveActive||attackCd>0||Player.Locked>.15f)return;PadFacing();var dir=Player.transform.forward;dir.y=0;dir.Normalize();var origin=Player.transform.position;
    var foe=Enemies.Where(e=>!e.Emerging&&e.Hp>0&&e.View&&e.Id!="boss").Select(e=>(e,rel:Vector3.ProjectOnPlane(e.View.transform.position-origin,Vector3.up))).Where(x=>x.rel.magnitude<9&&Vector3.Angle(dir,x.rel)<38).OrderBy(x=>x.rel.magnitude*(1+Vector3.Angle(dir,x.rel)/40)).Select(x=>x.e).FirstOrDefault();
-   Player.PlayWindow("Mage_Backhand",.45f,.9f,.28f);attackCd=.45f;
-   if(foe==null){RevFx.Glow(MageLeftPalm(),RevenantVfx.Arcane,.4f,1.6f,.18f);Sound("ui_error");return;}
+   // Nothing in reach: no reach for empty air, just a short refusal (a little gap so holding the buttons doesn't buzz).
+   if(foe==null){Sound("ui_error");attackCd=.25f;return;}
+   Player.PlayWindow("Mage_Backhand",0,.55f,.28f);attackCd=.45f;
    StartCoroutine(GripAndThrow(foe));
   }
   IEnumerator GripAndThrow(Enemy foe)
@@ -166,7 +167,7 @@ namespace Bloodwake
    // A beat to aim, then the throw goes where the stick (or mouse) points now.
    yield return Delay(.08f);
    var aimAt=!usingPad?aim:moveIntent.sqrMagnitude>.01f?moveIntent:Player.transform.forward;aimAt.y=0;if(aimAt.sqrMagnitude<.001f)aimAt=Player.transform.forward;aimAt.Normalize();
-   Player.transform.rotation=Quaternion.LookRotation(aimAt);Player.Play("Attack",.34f);Sound("orb_cast");
+   Player.transform.rotation=Quaternion.LookRotation(aimAt);Player.Play("Mage_Hurl",.34f);Sound("orb_cast");
    if(tether)tether.Release();
    var struck=new HashSet<Enemy>{foe};age=0;const float flight=.42f,distance=7.5f;bool smashed=false;
    while(age<flight&&foe.View&&foe.Hp>0)
@@ -197,20 +198,128 @@ namespace Bloodwake
   }
   IEnumerator MageGlide(Vector3 dir)
   {
-   vesperMoveActive=true;dashCd=combatPractice?0:RevenantDashCooldown;invulnerable=Mathf.Max(invulnerable,.38f);
-   const float time=.36f,distance=4.6f;var start=Player.transform.position;var end=Move(start,dir*distance);
-   Player.transform.rotation=Quaternion.LookRotation(dir);Player.Play("Idle",0);RevFx.ArcaneFlight(start,end,time,false);RevFx.Glow(start+Vector3.up*.8f,RevenantVfx.Arcane,.9f,2,.2f);Sound(Voice("mage_glide","orb_cast"));
-   float age=0,done=0;
+   vesperMoveActive=true;dashCd=combatPractice?0:RevenantDashCooldown;invulnerable=Mathf.Max(invulnerable,.5f);
+   // An unhurried glide, not a blink.
+   const float time=.62f,distance=4.6f;var start=Player.transform.position;var end=Move(start,dir*distance);
+   // The leap (0.5 s) spans the flight until the landing takes over.
+   Player.transform.rotation=Quaternion.LookRotation(dir);Player.PlayWindow("Mage_Glide",0,.5f,time*.7f,.2f);RevFx.ArcaneFlight(start,end,time,false);RevFx.Glow(start+Vector3.up*.8f,RevenantVfx.Arcane,.9f,2,.2f);GlideLiftoff(start,time);Sound(Voice("mage_glide","orb_cast"));
+   // Three beats so the body answers the motion instead of sliding as one held pose: a quick push off (fast,
+   // tipping forward), a floating middle that bleeds speed with a slow sway, and the legs reaching down for the
+   // landing (the start of her landing clip) while she settles back against the momentum.
+   float age=0,done=0;bool landing=false;float sway=Random.value<.5f?-1:1;
    while(age<time)
    {
     if(Screen!="playing"||hitStop>0){yield return null;continue;}
-    age=Mathf.Min(time,age+Time.deltaTime);float t=age/time,want=distance*Mathf.SmoothStep(0,1,t);
+    age=Mathf.Min(time,age+Time.deltaTime);float t=age/time;
+    float want=distance*(1-Mathf.Pow(1-t,2.2f));  // launched hard, coasting out
     var ground=Move(new Vector3(Player.transform.position.x,0,Player.transform.position.z),dir*(want-done));done=want;
-    // Lifted off the ground, leaning into the glide.
-    Player.transform.position=new Vector3(ground.x,Mathf.Sin(t*Mathf.PI)*.5f,ground.z);Player.transform.rotation=Quaternion.LookRotation(dir)*Quaternion.Euler(14*Mathf.Sin(t*Mathf.PI),0,0);
+    if(!landing&&t>=.7f){landing=true;Player.PlayWindow("Mage_Land",0,.32f,time-age,.18f);}
+    float lift=Mathf.Pow(Mathf.Sin(t*Mathf.PI),.6f)*.5f+Mathf.Sin(t*Mathf.PI*3)*.03f;  // rises fast, hovers with a small bob
+    float pitch=Mathf.Lerp(12,-5,Mathf.SmoothStep(0,1,Mathf.InverseLerp(.15f,.9f,t)))*Mathf.Sin(t*Mathf.PI);  // leans in, then back to brake
+    float roll=sway*5*Mathf.Sin(t*Mathf.PI*1.5f)*Mathf.Sin(t*Mathf.PI);
+    Player.transform.position=new Vector3(ground.x,lift,ground.z);Player.transform.rotation=Quaternion.LookRotation(dir)*Quaternion.Euler(pitch,0,roll);
     yield return null;
    }
-   var p=Player.transform.position;p.y=0;Player.transform.position=p;Player.transform.rotation=Quaternion.LookRotation(dir);RevFx.Glow(p+Vector3.up*.6f,RevenantVfx.Arcane,.7f,1.6f,.16f);vesperMoveActive=false;
+   var p=Player.transform.position;p.y=0;Player.transform.position=p;Player.transform.rotation=Quaternion.LookRotation(dir);RevFx.Glow(p+Vector3.up*.6f,RevenantVfx.Arcane,.7f,1.6f,.16f);GlideTouchdown(p);vesperMoveActive=false;
+  }
+  // The glide must read as magic lifting her, not a jump (art/vfx-incoming storyboard, 20 Oct): blue-violet magic
+  // erupts from under her feet with light ripples spreading on the stone and diamond motes; in flight long arcane
+  // streaks stream behind her and two ribbons coil round her legs; she touches down on ripples and a last puff.
+  void GlideLiftoff(Vector3 at,float time)
+  {
+   GlideRipples(at,3.4f,.75f,1.6f);StartCoroutine(DelayedCall(.12f,()=>GlideRipples(at,2.4f,.6f,1.1f)));
+   GlideBurst(at,3.2f,.85f,0);GlideDiamonds(at,16,1.1f,3.2f);
+   RevFx.Glow(at+Vector3.up*.1f,RevenantVfx.Arcane,2.2f,3,.35f);
+   StartCoroutine(GlideTrails(time));
+  }
+  void GlideTouchdown(Vector3 at){GlideRipples(at,2.6f,.6f,1.2f);GlideBurst(at,1.5f,.55f,.35f);GlideDiamonds(at,8,.6f,1.6f);}
+  // Thin bright rings on the ground, racing outward and fading.
+  void GlideRipples(Vector3 at,float size,float life,float energy)
+  {
+   if(!RevenantVfx.SheetTexture("arcane_ripples"))return;at.y=.04f;
+   var ring=RevFx.Textured("Glide ripples",at,Vector3.one*size*.3f,"arcane_ripples",life,new Color(.78f,.72f,1.25f,1),false,1,false,true);
+   ring.Tick=(p,dt)=>{float e=1-Mathf.Pow(1-p,2.5f);ring.transform.localScale=Vector3.one*Mathf.Lerp(size*.3f,size,e);ring.Block.SetFloat("_Opacity",energy*(1-p));ring.Block.SetFloat("_Progress",.5f);};
+  }
+  // The eruption flipbook (4x4, side on), standing on the ground and turned to the camera. skip starts it later
+  // in the sheet (0 = the first flash, .35 = already billowing smoke) for the softer landing puff.
+  void GlideBurst(Vector3 at,float size,float life,float skip)
+  {
+   if(!RevenantVfx.SheetTexture("arcane_burst"))return;
+   var burst=RevFx.Textured("Glide burst",at,new Vector3(size,size,1),"arcane_burst",life,Color.white,false,4,true);
+   burst.Tick=(p,dt)=>
+   {
+    var cam=Cam.transform;var flat=Vector3.ProjectOnPlane(cam.forward,Vector3.up).normalized;
+    burst.transform.rotation=Quaternion.LookRotation(flat.sqrMagnitude>.01f?flat:Vector3.forward,Vector3.up);
+    burst.transform.position=at+Vector3.up*size*.42f;  // the flames rise from the bottom of each cell
+    float q=Mathf.Lerp(skip,1,p);burst.Block.SetFloat("_Progress",q);burst.Block.SetFloat("_Opacity",1.5f*(p<.08f?p/.08f:1));
+   };
+  }
+  // Small blue rhombus sparkles thrown up and out, drifting on upward and fading in the air (never settling).
+  void GlideDiamonds(Vector3 at,int count,float life,float speed)
+  {
+   if(!RevenantVfx.SheetTexture("arcane_diamond"))return;
+   for(int i=0;i<count;i++)
+   {
+    var dir=(Quaternion.Euler(0,Random.value*360,0)*Vector3.forward*Random.Range(.4f,1f)+Vector3.up*Random.Range(.8f,1.6f)).normalized*speed*Random.Range(.5f,1f);
+    float s=Random.Range(.12f,.24f),spin=Random.Range(-120f,120f),l=life*Random.Range(.5f,.9f);var pos=at+Vector3.up*.15f;
+    var d=RevFx.Textured("Glide diamond",pos,new Vector3(s*.75f,s,1),"arcane_diamond",l,new Color(.35f,.5f,1.7f,1),false);
+    d.Tick=(p,dt)=>{pos+=dir*dt;dir+=Vector3.up*.5f*dt;dir*=1-2.2f*dt;d.transform.position=pos;d.transform.rotation=Cam.transform.rotation*Quaternion.Euler(0,0,d.Age*spin);d.Block.SetFloat("_Opacity",2.2f);};
+   }
+  }
+  // In flight, everything hangs on her, never on the path behind: streaks stream back from her body (their
+  // length follows her speed, so they shorten and fade as she slows instead of piling into her), two ribbons coil
+  // round her legs, and under her feet a held column of the eruption, a glow, ground ripples and rising motes
+  // keep her visibly borne up by the magic for the whole glide.
+  IEnumerator GlideTrails(float time)
+  {
+   var material=RevFx.TexturedMaterial("arcane_streak");var player=Player;if(!material||!player)yield break;
+   var root=new GameObject("Glide trails");if(roomRoot)root.transform.SetParent(roomRoot,true);  // a room change ends the coroutine; the room takes the trails with it
+   var block=new MaterialPropertyBlock();const int N=14;
+   LineRenderer Line(float width){var l=new GameObject("Glide trail").AddComponent<LineRenderer>();l.transform.SetParent(root.transform,false);l.sharedMaterial=material;l.textureMode=LineTextureMode.Stretch;l.alignment=LineAlignment.View;l.widthMultiplier=width;l.widthCurve=new AnimationCurve(new Keyframe(0,.5f),new Keyframe(.25f,1),new Keyframe(1,.3f));l.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;l.receiveShadows=false;l.positionCount=N;return l;}
+   var streaks=new[]{(Line(.7f),1.15f,0f,0f),(Line(.5f),.7f,.2f,1.7f),(Line(.45f),1.55f,-.18f,3.4f)};var coils=new[]{Line(.18f),Line(.18f)};
+   // The held column: the eruption's fullest frames (cells 3-8) looped under her feet, turned to the camera.
+   VfxLifetime column=null;
+   if(RevenantVfx.SheetTexture("arcane_burst"))
+   {
+    column=RevFx.Textured("Glide column",player.transform.position,new Vector3(1.5f,1.5f,1),"arcane_burst",time+.2f,Color.white,false,4,false);
+   }
+   var under=RevFx.Glow(player.transform.position,RevenantVfx.Arcane,1.7f,2.4f,time+.15f);
+   float age=0,length=.3f,shed=0,ring=.1f,fade=0;var last=player.transform.position;
+   // The card's own update sets _Progress every frame; take the frame, level and placement over in its Tick.
+   if(column)column.Tick=(p,dt)=>
+   {
+    var cam=Cam.transform;var flat=Vector3.ProjectOnPlane(cam.forward,Vector3.up).normalized;
+    column.transform.rotation=Quaternion.LookRotation(flat.sqrMagnitude>.01f?flat:Vector3.forward,Vector3.up);
+    if(player)column.transform.position=player.transform.position+Vector3.up*.53f;  // flames rise from the cell's bottom edge to her soles
+    column.Block.SetFloat("_Frames",0);column.Block.SetFloat("_Cell",3+Mathf.Floor(column.Age*18)%6);column.Block.SetFloat("_Progress",.5f);column.Block.SetFloat("_Opacity",1.3f*fade);
+   };
+   while(age<time+.15f&&player)
+   {
+    float dt=Mathf.Max(Time.deltaTime,.0001f);age+=dt;var at=player.transform.position;
+    var travel=at-last;travel.y=0;float speed=travel.magnitude/dt;last=at;
+    var fwd=player.transform.forward;fwd.y=0;fwd.Normalize();var right=Vector3.Cross(Vector3.up,fwd);
+    float landing=Mathf.SmoothStep(0,1,Mathf.InverseLerp(.62f,.95f,age/time));
+    fade=Mathf.Clamp01(age/.07f)*(1-landing);
+    length=Mathf.Lerp(length,Mathf.Clamp(speed*.3f,.25f,2.3f)*(1-landing*.7f),1-Mathf.Exp(-12*dt));
+    block.SetFloat("_Progress",.5f);block.SetColor("_Tone",Color.white);block.SetFloat("_Opacity",1.6f*fade);
+    foreach(var(line,height,side,phase)in streaks)
+    {
+     for(int i=0;i<N;i++){float u=i/(N-1f);float wave=Mathf.Sin(age*9+phase+u*5)*.12f*u;line.SetPosition(i,at+Vector3.up*(height+wave)+right*side*(1+u*.6f)-fwd*length*u);}
+     line.SetPropertyBlock(block);
+    }
+    for(int c=0;c<coils.Length;c++)
+    {
+     var line=coils[c];
+     for(int i=0;i<N;i++){float u=i/(N-1f);float a=age*14+c*Mathf.PI-u*5.5f;float r=.26f*(1-u*.35f);line.SetPosition(i,at+Vector3.up*(.25f+.55f*u+Mathf.Sin(a)*r*.5f)+right*Mathf.Cos(a)*r-fwd*length*.55f*u);}
+     line.SetPropertyBlock(block);
+    }
+    var feet=at+Vector3.up*.05f;
+    if(under){under.transform.position=feet;under.transform.rotation=Cam.transform.rotation;}
+    shed+=dt;if(fade>.2f&&shed>.045f){shed=0;GlideDiamonds(feet,1,.55f,1.1f);}
+    ring-=dt;if(fade>.3f&&ring<=0){ring=.16f;GlideRipples(new Vector3(at.x,0,at.z),1.6f,.45f,.9f*fade);}
+    yield return null;
+   }
+   Destroy(root);if(column)Destroy(column.gameObject);
   }
  }
 }

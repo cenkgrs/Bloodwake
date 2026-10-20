@@ -81,15 +81,20 @@ namespace Bloodwake
    }
    if(behavior=="voidLeap")
    {
-    float flight=Mathf.Clamp(Vector3.Distance(start,target)/16,.26f,.6f);Player.Play("Ultimate",.7f);float elapsed=0;invulnerable=flight;if(Run.ClassId=="mage")RevFx.ArcaneFlight(start,target,flight,false);
+    float flight=Mathf.Clamp(Vector3.Distance(start,target)/16,.26f,.6f);if(Run.ClassId=="mage")Player.PlayWindow("Mage_Fall",0,flight,flight);else Player.Play("Ultimate",.7f);float elapsed=0;invulnerable=flight;if(Run.ClassId=="mage")RevFx.ArcaneFlight(start,target,flight,false);
     var tone=RevenantVfx.Tone(data.S("tone","7f6bff"));RevFx.ArcaneWarning(start,2,tone,.35f);RevFx.ArcaneWarning(target,radius,tone,flight);
     while(elapsed<flight){if(Screen=="playing"&&hitStop<=0){elapsed+=Time.deltaTime;float p=Mathf.Clamp01(elapsed/flight);float lift=p<.45f?Mathf.Sin(p/.45f*Mathf.PI*.5f):1-Mathf.Pow((p-.45f)/.55f,2);Player.transform.position=Vector3.Lerp(start,target,(1-Mathf.Cos(p*Mathf.PI))*.5f)+Vector3.up*lift*2.6f;if(Run.ClassId=="mage")RevFx.ProjectileTrail(Player.transform.position+Vector3.up*.5f,true,false);}yield return null;}
     Player.transform.position=target;Area(target,radius,damage,false,true);foreach(var e in Enemies)if(!e.Emerging&&Vector3.Distance(e.View.transform.position,target)<radius+.4f){e.Slow=2;e.SlowAmount=.3f;e.Stagger=Mathf.Max(e.Stagger,.27f);}
-    if(Run.ClassId=="warrior")RevFx.GroundImpact(target,radius);else RevFx.ArcaneLeap(target,radius);Sound("skill_leap_land");yield break;
+    if(Run.ClassId=="warrior")RevFx.GroundImpact(target,radius);else RevFx.ArcaneLeap(target,radius);Sound("skill_leap_land");
+    if(Run.ClassId=="mage")Player.Play("Mage_Land",.55f);  // the fall loop carried her through the air; she lands on the blast
+    yield break;
    }
    if(behavior=="warCry"){Player.Play("Ultimate",.9f);yield return Delay(.45f);Area(start,radius,damage,false,true);RevFx.GroundImpact(start,radius);RevFx.Flash(start,RevenantVfx.Tone("bf956b"),.8f,radius,.16f);Sound("ulti_war_cry");yield break;}
    bool targeted=behavior=="meteor";Vector3 origin=targeted?target:start;float delay=behavior=="meteor"?Mathf.Clamp(Vector3.Distance(start,target)/(data.N("projectileSpeed",500)*.02f),.26f,.55f):behavior=="frostNova"?.45f:.3f;
    bool arcane=behavior=="meteor"||behavior=="frostNova";
+   // The Mage casts with her body: the meteor leaves on a two-handed push, the nova bursts as her arms fly open
+   // (the ground cast's release sits at 62% of the clip, so the hold puts it on the blast).
+   if(Run.ClassId=="mage")Player.Play(behavior=="meteor"?"Ultimate":"Mage_GroundCast",behavior=="meteor"?.5f:delay/.62f);
    if(arcane){RevFx.ArcaneWarning(origin,radius,RevenantVfx.Arcane,delay);if(behavior=="meteor")RevFx.Meteor(Player.MagicPalmPosition(),origin,delay);}else Effects.Ring(origin,radius,Color.red,delay);
    yield return Delay(delay);Area(origin,radius,damage,!arcane,arcane);if(arcane){RevFx.ArcaneBlast(origin,radius,behavior=="frostNova");Sound("skill_meteor_blast");}
    if(behavior=="frostNova")foreach(var e in Enemies)if(!e.Emerging&&Vector3.Distance(e.View.transform.position,origin)<radius){e.Slow=3;e.SlowAmount=.45f;}

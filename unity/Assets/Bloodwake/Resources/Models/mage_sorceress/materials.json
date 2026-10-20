@@ -1,5 +1,19 @@
 {
-  "Mage Sorceress": {
+  "Mage Sorceress Body": {
+    "color": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "alpha": 1,
+    "metallic": 1,
+    "roughness": 1,
+    "albedo": "sorceress_body_basecolor.jpg",
+    "normal": "sorceress_body_normal.png",
+    "metallicRoughness": "sorceress_body_metallicRoughness.png"
+  },
+  "Mage Sorceress Head": {
     "color": [
       1,
       1,
@@ -8,7 +22,9 @@
     ],
     "alpha": 1,
     "metallic": 0,
-    "roughness": 0.62,
-    "albedo": "sorceress_basecolor.jpg"
+    "roughness": 0.6,
+    "doubleSided": 1,
+    "albedo": "sorceress_head_basecolor.jpg",
+    "normal": "sorceress_head_normal.png"
   }
 }

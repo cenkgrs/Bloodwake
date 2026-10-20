@@ -26,13 +26,14 @@ namespace Bloodwake
    if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else{DressRoom(id);DressEdges(id);}ConfigureBreakableCargo();
    roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
-   SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);RevFx.HandMagic(Player);if(id=="town_safehouse")SpawnTrainingWarrior();
+   SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);  // no orb held in the Mage's palm: her magic leaves the hand only when she casts
+   if(id=="town_safehouse")SpawnTrainingWarrior();
    float maxSize=Mathf.Min((half.x*2+10)/Cam.aspect,(half.y*2+11)*cameraOffset.normalized.y)/2;Cam.orthographicSize=Mathf.Min(PlayerPrefs.GetFloat("zoom",DefaultZoom),maxSize);PositionCamera(true);
    roomClear=room.S("type")=="merchant"||room.S("type")=="safehouse";rolledWaves=room.S("type")=="combat"&&Run!=null;waves=rolledWaves?RollWaves():room["encounter"]?["waves"] as JArray;
    if(room.S("type")=="boss")waves=new JArray{new JArray("boss")};
    waveIndex=0;spawnCursor=0;spawnTimer=1.5f;attackCd=0;dashCd=0;
    SetAmbience(room.S("type"));PlaceFireSounds();
-   if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(room.S("type")=="boss"?"music_boss":room.S("type")=="safehouse"?Voice("music_safehouse","music_menu"):room.S("type")=="merchant"?Voice("music_market","music_menu"):"music_combat");
+   if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(room.S("type")=="boss"?"music_boss":room.S("type")=="safehouse"?Voice("music_safehouse",""):room.S("type")=="merchant"?Voice("music_market",""):"music_combat");
    // A warden's square opens on the warden (skipped by the batch smoke run, which drives the fight itself).
    if(room.S("type")=="boss"&&Run!=null&&!smokeRunning)BeginBossIntro();
   }

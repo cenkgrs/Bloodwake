@@ -25,7 +25,7 @@ namespace Bloodwake
   }
   void PositionCamera(bool snap)
   {
-   if(!Player)return;var focus=CameraFocus(Player.transform.position);var desired=focus+cameraOffset;
+   if(!Player){if(thirdPerson)ToggleThirdPerson();return;}if(thirdPerson){PositionThirdPerson(snap);return;}var focus=CameraFocus(Player.transform.position);var desired=focus+cameraOffset;
    cameraRest=snap||cameraRest==Vector3.zero?desired:Vector3.Lerp(cameraRest,desired,1-Mathf.Exp(-10*Time.unscaledDeltaTime));
    var offset=Vector3.zero;
    if(shakeTrauma>0&&!snap)

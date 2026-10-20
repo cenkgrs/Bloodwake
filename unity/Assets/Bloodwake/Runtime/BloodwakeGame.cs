@@ -16,7 +16,7 @@ namespace Bloodwake
   public string Screen="menu",SelectedClass="vesper";Vector3 aim=Vector3.forward;Vector2 half;
   float attackCd,dashCd,invulnerable,hitStop,spawnTimer;int waveIndex,spawnCursor;JArray waves;
   bool roomClear;readonly List<Bounds> blockers=new();readonly List<JToken> offers=new();
-  MusicBlend musicBlend;Light playerFill;readonly Dictionary<string,AudioClip> sounds=new();
+  MusicBlend musicBlend;readonly Dictionary<string,AudioClip> sounds=new();
   void OnDestroy(){ReleaseCrowdNavigation();Effects.Release();}
   void Awake()
   {
@@ -28,7 +28,7 @@ namespace Bloodwake
    foreach(var clip in Resources.LoadAll<AudioClip>("audio"))sounds[clip.name]=clip;
    foreach(var clip in Resources.LoadAll<AudioClip>("audio/polished"))sounds[clip.name]=clip;
    gameObject.AddComponent<GameplayLighting>().Configure(Cam);SetMusic("music_menu");
-   if(Environment.GetCommandLineArgs().Contains("--smoke"))StartCoroutine(Smoke());
+   if(Environment.GetCommandLineArgs().Contains("--smoke"))StartCoroutine(Smoke());if(Environment.GetCommandLineArgs().Contains("--lookdev")||LookDevRequested())new GameObject("LookDev driver").AddComponent<LookDevDriver>().Begin(this);if(GlideCaptureRequested())new GameObject("Glide capture driver").AddComponent<LookDevDriver>().BeginGlide(this);
   }
   public void StartRun(string id)
   {
@@ -36,7 +36,7 @@ namespace Bloodwake
    StopAllCoroutines();if(actorRoot)Destroy(actorRoot.gameObject);if(roomRoot)Destroy(roomRoot.gameObject);Enemies.Clear();
    attackCd=dashCd=invulnerable=hitStop=0;combo=0;markChain=0;comboExpires=0;bossReward=false;merchantVisit="";merchantStock=null;pickups.Clear();fireZones.Clear();
    Run=new RunState(id,Meta);SelectedClass=id;actorRoot=new GameObject("Actors").transform;
-   Player=ActorView.Create(id,false,2.05f*CombatActorScale,actorRoot);playerFill=new GameObject("Player fill light").AddComponent<Light>();playerFill.transform.SetParent(Player.transform);playerFill.type=LightType.Point;playerFill.color=RevenantVfx.Tone("d1def0");playerFill.intensity=6;playerFill.range=7;playerFill.shadows=LightShadows.None;playerFill.GetUniversalAdditionalLightData().renderingLayers=2u;var map=GameData.Maps["maps"][0];Run.Plan=map["route"].Values<string>().ToList();Run.Plan.Add(map.S("boss"));Run.Plan.Add(map.S("interlude"));EnterRoom("town_safehouse");Screen="playing";
+   Player=ActorView.Create(id,false,2.05f*CombatActorScale,actorRoot);var map=GameData.Maps["maps"][0];Run.Plan=map["route"].Values<string>().ToList();Run.Plan.Add(map.S("boss"));Run.Plan.Add(map.S("interlude"));EnterRoom("town_safehouse");Screen="playing";
   }
   readonly Dictionary<string,float> soundTimes=new();readonly List<AudioSource> soundVoices=new();
   void Sound(string id)=>SoundFrom(id,0);

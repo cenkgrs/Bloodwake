@@ -5,9 +5,9 @@ using UnityEditor.Animations;
 using UnityEngine;
 namespace Bloodwake.Editor
 {
- // The player Mage is the delivered sorceress (19 Oct 2026), built by art/mage/build_sorceress.py: Mixamo rig,
- // Tripo 4K maps, the Mage's six Mixamo clips and the two kit clips borrowed from the enemy mage, all baked onto
- // the one skeleton in Blender. This points mage_player's prefab and controller at it.
+ // The player Mage is the sorceress (v3, 20 Oct 2026), built by art/mage/build_sorceress.py: Tripo body with a
+ // swapped-in Tripo head, Mixamo rig, 4K PBR maps, and her Mixamo clips trimmed to their cast windows, all baked
+ // onto the one skeleton in Blender. This points mage_player's prefab and controller at it.
  public static class MageSorceressImport
  {
   const string Root="Assets/Bloodwake/Resources/";
@@ -20,9 +20,9 @@ namespace Bloodwake.Editor
    importer.animationType=ModelImporterAnimationType.Generic;importer.importAnimation=true;importer.animationCompression=ModelImporterAnimationCompression.Off;
    importer.materialImportMode=ModelImporterMaterialImportMode.ImportStandard;
    var clips=importer.defaultClipAnimations;
-   foreach(var clip in clips){clip.name=clip.name.Split('|').Last();clip.loopTime=clip.name=="Idle"||clip.name=="Run";clip.loopPose=false;clip.lockRootPositionXZ=true;clip.lockRootRotation=true;}
+   foreach(var clip in clips){clip.name=clip.name.Split('|').Last();clip.loopTime=clip.name=="Idle"||clip.name=="Run"||clip.name=="Walk"||clip.name=="Mage_Fall";clip.loopPose=false;clip.lockRootPositionXZ=true;clip.lockRootRotation=true;}
    importer.clipAnimations=clips;importer.SaveAndReimport();
-   var names=new[]{"Idle","Run","Attack","Hit","Death","Ultimate","Mage_Backhand","Mage_GroundCast"};
+   var names=new[]{"Idle","Run","Walk","Attack","Hit","Hit2","Death","Ultimate","Mage_Backhand","Mage_GroundCast","Mage_Comet","Mage_Hurl","Mage_Fall","Mage_Land","Mage_Glide"};
    var imported=AssetDatabase.LoadAllAssetsAtPath(Model).OfType<AnimationClip>().Where(c=>!c.name.StartsWith("__preview__")).ToDictionary(c=>c.name);
    foreach(var n in names)if(!imported.ContainsKey(n))throw new Exception("Mage sorceress: clip missing "+n);
    var path=Root+"Controllers/mage_player.controller";var controller=AssetDatabase.LoadAssetAtPath<AnimatorController>(path)??AnimatorController.CreateAnimatorControllerAtPath(path);

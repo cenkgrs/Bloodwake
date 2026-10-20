@@ -25,7 +25,11 @@ namespace Bloodwake
    // Ambience bed fades between rooms.
    ambienceVoice.volume=Mathf.MoveTowards(ambienceVoice.volume,ambienceTarget,dt*.5f);if(ambienceVoice.volume<=0&&ambienceTarget<=0&&ambienceVoice.isPlaying)ambienceVoice.Stop();
    if(Screen!="playing"||!Player)return;
-   if(playerMoving){playerStep-=dt;if(playerStep<=0){playerStep=walking?.52f:.31f;Sound(walking?"player_step_walk":"player_step");}}else playerStep=Mathf.Min(playerStep,.08f);
+   // Each step sounds when a foot actually plants (see ActorView.TakeFootfalls); the old fixed .31 s beat ran
+   // ahead of the run cycle. The timer stays only for a rig without foot bones.
+   int footfalls=Player.TakeFootfalls(dt);
+   if(Player.HasFeet){if(playerMoving)for(int i=0;i<footfalls;i++)Sound(walking?"player_step_walk":"player_step");}
+   else if(playerMoving){playerStep-=dt;if(playerStep<=0){playerStep=walking?.52f:.31f;Sound(walking?"player_step_walk":"player_step");}}else playerStep=Mathf.Min(playerStep,.08f);
    // Enemies' steps, only for those that are actually covering ground and near enough to matter: measured from
    // how far the body moved, so the warden's lunges and charges thud as well as his walk.
    foreach(var e in Enemies)
@@ -49,10 +53,13 @@ namespace Bloodwake
   void PlaceFireSounds()
   {
    var crackle=PickVariant("amb_fire_crackle");if(!crackle||!roomRoot)return;int i=0;
-   foreach(var light in roomRoot.GetComponentsInChildren<Light>().Where(l=>l.type==LightType.Point&&(l.name.Contains("Brazier")||l.name.Contains("Lantern")||l.name.Contains("Hearth"))))
+   var fires=roomRoot.GetComponentsInChildren<Light>().Where(l=>l.type==LightType.Point&&(l.name.Contains("Brazier")||l.name.Contains("Lantern")||l.name.Contains("Hearth"))).ToArray();
+   // Level from rules.json, shared out so a room of braziers sounds about as loud as two of them, not the sum.
+   float level=Mathf.Pow(10,(GameData.Rules["audio"]?["amb_fire_crackle"]?.N("db",-18)??-18)/20)/Mathf.Sqrt(Mathf.Max(1,fires.Length/2f));
+   foreach(var light in fires)
    {
-    var src=light.gameObject.AddComponent<AudioSource>();src.clip=crackle;src.loop=true;src.spatialBlend=1;src.rolloffMode=AudioRolloffMode.Linear;src.minDistance=1;src.maxDistance=light.name.Contains("Lantern")?5:8;
-    src.volume=light.name.Contains("Lantern")?.25f:.5f;src.time=(i++*1.37f)%Mathf.Max(.1f,crackle.length);src.Play();
+    var src=light.gameObject.AddComponent<AudioSource>();src.clip=crackle;src.loop=true;src.spatialBlend=1;src.rolloffMode=AudioRolloffMode.Linear;src.minDistance=1;src.maxDistance=light.name.Contains("Lantern")?4:6;
+    src.volume=level*(light.name.Contains("Lantern")?.5f:1);src.time=(i++*1.37f)%Mathf.Max(.1f,crackle.length);src.Play();
    }
   }
   bool HasSound(string id)=>sounds.ContainsKey(id)||((GameData.Rules["audio"]?[id]?["files"] as Newtonsoft.Json.Linq.JArray)?.Any(f=>sounds.ContainsKey((string)f))??false);

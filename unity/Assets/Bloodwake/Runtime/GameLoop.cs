@@ -12,10 +12,11 @@ namespace Bloodwake
    if(arrivalActive)return;
    var keys=Keyboard.current;var pad=Gamepad.current;
    if(keys?.f11Key.wasPressedThisFrame==true)UnityEngine.Screen.fullScreen=!UnityEngine.Screen.fullScreen;
+   if(Player&&(keys?.f6Key.wasPressedThisFrame==true||pad?.rightStickButton.wasPressedThisFrame==true))ToggleThirdPerson();
    if(keys?.escapeKey.wasPressedThisFrame==true||pad?.startButton.wasPressedThisFrame==true){if(Screen=="playing"){Screen="pause";Sound("ui_pause_open");}else if(Screen=="pause"){Screen="playing";Sound("ui_back");}}
    MenuInput(keys,pad);DevKitInput(keys,pad);
    if(Screen=="dialogue")DialogueInput(keys,pad);
-   PositionCamera(false);if(playerFill&&Player)playerFill.transform.position=Player.transform.position+new Vector3(-1.8f,2.4f,2.4f);
+   PositionCamera(false);
    bool paused=Screen!="playing"&&Screen!="dead"&&Screen!="dying"&&Screen!="death_transition";if(Player)Player.Animator.speed=paused?0:Player.PlaybackRate;foreach(var e in Enemies)e.View.Animator.speed=paused?0:e.View.PlaybackRate;
    if(Screen!="playing"||Run==null||Run.Stats.N("hp")<=0)return;
    float dt=Time.deltaTime;if(hitStop>0){comboExpires+=dt;hitStop=Mathf.Max(0,hitStop-dt);Player.Animator.speed=0;foreach(var e in Enemies)e.View.Animator.speed=0;return;}
@@ -27,7 +28,8 @@ namespace Bloodwake
    Vector2 input=pad?.leftStick.ReadValue()??Vector2.zero;if(keys!=null){input.x+=(keys.dKey.isPressed||keys.rightArrowKey.isPressed?1:0)-(keys.aKey.isPressed||keys.leftArrowKey.isPressed?1:0);input.y+=(keys.wKey.isPressed||keys.upArrowKey.isPressed?1:0)-(keys.sKey.isPressed||keys.downArrowKey.isPressed?1:0);}input=Vector2.ClampMagnitude(input,1);
    Vector3 forward=Vector3.ProjectOnPlane(Cam.transform.forward,Vector3.up).normalized,right=Cam.transform.right;right.y=0;var move=forward*input.y+right*input.x;
    // The mouse aims while it is the active device; on a gamepad the hunter acts where the left stick points (else where she faces).
-   if(!usingPad&&Mouse.current!=null&&!Application.isBatchMode){var ray=Cam.ScreenPointToRay(Mouse.current.position.ReadValue());if(new Plane(Vector3.up,0).Raycast(ray,out float distance)){var target=ray.GetPoint(distance)-Player.transform.position;if(target.sqrMagnitude>.01f)aim=target.normalized;}}
+   if(thirdPerson&&!usingPad)aim=ThirdPersonAim;
+   else if(!usingPad&&Mouse.current!=null&&!Application.isBatchMode){var ray=Cam.ScreenPointToRay(Mouse.current.position.ReadValue());if(new Plane(Vector3.up,0).Raycast(ray,out float distance)){var target=ray.GetPoint(distance)-Player.transform.position;if(target.sqrMagnitude>.01f)aim=target.normalized;}}
    moveIntent=move;if(usingPad)aim=move.sqrMagnitude>.01f?move.normalized:Player.transform.forward;
    // Light attack: left mouse / R1. Heavy attack: right mouse / R2. Dash: Shift / Square.
    bool lightPressed=Mouse.current?.leftButton.wasPressedThisFrame==true||pad?.rightShoulder.wasPressedThisFrame==true;
@@ -45,13 +47,16 @@ namespace Bloodwake
    if(fresh&&(keys?.leftShiftKey.wasPressedThisFrame==true||keys?.rightShiftKey.wasPressedThisFrame==true||pad?.buttonWest.wasPressedThisFrame==true)){var dashDir=move.sqrMagnitude>.01f?move:aim;if(!TryRevenantDash(dashDir))TryMageGlide(dashDir);}
    if(fresh&&revenantDashing&&lightPressed)thrustQueued=true;
    bool actionFrame=RevenantActionActive;TickRevenantDash(dt);
-   // Measured planted-foot stride: new Sneak Walk 1.962 m/s, legacy Swagger .89.
+   // Measured planted-foot stride: new Sneak Walk 1.962 m/s, legacy Swagger .89; the Mage's catwalk walk 1.119.
    // Match that stride to the displayed body size; upgrades scale speed and playback together.
-   bool walking=Run.ClassId=="revenant"&&(keys?.leftCtrlKey.isPressed==true||(pad!=null&&input.sqrMagnitude>.01f&&input.magnitude<.65f));float walkStride=Player.NobleRevenant?1.96218f:.89f;float locomotionScale=walking?(walkStride*Player.Height/1.8f)/(GameData.Stats("revenant").N("moveSpeed")*.02f):1;
+   bool walking=(Run.ClassId=="revenant"||Run.ClassId=="mage")&&(keys?.leftCtrlKey.isPressed==true||(pad!=null&&input.sqrMagnitude>.01f&&input.magnitude<.65f));float walkStride=Run.ClassId=="mage"?1.119f:Player.NobleRevenant?1.96218f:.89f;float locomotionScale=walking?(walkStride*Player.Height/1.8f)/(GameData.Stats(Run.ClassId).N("moveSpeed")*.02f):1;
    bool canMove=!actionFrame&&!RevenantActionActive&&!vesperMoveActive&&!Rooted&&(Run.ClassId=="revenant"?!Player.IsCasting:Player.Locked<=.15f);
    if(canMove){Player.transform.position=Move(Player.transform.position,move*Run.Stats.N("moveSpeed")*.02f*dt*locomotionScale);if(move.sqrMagnitude>.01f&&!(Run.ClassId=="revenant"&&Player.ContactPending))Player.transform.rotation=Quaternion.Slerp(Player.transform.rotation,Quaternion.LookRotation(move),dt*16);}
    float motionRate=Run.Stats.N("moveSpeed")/GameData.Stats(Run.ClassId).N("moveSpeed");if(Player.NobleRevenant&&!walking)motionRate=Run.Stats.N("moveSpeed")*.02f/(4.08527f*Player.Height/1.8f);
-   Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking);TickAudioWorld(dt,canMove&&move.sqrMagnitude>.01f,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
+   // The Mage runs on her catwalk walk at 1.3x rather than the Slow Run clip; at her full speed the feet
+   // glide a little, which is accepted for the look.
+   bool mageCatwalkRun=Run.ClassId=="mage"&&!walking;if(mageCatwalkRun)motionRate=1.3f;
+   Player.Tick(dt,canMove&&move.sqrMagnitude>.01f,motionRate,walking||mageCatwalkRun);TickAudioWorld(dt,canMove&&move.sqrMagnitude>.01f,walking);Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+Run.Stats.N("regenPerSecond")*dt);
    if(fresh&&keys!=null){if(keys.qKey.wasPressedThisFrame)Cast(0);if(keys.eKey.wasPressedThisFrame)Cast(1);if(keys.spaceKey.wasPressedThisFrame)Cast(2);if(keys.fKey.wasPressedThisFrame)Interact();}
    // Skills: Triangle, Circle, Cross. Cross talks or claims instead when something is in reach. L1 / L2 are free.
    if(fresh&&pad!=null){if(pad.buttonNorth.wasPressedThisFrame)Cast(0);if(pad.buttonEast.wasPressedThisFrame)Cast(1);if(pad.buttonSouth.wasPressedThisFrame){if(InteractInRange)Interact();else Cast(2);}}

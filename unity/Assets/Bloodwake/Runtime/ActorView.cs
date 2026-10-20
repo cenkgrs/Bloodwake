@@ -77,7 +77,7 @@ namespace Bloodwake
    view.Shake=go.AddComponent<HitShake>();view.Shake.Initialize(model.transform);
    if(enemy&&id=="warlock")WarlockSkin(model);
    if(!enemy&&id=="revenant")view.Animator.gameObject.AddComponent<RevenantPosture>().Owner=view;
-   if(!enemy&&id=="vesper")model.AddComponent<VesperBladeVfx>();
+   if(!enemy&&id=="vesper"){SeatVesperGrip(model);model.AddComponent<VesperBladeVfx>();}
    if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_ShieldWalk"))
    {
     var calibration=JsonUtility.FromJson<StrideCalibration>(Resources.Load<TextAsset>("Animations/WarriorLocomotion/stride").text);
@@ -87,6 +87,24 @@ namespace Bloodwake
    if(enemy&&id=="grunt"&&view.Animator.runtimeAnimatorController.animationClips.Any(c=>c.name=="Warrior_Turn180"))
     view.TurnData=JsonUtility.FromJson<WarriorTurnData>(Resources.Load<TextAsset>("Animations/WarriorCombat/turn").text);
    view.Play("Idle",0);return view;
+  }
+  // The baked sword sits in the fist 10.5% up its length, right against the pommel; the handle runs from 9% to the
+  // guard at 22.5%. Slide the sword (and its flame sockets) 6% of its length toward the pommel so the fist closes
+  // round the middle of the handle (16.5%).
+  static Mesh vesperSword;
+  static void SeatVesperGrip(GameObject model)
+  {
+   var bones=model.GetComponentsInChildren<Transform>(true);var grip=bones.FirstOrDefault(t=>t.name=="VesperSwordGrip");var mid=bones.FirstOrDefault(t=>t.name=="VesperSwordMid");var tip=bones.FirstOrDefault(t=>t.name=="VesperSwordTip");
+   var sword=model.GetComponentsInChildren<SkinnedMeshRenderer>(true).FirstOrDefault(r=>r.name.Contains("FierySword"));
+   if(!grip||!mid||!tip||!sword)return;
+   int index=System.Array.IndexOf(sword.bones,grip);if(index<0)return;
+   var shift=-mid.localPosition*(.06f*1.58f/.78f);  // the Mid socket is 0.78 m up the 1.58 m blade from the grip
+   if(!vesperSword)
+   {
+    vesperSword=Instantiate(sword.sharedMesh);vesperSword.name=sword.sharedMesh.name+" (seated grip)";
+    var poses=vesperSword.bindposes;poses[index]=Matrix4x4.Translate(shift)*poses[index];vesperSword.bindposes=poses;
+   }
+   sword.sharedMesh=vesperSword;mid.localPosition+=shift;tip.localPosition+=shift;
   }
   Transform magicHand;
   Transform clapLeftHand,clapRightHand;
@@ -100,6 +118,24 @@ namespace Bloodwake
    }
    return clapLeftHand&&clapRightHand?(clapLeftHand.position+clapRightHand.position)*.5f:MagicPalmPosition();
   }
+  // Footfalls read off the pose itself, so steps land with the feet at any clip and playback rate: a foot that
+  // has lifted clear of its lowest point and comes back down to it has planted. Returns how many planted since
+  // the last call (0 while standing still, as the feet never lift).
+  Transform[] feet;readonly float[] footY=new float[2],footLow=new float[2],footArmed=new float[2];
+  public int TakeFootfalls(float dt)
+  {
+   if(feet==null){var bones=Animator.GetComponentsInChildren<Transform>();feet=new[]{bones.FirstOrDefault(t=>t.name.EndsWith("LeftFoot")),bones.FirstOrDefault(t=>t.name.EndsWith("RightFoot"))};if(feet.Any(f=>!f))feet=new Transform[0];for(int i=0;i<2;i++)footLow[i]=float.MaxValue;}
+   int steps=0;float ground=transform.position.y;
+   for(int i=0;i<feet.Length;i++)
+   {
+    float y=feet[i].position.y-ground,v=y-footY[i];footY[i]=y;
+    footLow[i]=Mathf.Min(footLow[i]+dt*.05f*Height,y);  // the planted height, relaxing slowly if the stance changes
+    if(y>footLow[i]+.035f*Height)footArmed[i]=1;         // lifted clear (a catwalk step lifts ~7% of height, a run ~28%)
+    else if(footArmed[i]>0&&v>=0&&y<footLow[i]+.015f*Height){footArmed[i]=0;steps++;}
+   }
+   return steps;
+  }
+  public bool HasFeet=>feet==null||feet.Length>0;
   public Vector3 MagicPalmPosition()
   {
    if(!magicHand)magicHand=Animator.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name.EndsWith("RightHand"));
@@ -140,16 +176,16 @@ namespace Bloodwake
   }
   // The Warrior's swings end and begin in very different poses (deep lunge, overhead, spin); a short
   // blend snaps between them, so his attacks and their settle back to stance blend longer.
-  float BlendTime(string key)=>Kind=="vesper"?.16f:Kind=="warrior"?(key.StartsWith("Attack")||key=="Ultimate"?.2f:state.StartsWith("Attack")||state=="Ultimate"?.24f:.12f):.09f;
+  float BlendTime(string key)=>Kind=="mage"&&(state=="Mage_Glide"||state=="Mage_Land")?.24f:Kind=="vesper"?.16f:Kind=="warrior"?(key.StartsWith("Attack")||key=="Ultimate"?.2f:state.StartsWith("Attack")||state=="Ultimate"?.24f:.12f):.09f;
   // Plays only part of a clip (start..end seconds) squeezed into hold: borrowed clips carry long idle
   // lead-ins and tails around the motion we want.
-  public float PlayWindow(string key,float start,float end,float hold)
+  public float PlayWindow(string key,float start,float end,float hold,float blend=.1f)
   {
    string clip=Clip(key);if(!Animator.runtimeAnimatorController.animationClips.Any(c=>c.name==clip))return Play("Attack",hold);
-   CancelAction();PlaybackRate=Mathf.Max(.05f,(end-start)/Mathf.Max(.01f,hold));Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,.1f,0,start);state=clip;Locked=hold;return hold;
+   CancelAction();PlaybackRate=Mathf.Max(.05f,(end-start)/Mathf.Max(.01f,hold));Animator.speed=PlaybackRate;Animator.CrossFadeInFixedTime(clip,blend,0,start);state=clip;Locked=hold;return hold;
   }
   public float ClipLength(string key)=>Animator.runtimeAnimatorController.animationClips.FirstOrDefault(c=>c.name==Clip(key))?.length??.6f;
-  public void Tick(float dt,bool moving,float rate=1,bool walking=false){if(RevenantPoseActive){Locked=Mathf.Max(.03f,Locked-dt);Animator.speed=0;TickImpact(dt);return;}Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?(Kind=="revenant"&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
+  public void Tick(float dt,bool moving,float rate=1,bool walking=false){if(RevenantPoseActive){Locked=Mathf.Max(.03f,Locked-dt);Animator.speed=0;TickImpact(dt);return;}Locked=Mathf.Max(0,Locked-dt);if(Locked<=0){Play(moving?((Kind=="revenant"||Kind=="mage")&&walking?"Walk":"Run"):"Idle",0);PlaybackRate=moving?Mathf.Clamp(rate,LocomotionSpeed>0?.01f:.5f,LocomotionSpeed>0?3:2.5f):1;}Animator.speed=PlaybackRate;TickLayers(dt,moving,rate);TickImpact(dt);}
  }
  public sealed class RevenantMarkerRelay:MonoBehaviour
  {

@@ -30,13 +30,15 @@ namespace Bloodwake
    RenderSettings.sun=key; // Keep the shadow-casting light as URP's main light.
    Directional("Warm bounce",new Vector3(65,145,0),new Color(1,.72f,.48f),.18f,false);
    Directional("Cool silhouette",new Vector3(25,130,0),new Color(.53f,.7f,1),.25f,false);
+   // Look-dev "E" (20 Oct 2026): materials read as they are authored. The atmosphere comes from the dark,
+   // firelit scene and a gentle grade; the actor lights only lift faces and armour off the stone.
    // Rendering layer 2 is reserved for actor readability. It cannot wash out
    // the courtyard; normal world lights still illuminate these renderers.
-   var portrait=Directional("Actor soft fill",new Vector3(38,145,0),new Color(.9f,.91f,1),2.3f,false);
+   var portrait=Directional("Actor soft fill",new Vector3(38,145,0),new Color(.9f,.91f,1),.6f,false);
    portrait.GetUniversalAdditionalLightData().renderingLayers=2u;
    // A warm rim from above and behind the actors, so shoulders and heads catch it from the camera,
    // separates dark armour from dark stone the way the art-direction frames do.
-   var rim=Directional("Actor rim",Quaternion.LookRotation(new Vector3(-.45f,-.75f,.5f)).eulerAngles,new Color(1,.55f,.42f),4f,false);
+   var rim=Directional("Actor rim",Quaternion.LookRotation(new Vector3(-.45f,-.75f,.5f)).eulerAngles,new Color(1,.55f,.42f),1f,false);
    rim.GetUniversalAdditionalLightData().renderingLayers=2u;
    previousSky=RenderSettings.skybox;
    sky=new Material(Resources.Load<Shader>("Presentation/TownSky")){name="Town reflection sky"};
@@ -48,9 +50,7 @@ namespace Bloodwake
    profile=ScriptableObject.CreateInstance<VolumeProfile>();volume.sharedProfile=profile;
    profile.Add<Tonemapping>().mode.Override(TonemappingMode.ACES);
    var bloom=profile.Add<Bloom>();bloom.intensity.Override(.42f);bloom.threshold.Override(.95f);bloom.scatter.Override(.62f);
-   var grade=profile.Add<ColorAdjustments>();grade.contrast.Override(16);grade.saturation.Override(8);grade.postExposure.Override(.35f);
-   // Cold moonlit shadows against warm firelit highlights.
-   var split=profile.Add<SplitToning>();split.shadows.Override(new Color(.42f,.46f,.54f));split.highlights.Override(new Color(1,.76f,.56f));split.balance.Override(0);
+   var grade=profile.Add<ColorAdjustments>();grade.contrast.Override(4);grade.saturation.Override(0);grade.postExposure.Override(.35f);
    var vignette=profile.Add<Vignette>();vignette.intensity.Override(.3f);vignette.smoothness.Override(.5f);vignette.color.Override(new Color(.02f,0,.01f));
   }
   Light Directional(string label,Vector3 angles,Color color,float intensity,bool shadows)

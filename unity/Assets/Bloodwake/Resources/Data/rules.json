@@ -1,5 +1,11 @@
 {
   "audio": {
+    "music_combat": {"db": -18},
+    "music_boss": {"db": -15},
+    "music_menu": {"db": -20},
+    "music_safehouse": {"db": -20},
+    "music_market": {"db": -20},
+    "music_explore": {"db": -20},
     "vesper_flame_breath": {"db": -4, "files": ["vesper_flame_breath"], "gap": 0.2, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 1},
     "vesper_falling_star": {"db": -3, "files": ["vesper_falling_star"], "gap": 0.3, "impact": 0.62, "pitch": [0.97, 1.03], "voices": 1},
     "vesper_rising_crescent": {"db": -4, "files": ["vesper_rising_crescent"], "gap": 0.1, "impact": 0.32, "pitch": [0.97, 1.03], "voices": 1},
@@ -21,19 +27,19 @@
     "healer_cast": {"db": -8.9, "files": ["healer_cast"], "gap": 0.3, "impact": 0.0, "pitch": [0.97, 1.03], "voices": 2},
     "healer_bloom": {"db": -6, "files": ["healer_bloom"], "gap": 0.3, "impact": 0.1, "pitch": [0.97, 1.03], "voices": 2},
     "amb_boss_square": {
-      "db": -16
+      "db": -9
     },
     "amb_fire_crackle": {
-      "db": -16
+      "db": -18
     },
     "amb_market_night": {
-      "db": -14
+      "db": -7
     },
     "amb_sanctuary": {
-      "db": -15
+      "db": -8
     },
     "amb_town_night": {
-      "db": -14
+      "db": -8
     },
     "archer_attack": {
       "db": -10,
@@ -79,7 +85,7 @@
       "voices": 2
     },
     "armored_step": {
-      "db": -16,
+      "db": -10,
       "files": [
         "armored_step_1",
         "armored_step_2",
@@ -204,7 +210,7 @@
       "voices": 1
     },
     "boss_step": {
-      "db": -4,
+      "db": -12,
       "files": [
         "boss_step_1",
         "boss_step_2",
@@ -304,7 +310,7 @@
       "voices": 4
     },
     "enemy_step": {
-      "db": -18,
+      "db": -12,
       "files": [
         "enemy_step_1",
         "enemy_step_2",
@@ -623,7 +629,7 @@
       "voices": 2
     },
     "player_step": {
-      "db": -12,
+      "db": -8,
       "files": [
         "player_step_1",
         "player_step_2",
@@ -640,7 +646,7 @@
       "voices": 2
     },
     "player_step_walk": {
-      "db": -14,
+      "db": -6,
       "files": [
         "player_step_walk_1",
         "player_step_walk_2",

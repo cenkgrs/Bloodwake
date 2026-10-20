@@ -58,16 +58,16 @@ namespace Bloodwake
     float damage=row.N("damage")*Run.Stats.N("damage")*slot.N("damage"),range=row.N("range")*.02f*Run.Stats.N("attackRange")*slot.N("range");
     bool heavy=heavyAttack&&HeavyUnlocked;
     float duration=melee?Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,2.5f)):Mathf.Min(.45f,attackCd*.85f);
-    // Vesper's Mixamo swings are already quick; play them slightly slower than authored so each
-    // reads, and let only attack speed gained above the class base shorten them.
-    if(Run.ClassId=="vesper")duration=Player.ClipLength(clip)*1.1f/Mathf.Clamp(Run.Stats.N("attackSpeed")/GameData.Stats("vesper").N("attackSpeed"),.8f,1.6f);
+    // Vesper's opening two swings snap out a little faster than authored; the closing thrust plays slightly slower
+    // so it lands with weight. Only attack speed gained above the class base shortens them further.
+    if(Run.ClassId=="vesper")duration=Player.ClipLength(clip)*(combo<3?.85f:1.1f)/Mathf.Clamp(Run.Stats.N("attackSpeed")/GameData.Stats("vesper").N("attackSpeed"),.8f,1.6f);
     if(Run.ClassId=="revenant")duration=Player.ClipLength(clip)/Mathf.Sqrt(Mathf.Max(.5f,Run.Stats.N("attackSpeed")/GameData.Stats("revenant").N("attackSpeed")*slot.N("speed")));
     if(Run.ClassId=="warrior"&&combo==4)duration=.9f;
     if(heavy){clip="SpinAttack";duration=Player.ClipLength(clip)/(1.5f*Mathf.Clamp(Run.Stats.N("attackSpeed"),.8f,1.5f));attackCd*=2.6f;combo=0;}
     if(melee){float impact=Run.ClassId=="vesper"?(combo==1?.43f:combo==2?.40f:.52f):heavy?.55f:combo==1?.46f:combo==2?.33f:combo==3?.22f:.5f;float contact=Run.ClassId=="revenant"?(combo==1?10:combo==2?11:18)/60f*duration/Player.ClipLength(clip):duration*impact;if(Run.ClassId=="vesper")SoundOnContact("vesper_attack_"+combo,contact);else if(Run.ClassId!="warrior")Sound(Run.ClassId=="revenant"?"revenant_swing":"sword_swing");if(Run.ClassId=="revenant") {int swing=combo;float reach=range;contactEvent=()=>StartCoroutine(MeleeContact(dir,reach*1.8f,damage,0,false,swing,reach));}
      else StartCoroutine(MeleeContact(dir,range*(heavy?1.9f:Run.ClassId=="warrior"?1.7f:Run.ClassId=="vesper"?2.1f:1),damage*(heavy?2.2f:1),contact,heavy,0,0,heavy||combo==(Run.ClassId=="warrior"?4:3)));}
     else StartCoroutine(ReleaseWeapon(row,slot,dir,damage,range,duration*.55f,"R",combo==3));
-    Player.Play(clip,duration);if(contactEvent!=null)Player.OnMarker("DAMAGE",contactEvent);attackCd=Mathf.Max(attackCd,duration*(heavy?.85f:.62f));comboExpires=Time.time+duration+.5f;
+    Player.Play(clip,duration);if(contactEvent!=null)Player.OnMarker("DAMAGE",contactEvent);attackCd=Mathf.Max(attackCd,duration*(heavy?.85f:.62f));comboExpires=Time.time+duration+.25f;
    }
   }
   IEnumerator Delay(float time){while(time>0){if(Screen=="playing"&&hitStop<=0)time-=Time.deltaTime;yield return null;}}
@@ -144,6 +144,8 @@ namespace Bloodwake
     Player.FlashHit(true);Sound("player_hit");Rumble(.75f,.45f,.22f);
     if(!combatPractice)RevFx.DamageText(Player.transform.position,beforeHp-Run.Stats.N("hp"),RevenantVfx.Tone("ff8678"));
     if(Run.ClassId=="revenant"&&Run.Stats.N("hp")>0)Player.HitOverlay();
+    // The Mage flinches with one of her two hit takes, unless a cast is under way.
+    if(Run.ClassId=="mage"&&Run.Stats.N("hp")>0&&Player.Locked<=.15f)Player.Play(Random.value<.5f?"Hit":"Hit2",.35f);
    }
    invulnerable=.25f;
    if(Run.Stats.N("hp")<=0){ResetRevenantDash();Player.Play("Death");if(Run.ClassId=="revenant"){Player.OnMarker("DEATH_GROUND",()=>RevFx.Death(Player.transform.position));RevFx.Dissolve(Player);}hitStop=0;Rumble(1,.6f,.55f);Screen="dying";RecordRunEnd(RunEndCategory());SetMusic("");Sound(Run.ClassId=="vesper"?"vesper_death":"player_death");StartCoroutine(DeathTransition());Run.Awarded=true;}
