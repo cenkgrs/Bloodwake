@@ -20,6 +20,8 @@ namespace Bloodwake
      exitGlow=r;exitMaterial=new Material(Resources.Load<Shader>("Presentation/ExitGlow")){name="Open gate glow"};
      r.sharedMaterial=exitMaterial;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.enabled=false;continue;
     }
+    // The keep lays its own floors and windows.
+    if(r.name.StartsWith("Keep"))continue;
     var b=r.bounds;
     // The source room contains a dark 7.2 m circular combat decal. It reads as
     // a permanent ability indicator and competes with actual telegraphs.
@@ -31,6 +33,8 @@ namespace Bloodwake
    }
    foreach(var lamp in environment.GetComponentsInChildren<Light>())
    {
+    // Moonlight through the keep's windows stays cold and has no flame.
+    if(lamp.name.StartsWith("Keep cold"))continue;
     lamp.color=new Color(1,.46f,.15f);lamp.intensity=lamp.name=="Brazier light"?4.2f:4.8f;lamp.range=lamp.name=="Brazier light"?8f:8;
     if(!fire)fire=new Material(Resources.Load<Shader>("Presentation/Flame")){name="Lantern flame"};
     var flame=GameObject.CreatePrimitive(PrimitiveType.Quad);flame.name="Lantern flame";Destroy(flame.GetComponent<Collider>());

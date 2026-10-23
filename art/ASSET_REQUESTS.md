@@ -186,3 +186,32 @@ Daha doğal dursun istersen Mixamo'dan şunları **Without Skin, 60 fps, In Plac
 | `FallingStar.fbx` | "Great Sword Jump Attack" |
 | `CrescentFan.fbx` | "Great Sword High Spin Attack" |
 | `BladeThrow.fbx` | "Throw" ya da "Great Sword Kick" |
+
+## 4. YENİ — 23 Ekim: ikinci harita, THE HOLLOW KEEP (kale içi)
+
+Kale haritası şu an oynanabilir durumda ama geçici malzemeyle: duvarlar, sütunlar ve mobilya kutu geometri ile oda dokularından kuruldu (`Runtime/KeepInterior.cs`). Düşmanlar kasaba düşmanlarının soluk, soğuk tonlu "hayalet garnizon" versiyonları; sesler, kendi dosyaları gelene kadar kasabanınkileri çalıyor. Aşağıdakiler geldikçe yerine oturtulacak, kod hazır.
+
+### Ses (ElevenLabs) → `unity/Assets/Bloodwake/Resources/audio/`
+| Dosya | İstek |
+|---|---|
+| `amb_keep_halls_1.wav` | Taş koridorlarda boğuk rüzgâr uğultusu, uzakta zincir şıngırtısı ve yankılanan damla sesi, 60 sn döngü |
+| `amb_keep_throne_1.wav` | Geniş boş taş salon, derin yankı, alçak organ benzeri drone, 60 sn döngü |
+| `amb_undercroft_1.wav` | Mahzen: su damlası, uzak fısıltı, mum çıtırtısı, 45 sn döngü |
+| `music_keep.wav` | Karanlık gotik savaş müziği, kasabadakinden daha soğuk: koro, çan, gergin yaylılar, döngü |
+| `music_keep_boss.wav` | Kale bossu: ağır davul, organ, koro, döngü |
+| `music_undercroft.wav` | Sakin ama tedirgin tüccar müziği, tek çello ve harp, döngü |
+
+### 3D (Tripo, 4K PBR, FBX) → `unity/Assets/Bloodwake/Resources/Environment/Kit01/<id>/`
+| id | İstek |
+|---|---|
+| `keep_wall` | Gotik kale iç duvarı, iri kesme taş, 3 m genişlik 4.5 m yükseklik, alt kısmı kaide |
+| `keep_window` | Sivri kemerli dar pencere çerçevesi (taş), cam yok |
+| `keep_pillar` | Gotik taş sütun, kaide ve başlık ile, 4.5 m |
+| `keep_throne` | Demir ve taştan yüksek sırtlı taht |
+| `keep_banner` | Duvar sancağı, yırtık koyu kırmızı kumaş, demir çubuk |
+| `keep_chandelier` | Demir halka avize, mumlarla |
+| `keep_pew` | Kilise sırası, eski ahşap |
+| `keep_cell_bars` | Zindan hücre parmaklığı kapısıyla |
+
+### Düşman modelleri (Tripo + Mixamo, isteğe bağlı)
+Şimdilik var olan modellerin renklendirilmiş halleri kullanılıyor. Kendine özgü görünsün istersen: Hollow Halberdier (teberli zırhlı iskelet muhafız), Hollow Knight (ağır plaka zırhlı şövalye), Garrison Crossbow, Watch Wraith (yarı saydam hayalet), Black Chaplain (cüppeli rahip), ve boss Ser Caldren (kırık taçlı dev şövalye).

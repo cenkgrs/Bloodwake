@@ -1,0 +1,1006 @@
+{
+  "_doc": "The Hollow Keep (second map, 23 Oct 2026): a castle interior the run enters after the first Black Bell. Rooms carry keep: <style> and are built by Runtime/KeepInterior.cs; enemies are keep_* kinds that fight as their base kind (stats, tint and a spectral glow overridden) until their own models arrive; music and ambience ids fall back to the town's until delivered (see ASSET_REQUESTS.md).",
+  "maps": [
+    {
+      "id": "hollow_keep",
+      "name": "THE HOLLOW KEEP",
+      "region": "keep",
+      "blurb": "Past the Black Bell the road climbs into a fortress that forgot its war had ended. Its garrison still keeps the watch, and it does not know you.",
+      "route": [
+        "keep_gatehouse_01",
+        "keep_armory_02",
+        "keep_chapel_03",
+        "keep_hall_04",
+        "keep_cells_05"
+      ],
+      "boss": "keep_throne_01",
+      "interlude": "keep_undercroft",
+      "districts": [
+        "THE OUTER WARD",
+        "THE LONG GALLERY",
+        "THE BELLFRY STAIR",
+        "THE SALT CHAPELS",
+        "THE INNER WARD",
+        "THE COLD KITCHENS",
+        "THE KING'S WALK",
+        "THE SEALED LIBRARY",
+        "THE CROWN VAULT",
+        "THE HOLLOW THRONE"
+      ],
+      "pools": [
+        [
+          "garrison",
+          "iron_vigil",
+          "bolt_gallery",
+          "wraith_choir",
+          "night_watch"
+        ],
+        [
+          "iron_vigil",
+          "bolt_gallery",
+          "wraith_choir",
+          "castellan_court",
+          "night_watch",
+          "garrison"
+        ],
+        [
+          "castellan_court",
+          "iron_vigil",
+          "wraith_choir",
+          "bolt_gallery",
+          "night_watch"
+        ]
+      ],
+      "music": {
+        "combat": "music_keep",
+        "boss": "music_keep_boss",
+        "merchant": "music_undercroft"
+      },
+      "ambience": {
+        "combat": "amb_keep_halls",
+        "boss": "amb_keep_throne",
+        "merchant": "amb_undercroft"
+      },
+      "bossVariants": [
+        {
+          "name": "SER CALDREN, THE HOLLOW KING",
+          "title": "Who Kept the Keep",
+          "pattern": [
+            "attack",
+            "summon",
+            "sweep",
+            "charge",
+            "attack",
+            "slam"
+          ],
+          "summon": [
+            "keep_halberd",
+            "keep_knight"
+          ],
+          "summonCount": 3,
+          "castCount": 4,
+          "tempo": 1.05,
+          "hp": 1.0,
+          "scale": 1.0,
+          "tint": "7f8fb8"
+        },
+        {
+          "name": "THE CASTELLAN OF ASH",
+          "title": "Last Voice of the Watch",
+          "pattern": [
+            "cast",
+            "attack",
+            "summon",
+            "charge",
+            "cast",
+            "slam"
+          ],
+          "summon": [
+            "keep_crossbow",
+            "keep_halberd"
+          ],
+          "summonCount": 3,
+          "castCount": 4,
+          "tempo": 1.1,
+          "hp": 1.1,
+          "scale": 1.02,
+          "tint": "8a9ab0"
+        },
+        {
+          "name": "SAINT ORDRIC UNCROWNED",
+          "title": "Who Prayed the Walls Shut",
+          "pattern": [
+            "cast",
+            "summon",
+            "cast",
+            "sweep",
+            "slam",
+            "attack"
+          ],
+          "summon": [
+            "keep_wraith",
+            "keep_chaplain"
+          ],
+          "summonCount": 4,
+          "castCount": 4,
+          "tempo": 1.12,
+          "hp": 1.2,
+          "scale": 1.05,
+          "tint": "6f8fd0"
+        }
+      ]
+    }
+  ],
+  "rooms": [
+    {
+      "id": "keep_gatehouse_01",
+      "name": "THE GATEHOUSE",
+      "region": "keep",
+      "type": "combat",
+      "keep": "gatehouse",
+      "size": [
+        24,
+        26
+      ],
+      "light": {
+        "ambient": "7f8ea8",
+        "fog": "0d1118",
+        "energy": 0.45,
+        "ground": "3c4048"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            13.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -13.0
+          ]
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          9.0
+        ],
+        "RewardPoint": [
+          -4.800000000000001,
+          -10.8
+        ],
+        "EnemySpawn": [
+          [
+            -10.4,
+            -7.15
+          ],
+          [
+            10.4,
+            -7.15
+          ],
+          [
+            -10.4,
+            0.65
+          ],
+          [
+            10.4,
+            0.65
+          ],
+          [
+            -10.2,
+            7.8
+          ],
+          [
+            10.2,
+            7.8
+          ]
+        ]
+      },
+      "layout": [
+        {
+          "kind": "pillar",
+          "at": [
+            -5.0,
+            -3.0
+          ],
+          "size": [
+            1.2,
+            1.2
+          ],
+          "height": 4.5
+        },
+        {
+          "kind": "pillar",
+          "at": [
+            5.0,
+            -3.0
+          ],
+          "size": [
+            1.2,
+            1.2
+          ],
+          "height": 4.5
+        },
+        {
+          "kind": "pillar",
+          "at": [
+            -5.0,
+            4.5
+          ],
+          "size": [
+            1.2,
+            1.2
+          ],
+          "height": 4.5
+        },
+        {
+          "kind": "pillar",
+          "at": [
+            5.0,
+            4.5
+          ],
+          "size": [
+            1.2,
+            1.2
+          ],
+          "height": 4.5
+        }
+      ],
+      "encounter": {
+        "waves": [
+          [
+            "keep_halberd",
+            "keep_halberd"
+          ]
+        ],
+        "perNight": [],
+        "cap": 6
+      }
+    },
+    {
+      "id": "keep_armory_02",
+      "name": "THE ARMORY",
+      "region": "keep",
+      "type": "combat",
+      "keep": "armory",
+      "size": [
+        28,
+        24
+      ],
+      "light": {
+        "ambient": "7f8ea8",
+        "fog": "0d1118",
+        "energy": 0.45,
+        "ground": "3c4048"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            12.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -12.0
+          ]
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          8.0
+        ],
+        "RewardPoint": [
+          -5.6000000000000005,
+          -9.8
+        ],
+        "EnemySpawn": [
+          [
+            -12.4,
+            -6.6000000000000005
+          ],
+          [
+            12.4,
+            -6.6000000000000005
+          ],
+          [
+            -12.4,
+            0.6000000000000001
+          ],
+          [
+            12.4,
+            0.6000000000000001
+          ],
+          [
+            -12.2,
+            7.199999999999999
+          ],
+          [
+            12.2,
+            7.199999999999999
+          ]
+        ]
+      },
+      "layout": [
+        {
+          "kind": "rack_row",
+          "at": [
+            0.0,
+            -5.0
+          ],
+          "size": [
+            7.0,
+            1.0
+          ],
+          "height": 1.5
+        },
+        {
+          "kind": "anvil",
+          "at": [
+            -7.0,
+            3.0
+          ],
+          "size": [
+            1.4,
+            0.9
+          ],
+          "height": 0.9
+        },
+        {
+          "kind": "anvil",
+          "at": [
+            7.0,
+            3.0
+          ],
+          "size": [
+            1.4,
+            0.9
+          ],
+          "height": 0.9
+        }
+      ],
+      "encounter": {
+        "waves": [
+          [
+            "keep_halberd",
+            "keep_halberd"
+          ]
+        ],
+        "perNight": [],
+        "cap": 6
+      }
+    },
+    {
+      "id": "keep_chapel_03",
+      "name": "THE DROWNED CHAPEL",
+      "region": "keep",
+      "type": "combat",
+      "keep": "chapel",
+      "size": [
+        26,
+        30
+      ],
+      "light": {
+        "ambient": "6f86b0",
+        "fog": "0b1020",
+        "energy": 0.42,
+        "ground": "373d4a"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            15.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -15.0
+          ]
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          11.0
+        ],
+        "RewardPoint": [
+          -5.2,
+          -12.8
+        ],
+        "EnemySpawn": [
+          [
+            -11.4,
+            -8.25
+          ],
+          [
+            11.4,
+            -8.25
+          ],
+          [
+            -11.4,
+            0.75
+          ],
+          [
+            11.4,
+            0.75
+          ],
+          [
+            -11.2,
+            9.0
+          ],
+          [
+            11.2,
+            9.0
+          ]
+        ]
+      },
+      "layout": [
+        {
+          "kind": "pews",
+          "at": [
+            -5.2,
+            1.5
+          ],
+          "size": [
+            6.0,
+            7.5
+          ],
+          "height": 0.9
+        },
+        {
+          "kind": "pews",
+          "at": [
+            5.2,
+            1.5
+          ],
+          "size": [
+            6.0,
+            7.5
+          ],
+          "height": 0.9
+        },
+        {
+          "kind": "altar",
+          "at": [
+            0.0,
+            -11.0
+          ],
+          "size": [
+            4.0,
+            1.6
+          ],
+          "height": 1.1
+        }
+      ],
+      "encounter": {
+        "waves": [
+          [
+            "keep_halberd",
+            "keep_halberd"
+          ]
+        ],
+        "perNight": [],
+        "cap": 6
+      }
+    },
+    {
+      "id": "keep_hall_04",
+      "name": "THE GREAT HALL",
+      "region": "keep",
+      "type": "combat",
+      "keep": "hall",
+      "size": [
+        30,
+        26
+      ],
+      "light": {
+        "ambient": "9a8a7a",
+        "fog": "140f0c",
+        "energy": 0.5,
+        "ground": "3f3a36"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            13.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -13.0
+          ]
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          9.0
+        ],
+        "RewardPoint": [
+          -6.0,
+          -10.8
+        ],
+        "EnemySpawn": [
+          [
+            -13.4,
+            -7.15
+          ],
+          [
+            13.4,
+            -7.15
+          ],
+          [
+            -13.4,
+            0.65
+          ],
+          [
+            13.4,
+            0.65
+          ],
+          [
+            -13.2,
+            7.8
+          ],
+          [
+            13.2,
+            7.8
+          ]
+        ]
+      },
+      "layout": [
+        {
+          "kind": "table",
+          "at": [
+            -6.5,
+            0.0
+          ],
+          "size": [
+            2.0,
+            11.0
+          ],
+          "height": 0.85
+        },
+        {
+          "kind": "table",
+          "at": [
+            6.5,
+            0.0
+          ],
+          "size": [
+            2.0,
+            11.0
+          ],
+          "height": 0.85
+        }
+      ],
+      "encounter": {
+        "waves": [
+          [
+            "keep_halberd",
+            "keep_halberd"
+          ]
+        ],
+        "perNight": [],
+        "cap": 6
+      }
+    },
+    {
+      "id": "keep_cells_05",
+      "name": "THE OUBLIETTE",
+      "region": "keep",
+      "type": "combat",
+      "keep": "cells",
+      "size": [
+        28,
+        26
+      ],
+      "light": {
+        "ambient": "6c7a74",
+        "fog": "0a0f0d",
+        "energy": 0.4,
+        "ground": "35393a"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            13.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -13.0
+          ]
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          9.0
+        ],
+        "RewardPoint": [
+          -5.6000000000000005,
+          -10.8
+        ],
+        "EnemySpawn": [
+          [
+            -12.4,
+            -7.15
+          ],
+          [
+            12.4,
+            -7.15
+          ],
+          [
+            -12.4,
+            0.65
+          ],
+          [
+            12.4,
+            0.65
+          ],
+          [
+            -12.2,
+            7.8
+          ],
+          [
+            12.2,
+            7.8
+          ]
+        ]
+      },
+      "layout": [
+        {
+          "kind": "cellblock",
+          "at": [
+            -10.0,
+            -2.0
+          ],
+          "size": [
+            6.0,
+            14.0
+          ],
+          "height": 3.0
+        },
+        {
+          "kind": "cellblock",
+          "at": [
+            10.0,
+            -2.0
+          ],
+          "size": [
+            6.0,
+            14.0
+          ],
+          "height": 3.0
+        }
+      ],
+      "encounter": {
+        "waves": [
+          [
+            "keep_halberd",
+            "keep_halberd"
+          ]
+        ],
+        "perNight": [],
+        "cap": 6
+      }
+    },
+    {
+      "id": "keep_throne_01",
+      "name": "THE HOLLOW THRONE",
+      "region": "keep",
+      "type": "boss",
+      "keep": "throne",
+      "size": [
+        36,
+        34
+      ],
+      "light": {
+        "ambient": "7a7f9e",
+        "fog": "0c0c16",
+        "energy": 0.45,
+        "ground": "3a3b46"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            17.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -17.0
+          ],
+          "grand": true
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          13.0
+        ],
+        "RewardPoint": [
+          -5.0,
+          -12.0
+        ],
+        "EnemySpawn": [
+          [
+            -15.4,
+            -4.9
+          ],
+          [
+            15.4,
+            -4.9
+          ],
+          [
+            -15.4,
+            6.3
+          ],
+          [
+            15.4,
+            6.3
+          ]
+        ],
+        "BossArenaCenter": [
+          0.0,
+          0.0
+        ],
+        "BossSpawn": [
+          0.0,
+          -5.0
+        ]
+      },
+      "layout": [
+        {
+          "kind": "dais",
+          "at": [
+            0.0,
+            -13.5
+          ],
+          "size": [
+            10.0,
+            4.0
+          ],
+          "height": 0.6
+        }
+      ],
+      "encounter": {
+        "waves": [
+          [
+            "boss"
+          ]
+        ],
+        "perNight": [],
+        "cap": 1
+      }
+    },
+    {
+      "id": "keep_undercroft",
+      "name": "THE UNDERCROFT",
+      "region": "keep",
+      "type": "merchant",
+      "keep": "undercroft",
+      "size": [
+        18,
+        14
+      ],
+      "light": {
+        "ambient": "9c8a74",
+        "fog": "120e0b",
+        "energy": 0.55,
+        "ground": "433d37"
+      },
+      "doors": {
+        "entrance": {
+          "at": [
+            0.0,
+            7.0
+          ]
+        },
+        "exit": {
+          "at": [
+            0.0,
+            -7.0
+          ]
+        }
+      },
+      "markers": {
+        "EntrySpawn": [
+          0.0,
+          3.0
+        ],
+        "RewardPoint": [
+          0.0,
+          -2.4
+        ]
+      },
+      "layout": [
+        {
+          "kind": "stall",
+          "at": [
+            0.0,
+            -3.8
+          ],
+          "size": [
+            3.6,
+            1.4
+          ],
+          "height": 1.1
+        }
+      ],
+      "hosts": [
+        {
+          "role": "merchant",
+          "name": "THE GAOLER'S WIDOW",
+          "verb": "TRADE",
+          "at": [
+            0.0,
+            -2.4
+          ],
+          "model": "commander",
+          "tint": "8a93a8"
+        }
+      ]
+    }
+  ],
+  "enemies": [
+    {
+      "id": "keep_halberd",
+      "base": "grunt",
+      "name": "HOLLOW HALBERDIER",
+      "maxHp": 64,
+      "damage": 13,
+      "moveSpeed": 82,
+      "attackRange": 52,
+      "tint": "7a8296",
+      "spectral": 0.25
+    },
+    {
+      "id": "keep_knight",
+      "base": "tank",
+      "name": "HOLLOW KNIGHT",
+      "maxHp": 190,
+      "damage": 24,
+      "moveSpeed": 62,
+      "tint": "6c7488",
+      "spectral": 0.3,
+      "scale": 1.06
+    },
+    {
+      "id": "keep_crossbow",
+      "base": "archer",
+      "name": "GARRISON CROSSBOW",
+      "maxHp": 38,
+      "damage": 14,
+      "moveSpeed": 66,
+      "attackCooldown": 1.6,
+      "tint": "7d8494",
+      "spectral": 0.2
+    },
+    {
+      "id": "keep_wraith",
+      "base": "assassin",
+      "name": "WATCH WRAITH",
+      "maxHp": 30,
+      "damage": 15,
+      "moveSpeed": 170,
+      "tint": "8fb2ff",
+      "spectral": 0.9
+    },
+    {
+      "id": "keep_chaplain",
+      "base": "healer",
+      "name": "BLACK CHAPLAIN",
+      "maxHp": 48,
+      "healAmount": 14,
+      "tint": "5a6070",
+      "spectral": 0.5
+    },
+    {
+      "id": "keep_castellan",
+      "base": "commander",
+      "name": "CASTELLAN",
+      "maxHp": 120,
+      "damage": 13,
+      "tint": "8890a8",
+      "spectral": 0.35
+    }
+  ],
+  "waveCombos": {
+    "garrison": [
+      [
+        "keep_halberd",
+        "keep_halberd",
+        "keep_halberd",
+        "keep_halberd"
+      ],
+      [
+        "keep_halberd",
+        "keep_halberd",
+        "keep_halberd",
+        "keep_crossbow",
+        "keep_crossbow"
+      ]
+    ],
+    "iron_vigil": [
+      [
+        "keep_knight",
+        "keep_knight"
+      ],
+      [
+        "keep_knight",
+        "keep_halberd",
+        "keep_halberd",
+        "keep_chaplain"
+      ]
+    ],
+    "bolt_gallery": [
+      [
+        "keep_crossbow",
+        "keep_crossbow",
+        "keep_crossbow"
+      ],
+      [
+        "keep_crossbow",
+        "keep_crossbow",
+        "keep_knight",
+        "keep_halberd"
+      ]
+    ],
+    "wraith_choir": [
+      [
+        "keep_wraith",
+        "keep_wraith",
+        "keep_wraith",
+        "keep_wraith"
+      ],
+      [
+        "keep_wraith",
+        "keep_wraith",
+        "keep_wraith",
+        "keep_chaplain",
+        "keep_chaplain"
+      ]
+    ],
+    "castellan_court": [
+      [
+        "keep_castellan",
+        "keep_halberd",
+        "keep_halberd",
+        "keep_halberd"
+      ],
+      [
+        "keep_knight",
+        "keep_knight",
+        "keep_crossbow",
+        "keep_crossbow"
+      ]
+    ],
+    "night_watch": [
+      [
+        "keep_wraith",
+        "keep_wraith",
+        "keep_halberd",
+        "keep_halberd"
+      ],
+      [
+        "keep_crossbow",
+        "keep_crossbow",
+        "keep_wraith",
+        "keep_wraith"
+      ]
+    ]
+  }
+}

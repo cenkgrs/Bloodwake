@@ -53,7 +53,7 @@ namespace Bloodwake
   }
   void DevDistrict(int step)
   {
-   if(Run.Plan.Count==0)return;Run.Night=Mathf.Clamp(Run.Night+step,1,FinalDistrict);Run.RoomIndex=0;Screen="playing";EnterRoom(Run.Plan[0]);
+   if(Run.Plan.Count==0)return;Run.Night=Mathf.Clamp(Run.Night+step,1,FinalDistrict);PlanNight();Screen="playing";EnterRoom(Run.Plan[0]);
   }
  }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 namespace Bloodwake
 {
@@ -46,8 +47,15 @@ namespace Bloodwake
   {
    EnsureListener();
    string id=roomType=="safehouse"?"amb_sanctuary":roomType=="boss"?"amb_boss_square":roomType=="merchant"?"amb_market_night":"amb_town_night";
+   id=RegionSound("ambience",roomType,id);
    if(id==ambienceId)return;ambienceId=id;var clip=PickVariant(id);
    if(!clip){ambienceTarget=0;return;}ambienceVoice.clip=clip;ambienceVoice.volume=0;ambienceVoice.Play();ambienceTarget=GameData.Rules["audio"]?[id]?.N("db",-14) is float db?Mathf.Pow(10,db/20):.2f;
+  }
+  // A map may name its own music and ambience per room type (the keep); until a clip is delivered the town's plays.
+  string RegionSound(string kind,string roomType,string fallback)
+  {
+   var map=AllMaps.FirstOrDefault(m=>m.S("region")==room?.S("region"));var own=map?[kind]?[roomType=="boss"?"boss":roomType=="merchant"?"merchant":"combat"]?.Value<string>();
+   return own!=null&&HasSound(own)?own:fallback;
   }
   // Every fire in the room crackles from where it burns.
   void PlaceFireSounds()

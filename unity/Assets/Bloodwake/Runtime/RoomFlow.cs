@@ -21,9 +21,10 @@ namespace Bloodwake
    if(authored){foreach(var r in roomRoot.GetComponentsInChildren<Renderer>())r.enabled=false;var environment=Instantiate(authored,roomRoot);environment.name="Imported town geometry";
     var metadata=id=="town_safehouse"?null:Resources.Load<TextAsset>("Rooms/"+id+"/collision");if(metadata){var data=JObject.Parse(metadata.text);blockers.Clear();foreach(var r in data["rects"]){float x=(float)r[0],z=(float)r[1],w=(float)r[2],h=(float)r[3];blockers.Add(new Bounds(new Vector3(-x-w/2,1,z+h/2),new Vector3(w,2,h)));}foreach(var c in data["circles"]){float radius=(float)c[2];blockers.Add(new Bounds(new Vector3(-(float)c[0],1,(float)c[1]),new Vector3(radius*2,2,radius*2)));}var hidden=data["hidden"].Values<string>().ToHashSet();foreach(var t in environment.GetComponentsInChildren<Transform>())if(hidden.Contains(t.name))t.gameObject.SetActive(false);}
    }
-   EnvironmentDressing.Apply(roomRoot,half,room["layout"]);
-   EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);
-   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else{DressRoom(id);DressEdges(id);}ConfigureBreakableCargo();
+   // The keep is built whole by KeepInterior; the town dressing (streets, houses, cargo) belongs outdoors.
+   bool keep=room["keep"]!=null;
+   if(!keep){EnvironmentDressing.Apply(roomRoot,half,room["layout"]);EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);}
+   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else if(keep)BuildKeep();else{DressRoom(id);DressEdges(id);}ConfigureBreakableCargo();
    roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
    SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);  // no orb held in the Mage's palm: her magic leaves the hand only when she casts
@@ -33,7 +34,7 @@ namespace Bloodwake
    if(room.S("type")=="boss")waves=new JArray{new JArray("boss")};
    waveIndex=0;spawnCursor=0;spawnTimer=1.5f;attackCd=0;dashCd=0;
    SetAmbience(room.S("type"));PlaceFireSounds();
-   if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(room.S("type")=="boss"?"music_boss":room.S("type")=="safehouse"?Voice("music_safehouse",""):room.S("type")=="merchant"?Voice("music_market",""):"music_combat");
+   if(!roomClear){Run.Fights++;Run.Wave=Run.Fights;}SetMusic(RegionSound("music",room.S("type"),room.S("type")=="boss"?"music_boss":room.S("type")=="safehouse"?Voice("music_safehouse",""):room.S("type")=="merchant"?Voice("music_market",""):"music_combat"));
    // A warden's square opens on the warden (skipped by the batch smoke run, which drives the fight itself).
    if(room.S("type")=="boss"&&Run!=null&&!smokeRunning)BeginBossIntro();
   }
@@ -67,12 +68,24 @@ namespace Bloodwake
   void OpenHost(JToken host){if(host.S("role")=="mirror"){OpenMirror();return;}if(host.S("role")=="maps"){Sound("ui_enter_district");EnterDistrict();}else Screen=HostScreen(host);}
   void EnterDistrict()=>BeginCharacterIntro(Run.ClassId,GameData.Maps["maps"][0]);
   // Each pass through the route and its boss is one district; beating the last district's boss wins the run.
-  JArray Districts=>(JArray)GameData.Maps["maps"][0]["districts"];
-  int FinalDistrict=>Districts.Count;
+  // Districts alternate between the maps in maps order (night 1 the town, night 2 the keep, night 3 the town
+  // again and harder...); each map names its own districts and may carry its own wave pools and wardens.
+  static JArray AllMaps=>(JArray)GameData.Maps["maps"];
+  static JToken MapForNight(int night)=>AllMaps[(Mathf.Max(1,night)-1)%AllMaps.Count];
+  static int MapVisit(int night)=>(Mathf.Max(1,night)-1)/AllMaps.Count;
+  JToken CurrentMap=>MapForNight(Run?.Night??1);
+  JArray Districts=>(JArray)CurrentMap["districts"];
+  int FinalDistrict=>((JArray)AllMaps[0]["districts"]).Count;
+  // The rooms of one night on its map: the route, its warden, then its interlude.
+  void PlanNight()
+  {
+   var map=CurrentMap;Run.MapId=map.S("id");
+   Run.Plan=map["route"].Values<string>().Concat(new[]{map.S("boss"),map.S("interlude")}).ToList();Run.RoomIndex=0;
+  }
   // The HUD names the district rather than counting it, so the run never reads as a countdown.
-  string DistrictName=>(string)Districts[Mathf.Clamp(Run.Night-1,0,Districts.Count-1)];
+  string DistrictName=>(string)Districts[Mathf.Clamp(MapVisit(Run.Night),0,Districts.Count-1)];
   void Interact(){var host=NearbyHost();if(host!=null){if(!OpenDialogue(host))OpenHost(host);return;}if(!RewardReady||Vector3.Distance(Player.transform.position,Point(room["markers"]["RewardPoint"]))>=2.4f)return;bossReward=room.S("type")=="boss"&&!Run.Claimed.Contains(Run.Night+":"+Run.RoomIndex);PrepareReward();}
   void PrepareReward(){offers.Clear();offers.AddRange(GameData.Rows("upgrades").Where(r=>Run.Available(r,"upgrades")&&(Run.PendingLevels>0||r.S("rarity")!="common")).OrderBy(_=>Random.value).Take(3));Screen=offers.Count>0?"upgrade":"playing";if(offers.Count==0){Run.PendingLevels=0;bossReward=false;Run.Claimed.Add(Run.Night+":"+Run.RoomIndex);}}
-  public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.RoomIndex=0;Run.Night++;Sound("ui_enter_district");}Screen="playing";EnterRoom(Run.Plan[Run.RoomIndex]);}
+  public void NextRoom(){Run.RoomIndex++;if(Run.RoomIndex>=Run.Plan.Count){Run.Night++;PlanNight();Sound("ui_enter_district");}Screen="playing";EnterRoom(Run.Plan[Run.RoomIndex]);}
  }
 }

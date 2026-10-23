@@ -26,14 +26,14 @@ namespace Bloodwake
    if(combo==1)
    {
     float hold=.42f/rate;Player.Play("Attack",hold);Sound("orb_cast");
-    StartCoroutine(DelayedCall(hold*.45f,()=>StartCoroutine(MageBolt(Player.MagicPalmPosition(),Player.transform.forward,damage,22,10,1,3,false))));
+    StartCoroutine(DelayedCall(hold*.45f,()=>StartCoroutine(MageBolt(Player.MagicPalmPosition(),Player.transform.forward,damage,22,10,1.2f,3,false))));
     attackCd=.3f/rate;comboExpires=Time.time+hold+.3f;
    }
    else if(combo==2)
    {
     // The back of the left hand flings a heavier orb.
     float hold=.46f/rate;Player.Play("Mage_Backhand",hold);Sound("orb_cast");
-    StartCoroutine(DelayedCall(hold*.53f,()=>StartCoroutine(MageBolt(MageLeftPalm(),Player.transform.forward,damage*1.2f,26,10,1.35f,3,false))));
+    StartCoroutine(DelayedCall(hold*.53f,()=>StartCoroutine(MageBolt(MageLeftPalm(),Player.transform.forward,damage*1.2f,26,10,1.55f,3,false))));
     attackCd=.34f/rate;comboExpires=Time.time+hold+.3f;
    }
    else
@@ -56,7 +56,9 @@ namespace Bloodwake
   IEnumerator MageBolt(Vector3 origin,Vector3 dir,float damage,float speed,float range,float size,int pierce,bool finisher)
   {
    dir.y=0;dir.Normalize();var orb=RevFx.Orb(origin,false,true);orb.transform.localScale*=size;orb.transform.rotation=Quaternion.LookRotation(dir);
-   RevFx.Muzzle(origin,dir,true,null);var hit=new HashSet<Enemy>();float travelled=0,trail=0;
+   RevFx.Muzzle(origin,dir,true,null);RevFx.Glow(origin,RevenantVfx.Tone("cfc0ff"),.9f*size,2.4f,.12f);GlideDiamonds(origin,3,.3f,1.4f);
+   var hit=new HashSet<Enemy>();float travelled=0,trail=0;
+   var streak=BoltStreak(size);
    while(orb&&travelled<range)
    {
     if(Screen!="playing"||hitStop>0){yield return null;continue;}
@@ -64,18 +66,45 @@ namespace Bloodwake
     // Walls stop it.
     var flat=new Vector3(next.x,0,next.z);if(Vector3.Distance(Move(new Vector3(previous.x,0,previous.z),dir*step,.1f),flat)>.15f){RevFx.ProjectileImpact(next,true,false,dir);break;}
     orb.transform.position=next;travelled+=step;DamageCargoSegment(previous,next,.4f);
+    if(streak){float reach=Mathf.Min(travelled,1.7f*size);for(int i=0;i<streak.positionCount;i++)streak.SetPosition(i,next-dir*reach*i/(streak.positionCount-1f));}
     if((trail-=Time.deltaTime)<=0){trail=.03f;RevFx.ProjectileTrail(next,true,false);}
     foreach(var e in Enemies.ToArray())
     {
      if(e.Emerging||e.Hp<=0||hit.Contains(e)||ProjectileBodyDistance(e.View,previous,next)>e.Data.N("radius",16)*.02f+.45f*size)continue;
-     hit.Add(e);RevFx.ProjectileImpact(e.View.transform.position+Vector3.up,true,false,dir);DamageEnemy(e,damage);MeleeKnockback(e,dir,size>1.2f);
+     hit.Add(e);var struck=e.View.transform.position+Vector3.up;RevFx.ProjectileImpact(struck,true,false,dir);DamageEnemy(e,damage);MeleeKnockback(e,dir,size>1.2f);
+     ArcaneHit(struck,dir,size,hit.Count==1);
      if(hit.Count>pierce){travelled=range;break;}
     }
     yield return null;
    }
    if(orb)Destroy(orb.gameObject);
+   if(streak)Destroy(streak.gameObject);
+  }
+  // The bolt's tail: the glide's arcane strip, bright at the orb, so the Mage's magic shares one look.
+  LineRenderer BoltStreak(float size)
+  {
+   var material=RevFx.TexturedMaterial("arcane_streak");if(!material)return null;
+   var l=new GameObject("Bolt streak").AddComponent<LineRenderer>();if(roomRoot)l.transform.SetParent(roomRoot,true);
+   l.sharedMaterial=material;l.textureMode=LineTextureMode.Stretch;l.textureScale=new Vector2(.6f,1);l.alignment=LineAlignment.View;l.positionCount=8;
+   l.widthMultiplier=.75f*size;l.widthCurve=new AnimationCurve(new Keyframe(0,.7f),new Keyframe(.15f,1),new Keyframe(1,.2f));
+   l.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;l.receiveShadows=false;
+   var block=new MaterialPropertyBlock();block.SetFloat("_Progress",.5f);block.SetFloat("_Opacity",1.8f);block.SetColor("_Tone",Color.white);l.SetPropertyBlock(block);
+   return l;
   }
 
+  // Where a spell meets a body: a bright arcane flare, a ring of light and diamond motes thrown on through the
+  // body, and for the first body a camera kick scaled by the spell's size (the hit stop comes from DamageEnemy).
+  void ArcaneHit(Vector3 at,Vector3 dir,float size,bool first)
+  {
+   RevFx.Flash(at,RevenantVfx.Arcane,2.2f*size,.9f*size,.12f);RevFx.Glow(at,RevenantVfx.Tone("cfc0ff"),1.1f*size,3,.14f);
+   RevFx.BurstRing(at,.55f*size,RevenantVfx.Tone("cfc0ff"),10,2.6f,.22f);GlideDiamonds(at-dir*.1f,Mathf.RoundToInt(5*size),.45f,2.4f);
+   if(RevenantVfx.SheetTexture("arcane_burst"))
+   {
+    var pop=RevFx.Textured("Arcane hit burst",at,Vector3.one*1.3f*size,"arcane_burst",.42f,Color.white,false,4,true);
+    pop.Tick=(p,dt)=>{pop.transform.rotation=Cam.transform.rotation;pop.Block.SetFloat("_Progress",Mathf.Lerp(.12f,1,p));pop.Block.SetFloat("_Opacity",1.4f);};
+   }
+   if(first){ShakeCamera(.14f+.12f*size,dir);Rumble(.25f*size,.4f*size,.08f);}
+  }
   // Shards of ice tear up out of the ground in rows racing along a 30-degree wedge.
   IEnumerator IceShards(Vector3 origin,Vector3 dir,float damage)
   {
@@ -91,11 +120,18 @@ namespace Bloodwake
      if(Vector3.Distance(Move(origin,at-origin,.1f),at)>.3f)continue;
      RevFx.IceSpike(at,dir,Random.Range(.8f,1.5f)*Mathf.Lerp(.85f,1.25f,d/length));
     }
+    if(RevenantVfx.SheetTexture("frost_ground"))
+    {
+     var frost=RevFx.Textured("Shard frost",origin+dir*d+Vector3.up*.03f,Vector3.one*(half*2+.8f),"frost_ground",1f,new Color(.45f,.7f,1.3f,1),false,1,false,true);
+     frost.Tick=(p,dt)=>{frost.Block.SetFloat("_Opacity",.5f*Mathf.Clamp01(frost.Age/.08f)*(1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.55f,1,p))));frost.Block.SetFloat("_Progress",.5f);};
+    }
     foreach(var e in Enemies.ToArray())
     {
      if(e.Emerging||e.Hp<=0||hit.Contains(e))continue;var rel=e.View.transform.position-origin;rel.y=0;float along=Vector3.Dot(rel,dir);
      if(along<d-rowStep-.3f||along>d+.4f||Vector3.Angle(dir,rel)>halfAngle+10)continue;
      hit.Add(e);DamageEnemy(e,damage);e.Slow=Mathf.Max(e.Slow,1.6f);e.SlowAmount=Mathf.Max(e.SlowAmount,.45f);if(e.Id!="boss")e.View.ImpactPose(origin,16,.35f);
+     if(hit.Count==1){hitStop=Mathf.Max(hitStop,MeleeHitStop);ShakeCamera(.42f,dir);Rumble(.4f,.6f,.12f);}
+     RevFx.Sparks(e.View.transform.position+Vector3.up*.8f,RevenantVfx.Tone("bfe4ff"),14,.35f,1.5f,4f);
     }
     DamageCargoSegment(origin+dir*(d-rowStep),origin+dir*d,half);
     yield return Delay(.03f);
@@ -107,6 +143,7 @@ namespace Bloodwake
   {
    dir.y=0;dir.Normalize();origin.y=0;const float reach=5.6f,time=.34f,halfAngle=45;var hit=new HashSet<Enemy>();
    var wave=RevFx.ForceArc(origin,dir,halfAngle,time,reach);ShakeCamera(.35f,dir);float age=0;
+   GlideRipples(origin,4.2f,.5f,1.5f);GlideDiamonds(origin+dir*1.2f+Vector3.up*.4f,12,.55f,4.5f);
    while(age<time)
    {
     if(Screen!="playing"||hitStop>0){yield return null;continue;}
@@ -116,6 +153,7 @@ namespace Bloodwake
      if(e.Emerging||e.Hp<=0||hit.Contains(e))continue;var rel=e.View.transform.position-origin;rel.y=0;
      if(rel.magnitude>radius+.5f||Vector3.Angle(dir,rel)>halfAngle+8)continue;
      hit.Add(e);DamageEnemy(e,damage);StartAreaRecoil(e,origin,2.2f);e.Slow=Mathf.Max(e.Slow,1.2f);e.SlowAmount=Mathf.Max(e.SlowAmount,.3f);
+     ArcaneHit(e.View.transform.position+Vector3.up,rel.normalized,1.5f,hit.Count==1);if(hit.Count==1){hitStop=Mathf.Max(hitStop,MeleeHitStop);ShakeCamera(.55f,dir);Rumble(.5f,.7f,.14f);}
     }
     yield return null;
    }
@@ -200,9 +238,9 @@ namespace Bloodwake
   {
    vesperMoveActive=true;dashCd=combatPractice?0:RevenantDashCooldown;invulnerable=Mathf.Max(invulnerable,.5f);
    // An unhurried glide, not a blink.
-   const float time=.62f,distance=4.6f;var start=Player.transform.position;var end=Move(start,dir*distance);
+   const float time=.62f,distance=4.6f;var start=Player.transform.position;
    // The leap (0.5 s) spans the flight until the landing takes over.
-   Player.transform.rotation=Quaternion.LookRotation(dir);Player.PlayWindow("Mage_Glide",0,.5f,time*.7f,.2f);RevFx.ArcaneFlight(start,end,time,false);RevFx.Glow(start+Vector3.up*.8f,RevenantVfx.Arcane,.9f,2,.2f);GlideLiftoff(start,time);Sound(Voice("mage_glide","orb_cast"));
+   Player.transform.rotation=Quaternion.LookRotation(dir);Player.PlayWindow("Mage_Glide",0,.5f,time*.7f,.2f);GlideLiftoff(start,time);Sound(Voice("mage_glide","orb_cast"));
    // Three beats so the body answers the motion instead of sliding as one held pose: a quick push off (fast,
    // tipping forward), a floating middle that bleeds speed with a slow sway, and the legs reaching down for the
    // landing (the start of her landing clip) while she settles back against the momentum.
@@ -211,7 +249,8 @@ namespace Bloodwake
    {
     if(Screen!="playing"||hitStop>0){yield return null;continue;}
     age=Mathf.Min(time,age+Time.deltaTime);float t=age/time;
-    float want=distance*(1-Mathf.Pow(1-t,2.2f));  // launched hard, coasting out
+    // An even glide that eases in and out a little: half linear, half ease-out.
+    float want=distance*Mathf.Lerp(t,1-Mathf.Pow(1-t,2f),.5f);
     var ground=Move(new Vector3(Player.transform.position.x,0,Player.transform.position.z),dir*(want-done));done=want;
     if(!landing&&t>=.7f){landing=true;Player.PlayWindow("Mage_Land",0,.32f,time-age,.18f);}
     float lift=Mathf.Pow(Mathf.Sin(t*Mathf.PI),.6f)*.5f+Mathf.Sin(t*Mathf.PI*3)*.03f;  // rises fast, hovers with a small bob
@@ -228,8 +267,8 @@ namespace Bloodwake
   void GlideLiftoff(Vector3 at,float time)
   {
    GlideRipples(at,3.4f,.75f,1.6f);StartCoroutine(DelayedCall(.12f,()=>GlideRipples(at,2.4f,.6f,1.1f)));
-   GlideBurst(at,3.2f,.85f,0);GlideDiamonds(at,16,1.1f,3.2f);
-   RevFx.Glow(at+Vector3.up*.1f,RevenantVfx.Arcane,2.2f,3,.35f);
+   GlideBurst(at,3.2f,.85f,0);GlideDiamonds(at,10,1f,3f);
+   RevFx.Glow(at+Vector3.up*.55f,RevenantVfx.Arcane,1f,2,.25f);
    StartCoroutine(GlideTrails(time));
   }
   void GlideTouchdown(Vector3 at){GlideRipples(at,2.6f,.6f,1.2f);GlideBurst(at,1.5f,.55f,.35f);GlideDiamonds(at,8,.6f,1.6f);}
@@ -275,16 +314,17 @@ namespace Bloodwake
    var material=RevFx.TexturedMaterial("arcane_streak");var player=Player;if(!material||!player)yield break;
    var root=new GameObject("Glide trails");if(roomRoot)root.transform.SetParent(roomRoot,true);  // a room change ends the coroutine; the room takes the trails with it
    var block=new MaterialPropertyBlock();const int N=14;
-   LineRenderer Line(float width){var l=new GameObject("Glide trail").AddComponent<LineRenderer>();l.transform.SetParent(root.transform,false);l.sharedMaterial=material;l.textureMode=LineTextureMode.Stretch;l.alignment=LineAlignment.View;l.widthMultiplier=width;l.widthCurve=new AnimationCurve(new Keyframe(0,.5f),new Keyframe(.25f,1),new Keyframe(1,.3f));l.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;l.receiveShadows=false;l.positionCount=N;return l;}
-   var streaks=new[]{(Line(.7f),1.15f,0f,0f),(Line(.5f),.7f,.2f,1.7f),(Line(.45f),1.55f,-.18f,3.4f)};var coils=new[]{Line(.18f),Line(.18f)};
+   // Lines use only the dense, bright front of the strip (textureScale); its thin tail reads as wire.
+   LineRenderer Line(float width){var l=new GameObject("Glide trail").AddComponent<LineRenderer>();l.transform.SetParent(root.transform,false);l.sharedMaterial=material;l.textureMode=LineTextureMode.Stretch;l.alignment=LineAlignment.View;l.widthMultiplier=width;l.widthCurve=new AnimationCurve(new Keyframe(0,.55f),new Keyframe(.2f,1),new Keyframe(1,.15f));l.textureScale=new Vector2(.55f,1);l.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;l.receiveShadows=false;l.positionCount=N;return l;}
+   var streaks=new[]{(Line(1.05f),1.1f,0f,0f),(Line(.8f),.7f,.18f,1.7f),(Line(.7f),1.5f,-.16f,3.4f)};var coils=new[]{Line(.26f),Line(.26f)};
    // The held column: the eruption's fullest frames (cells 3-8) looped under her feet, turned to the camera.
    VfxLifetime column=null;
    if(RevenantVfx.SheetTexture("arcane_burst"))
    {
     column=RevFx.Textured("Glide column",player.transform.position,new Vector3(1.5f,1.5f,1),"arcane_burst",time+.2f,Color.white,false,4,false);
    }
-   var under=RevFx.Glow(player.transform.position,RevenantVfx.Arcane,1.7f,2.4f,time+.15f);
-   float age=0,length=.3f,shed=0,ring=.1f,fade=0;var last=player.transform.position;
+   var under=RevFx.Glow(player.transform.position,RevenantVfx.Arcane,1.05f,2.2f,time+.15f);
+   float age=0,length=0,shed=0,ring=.1f,fade=0;
    // The card's own update sets _Progress every frame; take the frame, level and placement over in its Tick.
    if(column)column.Tick=(p,dt)=>
    {
@@ -296,11 +336,11 @@ namespace Bloodwake
    while(age<time+.15f&&player)
    {
     float dt=Mathf.Max(Time.deltaTime,.0001f);age+=dt;var at=player.transform.position;
-    var travel=at-last;travel.y=0;float speed=travel.magnitude/dt;last=at;
     var fwd=player.transform.forward;fwd.y=0;fwd.Normalize();var right=Vector3.Cross(Vector3.up,fwd);
     float landing=Mathf.SmoothStep(0,1,Mathf.InverseLerp(.62f,.95f,age/time));
     fade=Mathf.Clamp01(age/.07f)*(1-landing);
-    length=Mathf.Lerp(length,Mathf.Clamp(speed*.3f,.25f,2.3f)*(1-landing*.7f),1-Mathf.Exp(-12*dt));
+    // Streak length follows the flight, not the frame speed: grows out over the first fifth, shrinks into the landing.
+    length=1.6f*Mathf.SmoothStep(0,1,Mathf.InverseLerp(0,.2f,age/time))*(1-landing*.8f);
     block.SetFloat("_Progress",.5f);block.SetColor("_Tone",Color.white);block.SetFloat("_Opacity",1.6f*fade);
     foreach(var(line,height,side,phase)in streaks)
     {
@@ -310,11 +350,11 @@ namespace Bloodwake
     for(int c=0;c<coils.Length;c++)
     {
      var line=coils[c];
-     for(int i=0;i<N;i++){float u=i/(N-1f);float a=age*14+c*Mathf.PI-u*5.5f;float r=.26f*(1-u*.35f);line.SetPosition(i,at+Vector3.up*(.25f+.55f*u+Mathf.Sin(a)*r*.5f)+right*Mathf.Cos(a)*r-fwd*length*.55f*u);}
+     for(int i=0;i<N;i++){float u=i/(N-1f);float a=age*14+c*Mathf.PI-u*5.5f;float r=.26f*(1-u*.35f);line.SetPosition(i,at+Vector3.up*(.2f+.6f*u+Mathf.Sin(a)*r*.5f)+right*Mathf.Cos(a)*r-fwd*length*.2f*u);}  // wound round the legs, barely trailing
      line.SetPropertyBlock(block);
     }
     var feet=at+Vector3.up*.05f;
-    if(under){under.transform.position=feet;under.transform.rotation=Cam.transform.rotation;}
+    if(under){under.transform.position=feet+Vector3.up*.45f;under.transform.rotation=Cam.transform.rotation;}
     shed+=dt;if(fade>.2f&&shed>.045f){shed=0;GlideDiamonds(feet,1,.55f,1.1f);}
     ring-=dt;if(fade>.3f&&ring<=0){ring=.16f;GlideRipples(new Vector3(at.x,0,at.z),1.6f,.45f,.9f*fade);}
     yield return null;

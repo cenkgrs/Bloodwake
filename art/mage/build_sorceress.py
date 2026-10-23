@@ -182,8 +182,7 @@ def fill_back_holes():
         if len(rim) < 8 or any(f.material_index != body_slot for e in rim for f in e.link_faces): continue
         centre = sum((v.co for v in verts), Vector()) / len(verts)
         if centre.y < .02 or not 1.1 < centre.z or max(v.co.z for v in verts) > 1.535: continue
-        nearest = min(verts, key=lambda v: (v.co - centre).length)
-        texel = next(l[uv].uv.copy() for l in nearest.link_loops)
+        texel = LEATHER_UV
         new = bmesh.ops.holes_fill(bm, edges=rim, sides=0)["faces"]
         new = bmesh.ops.triangulate(bm, faces=new, quad_method="BEAUTY", ngon_method="BEAUTY")["faces"]
         for f in new:
@@ -194,6 +193,35 @@ def fill_back_holes():
     bm.to_mesh(me); bm.free(); me.update()
     print(f"SORCERESS_HOLES filled {filled} back openings")
 
+# The swapped-out Tripo ponytail had its hair colour painted on the upper back beneath it: once the hair was
+# cut away those faces showed as blocky light-brown patches. Faces on the upper back whose texture reads as that
+# hair brown are pointed at one texel of the dark leather around them instead (the hole caps use it too), and the
+# gold filigree and straps keep their own texture since only whole faces of hair brown are moved.
+def back_leather():
+    import numpy as np, colorsys
+    img = bpy.data.images.load(os.path.join(SRC, "sorceress_basecolor.jpg"))
+    w, h = img.size; px = np.empty(w * h * 4, np.float32); img.pixels.foreach_get(px); px = px.reshape(h, w, 4)
+    bpy.data.images.remove(img)
+    me, mw = body.data, body.matrix_world; uv = me.uv_layers.active.data
+    body_slot = next(i for i, s in enumerate(body.material_slots) if s.material and s.material.name.startswith("Body"))
+    def colour(u, v):
+        x, y = int(u % 1 * (w - 1)), int(v % 1 * (h - 1)); patch = px[max(0, y - 2):y + 3, max(0, x - 2):x + 3, :3]
+        return patch.reshape(-1, 3).mean(axis=0)
+    faces, hair = [], []
+    for p in me.polygons:
+        c = mw @ p.center
+        if p.material_index != body_slot or not (c.y > 0 and 1.1 < c.z < 1.58 and abs(c.x) < .17): continue
+        us = [uv[l].uv for l in p.loop_indices]; u = sum(a[0] for a in us) / len(us); v = sum(a[1] for a in us) / len(us)
+        r, g, b = colour(u, v); hh, ss, vv = colorsys.rgb_to_hsv(r, g, b)
+        (hair if 10 / 360 < hh < 38 / 360 and ss > .35 and .16 < vv < .62 else faces).append((p, (u, v), vv, ss))
+    dark = sorted((f for f in faces if f[3] < .4 and .05 < f[2] < .3), key=lambda f: f[2])
+    pick = dark[len(dark) // 6] if dark else faces[0]
+    for p, _, _, _ in hair:
+        for l in p.loop_indices: uv[l].uv = pick[1]
+    me.update()
+    print(f"SORCERESS_BACK {len(hair)} hair-brown faces of {len(hair) + len(faces)} -> leather texel {pick[1][0]:.3f},{pick[1][1]:.3f}")
+    return Vector(pick[1])
+LEATHER_UV = back_leather()
 fill_back_holes()
 
 # Two materials, named for materials.json: the Tripo body and the swapped-in head (slot order kept from the rig).

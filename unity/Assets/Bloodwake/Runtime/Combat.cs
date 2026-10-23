@@ -23,14 +23,27 @@ namespace Bloodwake
   const float NormalHitStop=.06f,MeleeHitStop=.11f,FinisherHitStop=.19f;
   public void SpawnEnemy(string id,Vector3 pos)
   {
-   var data=GameData.Row("enemies",id);float n=Run.Wave-1,t=Run.Night-1;
+   // A region kind (keep_knight...) fights as its base kind with its own numbers and look laid over it.
+   var variant=GameData.Row("enemies",id);JObject data=variant;
+   if(variant?["base"]!=null){data=(JObject)GameData.Row("enemies",variant.S("base")).DeepClone();foreach(var p in variant.Properties())data[p.Name]=p.Value.DeepClone();id=variant.S("base");}
+   float n=Run.Wave-1,t=Run.Night-1;
    float power=id=="boss"?(1+.65f*t+.2f*t*t)*BossVariant.N("hp",1):1+.25f*n+.035f*n*n;
    float height=id=="boss"?3.5f*BossVariant.N("scale",1):id=="tank"?2.3f:id=="commander"?2.225f:id=="grunt"?2.15f:1.8f;
-   var view=ActorView.Create(id,true,height*CombatActorScale,actorRoot);view.transform.position=FreeEnemySpawn(pos,id=="boss"?.8f:id=="tank"||id=="grunt"?.65f:.56f);RevFx.HandMagic(view,true);if(id=="warlock")TintWarlockHands(view);
+   height*=data.N("scale",1);
+   var view=ActorView.Create(id,true,height*CombatActorScale,actorRoot);
+   if(variant?["base"]!=null)SkinVariant(view,data);
+   if(id=="boss"&&BossVariant["tint"]!=null)SkinVariant(view,(JObject)BossVariant);view.transform.position=FreeEnemySpawn(pos,id=="boss"?.8f:id=="tank"||id=="grunt"?.65f:.56f);RevFx.HandMagic(view,true);if(id=="warlock")TintWarlockHands(view);
    if(id=="boss")view.CalibrateRunFromFeet();
    float toughness=id=="boss"?EnemyBossToughness:EnemyToughness;var enemy=new Enemy{Id=id,Data=data,View=view,Hp=data.N("maxHp")*power*toughness,MaxHp=data.N("maxHp")*power*toughness,Damage=data.N("damage")*(id=="boss"?1+.25f*t:1+.09f*n+.002f*n*n),Cooldown=.9f};Enemies.Add(enemy);AttachEnemyAgent(enemy);
    var facing=Player.transform.position-view.transform.position;facing.y=0;if(facing.sqrMagnitude>.01f)view.transform.rotation=Quaternion.LookRotation(facing);
    view.BeginEmergence();HoldEnemyAgent(enemy);RevFx.EnemyEmergence(view.transform.position,view.Height);
+  }
+  // Cold spectral garrison: the model's colours pulled toward the kind's tint and a pale glow over it.
+  void SkinVariant(ActorView view,JObject data)
+  {
+   if(!view.HitFlash||!ColorUtility.TryParseHtmlString("#"+data.S("tint","ffffff"),out var tint))return;
+   float glow=data.N("spectral",0);var tone=new Color(.35f,.5f,.9f)*glow*.35f;
+   view.HitFlash.Restyle(Color.Lerp(Color.white,tint,.75f),tone);
   }
   // Warrior is born with the heavy blow; Vesper learns Heavy Cleave from the Blood Sage.
   bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="mage"||Run.ClassId=="vesper"&&Owns("vesper_heavy")||Run.ClassId=="revenant"&&Owns("revenant_rend"));
@@ -122,13 +135,13 @@ namespace Bloodwake
    if(e.Training)
    {
     if(e.Emerging)return;e.Hp-=damage;
-    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("d9dce2"));e.Stagger=.5f+PostImpactRecovery;hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);e.ImpactVersion++;StartRecoil(e);e.View.FlashHit(false);e.View.Play("Hit",.5f);}
+    if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone("d9dce2"));e.Stagger=.5f+PostImpactRecovery;hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":Run.ClassId=="mage"?"orb_impact":"sword_hit_flesh");Blood(e.View.transform.position);e.ImpactVersion++;StartRecoil(e);e.View.FlashHit(false);e.View.Play("Hit",.5f);}
     if(e.Hp<=0){e.Hp=e.MaxHp;e.RecoilRemaining=e.RecoilTime=0;e.View.transform.position=e.TrainingHome;e.View.transform.rotation=Quaternion.LookRotation(Vector3.forward);}
     return;
    }
    if(e.Hp<=0||e.Emerging)return;if(DevOneHit)damage=Mathf.Max(damage,e.Hp*4);bool critical=effects&&Random.value<Run.Stats.N("criticalChance");damage*=critical?Run.Stats.N("criticalDamage"):1;damage*=e.Mark>0?1.35f+.1f*markChain:1;float actual=Mathf.Min(e.Hp,damage);if(!combatPractice)e.Hp-=damage;
    if(Run.Stats.N("hp")>0)Run.Stats["hp"]=Mathf.Min(Run.Stats.N("maxHp"),Run.Stats.N("hp")+actual*Run.Stats.N("lifesteal"));
-   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));if(e.Id!="boss"){e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);}hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0&&e.Id!="boss"){e.ImpactVersion++;StartRecoil(e);}}
+   if(effects){RevFx.DamageText(e.View.transform.position,damage,RevenantVfx.Tone(critical?"ffe4a8":"d9dce2"));if(e.Id!="boss"){e.Stagger=Mathf.Max(e.Stagger,.5f+PostImpactRecovery);HoldAttack(e);}hitStop=Mathf.Max(hitStop,NormalHitStop);Sound(Run.ClassId=="vesper"?"vesper_hit_flesh":Run.ClassId=="mage"?"orb_impact":"sword_hit_flesh");Blood(e.View.transform.position);if(e.Hp>0&&e.Id!="boss"){e.ImpactVersion++;StartRecoil(e);}}
    if(effects&&actual>0){e.View.FlashHit(false);e.View.Shake?.Hit(e.View.transform.position-Player.transform.position,.7f);}
    if(e.Hp>0){if(effects){Sound(e.Id=="boss"?"boss_hurt":e.Id+"_hurt");if(e.Id=="grunt"||e.Id=="tank"||e.Id=="boss")Sound("sword_hit_armor");}if(effects&&e.AreaRecovery<=0&&e.Id!="boss")e.View.Play("Hit",.5f);return;}if(e.Agent)e.Agent.enabled=false;Enemies.Remove(e);
    if(e.Mark>0){var heir=Enemies.Where(x=>!x.Emerging&&Vector3.Distance(e.View.transform.position,x.View.transform.position)<9).OrderBy(x=>Vector3.Distance(e.View.transform.position,x.View.transform.position)).FirstOrDefault();if(heir!=null){markChain++;heir.Mark=float.PositiveInfinity;ApplyRuinMark(heir);}else markChain=0;}

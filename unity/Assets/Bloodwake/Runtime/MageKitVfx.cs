@@ -7,7 +7,7 @@ namespace Bloodwake
  // Effects for the Mage's moveset: ice shards, the force arc, the falling comet and the grip tether.
  public sealed partial class RevenantVfx
  {
-  static readonly Color IceTint=new(.62f,.82f,.98f);
+  static readonly Color IceTint=new(.72f,.93f,1.25f);
   // One shard bursting out of the stone, leaning along the wave, then sinking back and fading.
   public void IceSpike(Vector3 at,Vector3 dir,float tall)
   {

@@ -11,6 +11,19 @@ namespace Bloodwake
   public const float Unit=.02f;
   public static readonly JObject Catalog=Read("catalogs"), Rules=Read("rules"), Rooms=Read("rooms"), Maps=Read("maps"), Story=Read("story");
   static JObject Read(string name)=>JObject.Parse(Resources.Load<TextAsset>("Data/"+name).text);
+  // A region is one self-contained file under Data/regions (maps, rooms, wave combos, enemy kinds), merged in
+  // at load so a new district never has to reformat the shared tables.
+  static GameData()
+  {
+   foreach(var asset in Resources.LoadAll<TextAsset>("Data/regions"))
+   {
+    var region=JObject.Parse(asset.text);
+    foreach(var map in region["maps"]??new JArray())((JArray)Maps["maps"]).Add(map.DeepClone());
+    foreach(var room in region["rooms"]??new JArray())((JArray)Rooms["rooms"]).Add(room.DeepClone());
+    foreach(var enemy in region["enemies"]??new JArray())((JArray)Catalog["enemies"]).Add(enemy.DeepClone());
+    if(region["waveCombos"] is JObject combos)foreach(var p in combos.Properties())Story["waveCombos"][p.Name]=p.Value.DeepClone();
+   }
+  }
   public static JArray Rows(string kind)=>(JArray)Catalog[kind];
   public static JObject Row(string kind,string id)=>(JObject)Rows(kind).FirstOrDefault(r=>(string)r["id"]==id);
   public static float N(this JToken row,string key,float fallback=0)=>row?[key]?.Value<float>()??fallback;

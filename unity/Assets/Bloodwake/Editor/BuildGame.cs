@@ -55,6 +55,8 @@ namespace Bloodwake.Editor
    var meta=new Progression();if(!meta.Import("{\"essence\":25,\"levels\":{},\"ownedEquipment\":[],\"loadouts\":[{},{},{}],\"activeLoadout\":0}")||meta.Essence!=25)throw new Exception("Save compatibility failed");checks++;
    foreach(var room in GameData.Rooms["rooms"])
    {
+    // Keep rooms are built at run time by KeepInterior; they have no converted scene.
+    if(room["keep"]!=null){checks++;continue;}
     string id=room.S("id"),path="Assets/Bloodwake/Resources/Rooms/"+id+"/"+id+"_environment.prefab";
     var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(path);if(prefab==null)throw new Exception("Missing converted room "+id);checks++;
     if(!File.Exists(Path.GetDirectoryName(path)+"/collision.json"))throw new Exception("Missing room collisions "+id);checks++;
