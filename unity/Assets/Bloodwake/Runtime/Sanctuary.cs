@@ -59,7 +59,7 @@ namespace Bloodwake
    var b=EnvironmentDressing.BoundsOf(model.GetComponentsInChildren<Renderer>());model.transform.localScale=Vector3.Scale(model.transform.localScale,new Vector3(size.x/b.size.x,size.y/b.size.y,size.z/b.size.z));
    b=EnvironmentDressing.BoundsOf(model.GetComponentsInChildren<Renderer>());model.transform.localPosition-=new Vector3(b.center.x,b.min.y,b.center.z);
    pivot.SetPositionAndRotation(at,Quaternion.Euler(0,yaw,0));
-   if(solid){var world=EnvironmentDressing.BoundsOf(model.GetComponentsInChildren<Renderer>());world.min=new Vector3(world.min.x,0,world.min.z);blockers.Add(world);}
+   if(solid){var world=EnvironmentDressing.BoundsOf(model.GetComponentsInChildren<Renderer>());world.min=new Vector3(world.min.x,0,world.min.z);if(id=="wall")blockers.Add(world);else PropBlocker(world);}
    return model;
   }
   // Long runs are split into ~2.8 m kit segments so the stone texture is not smeared; one blocker covers the run.

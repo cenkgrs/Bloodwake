@@ -251,7 +251,7 @@ namespace Bloodwake
     age=Mathf.Min(time,age+Time.deltaTime);float t=age/time;
     // An even glide that eases in and out a little: half linear, half ease-out.
     float want=distance*Mathf.Lerp(t,1-Mathf.Pow(1-t,2f),.5f);
-    var ground=Move(new Vector3(Player.transform.position.x,0,Player.transform.position.z),dir*(want-done));done=want;
+    var ground=DashMove(new Vector3(Player.transform.position.x,0,Player.transform.position.z),dir*(want-done));done=want;
     if(!landing&&t>=.7f){landing=true;Player.PlayWindow("Mage_Land",0,.32f,time-age,.18f);}
     float lift=Mathf.Pow(Mathf.Sin(t*Mathf.PI),.6f)*.5f+Mathf.Sin(t*Mathf.PI*3)*.03f;  // rises fast, hovers with a small bob
     float pitch=Mathf.Lerp(12,-5,Mathf.SmoothStep(0,1,Mathf.InverseLerp(.15f,.9f,t)))*Mathf.Sin(t*Mathf.PI);  // leans in, then back to brake
@@ -259,7 +259,7 @@ namespace Bloodwake
     Player.transform.position=new Vector3(ground.x,lift,ground.z);Player.transform.rotation=Quaternion.LookRotation(dir)*Quaternion.Euler(pitch,0,roll);
     yield return null;
    }
-   var p=Player.transform.position;p.y=0;Player.transform.position=p;Player.transform.rotation=Quaternion.LookRotation(dir);RevFx.Glow(p+Vector3.up*.6f,RevenantVfx.Arcane,.7f,1.6f,.16f);GlideTouchdown(p);vesperMoveActive=false;
+   var p=Player.transform.position;p.y=0;p=DashLand(p,dir);Player.transform.position=p;Player.transform.rotation=Quaternion.LookRotation(dir);RevFx.Glow(p+Vector3.up*.6f,RevenantVfx.Arcane,.7f,1.6f,.16f);GlideTouchdown(p);vesperMoveActive=false;
   }
   // The glide must read as magic lifting her, not a jump (art/vfx-incoming storyboard, 20 Oct): blue-violet magic
   // erupts from under her feet with light ripples spreading on the stone and diamond motes; in flight long arcane

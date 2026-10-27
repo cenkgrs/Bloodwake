@@ -194,7 +194,7 @@ namespace Bloodwake
    var iron=KMat("iron",new Color(.3f,.3f,.33f),Vector2.one);
    foreach(int side in new[]{-1,1})
    {
-    var a=J(side*10.5f,-8.5f);if(KeepModel(root,"keep_anvil",a,90)!=null)blockers.Add(new Bounds(a+Vector3.up,new Vector3(1.2f,2,.8f)));else KBox(root,"Keep anvil",a+Vector3.up*.45f,new Vector3(1.2f,.9f,.6f),iron,true);KeepBrazier(root,a+J(side*-1.6f,-1.2f));
+    var a=J(side*10.5f,-8.5f);if(KeepModel(root,"keep_anvil",a,90)!=null)PropBlocker(new Bounds(a+Vector3.up,new Vector3(1.2f,2,.8f)));else KBox(root,"Keep anvil",a+Vector3.up*.45f,new Vector3(1.2f,.9f,.6f),iron,true);KeepBrazier(root,a+J(side*-1.6f,-1.2f));
     KeepPiece(root,"crate",J(side*11.8f,4),new Vector3(.95f,.95f,.95f),KR(0,60),true);KeepPiece(root,"barrel",J(side*11.6f,5.6f),new Vector3(.7f,.95f,.7f),0,true);
     KeepBrazier(root,J(side*10,9.5f));
    }
@@ -206,11 +206,11 @@ namespace Bloodwake
    foreach(int side in new[]{-1,1})for(float z=1.5f;z<=12.01f;z+=1.5f)
    {
     var p=J(side*2.6f,z);if(!KeepWalkable(p))continue;
-    if(KeepModel(root,"keep_pew",p,180)){blockers.Add(new Bounds(p+Vector3.up,new Vector3(2.2f,2,.6f)));continue;}
+    if(KeepModel(root,"keep_pew",p,180)){PropBlocker(new Bounds(p+Vector3.up,new Vector3(2.2f,2,.6f)));continue;}
     KBox(root,"Keep pew seat",p+Vector3.up*.45f,new Vector3(2.2f,.12f,.5f),wood,true);KBox(root,"Keep pew back",p+new Vector3(0,.75f,.28f),new Vector3(2.2f,.7f,.08f),wood,false);
    }
    var stone=KMat("ashlar",new Color(.62f,.62f,.68f),Vector2.one);
-   if(KeepModel(root,"keep_altar",J(0,-12),0)!=null)blockers.Add(new Bounds(J(0,-12)+Vector3.up,new Vector3(3.2f,2,1.4f)));
+   if(KeepModel(root,"keep_altar",J(0,-12),0)!=null)PropBlocker(new Bounds(J(0,-12)+Vector3.up,new Vector3(3.2f,2,1.4f)));
    else{KBox(root,"Keep altar",J(0,-12)+Vector3.up*.55f,new Vector3(3.2f,1.1f,1.4f),stone,true);
    KBox(root,"Keep altar cloth",J(0,-12)+Vector3.up*1.12f,new Vector3(3.4f,.04f,1f),KMat("cloth",new Color(.6f,.58f,.5f),Vector2.one),false);}
    KeepPiece(root,"shrine_statue",J(-3.1f,-14.1f),new Vector3(1f,2.8f,1f),0,true);
@@ -261,7 +261,7 @@ namespace Bloodwake
    KeepRugs(root,J(0,2),3.4f,26,cloth);
    // Stepped dais: three rises to the throne.
    for(int step=0;step<3;step++)KBox(root,"Keep dais",J(0,-12.5f)+new Vector3(0,.15f+step*.15f,1.4f-step*.9f),new Vector3(12-step*3,.3f+step*.3f,3-step*.6f),stone,step==2);
-   if(KeepModel(root,"keep_throne",J(0,-12.9f)+Vector3.up*.9f,0)!=null)blockers.Add(new Bounds(J(0,-12.6f)+Vector3.up,new Vector3(2,2,1.4f)));else{
+   if(KeepModel(root,"keep_throne",J(0,-12.9f)+Vector3.up*.9f,0)!=null)PropBlocker(new Bounds(J(0,-12.6f)+Vector3.up,new Vector3(2,2,1.4f)));else{
    KBox(root,"Keep throne seat",J(0,-12.6f)+Vector3.up*1.2f,new Vector3(1.8f,.9f,1.2f),stone,true);
    KBox(root,"Keep throne back",J(0,-13.3f)+Vector3.up*2.6f,new Vector3(2,3.2f,.4f),iron,false);
    foreach(int side in new[]{-1,1})KBox(root,"Keep throne spire",J(side*1.1f,-13.3f)+Vector3.up*3.7f,new Vector3(.25f,1.6f,.25f),iron,false);}
@@ -336,7 +336,7 @@ namespace Bloodwake
   GameObject KBox(Transform root,string name,Vector3 at,Vector3 size,Material material,bool solid)
   {
    var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;Destroy(go.GetComponent<Collider>());go.transform.SetParent(root,false);go.transform.position=at;go.transform.localScale=size;
-   go.GetComponent<Renderer>().sharedMaterial=material;if(solid)blockers.Add(new Bounds(new Vector3(at.x,1,at.z),new Vector3(size.x,2,size.z)));
+   go.GetComponent<Renderer>().sharedMaterial=material;if(solid)PropBlocker(new Bounds(new Vector3(at.x,1,at.z),new Vector3(size.x,2,size.z)));
    if(worldUv.Contains(material))go.GetComponent<MeshFilter>().sharedMesh=WorldUvCube(at,size,Quaternion.identity);
    return go;
   }
@@ -384,27 +384,19 @@ namespace Bloodwake
    m.SetColor("_BaseColor",Color.Lerp(Color.white,tint,.6f)*(scan=="keepwood"?1f:.85f));
    keepMaterials[key]=m;worldUv.Add(m);return m;
   }
-  // A runner made of Persian rugs laid end to end, each a little askew (textures/keep/keeprug: the photographed
-  // rug, its pile relief generated from it); the plain cloth strip if the rug is missing.
-  static Material rugMaterial;
+  // A woven runner (textures/keep/keeprunner, tools/keep_runner.py): one strip down the hall, its motif repeating
+  // every four widths; the plain cloth strip if the texture is missing.
   void KeepRugs(Transform root,Vector3 centre,float width,float length,Material fallback)
   {
-   var albedo=Resources.Load<Texture2D>("textures/keep/keeprug_albedo");
+   var albedo=Resources.Load<Texture2D>("textures/keep/keeprunner_albedo");
    if(!albedo){KBox(root,"Keep carpet",centre+Vector3.up*.012f,new Vector3(width,.02f,length),fallback,false);return;}
-   if(!rugMaterial)
-   {
-    rugMaterial=new Material(Shader.Find("Universal Render Pipeline/Lit")){name="Keep rug"};rugMaterial.SetTexture("_BaseMap",albedo);
-    var normal=Resources.Load<Texture2D>("textures/keep/keeprug_normal");if(normal){rugMaterial.SetTexture("_BumpMap",normal);rugMaterial.EnableKeyword("_NORMALMAP");rugMaterial.SetFloat("_BumpScale",.8f);}
-    rugMaterial.SetFloat("_AlphaClip",1);rugMaterial.SetFloat("_Cutoff",.5f);rugMaterial.EnableKeyword("_ALPHATEST_ON");rugMaterial.SetFloat("_Smoothness",.05f);rugMaterial.SetColor("_BaseColor",new Color(.95f,.92f,.9f));
-   }
-   float rug=width*albedo.height/albedo.width;int count=Mathf.Max(1,Mathf.FloorToInt((length+.3f)/(rug+.3f)));float gap=(length-count*rug)/Mathf.Max(1,count-1);if(count==1)gap=0;
-   for(int i=0;i<count;i++)
-   {
-    var at=centre+Vector3.forward*(-length*.5f+rug*.5f+i*(rug+gap))+Vector3.up*(.012f+i*.001f);
-    var q=GameObject.CreatePrimitive(PrimitiveType.Quad);q.name="Keep rug";Destroy(q.GetComponent<Collider>());q.transform.SetParent(root,false);
-    q.transform.SetPositionAndRotation(at,Quaternion.Euler(90,KR(-2.5f,2.5f),0));q.transform.localScale=new Vector3(width,rug,1);
-    var r=q.GetComponent<MeshRenderer>();r.sharedMaterial=rugMaterial;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
-   }
+   var m=new Material(Shader.Find("Universal Render Pipeline/Lit")){name="Keep runner"};var repeat=new Vector2(1,length/(width*albedo.height/albedo.width));
+   m.SetTexture("_BaseMap",albedo);m.SetTextureScale("_BaseMap",repeat);
+   var normal=Resources.Load<Texture2D>("textures/keep/keeprunner_normal");if(normal){m.SetTexture("_BumpMap",normal);m.SetTextureScale("_BumpMap",repeat);m.EnableKeyword("_NORMALMAP");m.SetFloat("_BumpScale",.7f);}
+   m.SetFloat("_Smoothness",.05f);m.SetColor("_BaseColor",new Color(1.1f,1.05f,1.05f));
+   var q=GameObject.CreatePrimitive(PrimitiveType.Quad);q.name="Keep runner";Destroy(q.GetComponent<Collider>());q.transform.SetParent(root,false);
+   q.transform.SetPositionAndRotation(centre+Vector3.up*.012f,Quaternion.Euler(90,0,0));q.transform.localScale=new Vector3(width,length,1);
+   var r=q.GetComponent<MeshRenderer>();r.sharedMaterial=m;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
   }
   // Additive pale-blue glow fading upward: window panes and the moon shafts on the floor.
   static Material ShaftMaterial()

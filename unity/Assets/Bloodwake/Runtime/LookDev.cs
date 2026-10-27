@@ -86,6 +86,13 @@ namespace Bloodwake
      foreach(var c in far){Player.transform.position=c;PositionCamera(true);var v=Cam.WorldToViewportPoint(c+Vector3.up);if(v.x<.08f||v.x>.92f||v.y<.08f||v.y>.92f)Debug.Log("BLOODWAKE_KEEP_OFFSCREEN "+id+" at "+c+" viewport "+v);}
      Player.transform.position=entry;
     }
+    // A dash slips through furniture that walking cannot: walk and dash across the nearest solid prop.
+    foreach(var b in propBlockers)
+    {
+     var start=new Vector3(b.center.x,0,b.center.z)+Vector3.back*(b.extents.z+.9f);if(Mathf.Abs(start.z)>half.y-1)continue;
+     var walked=Move(start,Vector3.forward*(b.size.z+1.8f));var dashed=DashLand(DashMove(start,Vector3.forward*(b.size.z+1.8f)),Vector3.forward);
+     Debug.Log("BLOODWAKE_KEEP_DASH "+id+" walk="+(walked.z-start.z).ToString("0.0")+" dash="+(dashed.z-start.z).ToString("0.0")+" need="+(b.size.z+1.8f).ToString("0.0"));break;
+    }
     // The exit must be reachable on foot: a complete crowd-navmesh path from the entry to the gate's mouth.
     if(room["doors"]?["exit"]!=null)
     {
@@ -268,5 +275,6 @@ namespace Bloodwake
   public void BeginGlide(BloodwakeGame game){StartCoroutine(game.GlideCapture());}
   public void BeginSpells(BloodwakeGame game){StartCoroutine(game.SpellCapture());}
   public void BeginKeepTour(BloodwakeGame game,int night=2){StartCoroutine(game.KeepTour(night));}
+  public void BeginTarget(BloodwakeGame game){StartCoroutine(game.TargetCapture());}
  }
 }

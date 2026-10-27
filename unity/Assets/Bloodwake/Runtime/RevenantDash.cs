@@ -52,14 +52,14 @@ namespace Bloodwake
     // With R1 queued the dash is an attack: it pulls up in front of the first body on its line instead of
     // ending inside it. Without one it stays an escape and passes through.
     bool stopShort=false;if(thrustQueued&&travel>0){float allowed=LungeDistance(revenantDashDirection,travel);if(allowed<travel-.001f){travel=allowed;stopShort=true;}}
-    var from=Player.transform.position;Player.transform.position=Move(from,revenantDashDirection*travel);
+    var from=Player.transform.position;Player.transform.position=DashMove(from,revenantDashDirection*travel);
     float actual=Vector3.Distance(from,Player.transform.position);dashTravelled+=actual;dashWakeDistance+=actual;
     for(float d=.45f;dashWakeDistance>=d;dashWakeDistance-=d){var wake=Player.transform.position-revenantDashDirection*(dashWakeDistance-d);RevFx.DashWake(wake,revenantDashDirection,Run.ClassId=="vesper");if(Run.ClassId=="vesper")AddFireZone(wake,.45f,1.5f,RevenantBasicDamage()*.1f);}
     Player.RevenantPosePhase=b;
     bool blocked=travel>.001f&&Vector3.Dot(Player.transform.position-from,revenantDashDirection)<travel*.35f;
     if(revenantDashAge>=RevenantDashDuration||blocked||stopShort)
     {
-     revenantDashing=false;Player.EndRevenantPose();thrustWindow=Player.HasRevenantThrust||Run.ClassId=="vesper"?RevenantThrustWindow:0;
+     revenantDashing=false;Player.transform.position=DashLand(Player.transform.position,revenantDashDirection);Player.EndRevenantPose();thrustWindow=Player.HasRevenantThrust||Run.ClassId=="vesper"?RevenantThrustWindow:0;
      if(DashImpactUnlocked&&dashTravelled>.1f)DashLandingImpact();
      if(thrustQueued){thrustQueued=false;if(!BeginRevenantThrust()&&!BeginVesperRisingSlash())Attack();}
     }

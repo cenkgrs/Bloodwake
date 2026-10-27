@@ -160,13 +160,13 @@ namespace Bloodwake
   {
    var rot=Quaternion.Euler(0,yaw,0);var timber=KMat("timber",new Color(.42f,.34f,.27f),new Vector2(1,3));var iron=KMat("iron",new Color(.3f,.3f,.32f),Vector2.one);
    var post=p+rot*new Vector3(-1.1f,0,0);
-   KBoxR(root,"Gibbet post",post+Vector3.up*1.9f,rot,new Vector3(.28f,3.8f,.28f),timber);blockers.Add(new Bounds(post+Vector3.up,new Vector3(.5f,2,.5f)));
+   KBoxR(root,"Gibbet post",post+Vector3.up*1.9f,rot,new Vector3(.28f,3.8f,.28f),timber);PropBlocker(new Bounds(post+Vector3.up,new Vector3(.5f,2,.5f)));
    KBoxR(root,"Gibbet arm",p+rot*new Vector3(-.2f,3.65f,0),rot,new Vector3(2.2f,.22f,.22f),timber);
    KBoxR(root,"Gibbet brace",post+rot*new Vector3(.45f,3.2f,0),rot*Quaternion.Euler(0,0,45),new Vector3(1.1f,.14f,.14f),timber);
    var hang=p+rot*new Vector3(.6f,0,0);
    KBoxR(root,"Gibbet chain",hang+Vector3.up*3.2f,rot,new Vector3(.04f,.8f,.04f),iron);
    var cage=Piece(root,"cage",hang+Vector3.up*1f,new Vector3(.83f,1.85f,1f),yaw+DR(-20,20),false);
-   blockers.Add(new Bounds(hang+Vector3.up,new Vector3(.9f,2,.9f)));
+   PropBlocker(new Bounds(hang+Vector3.up,new Vector3(.9f,2,.9f)));
    Piece(root,"bones",hang+rot*new Vector3(.3f,0,.5f),new Vector3(1.04f,.2f,.82f),DR(0,360),false);
   }
   // A chest-high line of bales, crates and planks: cover to circle round.
@@ -205,7 +205,7 @@ namespace Bloodwake
   void Wayside(Transform root,Vector3 p,float yaw)
   {
    var stone=KMat("ashlar",new Color(.55f,.55f,.6f),Vector2.one);
-   KBoxR(root,"Shrine plinth",p+Vector3.up*.3f,Quaternion.Euler(0,yaw,0),new Vector3(1.3f,.6f,1.3f),stone);blockers.Add(new Bounds(p+Vector3.up,new Vector3(1.3f,2,1.3f)));
+   KBoxR(root,"Shrine plinth",p+Vector3.up*.3f,Quaternion.Euler(0,yaw,0),new Vector3(1.3f,.6f,1.3f),stone);PropBlocker(new Bounds(p+Vector3.up,new Vector3(1.3f,2,1.3f)));
    Piece(root,"shrine_statue",p+Vector3.up*.6f,new Vector3(.8f,2.2f,.84f),yaw,false);
    var front=Quaternion.Euler(0,yaw,0)*Vector3.forward;
    Piece(root,"candles",p+front*1.05f,new Vector3(.6f,.42f,.52f),yaw,false);Lamp(root,"Lantern light",p+front*1.05f+Vector3.up*.6f);
@@ -398,7 +398,7 @@ namespace Bloodwake
   // A suit of plate on a stand: legs, cuirass, pauldrons, helm, a pike at its side.
   void ArmourStand(Transform root,Vector3 p,float yaw)
   {
-   if(KeepModel(root,"keep_armor_stand",p,yaw)){blockers.Add(new Bounds(p+Vector3.up,new Vector3(.8f,2,.8f)));return;}
+   if(KeepModel(root,"keep_armor_stand",p,yaw)){PropBlocker(new Bounds(p+Vector3.up,new Vector3(.8f,2,.8f)));return;}
    var plate=KMat("ashlar",new Color(.95f,.97f,1.05f),new Vector2(.2f,.2f));var wood=KMat("timber",new Color(.45f,.36f,.27f),Vector2.one);var rot=Quaternion.Euler(0,yaw,0);
    KBoxR(root,"Keep stand base",p+Vector3.up*.05f,rot,new Vector3(.7f,.1f,.7f),wood);
    foreach(int s in new[]{-1,1})KBoxR(root,"Keep armour leg",p+rot*new Vector3(s*.13f,.5f,0),rot,new Vector3(.15f,.8f,.17f),plate);
@@ -407,32 +407,32 @@ namespace Bloodwake
    var helm=GameObject.CreatePrimitive(PrimitiveType.Sphere);helm.name="Keep armour helm";Destroy(helm.GetComponent<Collider>());helm.transform.SetParent(root,false);helm.transform.SetPositionAndRotation(p+Vector3.up*1.72f,rot);helm.transform.localScale=new Vector3(.26f,.3f,.28f);helm.GetComponent<Renderer>().sharedMaterial=plate;
    KBoxR(root,"Keep armour visor",p+rot*new Vector3(0,1.72f,.13f),rot,new Vector3(.2f,.03f,.04f),KMat("slate",new Color(.05f,.05f,.06f),Vector2.one));
    KBoxR(root,"Keep pike",p+rot*new Vector3(.5f,1.25f,0),rot,new Vector3(.05f,2.5f,.05f),wood);KBoxR(root,"Keep pike head",p+rot*new Vector3(.5f,2.6f,0),rot*Quaternion.Euler(0,0,45),new Vector3(.12f,.12f,.03f),plate);
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(.8f,2,.8f)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(.8f,2,.8f)));
   }
   void TrainingDummy(Transform root,Vector3 p,float yaw)
   {
-   if(KeepModel(root,"keep_training_dummy",p,yaw)){blockers.Add(new Bounds(p+Vector3.up,new Vector3(.9f,2,.7f)));return;}
+   if(KeepModel(root,"keep_training_dummy",p,yaw)){PropBlocker(new Bounds(p+Vector3.up,new Vector3(.9f,2,.7f)));return;}
    var wood=KMat("timber",new Color(.4f,.32f,.24f),Vector2.one);var sack=KMat("cloth",new Color(.5f,.44f,.32f),Vector2.one);var rot=Quaternion.Euler(0,yaw,0);
    KBoxR(root,"Keep dummy post",p+Vector3.up*.9f,rot,new Vector3(.14f,1.8f,.14f),wood);KBoxR(root,"Keep dummy arms",p+Vector3.up*1.35f,rot,new Vector3(1.2f,.1f,.1f),wood);
    KBoxR(root,"Keep dummy body",p+Vector3.up*1.15f,rot*Quaternion.Euler(0,0,4),new Vector3(.46f,.6f,.34f),sack);
    var head=GameObject.CreatePrimitive(PrimitiveType.Sphere);head.name="Keep dummy head";Destroy(head.GetComponent<Collider>());head.transform.SetParent(root,false);head.transform.position=p+Vector3.up*1.68f;head.transform.localScale=Vector3.one*.32f;head.GetComponent<Renderer>().sharedMaterial=sack;
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(.7f,2,.7f)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(.7f,2,.7f)));
   }
   // A tall iron stand of candles, lit.
   void Candelabrum(Transform root,Vector3 p)
   {
-   if(KeepModel(root,"keep_candelabrum",p,0)){Lamp(root,"Sconce light",p+Vector3.up*2.05f);blockers.Add(new Bounds(p+Vector3.up,new Vector3(.6f,2,.6f)));return;}
+   if(KeepModel(root,"keep_candelabrum",p,0)){Lamp(root,"Sconce light",p+Vector3.up*2.05f);PropBlocker(new Bounds(p+Vector3.up,new Vector3(.6f,2,.6f)));return;}
    var iron=KMat("iron",new Color(.3f,.27f,.22f),Vector2.one);var wax=KMat("cloth",new Color(.85f,.8f,.68f),Vector2.one);
    KBox(root,"Keep candelabrum foot",p+Vector3.up*.06f,new Vector3(.5f,.12f,.5f),iron,false);KBox(root,"Keep candelabrum stem",p+Vector3.up*.85f,new Vector3(.07f,1.6f,.07f),iron,false);
    KBox(root,"Keep candelabrum bar",p+Vector3.up*1.6f,new Vector3(.8f,.05f,.05f),iron,false);
    foreach(float x in new[]{-.38f,0f,.38f})KBox(root,"Keep candle",p+new Vector3(x,1.72f+(x==0?.06f:0),0),new Vector3(.06f,.2f+(x==0?.12f:0),.06f),wax,false);
    Lamp(root,"Sconce light",p+Vector3.up*1.95f);
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(.6f,2,.6f)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(.6f,2,.6f)));
   }
   // A column down across the floor in drums, with its rubble.
   void FallenPillar(Transform root,Vector3 p,float yaw)
   {
-   if(KeepModel(root,"keep_fallen_column",p,yaw)){var reach=Quaternion.Euler(0,yaw,0)*new Vector3(3.2f,0,.9f);blockers.Add(new Bounds(p+Vector3.up,new Vector3(Mathf.Abs(reach.x)+.3f,2,Mathf.Abs(reach.z)+.3f)));return;}
+   if(KeepModel(root,"keep_fallen_column",p,yaw)){var reach=Quaternion.Euler(0,yaw,0)*new Vector3(3.2f,0,.9f);PropBlocker(new Bounds(p+Vector3.up,new Vector3(Mathf.Abs(reach.x)+.3f,2,Mathf.Abs(reach.z)+.3f)));return;}
    var stone=KMat("ashlar",new Color(.6f,.6f,.66f),new Vector2(1,.6f));var rot=Quaternion.Euler(0,yaw,0);
    for(int d=0;d<3;d++)
    {
@@ -440,7 +440,7 @@ namespace Bloodwake
     drum.transform.SetPositionAndRotation(p+rot*new Vector3((d-1)*1.05f,.42f,DR(-.08f,.08f)),rot*Quaternion.Euler(DR(-6,6),0,90));drum.transform.localScale=new Vector3(.84f,.48f,.84f);drum.GetComponent<Renderer>().sharedMaterial=stone;
    }
    KeepPiece(root,"rubble",p+rot*new Vector3(1.9f,0,.5f),new Vector3(1.1f,.5f,.9f),DR(0,180),false);
-   var span=rot*new Vector3(3.2f,0,.9f);blockers.Add(new Bounds(p+Vector3.up,new Vector3(Mathf.Abs(span.x)+.3f,2,Mathf.Abs(span.z)+.3f)));
+   var span=rot*new Vector3(3.2f,0,.9f);PropBlocker(new Bounds(p+Vector3.up,new Vector3(Mathf.Abs(span.x)+.3f,2,Mathf.Abs(span.z)+.3f)));
   }
   void Workbench(Transform root,Vector3 p,float yaw)
   {
@@ -450,7 +450,7 @@ namespace Bloodwake
    KBoxR(root,"Keep bench blade",p+rot*new Vector3(-.4f,.9f,0),rot*Quaternion.Euler(0,20,0),new Vector3(1.1f,.03f,.09f),iron);
    KBoxR(root,"Keep bench helm",p+rot*new Vector3(.6f,.98f,.1f),rot,new Vector3(.26f,.24f,.28f),iron);
    KeepPiece(root,"candles",p+rot*new Vector3(.95f,.87f,-.2f),new Vector3(.4f,.28f,.34f),0,false);
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(2.5f,2,2.5f)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(2.5f,2,2.5f)));
   }
   // Chairs knocked over round a spilled cask.
   void Chairs(Transform root,Vector3 p,float yaw)
@@ -463,11 +463,11 @@ namespace Bloodwake
    }
    var cask=Piece(root,"barrel",p+Vector3.up*.3f,new Vector3(.6f,.8f,.6f),yaw,false);if(cask){cask.transform.parent.rotation=Quaternion.Euler(0,yaw,90);}
    Decal(root,"Keep spilled wine",p+Quaternion.Euler(0,yaw,0)*Vector3.right*.8f,1.8f,DR(0,360),bloodMaterial,.008f);
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(1,2,1)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(1,2,1)));
   }
   void TortureRack(Transform root,Vector3 p,float yaw)
   {
-   if(KeepModel(root,"keep_torture_rack",p,yaw)){blockers.Add(new Bounds(p+Vector3.up,new Vector3(2.5f,2,2.5f)));return;}
+   if(KeepModel(root,"keep_torture_rack",p,yaw)){PropBlocker(new Bounds(p+Vector3.up,new Vector3(2.5f,2,2.5f)));return;}
    var wood=KMat("timber",new Color(.32f,.25f,.19f),Vector2.one);var iron=KMat("iron",new Color(.3f,.3f,.32f),Vector2.one);var rot=Quaternion.Euler(0,yaw,0);
    foreach(int s in new[]{-1,1})KBoxR(root,"Keep rack rail",p+rot*new Vector3(0,.7f,s*.45f),rot,new Vector3(2.4f,.14f,.14f),wood);
    foreach(int a in new[]{-1,1})foreach(int b in new[]{-1,1})KBoxR(root,"Keep rack leg",p+rot*new Vector3(a*1.1f,.35f,b*.45f),rot,new Vector3(.14f,.7f,.14f),wood);
@@ -475,17 +475,17 @@ namespace Bloodwake
    for(int i=0;i<5;i++)KBoxR(root,"Keep rack slat",p+rot*new Vector3(-.8f+i*.4f,.72f,0),rot,new Vector3(.12f,.04f,.9f),wood);
    KBoxR(root,"Keep rack chain",p+rot*new Vector3(1.2f,.3f,.3f),rot*Quaternion.Euler(0,0,60),new Vector3(.04f,.7f,.04f),iron);
    Decal(root,"Keep blood",p,2f,DR(0,360),bloodMaterial,.008f);
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(2.5f,2,2.5f)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(2.5f,2,2.5f)));
   }
   void Stocks(Transform root,Vector3 p,float yaw)
   {
-   if(KeepModel(root,"keep_stocks",p,yaw)){blockers.Add(new Bounds(p+Vector3.up,new Vector3(1.8f,2,1.8f)));return;}
+   if(KeepModel(root,"keep_stocks",p,yaw)){PropBlocker(new Bounds(p+Vector3.up,new Vector3(1.8f,2,1.8f)));return;}
    var wood=KMat("timber",new Color(.38f,.3f,.22f),Vector2.one);var rot=Quaternion.Euler(0,yaw,0);
    foreach(int s in new[]{-1,1})KBoxR(root,"Keep stocks post",p+rot*new Vector3(s*.8f,.6f,0),rot,new Vector3(.16f,1.2f,.16f),wood);
    KBoxR(root,"Keep stocks board",p+Vector3.up*.95f,rot,new Vector3(1.8f,.36f,.12f),wood);
    var dark=KMat("slate",new Color(.04f,.04f,.04f),Vector2.one);foreach(float x in new[]{-.45f,0f,.45f})KBoxR(root,"Keep stocks hole",p+rot*new Vector3(x,.95f,.065f),rot,new Vector3(.16f,.16f,.01f),dark);
    Piece(root,"bones",p+rot*new Vector3(0,0,.6f),new Vector3(1.04f,.2f,.82f),DR(0,360),false);
-   blockers.Add(new Bounds(p+Vector3.up,new Vector3(1.8f,2,1.8f)));
+   PropBlocker(new Bounds(p+Vector3.up,new Vector3(1.8f,2,1.8f)));
   }
   void Debris(Transform root,Vector3 p,float yaw)
   {

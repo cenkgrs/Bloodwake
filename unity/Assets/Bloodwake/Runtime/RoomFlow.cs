@@ -9,7 +9,7 @@ namespace Bloodwake
   {
    ResetRevenantDash();
    StopAllCoroutines();RestoreThrownBlade();StopFlameBreath();Player.CancelAction();revenantFx=null;foreach(Transform child in actorRoot)if(child!=Player.transform)Destroy(child.gameObject);Enemies.Clear();pickups.Clear();fireZones.Clear();if(roomRoot)Destroy(roomRoot.gameObject);
-   roomRoot=new GameObject(id).transform;blockers.Clear();room=(JObject)GameData.Rooms["rooms"].First(r=>r.S("id")==id);half=new Vector2((float)room["size"][0],(float)room["size"][1])*.5f;
+   roomRoot=new GameObject(id).transform;blockers.Clear();propBlockers.Clear();room=(JObject)GameData.Rooms["rooms"].First(r=>r.S("id")==id);half=new Vector2((float)room["size"][0],(float)room["size"][1])*.5f;
    ColorUtility.TryParseHtmlString("#"+room["light"].S("ground","43434a"),out var ground);
    Box("Courtyard",new Vector3(0,-.15f,0),new Vector3(half.x*2,.3f,half.y*2),ground,false);
    foreach(var block in room["layout"]??new JArray())if(block["size"] is JArray size){var p=Point(block["at"]);float h=block.N("height",1);Box(block.S("kind"),p+Vector3.up*h*.5f,new Vector3((float)size[0],h,(float)size[1]),new Color(.22f,.17f,.13f),true);}
@@ -57,10 +57,23 @@ namespace Bloodwake
   {
    int steps=Mathf.Max(1,Mathf.CeilToInt(delta.magnitude/.15f));for(int i=0;i<steps;i++)p=MoveStep(p,delta/steps,radius);return p;
   }
+  // Furniture and cargo block walking but not a dash: the dashing hunter slips between them (walls, buildings
+  // and columns still stop her).
+  void PropBlocker(Bounds b){blockers.Add(b);propBlockers.Add(b);}
+  Vector3 DashMove(Vector3 p,Vector3 delta,float radius=.4f){dashThrough=true;try{return Move(p,delta,radius);}finally{dashThrough=false;}}
+  // A dash that ends inside a prop carries on along its line to the first free spot (or back to where it entered).
+  Vector3 DashLand(Vector3 p,Vector3 dir,float radius=.4f)
+  {
+   bool Inside(Vector3 q){foreach(var b in propBlockers){var e=b;e.Expand(new Vector3(radius*2,10,radius*2));if(e.Contains(new Vector3(q.x,b.center.y,q.z)))return true;}return false;}
+   if(!Inside(p))return p;dir.y=0;if(dir.sqrMagnitude<.0001f)return p;dir.Normalize();
+   for(float d=.1f;d<=3f;d+=.1f){var q=DashMove(p,dir*d,radius);if(!Inside(q)&&Vector3.Distance(q,p)>d-.05f)return q;}
+   for(float d=.1f;d<=3f;d+=.1f){var q=DashMove(p,-dir*d,radius);if(!Inside(q))return q;}
+   return p;
+  }
   Vector3 MoveStep(Vector3 p,Vector3 delta,float radius)
   {
    var next=p+delta;next.x=Mathf.Clamp(next.x,-half.x+radius,half.x-radius);next.z=Mathf.Clamp(next.z,-half.y+radius,half.y-radius);
-   foreach(var b in blockers){var expanded=b;expanded.Expand(new Vector3(radius*2,10,radius*2));if(!expanded.Contains(new Vector3(next.x,b.center.y,next.z)))continue;var xOnly=new Vector3(p.x+delta.x,b.center.y,p.z);var zOnly=new Vector3(p.x,b.center.y,p.z+delta.z);if(!expanded.Contains(xOnly))next.z=p.z;else if(!expanded.Contains(zOnly))next.x=p.x;else next=p;}return next;
+   foreach(var b in blockers){if(dashThrough&&propBlockers.Contains(b))continue;var expanded=b;expanded.Expand(new Vector3(radius*2,10,radius*2));if(!expanded.Contains(new Vector3(next.x,b.center.y,next.z)))continue;var xOnly=new Vector3(p.x+delta.x,b.center.y,p.z);var zOnly=new Vector3(p.x,b.center.y,p.z+delta.z);if(!expanded.Contains(xOnly))next.z=p.z;else if(!expanded.Contains(zOnly))next.x=p.x;else next=p;}return next;
   }
   bool bossReward;
   string HostScreen(JToken host)=>host.S("role") switch{"builds"=>"armory","skills"=>"progression","merchant"=>"merchant",_=>"hub"};

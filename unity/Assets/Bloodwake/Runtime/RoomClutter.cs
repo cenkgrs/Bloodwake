@@ -68,7 +68,7 @@ namespace Bloodwake
       if(!Free(p,1.1f))continue;
       Piece(root,"barrel",p,new Vector3(.68f,.92f,.68f),R(0,360),true);Piece(root,"barrel",p+along*.72f,new Vector3(.64f,.88f,.64f),R(0,360),true);
       var tipped=Piece(root,"barrel",p+along*.35f+inward*.75f,new Vector3(.64f,.88f,.64f),yaw,false);if(tipped)tipped.transform.parent.rotation=Quaternion.Euler(0,yaw+R(-30,30),90)*Quaternion.identity;
-      if(tipped){var tp=tipped.transform.parent;tp.position=p+along*.35f+inward*.75f+Vector3.up*.32f;blockers.Add(new Bounds(tp.position,new Vector3(.9f,.7f,.9f)));}
+      if(tipped){var tp=tipped.transform.parent;tp.position=p+along*.35f+inward*.75f+Vector3.up*.32f;PropBlocker(new Bounds(tp.position,new Vector3(.9f,.7f,.9f)));}
       break;
      case 1: // Crates on crates with a sheet thrown over the top one.
       if(!Free(p,1f))continue;

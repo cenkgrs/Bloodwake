@@ -15,7 +15,7 @@ namespace Bloodwake
   public readonly List<Enemy> Enemies=new();Transform roomRoot,actorRoot;JObject room;
   public string Screen="menu",SelectedClass="vesper";Vector3 aim=Vector3.forward;Vector2 half;
   float attackCd,dashCd,invulnerable,hitStop,spawnTimer;int waveIndex,spawnCursor;JArray waves;
-  bool roomClear;readonly List<Bounds> blockers=new();readonly List<JToken> offers=new();
+  bool roomClear;readonly List<Bounds> blockers=new();readonly HashSet<Bounds> propBlockers=new();bool dashThrough;readonly List<JToken> offers=new();
   MusicBlend musicBlend;readonly Dictionary<string,AudioClip> sounds=new();
   void OnDestroy(){ReleaseCrowdNavigation();Effects.Release();}
   void Awake()
@@ -28,7 +28,7 @@ namespace Bloodwake
    foreach(var clip in Resources.LoadAll<AudioClip>("audio"))sounds[clip.name]=clip;
    foreach(var clip in Resources.LoadAll<AudioClip>("audio/polished"))sounds[clip.name]=clip;
    gameObject.AddComponent<GameplayLighting>().Configure(Cam);SetMusic("music_menu");
-   if(Environment.GetCommandLineArgs().Contains("--smoke"))StartCoroutine(Smoke());if(Environment.GetCommandLineArgs().Contains("--lookdev")||LookDevRequested())new GameObject("LookDev driver").AddComponent<LookDevDriver>().Begin(this);if(GlideCaptureRequested()||Environment.GetCommandLineArgs().Contains("--glidecapture"))new GameObject("Glide capture driver").AddComponent<LookDevDriver>().BeginGlide(this);if(Environment.GetCommandLineArgs().Contains("--spellcapture"))new GameObject("Spell capture driver").AddComponent<LookDevDriver>().BeginSpells(this);if(Environment.GetCommandLineArgs().Contains("--keeptour"))new GameObject("Keep tour driver").AddComponent<LookDevDriver>().BeginKeepTour(this);if(Environment.GetCommandLineArgs().Contains("--towntour"))new GameObject("Town tour driver").AddComponent<LookDevDriver>().BeginKeepTour(this,1);
+   if(Environment.GetCommandLineArgs().Contains("--smoke"))StartCoroutine(Smoke());if(Environment.GetCommandLineArgs().Contains("--lookdev")||LookDevRequested())new GameObject("LookDev driver").AddComponent<LookDevDriver>().Begin(this);if(GlideCaptureRequested()||Environment.GetCommandLineArgs().Contains("--glidecapture"))new GameObject("Glide capture driver").AddComponent<LookDevDriver>().BeginGlide(this);if(Environment.GetCommandLineArgs().Contains("--spellcapture"))new GameObject("Spell capture driver").AddComponent<LookDevDriver>().BeginSpells(this);if(Environment.GetCommandLineArgs().Contains("--keeptour"))new GameObject("Keep tour driver").AddComponent<LookDevDriver>().BeginKeepTour(this);if(Environment.GetCommandLineArgs().Contains("--targetcapture"))new GameObject("Target capture driver").AddComponent<LookDevDriver>().BeginTarget(this);if(Environment.GetCommandLineArgs().Contains("--towntour"))new GameObject("Town tour driver").AddComponent<LookDevDriver>().BeginKeepTour(this,1);
   }
   public void StartRun(string id)
   {
