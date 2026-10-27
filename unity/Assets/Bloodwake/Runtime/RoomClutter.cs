@@ -104,13 +104,7 @@ namespace Bloodwake
   void GroundDetail(Transform root,System.Random random)
   {
    float R(float a,float b)=>a+(float)random.NextDouble()*(b-a);
-   if(!crackMaterial)
-   {
-    crackMaterial=DecalMaterial("Crack decal",Cracks(256,3),new Color(.02f,.018f,.018f,1),.2f);
-    mossMaterial=DecalMaterial("Moss decal",Speckle(256,5,.5f),new Color(.16f,.22f,.09f,.95f),.1f);
-    mudMaterial=DecalMaterial("Mud decal",Speckle(256,9,.75f),new Color(.11f,.08f,.06f,.8f),.55f);
-    strawMaterial=DecalMaterial("Straw decal",Straw(256,11),new Color(.62f,.5f,.26f,1),.05f);
-   }
+   EnsureGroundMaterials();
    float fx=half.x-.6f,fz=half.y-.6f;int area=Mathf.RoundToInt(half.x*half.y);
    void Scatter(string name,Material m,int count,float min,float max,float edgeBias)
    {
@@ -125,6 +119,14 @@ namespace Bloodwake
    Scatter("Moss",mossMaterial,Mathf.Clamp(area/8,5,16),1.2f,2.6f,.55f);
    Scatter("Mud",mudMaterial,Mathf.Clamp(area/12,3,10),1.6f,3.4f,.3f);
    Scatter("Straw",strawMaterial,Mathf.Clamp(area/14,3,9),1f,2f,.6f);
+  }
+  static void EnsureGroundMaterials()
+  {
+   if(crackMaterial)return;
+   crackMaterial=DecalMaterial("Crack decal",Cracks(256,3),new Color(.02f,.018f,.018f,1),.2f);
+   mossMaterial=DecalMaterial("Moss decal",Speckle(256,5,.5f),new Color(.16f,.22f,.09f,.95f),.1f);
+   mudMaterial=DecalMaterial("Mud decal",Speckle(256,9,.75f),new Color(.11f,.08f,.06f,.8f),.55f);
+   strawMaterial=DecalMaterial("Straw decal",Straw(256,11),new Color(.62f,.5f,.26f,1),.05f);
   }
   // Branching hairline cracks.
   static Texture2D Cracks(int size,int seed)

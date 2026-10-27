@@ -43,6 +43,7 @@ namespace Bloodwake
     case "undercroft":KeepUndercroft(root);break;
    }
    KeepScatter(root,style);
+   DetailKeep(root,style);
    KeepFill(root,style);
    // Every marker must stand on the floor; report any that the shape left inside the stone.
    foreach(var marker in (room["markers"] as JObject)?.Properties()??new List<JProperty>())
@@ -93,15 +94,21 @@ namespace Bloodwake
     blockers.Add(new Bounds(c+Vector3.up,new Vector3(len,2,KeepCell)));
    }
    var look=new Vector3(-cameraOffset.x,0,-cameraOffset.z).normalized;
-   var stone=KMat("ashlar",new Color(.85f,.85f,.9f),new Vector2(.5f,1.6f));var parapet=KMat("ashlar",new Color(.7f,.7f,.76f),new Vector2(.5f,.5f));var cap=KMat("slate",new Color(.4f,.41f,.46f),Vector2.one);
+   var stone=KMat("ashlar",new Color(.85f,.85f,.9f),new Vector2(.5f,1.6f));var parapet=KMat("ashlar",new Color(.7f,.7f,.76f),new Vector2(.5f,.5f));var cap=KMat("slate",new Color(.4f,.41f,.46f),Vector2.one);var roof=KMat("slate",new Color(.5f,.5f,.56f),new Vector2(1,1));
    int faces=0;
    for(int i=0;i<keepW;i++)for(int k=0;k<keepH;k++)
    {
     if(keepWalk[i,k])continue;var c=KeepCellCentre(i,k);if(KeepDoorGap(c))continue;
     bool edge=false;for(int di=-1;di<=1&&!edge;di++)for(int dk=-1;dk<=1;dk++)if(KeepWalkCell(i+di,k+dk)){edge=true;break;}
-    if(!edge)continue;
     float first=99;for(float t=.5f;t<=7;t+=.25f)if(KeepWalkable(c+look*t)){first=t;break;}
     float h=Mathf.Clamp((first-.7f)/1.43f,KeepLow,KeepTall);
+    // Stone enclosed inside the room (the armoury block, the cell block) is roofed at the height its walls
+    // would have, so it reads as a building rather than a hole.
+    if(!edge)
+    {
+     if(Mathf.Abs(c.x)<hx-.5f&&Mathf.Abs(c.z)<hz-.5f)KBox(root,"Keep roof",c+Vector3.up*(h+.06f),new Vector3(KeepCell+.02f,.12f,KeepCell+.02f),roof,false);
+     continue;
+    }
     KBox(root,h>=KeepTall-.01f?"Keep wall":"Keep parapet",c+Vector3.up*h*.5f,new Vector3(KeepCell,h,KeepCell),h>2?stone:parapet,false);
     KBox(root,"Keep wall cap",c+Vector3.up*(h+.06f),new Vector3(KeepCell+.06f,.12f,KeepCell+.06f),cap,false);
     // Visible faces of the full-height stone (floor on the camera's side of it) carry the windows and banners.
@@ -282,7 +289,7 @@ namespace Bloodwake
    {
     var c=KeepCellCentre(i,k);if(!keepWalk[i,k])continue;
     var light=new GameObject("Keep cold fill").AddComponent<Light>();light.transform.SetParent(root,false);light.transform.position=c+Vector3.up*4.2f;
-    light.type=LightType.Point;light.color=tone;light.intensity=2.6f;light.range=8;light.shadows=LightShadows.None;
+    light.type=LightType.Point;light.color=tone;light.intensity=4f;light.range=9;light.shadows=LightShadows.None;
    }
   }
 

@@ -57,11 +57,12 @@ namespace Bloodwake
   // Keep tour (--keeptour): every room of the second map, empty, as an overview of the whole floor and from the
   // game's own camera at the entrance; then the keep's garrison lined up, and its warden in the throne room.
   // Writes /tmp/bloodwake-keep-<room>-<view>.png. Silent.
-  public IEnumerator KeepTour()
+  // With night 1 (--towntour) it walks the first map's rooms instead, without the lineup.
+  public IEnumerator KeepTour(int night=2)
   {
    AudioListener.volume=0;smokeRunning=true;
    yield return new WaitForSeconds(.5f);
-   StartRun("mage");invulnerable=99999;Run.Night=2;PlanNight();
+   StartRun("mage");invulnerable=99999;Run.Night=night;PlanNight();
    foreach(var id in Run.Plan.ToArray())
    {
     Run.RoomIndex=Run.Plan.IndexOf(id);EnterRoom(id);spawnTimer=999;
@@ -77,8 +78,10 @@ namespace Bloodwake
     }
     Debug.Log("BLOODWAKE_KEEP_PATHS "+id+" ok="+ok+" bad="+bad);
     PositionCamera(true);yield return null;PositionCamera(true);SaveView("/tmp/bloodwake-keep-"+id+"-game.png");
+    // The middle of the room through the game camera, where the fighting happens.
+    Cam.transform.position=new Vector3(0,0,0)+cameraOffset;SaveView("/tmp/bloodwake-keep-"+id+"-middle.png");
     float size=Cam.orthographicSize;Cam.orthographicSize=Mathf.Max(half.x,half.y)*.95f;Cam.transform.position=new Vector3(0,0,-1.5f)+cameraOffset;SaveView("/tmp/bloodwake-keep-"+id+"-overview.png");Cam.orthographicSize=size;
-    if(id==Run.Plan[0])
+    if(id==Run.Plan[0]&&night==2)
     {
      var at=Player.transform.position;var dir=Vector3.ProjectOnPlane(-at,Vector3.up).normalized;var side=Vector3.Cross(Vector3.up,dir);
      string[] kinds={"keep_halberd","keep_knight","keep_crossbow","keep_wraith","keep_chaplain","keep_castellan"};
@@ -240,6 +243,6 @@ namespace Bloodwake
   public void Begin(BloodwakeGame game){StartCoroutine(game.LookDev());}
   public void BeginGlide(BloodwakeGame game){StartCoroutine(game.GlideCapture());}
   public void BeginSpells(BloodwakeGame game){StartCoroutine(game.SpellCapture());}
-  public void BeginKeepTour(BloodwakeGame game){StartCoroutine(game.KeepTour());}
+  public void BeginKeepTour(BloodwakeGame game,int night=2){StartCoroutine(game.KeepTour(night));}
  }
 }

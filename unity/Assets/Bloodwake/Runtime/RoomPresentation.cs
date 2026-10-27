@@ -36,12 +36,15 @@ namespace Bloodwake
     // Moonlight through the keep's windows stays cold and has no flame.
     if(lamp.name.StartsWith("Keep cold"))continue;
     lamp.color=new Color(1,.46f,.15f);lamp.intensity=lamp.name=="Brazier light"?4.2f:4.8f;lamp.range=lamp.name=="Brazier light"?8f:8;
+    // Wall torches and candle stands: smaller pools, so the walls carry rhythm rather than wash.
+    if(lamp.name=="Sconce light"){lamp.intensity=2.6f;lamp.range=5;}
     if(!fire)fire=new Material(Resources.Load<Shader>("Presentation/Flame")){name="Lantern flame"};
     var flame=GameObject.CreatePrimitive(PrimitiveType.Quad);flame.name="Lantern flame";Destroy(flame.GetComponent<Collider>());
     // Imported light parents can carry the FBX centimetre conversion scale.
     // Define the flame in world metres before parenting to preserve its size.
     flame.transform.position=lamp.transform.position+Vector3.up*.1f;flame.transform.localScale=new Vector3(.26f,.55f,1);flame.transform.SetParent(transform,true);
     var renderer=flame.GetComponent<MeshRenderer>();renderer.sharedMaterial=fire;renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+    if(lamp.name=="Sconce light")flame.transform.localScale=new Vector3(.17f,.34f,1);
     flame.AddComponent<FlameFacing>();
    }
   }

@@ -24,7 +24,7 @@ namespace Bloodwake
    // The keep is built whole by KeepInterior; the town dressing (streets, houses, cargo) belongs outdoors.
    bool keep=room["keep"]!=null;
    if(!keep){EnvironmentDressing.Apply(roomRoot,half,room["layout"]);EnvironmentDetails.Apply(roomRoot,this,half,room["layout"]);}
-   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else if(keep)BuildKeep();else{DressRoom(id);DressEdges(id);}ConfigureBreakableCargo();
+   if(id=="town_safehouse"){BuildSanctuary();SpawnSanctuaryCargo();}else if(keep)BuildKeep();else{DressRoom(id);DressEdges(id);DetailTown(id);}ConfigureBreakableCargo();
    roomRoot.gameObject.AddComponent<RoomReflection>().HalfSize=half;
    roomRoot.gameObject.AddComponent<RoomPresentation>().Apply(roomRoot,this);
    SpawnHosts();BuildNavigation();Player.transform.position=Point(room["markers"]["EntrySpawn"]);Player.transform.rotation=Quaternion.LookRotation(Vector3.back);Player.Locked=0;RevFx.Hands(Player);  // no orb held in the Mage's palm: her magic leaves the hand only when she casts
