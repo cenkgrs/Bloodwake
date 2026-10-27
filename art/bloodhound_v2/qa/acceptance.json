@@ -1,0 +1,30 @@
+{
+  "status": "IN_REVIEW_NOT_PRODUCTION_READY",
+  "completed": false,
+  "source_sha256": "61d089028e0f19c6acc4dfea2e6a1e6ad923e8a1151178dd948e448bcff71d1e",
+  "runtime_glb_sha256": "7bc4dfdf11ec0adad1bcda8cd5eb74c178533d7a474c32fc8d2fb400e2967d43",
+  "linux_build_sha256": "f04db81084e4a38b8791b3a9a3fb5bce12c73cd70f17f18de65f5c3cbb3661cb",
+  "windows_build_sha256": "378cd7f2d4d3f285ba5f2b46c726ba737333be7c7a66c8b100222bad1ad21c74",
+  "verified": [
+    "Original GLB preserved byte-for-byte",
+    "Seven distinct baked 60 FPS Blender actions",
+    "48-bone rig imported into Godot and used by the actual player",
+    "Idle and walk endpoint poses match",
+    "Both planted feet pass a world-space drift threshold of 3 mm",
+    "Five shot events at source frames 10, 14, 18, 22 and 26",
+    "Grenade release at source frame 20",
+    "Nine ultimate salvo directions with maximum angular gap below 43 degrees",
+    "Death cancels queued attacks",
+    "Moving shot lower-body overlay preserves upper-body aim",
+    "38 gameplay assertions, zero failures",
+    "Actual Godot renderer contact sheets and real-game video recorded",
+    "Linux packaged-game smoke test"
+  ],
+  "open_acceptance_items": [
+    "Handheld revolvers are provisional geometry; source holstered guns remain fused with the body",
+    "Full-frame clothing/body/weapon intersection clearance is not certified",
+    "High-speed movement accelerates the heavy walk; dedicated run art remains needed",
+    "Death hat detachment is not authored",
+    "Windows package has not been executed on Windows"
+  ]
+}

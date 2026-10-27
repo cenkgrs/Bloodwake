@@ -1,0 +1,105 @@
+{
+  "status": "IN_REVIEW",
+  "actions": {
+    "BH_BombThrow": {
+      "frames": [
+        1,
+        50
+      ],
+      "duration_seconds": 0.8166666666666667,
+      "max_pose_change": 1.8938356637954712,
+      "loop_pose_difference": null,
+      "lowest_vertex_z": -7.75088119553402e-05,
+      "events": {
+        "THROW_RELEASE": 20
+      }
+    },
+    "BH_Death": {
+      "frames": [
+        1,
+        60
+      ],
+      "duration_seconds": 0.9833333333333333,
+      "max_pose_change": 1.55977463722229,
+      "loop_pose_difference": null,
+      "lowest_vertex_z": -4.1557470353836834e-07,
+      "events": {}
+    },
+    "BH_FiveShot": {
+      "frames": [
+        1,
+        42
+      ],
+      "duration_seconds": 0.6833333333333333,
+      "max_pose_change": 1.6071581840515137,
+      "loop_pose_difference": null,
+      "lowest_vertex_z": -7.740833098068833e-05,
+      "events": {
+        "FIRE_01": 10,
+        "FIRE_02": 14,
+        "FIRE_03": 18,
+        "FIRE_04": 22,
+        "FIRE_05": 26
+      }
+    },
+    "BH_GetHit": {
+      "frames": [
+        1,
+        18
+      ],
+      "duration_seconds": 0.2833333333333333,
+      "max_pose_change": 0.2243165522813797,
+      "loop_pose_difference": null,
+      "lowest_vertex_z": -0.00037531336420215666,
+      "events": {}
+    },
+    "BH_Idle": {
+      "frames": [
+        1,
+        72
+      ],
+      "duration_seconds": 1.1833333333333333,
+      "max_pose_change": 0.08006875216960907,
+      "loop_pose_difference": 0.0,
+      "lowest_vertex_z": -8.213331602746621e-05,
+      "events": {}
+    },
+    "BH_Ultimate_BloodWake": {
+      "frames": [
+        1,
+        108
+      ],
+      "duration_seconds": 1.7833333333333334,
+      "max_pose_change": 2.0000091791152954,
+      "loop_pose_difference": null,
+      "lowest_vertex_z": -7.749325595796108e-05,
+      "events": {
+        "ULT_FIRE_01": 30,
+        "ULT_FIRE_02": 36,
+        "ULT_FIRE_03": 42,
+        "ULT_FIRE_04": 48,
+        "ULT_FIRE_05": 54,
+        "ULT_FIRE_06": 60,
+        "ULT_FIRE_07": 66,
+        "ULT_FIRE_08": 72,
+        "ULT_FIRE_09": 78
+      }
+    },
+    "BH_Walk_InPlace": {
+      "frames": [
+        1,
+        32
+      ],
+      "duration_seconds": 0.5166666666666667,
+      "max_pose_change": 0.5663756430149078,
+      "loop_pose_difference": 0.0,
+      "lowest_vertex_z": -0.0006840915302745998,
+      "events": {}
+    }
+  },
+  "notes": [
+    "Weapon props are provisional geometry.",
+    "Source holstered weapons remain part of the supplied body mesh.",
+    "This report does not certify clothing collision clearance."
+  ]
+}

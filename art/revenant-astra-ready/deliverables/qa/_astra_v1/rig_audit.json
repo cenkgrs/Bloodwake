@@ -1,0 +1,15 @@
+{
+  "vertices_before_weld": 79405,
+  "vertices_after_weld": 51489,
+  "triangles": 101244,
+  "bones": 77,
+  "reassigned_vertices": {
+    "coat": 24980,
+    "hair": 3604,
+    "armor": 632
+  },
+  "max_influences": 4,
+  "zero_weight_vertices": 0,
+  "height_m": 1.9000003337860107,
+  "source_skin_repair": "Rebuilt anatomical rest pivots; cleared incompatible identity-node poses; retained mesh UVs, material and normalized source weights; replaced detached twist weights."
+}

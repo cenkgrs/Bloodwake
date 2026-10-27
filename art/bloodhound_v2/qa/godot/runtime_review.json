@@ -1,0 +1,34 @@
+{
+	"bone_count": 48,
+	"clips": {
+		"BH_BombThrow": {
+			"duration": 0.816666662693024,
+			"max_joint_displacement": 0.700689673423767
+		},
+		"BH_Death": {
+			"duration": 0.983333349227905,
+			"max_joint_displacement": 1.28750717639923
+		},
+		"BH_FiveShot": {
+			"duration": 0.683333337306976,
+			"max_joint_displacement": 0.560490012168884
+		},
+		"BH_GetHit": {
+			"duration": 0.283333331346512,
+			"max_joint_displacement": 0.0636088326573372
+		},
+		"BH_Idle": {
+			"duration": 1.18333327770233,
+			"max_joint_displacement": 0.0190149024128914
+		},
+		"BH_Ultimate_BloodWake": {
+			"duration": 1.78333330154419,
+			"max_joint_displacement": 1.10097789764404
+		},
+		"BH_Walk_InPlace": {
+			"duration": 0.516666650772095,
+			"max_joint_displacement": 0.302259206771851
+		}
+	},
+	"status": "IN_REVIEW"
+}
