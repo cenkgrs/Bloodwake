@@ -11,12 +11,14 @@ namespace Bloodwake
  public sealed class GameplayLighting:MonoBehaviour
  {
   Material sky,previousSky,sharpen;VolumeProfile profile;SharpenPass sharpenPass;Camera gameCamera;
-  public static float Sharpness=.6f;
+  public static float Sharpness=.25f;
   // Render quality from Settings: the fraction of screen pixels the 3D view is drawn at; the sharpen pass recovers detail.
   // The pipeline asset's own value is restored on exit so the editor never saves a player's choice into the project.
   public static readonly float[] RenderScales={1,.85f,.7f};public static readonly string[] RenderScaleNames={"HIGH","BALANCED","PERFORMANCE"};
   static float assetScale=-1;
-  public static int RenderQuality{get=>Mathf.Clamp(PlayerPrefs.GetInt("renderQuality",1),0,RenderScales.Length-1);set{PlayerPrefs.SetInt("renderQuality",value);ApplyRenderQuality();}}
+  // Full resolution by default (27 Oct: the 85% "balanced" default read as a blurry 2002 game); a player who chose
+  // otherwise before this keeps nothing of it, since the old default was never a choice.
+  public static int RenderQuality{get{if(!PlayerPrefs.HasKey("renderQualityV2")){PlayerPrefs.SetInt("renderQuality",0);PlayerPrefs.SetInt("renderQualityV2",1);}return Mathf.Clamp(PlayerPrefs.GetInt("renderQuality",0),0,RenderScales.Length-1);}set{PlayerPrefs.SetInt("renderQuality",value);ApplyRenderQuality();}}
   public static void ApplyRenderQuality(){if(UniversalRenderPipeline.asset is not {} asset)return;if(assetScale<0)assetScale=asset.renderScale;asset.renderScale=RenderScales[RenderQuality];}
   public void Configure(Camera camera)
   {
@@ -24,7 +26,8 @@ namespace Bloodwake
    sharpen=new Material(Resources.Load<Shader>("Presentation/Sharpen")){name="Sharpen"};sharpenPass=new SharpenPass(sharpen);
    RenderPipelineManager.beginCameraRendering+=QueueSharpen;
    var data=camera.GetUniversalAdditionalCameraData();data.renderPostProcessing=true;
-   data.antialiasing=AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+   // Geometry edges from 4x MSAA (PC_RPAsset); SMAA on top only softened texture detail.
+   data.antialiasing=AntialiasingMode.None;
    data.antialiasingQuality=AntialiasingQuality.High;
    var key=Directional("Moon key",new Vector3(50,45,0),new Color(.69f,.79f,1),.85f,true);
    RenderSettings.sun=key; // Keep the shadow-casting light as URP's main light.
