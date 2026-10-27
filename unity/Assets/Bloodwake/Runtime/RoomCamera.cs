@@ -9,7 +9,8 @@ namespace Bloodwake
   const float DefaultZoom=4.5f;
   Vector3 CameraFocus(Vector3 target)
   {
-   if(room==null)return target;Vector3 forward=-cameraOffset.normalized,right=Vector3.Cross(Vector3.up,forward).normalized,up=Vector3.Cross(forward,right);
+   // The keep's rooms end in darkness, not in a street's facades: the camera simply keeps the hunter centred.
+   if(room==null||room["keep"]!=null)return new Vector3(target.x,0,target.z);Vector3 forward=-cameraOffset.normalized,right=Vector3.Cross(Vector3.up,forward).normalized,up=Vector3.Cross(forward,right);
    float minX=float.PositiveInfinity,maxX=float.NegativeInfinity,minZ=float.PositiveInfinity,maxZ=float.NegativeInfinity;
    foreach(int x in new[]{-1,1})foreach(int y in new[]{-1,1}){var p=cameraOffset+right*x*Cam.orthographicSize*Cam.aspect+up*y*Cam.orthographicSize;var g=p+forward*(-p.y/forward.y);minX=Mathf.Min(minX,g.x);maxX=Mathf.Max(maxX,g.x);minZ=Mathf.Min(minZ,g.z);maxZ=Mathf.Max(maxZ,g.z);}
    float left=-half.x-5-minX,rightEdge=half.x+5-maxX,bottom=-half.y-7-minZ,top=half.y+4-maxZ;

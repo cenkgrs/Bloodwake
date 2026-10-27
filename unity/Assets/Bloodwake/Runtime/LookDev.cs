@@ -84,7 +84,7 @@ namespace Bloodwake
      var far=new System.Collections.Generic.List<Vector3>();
      foreach(var dir in new[]{new Vector3(1,0,1),new Vector3(1,0,-1),new Vector3(-1,0,1),new Vector3(-1,0,-1),Vector3.right,Vector3.left,Vector3.forward,Vector3.back})
      {Vector3 best=Vector3.zero;float score=float.NegativeInfinity;for(int i=0;i<keepW;i++)for(int k=0;k<keepH;k++)if(keepWalk[i,k]){var c=KeepCellCentre(i,k);float d=Vector3.Dot(c,dir);if(d>score){score=d;best=c;}}far.Add(best);}
-     foreach(var c in far){Player.transform.position=c;PositionCamera(true);var v=Cam.WorldToViewportPoint(c+Vector3.up);if(v.x<.08f||v.x>.92f||v.y<.08f||v.y>.92f)Debug.Log("BLOODWAKE_KEEP_OFFSCREEN "+id+" at "+c+" viewport "+v);}
+     foreach(var c in far){Player.transform.position=c;PositionCamera(true);var v=Cam.WorldToViewportPoint(c+Vector3.up);if(Mathf.Abs(v.x-.5f)>.06f||Mathf.Abs(v.y-.5f)>.12f)Debug.Log("BLOODWAKE_KEEP_OFFCENTRE "+id+" at "+c+" viewport "+v);}
      Player.transform.position=entry;
     }
     // A dash slips through furniture that walking cannot: walk and dash across the nearest solid prop.
