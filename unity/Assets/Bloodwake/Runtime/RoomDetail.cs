@@ -30,6 +30,8 @@ namespace Bloodwake
    if(Mathf.Abs(p.x)>half.x-radius-.4f||Mathf.Abs(p.z)>half.y-radius-.4f)return false;
    foreach(var k in detailKeep)if(Vector2.Distance(new Vector2(p.x,p.z),new Vector2(k.at.x,k.at.z))<k.radius+radius)return false;
    foreach(var b in blockers){var e=b;e.Expand(new Vector3((radius+blockerGap)*2,0,(radius+blockerGap)*2));if(e.Contains(new Vector3(p.x,b.center.y,p.z)))return false;}
+   // The way to the exit stays open: nothing solid in the 5 m lane before either door.
+   if(room["keep"]!=null&&Mathf.Abs(p.x)<2.5f+radius&&Mathf.Abs(p.z)>half.y-6)return false;
    if(keepWalk!=null&&room["keep"]!=null)
     for(float a=0;a<360;a+=45)if(!KeepWalkable(p+Quaternion.Euler(0,a,0)*Vector3.forward*(radius+blockerGap)))return false;
    return true;

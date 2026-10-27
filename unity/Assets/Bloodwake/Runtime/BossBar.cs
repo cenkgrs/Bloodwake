@@ -8,7 +8,7 @@ namespace Bloodwake
  public sealed partial class BloodwakeGame
  {
   RectTransform bossBarRoot;Image bossBarFill,bossBarTrail;Text bossBarName;float bossTrail=1,bossTrailHold;
-  const float BossBarX=330,BossBarY=118,BossBarWidth=940,BossFillInset=128,BossFillWidth=BossBarWidth-BossFillInset-52;
+  const float BossBarX=330,BossBarY=118,BossBarWidth=940,BossFillInset=34,BossFillWidth=BossBarWidth-BossFillInset-16;
   void UpdateBossBar()
   {
    var boss=Enemies.FirstOrDefault(e=>e.Id=="boss"&&e.Hp>0&&e.View&&!e.Emerging);

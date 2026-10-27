@@ -167,10 +167,7 @@
           0,
           9
         ],
-        "RewardPoint": [
-          -6,
-          -11
-        ],
+        "RewardPoint": [-6, -11],
         "EnemySpawn": [
           [
             -9,
@@ -653,10 +650,7 @@
           0,
           13
         ],
-        "RewardPoint": [
-          -5,
-          -12
-        ],
+        "RewardPoint": [-7.5, -15],
         "EnemySpawn": [
           [
             -14,

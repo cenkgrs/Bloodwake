@@ -13,7 +13,15 @@ namespace Bloodwake
    float minX=float.PositiveInfinity,maxX=float.NegativeInfinity,minZ=float.PositiveInfinity,maxZ=float.NegativeInfinity;
    foreach(int x in new[]{-1,1})foreach(int y in new[]{-1,1}){var p=cameraOffset+right*x*Cam.orthographicSize*Cam.aspect+up*y*Cam.orthographicSize;var g=p+forward*(-p.y/forward.y);minX=Mathf.Min(minX,g.x);maxX=Mathf.Max(maxX,g.x);minZ=Mathf.Min(minZ,g.z);maxZ=Mathf.Max(maxZ,g.z);}
    float left=-half.x-5-minX,rightEdge=half.x+5-maxX,bottom=-half.y-7-minZ,top=half.y+4-maxZ;
-   return new Vector3(left<=rightEdge?Mathf.Clamp(target.x,left,rightEdge):(left+rightEdge)/2,0,bottom<=top?Mathf.Clamp(target.z,bottom,top):(bottom+top)/2);
+   var focus=new Vector3(left<=rightEdge?Mathf.Clamp(target.x,left,rightEdge):(left+rightEdge)/2,0,bottom<=top?Mathf.Clamp(target.z,bottom,top):(bottom+top)/2);
+   // The room bounds only hold the view while the hunter stays well inside it; near a corner of the floor
+   // (the keep's floors reach its walls) the camera follows, keeping her inside the middle 70% of the screen.
+   var d=new Vector3(target.x-focus.x,0,target.z-focus.z);
+   float sx=Vector3.Dot(d,right),sy=Vector3.Dot(d,up),limitX=Cam.orthographicSize*Cam.aspect*.7f,limitY=Cam.orthographicSize*.62f;
+   if(Mathf.Abs(sx)>limitX)focus+=right*(sx-Mathf.Sign(sx)*limitX);
+   var ground=Vector3.ProjectOnPlane(up,Vector3.up);float perMetre=Vector3.Dot(ground.normalized,up);
+   if(Mathf.Abs(sy)>limitY&&perMetre>.01f)focus+=ground.normalized*((sy-Mathf.Sign(sy)*limitY)/perMetre);
+   focus.y=0;return focus;
   }
   Vector3 cameraRest;float shakeTrauma,shakeSeed;Vector3 shakeKick;
   // Trauma-based screen shake; it keeps running through hit stop so the freeze frame reads as an impact.

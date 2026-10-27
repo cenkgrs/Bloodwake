@@ -27,7 +27,7 @@ namespace Bloodwake
    var variant=GameData.Row("enemies",id);JObject data=variant;
    if(variant?["base"]!=null){data=(JObject)GameData.Row("enemies",variant.S("base")).DeepClone();foreach(var p in variant.Properties())data[p.Name]=p.Value.DeepClone();id=variant.S("base");}
    float n=Run.Wave-1,t=Run.Night-1;
-   float power=id=="boss"?(1+.65f*t+.2f*t*t)*BossVariant.N("hp",1):1+.25f*n+.035f*n*n;
+   float power=id=="boss"?(1+.15f*t+.05f*t*t)*BossVariant.N("hp",1):1+.25f*n+.035f*n*n;
    float height=id=="boss"?3.5f*BossVariant.N("scale",1):id=="tank"?2.3f:id=="commander"?2.225f:id=="grunt"?2.15f:1.8f;
    height*=data.N("scale",1);
    var view=ActorView.Create(id,true,height*CombatActorScale,actorRoot);

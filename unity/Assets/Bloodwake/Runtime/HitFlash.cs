@@ -29,6 +29,7 @@ namespace Bloodwake
   public void Restyle(Color tint,Color glow)
   {
    foreach(var s in surfaces){s.color=new Color(s.color.r*tint.r,s.color.g*tint.g,s.color.b*tint.b,s.color.a);s.emission=glow;s.material.SetColor(Base,s.color);s.material.SetColor(Emission,s.emission);}
+   Apply(0);
   }
   public void Pulse(bool player){playerPulse=player;duration=player?.09f:.15f;strength=player?.12f:.62f;remaining=duration;pulseFrame=Time.frameCount;Apply(strength);}
   // A hit late in a long frame must still be rendered once at its intended peak.

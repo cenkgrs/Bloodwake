@@ -77,6 +77,23 @@ namespace Bloodwake
      else{bad++;Debug.Log("BLOODWAKE_KEEP_NOPATH "+id+" from "+sp.ToString(Newtonsoft.Json.Formatting.None));}
     }
     Debug.Log("BLOODWAKE_KEEP_PATHS "+id+" ok="+ok+" bad="+bad);
+    // The camera must keep the hunter on screen in every corner of the floor.
+    if(keepWalk!=null&&room["keep"]!=null)
+    {
+     var far=new System.Collections.Generic.List<Vector3>();
+     foreach(var dir in new[]{new Vector3(1,0,1),new Vector3(1,0,-1),new Vector3(-1,0,1),new Vector3(-1,0,-1),Vector3.right,Vector3.left,Vector3.forward,Vector3.back})
+     {Vector3 best=Vector3.zero;float score=float.NegativeInfinity;for(int i=0;i<keepW;i++)for(int k=0;k<keepH;k++)if(keepWalk[i,k]){var c=KeepCellCentre(i,k);float d=Vector3.Dot(c,dir);if(d>score){score=d;best=c;}}far.Add(best);}
+     foreach(var c in far){Player.transform.position=c;PositionCamera(true);var v=Cam.WorldToViewportPoint(c+Vector3.up);if(v.x<.08f||v.x>.92f||v.y<.08f||v.y>.92f)Debug.Log("BLOODWAKE_KEEP_OFFSCREEN "+id+" at "+c+" viewport "+v);}
+     Player.transform.position=entry;
+    }
+    // The exit must be reachable on foot: a complete crowd-navmesh path from the entry to the gate's mouth.
+    if(room["doors"]?["exit"]!=null)
+    {
+     var exit=Point(room["doors"]["exit"]["at"]);var mouth=exit+(exit.z<0?Vector3.forward:Vector3.back)*.7f;var exitPath=new UnityEngine.AI.NavMeshPath();
+     bool reach=UnityEngine.AI.NavMesh.SamplePosition(entry,out var a1,1.5f,UnityEngine.AI.NavMesh.AllAreas)&&UnityEngine.AI.NavMesh.SamplePosition(mouth,out var b1,1f,UnityEngine.AI.NavMesh.AllAreas)
+      &&UnityEngine.AI.NavMesh.CalculatePath(a1.position,b1.position,UnityEngine.AI.NavMesh.AllAreas,exitPath)&&exitPath.status==UnityEngine.AI.NavMeshPathStatus.PathComplete&&Vector3.Distance(b1.position,mouth)<.6f;
+     Debug.Log("BLOODWAKE_KEEP_EXITREACH "+id+" "+(reach?"ok":"BLOCKED"));
+    }
     PositionCamera(true);yield return null;PositionCamera(true);SaveView("/tmp/bloodwake-keep-"+id+"-game.png");
     // The middle of the room through the game camera, where the fighting happens.
     Cam.transform.position=new Vector3(0,0,0)+cameraOffset;SaveView("/tmp/bloodwake-keep-"+id+"-middle.png");
@@ -90,6 +107,9 @@ namespace Bloodwake
      foreach(var e in Enemies){if(e.Agent)e.Agent.enabled=false;}
      for(int i=0;i<Enemies.Count;i++){Enemies[i].View.transform.position=at+dir*4.5f+side*(i-2.5f)*1.7f;Enemies[i].View.transform.rotation=Quaternion.LookRotation(-dir);}
      PositionCamera(true);Cam.transform.position+=dir*2.4f;SaveView("/tmp/bloodwake-keep-garrison.png");
+     // The same lineup after one hit each: the look must not change once the flash has faded.
+     foreach(var e in Enemies)e.View.HitFlash?.Pulse(false);
+     yield return new WaitForSecondsRealtime(.6f);SaveView("/tmp/bloodwake-keep-garrison-hit.png");
      foreach(var e in Enemies.ToArray())Destroy(e.View.gameObject);Enemies.Clear();
     }
     if(room.S("type")=="boss")
@@ -97,7 +117,11 @@ namespace Bloodwake
      SpawnEnemy("boss",Point(room["markers"]["BossSpawn"]));yield return new WaitForSeconds(2.6f);
      foreach(var e in Enemies)if(e.Agent)e.Agent.enabled=false;
      Cam.transform.position=Enemies[0].View.transform.position+cameraOffset;SaveView("/tmp/bloodwake-keep-warden.png");
-     Debug.Log("BLOODWAKE_KEEP warden="+BossVariant.S("name"));
+     Debug.Log("BLOODWAKE_KEEP warden="+BossVariant.S("name")+" hp="+Enemies[0].MaxHp);
+     // Cleared: the spoils glow; claimed: the exit glows.
+     foreach(var e in Enemies.ToArray())Destroy(e.View.gameObject);Enemies.Clear();roomClear=true;
+     yield return null;var reward=Point(room["markers"]["RewardPoint"]);Player.transform.position=reward+Vector3.forward*3;PositionCamera(true);yield return null;SaveView("/tmp/bloodwake-keep-spoils.png");
+     Run.Claimed.Add(Run.Night+":"+Run.RoomIndex);yield return null;Player.transform.position=Point(room["doors"]["exit"]["at"])+Vector3.forward*4;PositionCamera(true);yield return null;SaveView("/tmp/bloodwake-keep-exit.png");
     }
    }
    Debug.Log("BLOODWAKE_KEEP_DONE");
