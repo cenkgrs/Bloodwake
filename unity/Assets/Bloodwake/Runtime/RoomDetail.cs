@@ -497,7 +497,9 @@ namespace Bloodwake
   GameObject KBoxR(Transform root,string name,Vector3 at,Quaternion rotation,Vector3 size,Material material)
   {
    var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;Destroy(go.GetComponent<Collider>());go.transform.SetParent(root,false);go.transform.SetPositionAndRotation(at,rotation);go.transform.localScale=size;
-   go.GetComponent<Renderer>().sharedMaterial=material;return go;
+   go.GetComponent<Renderer>().sharedMaterial=material;
+   if(worldUv.Contains(material))go.GetComponent<MeshFilter>().sharedMesh=WorldUvCube(at,size,rotation);
+   return go;
   }
   static void EnsureDetailMaterials()
   {

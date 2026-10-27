@@ -25,6 +25,7 @@ namespace Bloodwake
   {
    // EnterRoom's grey boundary boxes stay as blockers but are not drawn.
    foreach(var r in roomRoot.GetComponentsInChildren<Renderer>())r.enabled=false;
+   keepScans=true;
    string style=room.S("keep","hall");keepRandom=new System.Random(room.S("id").GetHashCode());
    var root=new GameObject("Keep "+style).transform;root.SetParent(roomRoot,false);
    float hx=half.x,hz=half.y;
@@ -45,6 +46,7 @@ namespace Bloodwake
    KeepScatter(root,style);
    DetailKeep(root,style);
    KeepFill(root,style);
+   keepScans=false;
    // Every marker must stand on the floor; report any that the shape left inside the stone.
    foreach(var marker in (room["markers"] as JObject)?.Properties()??new List<JProperty>())
    {
@@ -333,11 +335,33 @@ namespace Bloodwake
   GameObject KBox(Transform root,string name,Vector3 at,Vector3 size,Material material,bool solid)
   {
    var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;Destroy(go.GetComponent<Collider>());go.transform.SetParent(root,false);go.transform.position=at;go.transform.localScale=size;
-   go.GetComponent<Renderer>().sharedMaterial=material;if(solid)blockers.Add(new Bounds(new Vector3(at.x,1,at.z),new Vector3(size.x,2,size.z)));return go;
+   go.GetComponent<Renderer>().sharedMaterial=material;if(solid)blockers.Add(new Bounds(new Vector3(at.x,1,at.z),new Vector3(size.x,2,size.z)));
+   if(worldUv.Contains(material))go.GetComponent<MeshFilter>().sharedMesh=WorldUvCube(at,size,Quaternion.identity);
+   return go;
+  }
+  // The scanned sets are laid in metres of world space, so stone courses run on unbroken from one block to the
+  // next and never stretch with a block's height.
+  static readonly HashSet<Material> worldUv=new();static Mesh cubeTemplate;
+  static Mesh WorldUvCube(Vector3 at,Vector3 size,Quaternion rotation)
+  {
+   if(!cubeTemplate){var c=GameObject.CreatePrimitive(PrimitiveType.Cube);cubeTemplate=c.GetComponent<MeshFilter>().sharedMesh;Destroy(c);}
+   var v=cubeTemplate.vertices;var n=cubeTemplate.normals;var uv=new Vector2[v.Length];
+   // Axis-aligned boxes take world coordinates; rotated ones their own scaled ones.
+   var origin=rotation==Quaternion.identity?at:Vector3.zero;
+   for(int i=0;i<v.Length;i++)
+   {
+    var w=origin+Vector3.Scale(v[i],size);var a=n[i];
+    uv[i]=Mathf.Abs(a.y)>.5f?new Vector2(w.x,w.z):Mathf.Abs(a.x)>.5f?new Vector2(w.z*-Mathf.Sign(a.x),w.y):new Vector2(w.x*Mathf.Sign(a.z),w.y);
+   }
+   var mesh=new Mesh{name="Keep world-uv box",vertices=v,normals=n,triangles=cubeTemplate.triangles,uv=uv};mesh.RecalculateTangents();mesh.RecalculateBounds();return mesh;
   }
   // Lit material over one of the room textures (albedo + normal), tinted and tiled; cached by its settings.
+  // While the keep is built, its stone, floor and wood use the scanned 4K sets (textures/keep, metres per tile).
+  static bool keepScans;
   static Material KMat(string texture,Color tint,Vector2 tiling)
   {
+   string scan=!keepScans?null:texture switch{"ashlar"=>"keepwall","flagstone"=>"keepfloor","wood"=>"keepwood","timber"=>"keepwood",_=>null};
+   if(scan!=null&&Resources.Load<Texture2D>("textures/keep/"+scan+"_albedo"))return ScanMat(scan,tint);
    string key=texture+tint+tiling;if(keepMaterials.TryGetValue(key,out var m)&&m)return m;
    m=new Material(Shader.Find("Universal Render Pipeline/Lit")){name="Keep "+texture};
    var albedo=Resources.Load<Texture2D>("textures/rooms/"+texture+"_albedo");var normal=Resources.Load<Texture2D>("textures/rooms/"+texture+"_normal");
@@ -345,6 +369,19 @@ namespace Bloodwake
    if(normal){m.SetTexture("_BumpMap",normal);m.SetTextureScale("_BumpMap",tiling);m.EnableKeyword("_NORMALMAP");}
    m.SetColor("_BaseColor",tint);m.SetFloat("_Smoothness",texture=="iron"?.35f:.18f);m.SetFloat("_Metallic",texture=="iron"?.3f:0);
    keepMaterials[key]=m;return m;
+  }
+  static Material ScanMat(string scan,Color tint)
+  {
+   string key="scan"+scan+tint;if(keepMaterials.TryGetValue(key,out var m)&&m)return m;
+   // The wall scan covers 4 x 2 m, the floor and the planks about 2.5 m square.
+   var metres=scan=="keepwall"?new Vector2(4,2):new Vector2(2.5f,2.5f);var scale=new Vector2(1/metres.x,1/metres.y);
+   m=new Material(Shader.Find("Universal Render Pipeline/Lit")){name="Keep scan "+scan};
+   foreach(var (prop,suffix) in new[]{("_BaseMap","_albedo"),("_BumpMap","_normal"),("_MetallicGlossMap","_mask")})
+   {var t=Resources.Load<Texture2D>("textures/keep/"+scan+suffix);if(!t)continue;m.SetTexture(prop,t);m.SetTextureScale(prop,scale);}
+   m.EnableKeyword("_NORMALMAP");m.EnableKeyword("_METALLICSPECGLOSSMAP");m.SetFloat("_Smoothness",1);m.SetFloat("_Metallic",1);m.SetFloat("_BumpScale",1.2f);
+   // Tints were set for the old flat textures; the scans carry their own tone, so keep only the hue and value.
+   m.SetColor("_BaseColor",Color.Lerp(Color.white,tint,.6f)*(scan=="keepwood"?1f:.85f));
+   keepMaterials[key]=m;worldUv.Add(m);return m;
   }
   // Additive pale-blue glow fading upward: window panes and the moon shafts on the floor.
   static Material ShaftMaterial()
