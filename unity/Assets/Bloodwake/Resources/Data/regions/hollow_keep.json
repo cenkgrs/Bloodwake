@@ -1,5 +1,5 @@
 {
-  "_doc": "The Hollow Keep (second map, 23 Oct 2026): a castle interior the run enters after the first Black Bell. Rooms carry keep: <style> and are built by Runtime/KeepInterior.cs; enemies are keep_* kinds that fight as their base kind (stats, tint and a spectral glow overridden) until their own models arrive; music and ambience ids fall back to the town's until delivered (see ASSET_REQUESTS.md).",
+  "_doc": "The Hollow Keep (second map, 23 Oct 2026): a castle interior the run enters after the first Black Bell. Rooms carry keep: <style> and are built by Runtime/KeepInterior.cs; enemies are keep_* kinds that fight as their base kind (stats, tint and a spectral glow overridden) until their own models arrive; music and ambience ids fall back to the town's until delivered (see ASSET_REQUESTS.md). Each keep room's walkable area is floor (rectangles [x0,z0,x1,z1], room coordinates like the markers) minus carve; everything else is solid stone.",
   "maps": [
     {
       "id": "hollow_keep",
@@ -164,90 +164,41 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          9.0
+          0,
+          9
         ],
         "RewardPoint": [
-          -4.800000000000001,
-          -10.8
+          -6,
+          -11
         ],
         "EnemySpawn": [
           [
-            -10.4,
-            -7.15
+            -9,
+            -10
           ],
           [
-            10.4,
-            -7.15
+            9,
+            -10
           ],
           [
-            -10.4,
-            0.65
+            -9,
+            -5
           ],
           [
-            10.4,
-            0.65
+            9,
+            -5
           ],
           [
-            -10.2,
-            7.8
+            -6,
+            9
           ],
           [
-            10.2,
-            7.8
+            6,
+            9
           ]
         ]
       },
-      "layout": [
-        {
-          "kind": "pillar",
-          "at": [
-            -5.0,
-            -3.0
-          ],
-          "size": [
-            1.2,
-            1.2
-          ],
-          "height": 4.5
-        },
-        {
-          "kind": "pillar",
-          "at": [
-            5.0,
-            -3.0
-          ],
-          "size": [
-            1.2,
-            1.2
-          ],
-          "height": 4.5
-        },
-        {
-          "kind": "pillar",
-          "at": [
-            -5.0,
-            4.5
-          ],
-          "size": [
-            1.2,
-            1.2
-          ],
-          "height": 4.5
-        },
-        {
-          "kind": "pillar",
-          "at": [
-            5.0,
-            4.5
-          ],
-          "size": [
-            1.2,
-            1.2
-          ],
-          "height": 4.5
-        }
-      ],
+      "layout": [],
       "encounter": {
         "waves": [
           [
@@ -257,7 +208,28 @@
         ],
         "perNight": [],
         "cap": 6
-      }
+      },
+      "floor": [
+        [
+          -8,
+          4,
+          8,
+          13
+        ],
+        [
+          -2.6,
+          -3,
+          2.6,
+          4
+        ],
+        [
+          -11,
+          -13,
+          11,
+          -3
+        ]
+      ],
+      "shape": "boğaz: güney avlu, 5 m'lik dar geçit, kuzey avlu"
     },
     {
       "id": "keep_armory_02",
@@ -291,78 +263,41 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          8.0
+          0,
+          8
         ],
         "RewardPoint": [
-          -5.6000000000000005,
-          -9.8
+          -10,
+          -9
         ],
         "EnemySpawn": [
           [
-            -12.4,
-            -6.6000000000000005
+            -10,
+            -8
           ],
           [
-            12.4,
-            -6.6000000000000005
+            10,
+            -8
           ],
           [
-            -12.4,
-            0.6000000000000001
+            -10.5,
+            0
           ],
           [
-            12.4,
-            0.6000000000000001
+            10.5,
+            0
           ],
           [
-            -12.2,
-            7.199999999999999
+            -10,
+            8
           ],
           [
-            12.2,
-            7.199999999999999
+            10,
+            8
           ]
         ]
       },
-      "layout": [
-        {
-          "kind": "rack_row",
-          "at": [
-            0.0,
-            -5.0
-          ],
-          "size": [
-            7.0,
-            1.0
-          ],
-          "height": 1.5
-        },
-        {
-          "kind": "anvil",
-          "at": [
-            -7.0,
-            3.0
-          ],
-          "size": [
-            1.4,
-            0.9
-          ],
-          "height": 0.9
-        },
-        {
-          "kind": "anvil",
-          "at": [
-            7.0,
-            3.0
-          ],
-          "size": [
-            1.4,
-            0.9
-          ],
-          "height": 0.9
-        }
-      ],
+      "layout": [],
       "encounter": {
         "waves": [
           [
@@ -372,7 +307,24 @@
         ],
         "perNight": [],
         "cap": 6
-      }
+      },
+      "floor": [
+        [
+          -13,
+          -11,
+          13,
+          11
+        ]
+      ],
+      "shape": "halka: ortada geçilmez cephane bloğu, etrafında 6 m'lik koridor",
+      "carve": [
+        [
+          -7,
+          -5,
+          7,
+          5
+        ]
+      ]
     },
     {
       "id": "keep_chapel_03",
@@ -406,78 +358,41 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          11.0
+          0,
+          11
         ],
         "RewardPoint": [
-          -5.2,
-          -12.8
+          -2.5,
+          -12
         ],
         "EnemySpawn": [
           [
-            -11.4,
-            -8.25
+            -11,
+            -4
           ],
           [
-            11.4,
-            -8.25
+            11,
+            -4
           ],
           [
-            -11.4,
-            0.75
+            -8,
+            -2
           ],
           [
-            11.4,
-            0.75
+            8,
+            -6
           ],
           [
-            -11.2,
-            9.0
+            -2,
+            6
           ],
           [
-            11.2,
-            9.0
+            2,
+            2
           ]
         ]
       },
-      "layout": [
-        {
-          "kind": "pews",
-          "at": [
-            -5.2,
-            1.5
-          ],
-          "size": [
-            6.0,
-            7.5
-          ],
-          "height": 0.9
-        },
-        {
-          "kind": "pews",
-          "at": [
-            5.2,
-            1.5
-          ],
-          "size": [
-            6.0,
-            7.5
-          ],
-          "height": 0.9
-        },
-        {
-          "kind": "altar",
-          "at": [
-            0.0,
-            -11.0
-          ],
-          "size": [
-            4.0,
-            1.6
-          ],
-          "height": 1.1
-        }
-      ],
+      "layout": [],
       "encounter": {
         "waves": [
           [
@@ -487,7 +402,22 @@
         ],
         "perNight": [],
         "cap": 6
-      }
+      },
+      "floor": [
+        [
+          -4,
+          -15,
+          4,
+          15
+        ],
+        [
+          -13,
+          -7,
+          13,
+          -1
+        ]
+      ],
+      "shape": "haç: uzun nef, iki yan kanat, kuzeyde apsis"
     },
     {
       "id": "keep_hall_04",
@@ -521,66 +451,41 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          9.0
+          0,
+          9
         ],
         "RewardPoint": [
-          -6.0,
-          -10.8
+          3,
+          -11
         ],
         "EnemySpawn": [
           [
-            -13.4,
-            -7.15
+            -12,
+            6
           ],
           [
-            13.4,
-            -7.15
+            -12,
+            10
           ],
           [
-            -13.4,
-            0.65
+            -8,
+            8
           ],
           [
-            13.4,
-            0.65
+            4,
+            -10
           ],
           [
-            -13.2,
-            7.8
+            0,
+            -10
           ],
           [
-            13.2,
-            7.8
+            4,
+            -3
           ]
         ]
       },
-      "layout": [
-        {
-          "kind": "table",
-          "at": [
-            -6.5,
-            0.0
-          ],
-          "size": [
-            2.0,
-            11.0
-          ],
-          "height": 0.85
-        },
-        {
-          "kind": "table",
-          "at": [
-            6.5,
-            0.0
-          ],
-          "size": [
-            2.0,
-            11.0
-          ],
-          "height": 0.85
-        }
-      ],
+      "layout": [],
       "encounter": {
         "waves": [
           [
@@ -590,7 +495,22 @@
         ],
         "perNight": [],
         "cap": 6
-      }
+      },
+      "floor": [
+        [
+          -2,
+          -13,
+          6,
+          13
+        ],
+        [
+          -14,
+          3,
+          6,
+          13
+        ]
+      ],
+      "shape": "L: kuzey-güney salon, güneyde batıya açılan kanat (pusu)"
     },
     {
       "id": "keep_cells_05",
@@ -624,66 +544,41 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          9.0
+          0,
+          10
         ],
         "RewardPoint": [
-          -5.6000000000000005,
-          -10.8
+          -8,
+          -11
         ],
         "EnemySpawn": [
           [
-            -12.4,
-            -7.15
+            -8,
+            -10
           ],
           [
-            12.4,
-            -7.15
+            8,
+            -10
           ],
           [
-            -12.4,
-            0.65
+            0,
+            -7
           ],
           [
-            12.4,
-            0.65
+            -6.5,
+            0
           ],
           [
-            -12.2,
-            7.8
+            6.5,
+            0
           ],
           [
-            12.2,
-            7.8
+            -6,
+            8
           ]
         ]
       },
-      "layout": [
-        {
-          "kind": "cellblock",
-          "at": [
-            -10.0,
-            -2.0
-          ],
-          "size": [
-            6.0,
-            14.0
-          ],
-          "height": 3.0
-        },
-        {
-          "kind": "cellblock",
-          "at": [
-            10.0,
-            -2.0
-          ],
-          "size": [
-            6.0,
-            14.0
-          ],
-          "height": 3.0
-        }
-      ],
+      "layout": [],
       "encounter": {
         "waves": [
           [
@@ -693,7 +588,34 @@
         ],
         "perNight": [],
         "cap": 6
-      }
+      },
+      "floor": [
+        [
+          -8,
+          5,
+          8,
+          13
+        ],
+        [
+          -10,
+          -13,
+          10,
+          -4
+        ],
+        [
+          -8,
+          -4,
+          -5,
+          5
+        ],
+        [
+          5,
+          -4,
+          8,
+          5
+        ]
+      ],
+      "shape": "iki avlu, aralarında iki dar koridor, ortada hücre bloğu"
     },
     {
       "id": "keep_throne_01",
@@ -728,54 +650,41 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          13.0
+          0,
+          13
         ],
         "RewardPoint": [
-          -5.0,
-          -12.0
+          -5,
+          -12
         ],
         "EnemySpawn": [
           [
-            -15.4,
-            -4.9
+            -14,
+            -5
           ],
           [
-            15.4,
-            -4.9
+            14,
+            -5
           ],
           [
-            -15.4,
-            6.3
+            -14,
+            4
           ],
           [
-            15.4,
-            6.3
+            14,
+            4
           ]
         ],
         "BossArenaCenter": [
-          0.0,
-          0.0
+          0,
+          0
         ],
         "BossSpawn": [
-          0.0,
-          -5.0
+          0,
+          -5
         ]
       },
-      "layout": [
-        {
-          "kind": "dais",
-          "at": [
-            0.0,
-            -13.5
-          ],
-          "size": [
-            10.0,
-            4.0
-          ],
-          "height": 0.6
-        }
-      ],
+      "layout": [],
       "encounter": {
         "waves": [
           [
@@ -784,7 +693,90 @@
         ],
         "perNight": [],
         "cap": 1
-      }
+      },
+      "floor": [
+        [
+          -10,
+          -17,
+          10,
+          17
+        ],
+        [
+          -17,
+          -12,
+          -10,
+          8
+        ],
+        [
+          10,
+          -12,
+          17,
+          8
+        ]
+      ],
+      "shape": "sütunlu: geniş salon, iki yanda sütunlarla ayrılmış galeriler",
+      "carve": [
+        [
+          -10.6,
+          -10,
+          -9.4,
+          -8.8
+        ],
+        [
+          -10.6,
+          -6,
+          -9.4,
+          -4.8
+        ],
+        [
+          -10.6,
+          -2,
+          -9.4,
+          -0.8
+        ],
+        [
+          -10.6,
+          2,
+          -9.4,
+          3.2
+        ],
+        [
+          -10.6,
+          6,
+          -9.4,
+          7.2
+        ],
+        [
+          9.4,
+          -10,
+          10.6,
+          -8.8
+        ],
+        [
+          9.4,
+          -6,
+          10.6,
+          -4.8
+        ],
+        [
+          9.4,
+          -2,
+          10.6,
+          -0.8
+        ],
+        [
+          9.4,
+          2,
+          10.6,
+          3.2
+        ],
+        [
+          9.4,
+          6,
+          10.6,
+          7.2
+        ]
+      ]
     },
     {
       "id": "keep_undercroft",
@@ -818,28 +810,15 @@
       },
       "markers": {
         "EntrySpawn": [
-          0.0,
-          3.0
+          0,
+          3
         ],
         "RewardPoint": [
-          0.0,
+          0,
           -2.4
         ]
       },
-      "layout": [
-        {
-          "kind": "stall",
-          "at": [
-            0.0,
-            -3.8
-          ],
-          "size": [
-            3.6,
-            1.4
-          ],
-          "height": 1.1
-        }
-      ],
+      "layout": [],
       "hosts": [
         {
           "role": "merchant",
@@ -852,6 +831,41 @@
           "model": "commander",
           "tint": "8a93a8"
         }
+      ],
+      "floor": [
+        [
+          -9,
+          -7,
+          9,
+          7
+        ]
+      ],
+      "shape": "mahzen",
+      "carve": [
+        [
+          -5,
+          -2.5,
+          -4,
+          -1.5
+        ],
+        [
+          4,
+          -2.5,
+          5,
+          -1.5
+        ],
+        [
+          -5,
+          2.5,
+          -4,
+          3.5
+        ],
+        [
+          4,
+          2.5,
+          5,
+          3.5
+        ]
       ]
     }
   ],

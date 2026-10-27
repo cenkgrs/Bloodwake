@@ -67,6 +67,15 @@ namespace Bloodwake
     Run.RoomIndex=Run.Plan.IndexOf(id);EnterRoom(id);spawnTimer=999;
     yield return new WaitForSeconds(1.2f);
     Debug.Log("BLOODWAKE_KEEP room="+id+" blockers="+blockers.Count+" lights="+roomRoot.GetComponentsInChildren<Light>().Length+" renderers="+roomRoot.GetComponentsInChildren<Renderer>().Length);
+    // Every enemy spawn must have a walkable path to the hunter on the crowd navmesh.
+    var entry=Player.transform.position;int ok=0,bad=0;var path=new UnityEngine.AI.NavMeshPath();
+    foreach(var sp in (room["markers"]["EnemySpawn"] as Newtonsoft.Json.Linq.JArray)??new Newtonsoft.Json.Linq.JArray())
+    {
+     var from=Point(sp);
+     if(UnityEngine.AI.NavMesh.SamplePosition(from,out var a,1.5f,UnityEngine.AI.NavMesh.AllAreas)&&UnityEngine.AI.NavMesh.SamplePosition(entry,out var b,1.5f,UnityEngine.AI.NavMesh.AllAreas)&&UnityEngine.AI.NavMesh.CalculatePath(a.position,b.position,UnityEngine.AI.NavMesh.AllAreas,path)&&path.status==UnityEngine.AI.NavMeshPathStatus.PathComplete)ok++;
+     else{bad++;Debug.Log("BLOODWAKE_KEEP_NOPATH "+id+" from "+sp.ToString(Newtonsoft.Json.Formatting.None));}
+    }
+    Debug.Log("BLOODWAKE_KEEP_PATHS "+id+" ok="+ok+" bad="+bad);
     PositionCamera(true);yield return null;PositionCamera(true);SaveView("/tmp/bloodwake-keep-"+id+"-game.png");
     float size=Cam.orthographicSize;Cam.orthographicSize=Mathf.Max(half.x,half.y)*.95f;Cam.transform.position=new Vector3(0,0,-1.5f)+cameraOffset;SaveView("/tmp/bloodwake-keep-"+id+"-overview.png");Cam.orthographicSize=size;
     if(id==Run.Plan[0])
