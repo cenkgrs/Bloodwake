@@ -38,7 +38,12 @@ namespace Bloodwake.Editor
     material.SetColor("_BaseColor",Color.white);material.SetFloat("_Metallic",1);material.SetFloat("_Smoothness",1);material.SetFloat("_BumpScale",1);material.EnableKeyword("_NORMALMAP");material.EnableKeyword("_METALLICSPECGLOSSMAP");EditorUtility.SetDirty(material);
     var prefab=new GameObject(id);var model=Object.Instantiate(source,prefab.transform);var renderers=model.GetComponentsInChildren<Renderer>();var bounds=renderers[0].bounds;foreach(var renderer in renderers){bounds.Encapsulate(renderer.bounds);renderer.sharedMaterials=Enumerable.Repeat(material,renderer.sharedMaterials.Length).ToArray();}
     float height=id switch{"house_haunted"=>8f,"house"=>7f,"building"=>7f,"gate"=>3.5f,"wall"=>2.4f,"brazier"=>1.3f,"barrel"=>.95f,"lantern"=>.55f,"cloth"=>.65f,"well"=>3.35f,
-     "cart"=>1.4f,"sacks"=>.75f,"hay_bale"=>.8f,"weapon_rack"=>1.7f,"rubble"=>.55f,"coffin"=>.65f,"cage"=>1.9f,"shrine_statue"=>2.6f,"candles"=>.45f,"bones"=>.25f,"banner_pole"=>3.2f,"firewood"=>.7f,_=>1};float scale=height/Mathf.Max(.001f,bounds.size.y);model.transform.localScale*=scale;model.transform.localPosition=-new Vector3(bounds.center.x,bounds.min.y,bounds.center.z)*scale;
+     "cart"=>1.4f,"sacks"=>.75f,"hay_bale"=>.8f,"weapon_rack"=>1.7f,"rubble"=>.55f,"coffin"=>.65f,"cage"=>1.9f,"shrine_statue"=>2.6f,"candles"=>.45f,"bones"=>.25f,"banner_pole"=>3.2f,"firewood"=>.7f,
+     // The Hollow Keep kit (heights as requested; KeepInterior fits width and depth to the grid).
+     "keep_wall"=>4.5f,"keep_wall_window"=>4.5f,"keep_parapet"=>1.6f,"keep_pillar"=>4.5f,"keep_pilaster"=>4.5f,"keep_arch_door"=>5f,"keep_portcullis"=>4f,
+     "keep_throne"=>3.5f,"keep_altar"=>1.2f,"keep_pew"=>1.1f,"keep_candelabrum"=>2f,"keep_chandelier"=>1f,"keep_long_table"=>.9f,"keep_chair"=>1.1f,
+     "keep_armor_stand"=>2f,"keep_training_dummy"=>1.9f,"keep_anvil"=>.9f,"keep_cell_bars"=>2.6f,"keep_torture_rack"=>1f,"keep_stocks"=>1.2f,
+     "keep_torch_sconce"=>.7f,"keep_banner"=>3f,"keep_fallen_column"=>1f,_=>1};float scale=height/Mathf.Max(.001f,bounds.size.y);model.transform.localScale*=scale;model.transform.localPosition=-new Vector3(bounds.center.x,bounds.min.y,bounds.center.z)*scale;
     PrefabUtility.SaveAsPrefabAsset(prefab,folder+"/"+id+".prefab");Debug.Log("USER_ENV_IMPORTED "+id+" meshes "+renderers.Length+" raw bounds "+bounds.size+" scale "+scale);Object.DestroyImmediate(prefab);
    }
    AssetDatabase.SaveAssets();Debug.Log("BLOODWAKE_USER_ENVIRONMENT_IMPORTED "+ids.Length);

@@ -201,17 +201,55 @@ Kale haritası şu an oynanabilir durumda ama geçici malzemeyle: duvarlar, süt
 | `music_keep_boss.wav` | Kale bossu: ağır davul, organ, koro, döngü |
 | `music_undercroft.wav` | Sakin ama tedirgin tüccar müziği, tek çello ve harp, döngü |
 
-### 3D (Tripo, 4K PBR, FBX) → `unity/Assets/Bloodwake/Resources/Environment/Kit01/<id>/`
-| id | İstek |
-|---|---|
-| `keep_wall` | Gotik kale iç duvarı, iri kesme taş, 3 m genişlik 4.5 m yükseklik, alt kısmı kaide |
-| `keep_window` | Sivri kemerli dar pencere çerçevesi (taş), cam yok |
-| `keep_pillar` | Gotik taş sütun, kaide ve başlık ile, 4.5 m |
-| `keep_throne` | Demir ve taştan yüksek sırtlı taht |
-| `keep_banner` | Duvar sancağı, yırtık koyu kırmızı kumaş, demir çubuk |
-| `keep_chandelier` | Demir halka avize, mumlarla |
-| `keep_pew` | Kilise sırası, eski ahşap |
-| `keep_cell_bars` | Zindan hücre parmaklığı kapısıyla |
+### 3D — kale kiti (Tripo, 4K PBR, FBX) → `art/environment-incoming/<id>.zip`
+
+**27 Ekim güncellemesi.** Kale şu an kutu geometri. Kasabayla arasındaki kalite farkını kapatmak için aşağıdaki parçalar lazım.
+Kasaba eşyalarında yaptığın gibi: önce konsept görseli üret (tek obje, düz gri arka plan, 3/4 açı, sahne yok), sonra Tripo'da 4K PBR FBX al, zip'i `<id>.zip` adıyla bırak.
+İçe aktarma, ölçek ve odalara yerleştirme benden.
+
+**Ölçüler önemli:** kale 1 m'lik ızgaraya kurulu. Duvar parçaları birbirine eklenerek dizilecek, o yüzden **yan kenarları düz ve kesik** olmalı (köşe süsü, kule, uçta kemer yok). Arka yüzü görünmüyor, düz olabilir.
+
+Tüm konsept görsellerine şu stil cümlesini ekle:
+`dark gothic medieval castle interior, weathered cold grey ashlar stone, iron fittings, dark fantasy ARPG asset, single object, plain grey background, 3/4 view, PBR`
+
+#### Öncelik 1 — yapı (en büyük fark bunlardan gelir)
+| id | Ölçü (G×Y×D) | Konsept isteği |
+|---|---|---|
+| `keep_wall` | 2 × 4.5 × 0.7 m | Straight castle interior wall section, large cut ashlar blocks, moulded stone plinth at the base, plain flat cut sides so sections tile side by side |
+| `keep_wall_window` | 2 × 4.5 × 0.7 m | Same wall section with one tall narrow pointed-arch window opening in the middle, deep stone reveal, no glass |
+| `keep_parapet` | 2 × 1.6 × 0.7 m | Low crenellated stone parapet wall section, two merlons on top, worn edges, flat cut sides to tile |
+| `keep_pillar` | 1 × 4.5 × 1 m | Gothic stone column, square base, octagonal shaft, carved capital |
+| `keep_pilaster` | 0.8 × 4.5 × 0.4 m | Half-column pilaster to stand against a wall, base and capital, flat back |
+| `keep_arch_door` | 5 × 5 × 1 m | Pointed stone archway doorframe, heavy voussoirs, empty opening (gate sits inside) |
+| `keep_portcullis` | 4.5 × 4 × 0.2 m | Iron portcullis grid, spiked bottom, rusty |
+
+#### Öncelik 2 — odalara kimlik veren eşyalar
+| id | Ölçü | Konsept isteği | Oda |
+|---|---|---|---|
+| `keep_throne` | 2 × 3.5 × 1.5 m | Tall-backed iron and stone throne, spikes on the back, cracked | Taht |
+| `keep_altar` | 3 × 1.2 × 1.4 m | Stone altar block with carved front panel, cloth runner | Şapel |
+| `keep_pew` | 2.2 × 1.1 × 0.6 m | Old wooden church pew, high back | Şapel |
+| `keep_candelabrum` | 0.6 × 2 × 0.6 m | Tall standing iron candelabrum, three candles, melted wax | Şapel, taht |
+| `keep_chandelier` | 2 × 1 × 2 m | Iron ring chandelier with candles, hanging chains | Salon |
+| `keep_long_table` | 1.6 × 0.9 × 6 m | Long rough feast table, heavy legs, plates and goblets on it | Salon |
+| `keep_chair` | 0.5 × 1.1 × 0.5 m | Heavy wooden high-back chair | Salon |
+| `keep_armor_stand` | 0.8 × 2 × 0.6 m | Full suit of dark plate armour on a wooden stand, helm, halberd beside | Cephanelik, taht |
+| `keep_training_dummy` | 1.2 × 1.9 × 0.5 m | Straw-stuffed sack training dummy on a post, cross arm | Cephanelik |
+| `keep_anvil` | 1.2 × 0.9 × 0.6 m | Blacksmith anvil on a tree stump, hammer on it | Cephanelik |
+| `keep_cell_bars` | 2.4 × 2.6 × 0.2 m | Iron prison cell bars with a barred door | Zindan |
+| `keep_torture_rack` | 2.4 × 1 × 1 m | Medieval wooden torture rack with rollers and chains | Zindan |
+| `keep_stocks` | 1.8 × 1.2 × 0.4 m | Wooden pillory stocks, three holes | Zindan |
+| `keep_torch_sconce` | 0.3 × 0.7 × 0.4 m | Iron wall bracket holding an unlit torch (alevi ben eklerim) | Her oda |
+| `keep_banner` | 1 × 3 × 0.1 m | Long torn dark red hanging banner on an iron rod, faded crest | Her oda |
+| `keep_fallen_column` | 3.5 × 1 × 1 m | Broken gothic column lying on its side in drums, rubble | Şapel, taht |
+
+#### Öncelik 3 — zemin ve duvar dokusu
+Tripo değil, dokular: kale zemini ve duvarı için tekrarlanabilir (tileable) 4K PBR set.
+Albedo, normal ve roughness gerekli, mümkünse AO da.
+- `keep_floor`: büyük aşınmış taş döşeme
+- `keep_ashlar`: soğuk gri kesme taş duvar
+
+Ücretsiz CC0 kaynaklar (ambientCG, Poly Haven) yeterli; istersen ben indiririm, onay vermen yeterli.
 
 ### Düşman modelleri (Tripo + Mixamo, isteğe bağlı)
 Şimdilik var olan modellerin renklendirilmiş halleri kullanılıyor. Kendine özgü görünsün istersen: Hollow Halberdier (teberli zırhlı iskelet muhafız), Hollow Knight (ağır plaka zırhlı şövalye), Garrison Crossbow, Watch Wraith (yarı saydam hayalet), Black Chaplain (cüppeli rahip), ve boss Ser Caldren (kırık taçlı dev şövalye).

@@ -95,7 +95,7 @@ namespace Bloodwake
    }
    var look=new Vector3(-cameraOffset.x,0,-cameraOffset.z).normalized;
    var stone=KMat("ashlar",new Color(.85f,.85f,.9f),new Vector2(.5f,1.6f));var parapet=KMat("ashlar",new Color(.7f,.7f,.76f),new Vector2(.5f,.5f));var cap=KMat("slate",new Color(.4f,.41f,.46f),Vector2.one);var roof=KMat("slate",new Color(.5f,.5f,.56f),new Vector2(1,1));
-   int faces=0;
+   int faces=0;var tallFaces=new List<(Vector3,Vector3,bool)>();var lowFaces=new List<(Vector3,Vector3,bool)>();
    for(int i=0;i<keepW;i++)for(int k=0;k<keepH;k++)
    {
     if(keepWalk[i,k])continue;var c=KeepCellCentre(i,k);if(KeepDoorGap(c))continue;
@@ -111,25 +111,30 @@ namespace Bloodwake
     }
     KBox(root,h>=KeepTall-.01f?"Keep wall":"Keep parapet",c+Vector3.up*h*.5f,new Vector3(KeepCell,h,KeepCell),h>2?stone:parapet,false);
     KBox(root,"Keep wall cap",c+Vector3.up*(h+.06f),new Vector3(KeepCell+.06f,.12f,KeepCell+.06f),cap,false);
+    if(h<=KeepLow+.01f)foreach(var n in new[]{Vector3.forward,Vector3.left,Vector3.back,Vector3.right})if(KeepWalkable(c+n*KeepCell))lowFaces.Add((c+n*KeepCell*.5f,n,false));
     // Visible faces of the full-height stone (floor on the camera's side of it) carry the windows and banners.
     if(h<KeepTall-.01f)continue;
     foreach(var n in new[]{Vector3.forward,Vector3.left})
     {
      if(!KeepWalkable(c+n*KeepCell))continue;faces++;
-     var face=c+n*KeepCell*.5f;
+     var face=c+n*KeepCell*.5f;tallFaces.Add((face,n,faces%5==2));
      if(faces%5==2)KeepWindow(root,face,n);
      else if(faces%9==6)KeepBanner(root,face,n,keepRandom.NextDouble()<.6?new Color(.38f,.06f,.07f):new Color(.12f,.13f,.19f));
     }
    }
+   // Delivered wall and parapet sections go in front of the stone.
+   KeepWallRuns(root,tallFaces,"keep_wall","keep_wall_window",KeepTall+.1f);
+   KeepWallRuns(root,lowFaces,"keep_parapet",null,KeepLow+.25f);
   }
   // A pointed window on a wall face: a dark frame, a pale glowing pane and arch, a cold light just inside and a
   // shaft of moonlight laid across the floor in front of it.
   void KeepWindow(Transform root,Vector3 at,Vector3 inward)
   {
    bool alongZ=Mathf.Abs(inward.x)>.5f;float sill=1.6f,height=2.1f,width=.75f;
-   KBox(root,"Keep window frame",at+inward*.02f+Vector3.up*(sill+height*.5f),Size(alongZ,width+.3f,height+.25f,.08f),KMat("slate",new Color(.2f,.21f,.25f),Vector2.one),false);
-   Glass(root,"Keep window pane",at+inward*.07f+Vector3.up*(sill+height*.5f),Quaternion.LookRotation(-inward),new Vector3(width,height,1));
-   Glass(root,"Keep window arch",at+inward*.07f+Vector3.up*(sill+height+.18f),Quaternion.LookRotation(-inward)*Quaternion.Euler(0,0,45),Vector3.one*width*.7f);
+   bool model=HasKit("keep_wall_window");
+   if(!model)KBox(root,"Keep window frame",at+inward*.02f+Vector3.up*(sill+height*.5f),Size(alongZ,width+.3f,height+.25f,.08f),KMat("slate",new Color(.2f,.21f,.25f),Vector2.one),false);
+   if(!model)Glass(root,"Keep window pane",at+inward*.07f+Vector3.up*(sill+height*.5f),Quaternion.LookRotation(-inward),new Vector3(width,height,1));
+   if(!model)Glass(root,"Keep window arch",at+inward*.07f+Vector3.up*(sill+height+.18f),Quaternion.LookRotation(-inward)*Quaternion.Euler(0,0,45),Vector3.one*width*.7f);
    var floorAt=new Vector3(at.x,0,at.z)+inward*2.2f;
    if(KeepWalkable(floorAt))Glass(root,"Keep moon shaft",floorAt+Vector3.up*.03f,Quaternion.LookRotation(Vector3.down,inward),new Vector3(width*1.5f,3.8f,1));
    var light=new GameObject("Keep cold window light").AddComponent<Light>();light.transform.SetParent(root,false);light.transform.position=at+inward*1.2f+Vector3.up*2.2f;
@@ -143,6 +148,7 @@ namespace Bloodwake
   // A long cloth banner hanging on a wall face from an iron rod, with a pointed tail.
   void KeepBanner(Transform root,Vector3 at,Vector3 inward,Color color)
   {
+   if(KeepModel(root,"keep_banner",at+inward*.06f+Vector3.up*(KeepTall-.3f-3),Yaw(inward)))return;
    bool alongZ=Mathf.Abs(inward.x)>.5f;var cloth=KMat("cloth",color,new Vector2(1,2));var p=at+inward*.05f;float length=2.6f;
    KBox(root,"Keep banner",p+Vector3.up*(KeepTall-.5f-length*.5f),Size(alongZ,.8f,length,.04f),cloth,false);
    KBox(root,"Keep banner rod",p+Vector3.up*(KeepTall-.45f),Size(alongZ,1.05f,.06f,.06f),KMat("iron",new Color(.3f,.3f,.32f),Vector2.one),false);
@@ -156,6 +162,7 @@ namespace Bloodwake
    if(portcullis)
    {
     var iron=KMat("iron",new Color(.35f,.36f,.4f),Vector2.one);var bars=new GameObject("Keep portcullis").transform;bars.SetParent(root,false);bars.position=at;
+    if(KeepModel(bars,"keep_portcullis",at,0,new Vector3(4.4f,3.9f,.2f))){bars.gameObject.AddComponent<KeepPortcullis>().Game=this;return;}
     for(float x=-2;x<=2.01f;x+=.4f)KBox(bars,"Keep portcullis bar",at+new Vector3(x,1.9f,0),new Vector3(.09f,3.8f,.09f),iron,false);
     for(float y=.5f;y<3.8f;y+=.7f)KBox(bars,"Keep portcullis rail",at+new Vector3(0,y,0),new Vector3(4.2f,.08f,.08f),iron,false);
     bars.gameObject.AddComponent<KeepPortcullis>().Game=this;
@@ -184,7 +191,7 @@ namespace Bloodwake
    var iron=KMat("iron",new Color(.3f,.3f,.33f),Vector2.one);
    foreach(int side in new[]{-1,1})
    {
-    var a=J(side*10.5f,-8.5f);KBox(root,"Keep anvil",a+Vector3.up*.45f,new Vector3(1.2f,.9f,.6f),iron,true);KeepBrazier(root,a+J(side*-1.6f,-1.2f));
+    var a=J(side*10.5f,-8.5f);if(KeepModel(root,"keep_anvil",a,90)!=null)blockers.Add(new Bounds(a+Vector3.up,new Vector3(1.2f,2,.8f)));else KBox(root,"Keep anvil",a+Vector3.up*.45f,new Vector3(1.2f,.9f,.6f),iron,true);KeepBrazier(root,a+J(side*-1.6f,-1.2f));
     KeepPiece(root,"crate",J(side*11.8f,4),new Vector3(.95f,.95f,.95f),KR(0,60),true);KeepPiece(root,"barrel",J(side*11.6f,5.6f),new Vector3(.7f,.95f,.7f),0,true);
     KeepBrazier(root,J(side*10,9.5f));
    }
@@ -196,11 +203,13 @@ namespace Bloodwake
    foreach(int side in new[]{-1,1})for(float z=1.5f;z<=12.01f;z+=1.5f)
    {
     var p=J(side*2.6f,z);if(!KeepWalkable(p))continue;
+    if(KeepModel(root,"keep_pew",p,180)){blockers.Add(new Bounds(p+Vector3.up,new Vector3(2.2f,2,.6f)));continue;}
     KBox(root,"Keep pew seat",p+Vector3.up*.45f,new Vector3(2.2f,.12f,.5f),wood,true);KBox(root,"Keep pew back",p+new Vector3(0,.75f,.28f),new Vector3(2.2f,.7f,.08f),wood,false);
    }
    var stone=KMat("ashlar",new Color(.62f,.62f,.68f),Vector2.one);
-   KBox(root,"Keep altar",J(0,-12)+Vector3.up*.55f,new Vector3(3.2f,1.1f,1.4f),stone,true);
-   KBox(root,"Keep altar cloth",J(0,-12)+Vector3.up*1.12f,new Vector3(3.4f,.04f,1f),KMat("cloth",new Color(.6f,.58f,.5f),Vector2.one),false);
+   if(KeepModel(root,"keep_altar",J(0,-12),0)!=null)blockers.Add(new Bounds(J(0,-12)+Vector3.up,new Vector3(3.2f,2,1.4f)));
+   else{KBox(root,"Keep altar",J(0,-12)+Vector3.up*.55f,new Vector3(3.2f,1.1f,1.4f),stone,true);
+   KBox(root,"Keep altar cloth",J(0,-12)+Vector3.up*1.12f,new Vector3(3.4f,.04f,1f),KMat("cloth",new Color(.6f,.58f,.5f),Vector2.one),false);}
    KeepPiece(root,"shrine_statue",J(0,-14.2f),new Vector3(1f,2.8f,1f),0,true);
    foreach(int side in new[]{-1,1}){KeepPiece(root,"candles",J(side*1.2f,-12)+Vector3.up*1.12f,new Vector3(.6f,.42f,.52f),0,false);Lamp(root,"Lantern light",J(side*1.2f,-12)+Vector3.up*1.6f);}
    foreach(var p in new[]{J(-12,-6.2f),J(12,-6.2f),J(-12,-1.8f),J(12,-1.8f)})KeepPiece(root,"candles",p,new Vector3(.6f,.42f,.52f),KR(0,90),false);
@@ -232,6 +241,7 @@ namespace Bloodwake
    foreach(int side in new[]{-1,1})for(float z=-3;z<=4.01f;z+=2.4f)
    {
     var front=J(side*5,z);
+    if(KeepModel(root,"keep_cell_bars",front,Yaw(J(side,0)),new Vector3(2.2f,2.6f,.2f)))continue;
     for(float b=-1;b<=1.01f;b+=.33f)KBox(root,"Keep cell bar",front+new Vector3(0,1.25f,b),new Vector3(.06f,2.5f,.06f),iron,false);
     KBox(root,"Keep cell rail",front+new Vector3(0,2.45f,0),new Vector3(.1f,.1f,2.2f),iron,false);
    }
@@ -248,9 +258,10 @@ namespace Bloodwake
    KBox(root,"Keep carpet",J(0,2)+Vector3.up*.012f,new Vector3(3.4f,.02f,26),cloth,false);
    // Stepped dais: three rises to the throne.
    for(int step=0;step<3;step++)KBox(root,"Keep dais",J(0,-15.5f+step*.0f)+new Vector3(0,.15f+step*.15f,1.4f-step*.9f),new Vector3(12-step*3,.3f+step*.3f,3-step*.6f),stone,step==2);
+   if(KeepModel(root,"keep_throne",J(0,-15.9f)+Vector3.up*.9f,0)!=null)blockers.Add(new Bounds(J(0,-15.6f)+Vector3.up,new Vector3(2,2,1.4f)));else{
    KBox(root,"Keep throne seat",J(0,-15.6f)+Vector3.up*1.2f,new Vector3(1.8f,.9f,1.2f),stone,true);
    KBox(root,"Keep throne back",J(0,-16.3f)+Vector3.up*2.6f,new Vector3(2,3.2f,.4f),iron,false);
-   foreach(int side in new[]{-1,1})KBox(root,"Keep throne spire",J(side*1.1f,-16.3f)+Vector3.up*3.7f,new Vector3(.25f,1.6f,.25f),iron,false);
+   foreach(int side in new[]{-1,1})KBox(root,"Keep throne spire",J(side*1.1f,-16.3f)+Vector3.up*3.7f,new Vector3(.25f,1.6f,.25f),iron,false);}
    // The colonnade carved between hall and galleries: dress each stone pillar with base and capital.
    foreach(int side in new[]{-1,1})foreach(float z in new[]{-9.4f,-5.4f,-1.4f,2.6f,6.6f}){var p=J(side*10,z);KeepPillar(root,p,KeepTall,false);}
    foreach(int side in new[]{-1,1})foreach(float z in new[]{-7.5f,.5f}){KeepBrazier(root,J(side*13.5f,z));}
@@ -299,16 +310,18 @@ namespace Bloodwake
   // A stone column: free-standing (a blocker of its own) or dressing a carved pillar of stone.
   void KeepPillar(Transform root,Vector3 at,float height,bool solid)
   {
+   if(solid)blockers.Add(new Bounds(at+Vector3.up,new Vector3(1.2f,2,1.2f)));
+   if(KeepModel(root,"keep_pillar",at,0,new Vector3(1.2f,height,1.2f)))return;
    var stone=KMat("ashlar",new Color(.6f,.6f,.66f),new Vector2(.6f,2));var dark=KMat("slate",new Color(.28f,.28f,.32f),Vector2.one);
    KBox(root,"Keep pillar",at+Vector3.up*height*.5f,new Vector3(.95f,height,.95f),stone,false);
    KBox(root,"Keep pillar base",at+Vector3.up*.2f,new Vector3(1.3f,.4f,1.3f),dark,false);
    KBox(root,"Keep pillar capital",at+Vector3.up*(height-.15f),new Vector3(1.25f,.3f,1.25f),dark,false);
-   if(solid)blockers.Add(new Bounds(at+Vector3.up,new Vector3(1.2f,2,1.2f)));
   }
   void KeepBrazier(Transform root,Vector3 at){if(KeepPiece(root,"brazier",at,new Vector3(.6f,1.2f,.6f),0,true))Lamp(root,"Brazier light",at+Vector3.up*1.3f);}
   // An iron ring hung from the dark with candles round it.
   void KeepChandelier(Transform root,Vector3 at)
   {
+   if(KeepModel(root,"keep_chandelier",at+Vector3.down*.4f,0)){Lamp(root,"Lantern light",at+Vector3.up*.2f);return;}
    var iron=KMat("iron",new Color(.28f,.28f,.3f),Vector2.one);
    for(int i=0;i<8;i++){var a=i*45f;var p=at+Quaternion.Euler(0,a,0)*Vector3.forward*.9f;KBox(root,"Keep chandelier ring",p,new Vector3(.75f,.07f,.07f),iron,false).transform.rotation=Quaternion.Euler(0,a,0);}
    KBox(root,"Keep chandelier chain",at+Vector3.up*1.5f,new Vector3(.05f,3,.05f),iron,false);
