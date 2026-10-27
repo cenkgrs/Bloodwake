@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace Bloodwake
   {
    AudioListener.volume=0;smokeRunning=true;
    yield return new WaitForSeconds(.5f);
-   StartRun("mage");invulnerable=99999;
+   StartRun(System.Environment.GetCommandLineArgs().Contains("--vesper")?"vesper":"mage");invulnerable=99999;
    var rooms=new[]{("town_boss_blackbell_01",1),("town_well_03",1),("keep_throne_01",2),("keep_hall_04",2)};
    foreach(var (id,night) in rooms)
    {
@@ -259,7 +260,7 @@ namespace Bloodwake
    }
    AmbientParticles(root);
    var volume=root.gameObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=50;var profile=ScriptableObject.CreateInstance<VolumeProfile>();volume.sharedProfile=profile;
-   var bloom=profile.Add<Bloom>();bloom.intensity.Override(1.1f);bloom.threshold.Override(.8f);bloom.scatter.Override(.72f);bloom.tint.Override(keep?new Color(.8f,.88f,1):new Color(1,.85f,.7f));
+   var bloom=profile.Add<Bloom>();bloom.intensity.Override(1.1f);bloom.threshold.Override(.8f);bloom.scatter.Override(.72f);bloom.clamp.Override(40);bloom.tint.Override(keep?new Color(.8f,.88f,1):new Color(1,.85f,.7f));
    var grade=profile.Add<ColorAdjustments>();grade.contrast.Override(14);grade.saturation.Override(keep?-8:6);grade.postExposure.Override(keep?.45f:.3f);grade.colorFilter.Override(keep?new Color(.86f,.92f,1.06f):new Color(1.04f,.98f,.92f));
    var split=profile.Add<SplitToning>();split.shadows.Override(keep?new Color(.25f,.35f,.6f):new Color(.32f,.28f,.28f));split.highlights.Override(keep?new Color(1,.75f,.5f):new Color(.8f,.68f,.55f));split.balance.Override(keep?-20:0);
    var vignette=profile.Add<Vignette>();vignette.intensity.Override(.44f);vignette.smoothness.Override(.55f);vignette.color.Override(new Color(.01f,0,.01f));

@@ -42,8 +42,10 @@ namespace Bloodwake
   void SkinVariant(ActorView view,JObject data)
   {
    if(!view.HitFlash||!ColorUtility.TryParseHtmlString("#"+data.S("tint","ffffff"),out var tint))return;
-   float glow=data.N("spectral",0);var tone=new Color(.35f,.5f,.9f)*glow*.35f;
-   view.HitFlash.Restyle(Color.Lerp(Color.white,tint,.75f),tone);
+   // Only a cold cast over the model's own colours (27 Oct: the old 75% pull made the garrison read as grey
+   // stone until hit); the ghosts (spectral >= .8, the wraiths) keep their full pale glow.
+   float glow=data.N("spectral",0);bool ghost=glow>=.8f;var tone=new Color(.35f,.5f,.9f)*glow*(ghost?.35f:.12f);
+   view.HitFlash.Restyle(Color.Lerp(Color.white,tint,ghost?.75f:.22f),tone);
   }
   // Warrior is born with the heavy blow; Vesper learns Heavy Cleave from the Blood Sage.
   bool HeavyUnlocked=>Run!=null&&(Run.ClassId=="warrior"||Run.ClassId=="mage"||Run.ClassId=="vesper"&&Owns("vesper_heavy")||Run.ClassId=="revenant"&&Owns("revenant_rend"));

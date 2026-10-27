@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -28,6 +29,8 @@ namespace Bloodwake
    var data=camera.GetUniversalAdditionalCameraData();data.renderPostProcessing=true;
    // Geometry edges from 4x MSAA (PC_RPAsset); SMAA on top only softened texture detail.
    data.antialiasing=AntialiasingMode.None;
+   // A single NaN/infinite pixel (an effect shader under MSAA) must not bloom into a white disc over the screen.
+   data.stopNaN=!System.Environment.GetCommandLineArgs().Contains("--nostopnan");
    data.antialiasingQuality=AntialiasingQuality.High;
    var key=Directional("Moon key",new Vector3(50,45,0),new Color(.69f,.79f,1),.85f,true);
    RenderSettings.sun=key; // Keep the shadow-casting light as URP's main light.
@@ -52,7 +55,7 @@ namespace Bloodwake
    var volume=gameObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=10;
    profile=ScriptableObject.CreateInstance<VolumeProfile>();volume.sharedProfile=profile;
    profile.Add<Tonemapping>().mode.Override(TonemappingMode.ACES);
-   var bloom=profile.Add<Bloom>();bloom.intensity.Override(.42f);bloom.threshold.Override(.95f);bloom.scatter.Override(.62f);
+   var bloom=profile.Add<Bloom>();bloom.intensity.Override(.42f);bloom.threshold.Override(.95f);bloom.scatter.Override(.62f);bloom.clamp.Override(40);
    var grade=profile.Add<ColorAdjustments>();grade.contrast.Override(4);grade.saturation.Override(0);grade.postExposure.Override(.35f);
    var vignette=profile.Add<Vignette>();vignette.intensity.Override(.3f);vignette.smoothness.Override(.5f);vignette.color.Override(new Color(.02f,0,.01f));
   }

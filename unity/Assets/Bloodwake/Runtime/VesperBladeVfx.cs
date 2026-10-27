@@ -104,6 +104,9 @@ namespace Bloodwake
    bool casting=animator&&(st.IsName("CastQ")||st.IsName("Ultimate"));float glow=Mathf.MoveTowards(castGlow,casting?1:0,Time.deltaTime*4);castGlow=glow;
    if(castGlow>.01f){cardBlock??=new MaterialPropertyBlock();foreach(var c in cards){var rr=c.GetComponent<MeshRenderer>();rr.GetPropertyBlock(cardBlock);cardBlock.SetFloat("_Intensity",1.55f+2.6f*castGlow);rr.SetPropertyBlock(cardBlock);}}
    float speed=trailReady?Vector3.Distance(previousTip,end)/Mathf.Max(Time.deltaTime,.001f):0;
+   // A jump (room entry, a teleport) is not a swing: forget the old sweep, or the ribbon spans the jump as a huge
+   // bright sheet that the bloom turns into a white disc.
+   if(trailReady&&Vector3.Distance(previousTip,end)>.55f)history.Clear();
    SweepRibbon(start,end);
    for(int i=0;i<cards.Count;i++){float h=.5f*cardScale[i]*(1+.6f*castGlow),w=h*.5f;cards[i].SetPositionAndRotation(Vector3.Lerp(start,end,CardStops[i])+Vector3.up*h*.42f,facing);cards[i].localScale=Vector3.one;cards[i].localScale=new Vector3(w/cards[i].lossyScale.x,h/cards[i].lossyScale.y,1);}
    var shadowPosition=Vector3.Lerp(mid.position,end,.9f);

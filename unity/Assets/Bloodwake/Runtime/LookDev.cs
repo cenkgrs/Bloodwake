@@ -42,7 +42,8 @@ namespace Bloodwake
      Debug.Log("BLOODWAKE_GLIDE_LINE n="+line.positionCount+" p0="+line.GetPosition(0)+" pN="+line.GetPosition(Mathf.Max(0,line.positionCount-1))+" width="+line.widthMultiplier+" visible="+line.isVisible+" enabled="+line.enabled+" mat="+(line.sharedMaterial?line.sharedMaterial.name:"none")+" opacity="+block.GetFloat("_Opacity")+" player="+Player.transform.position);
     }
     Debug.Log("BLOODWAKE_GLIDE t="+at+" state="+Player.Animator.GetCurrentAnimatorClipInfo(0).FirstOrDefault().clip?.name+" y="+Player.transform.position.y.ToString("0.00")+" fx: "+string.Join(", ",names));
-    var target=new RenderTexture(1600,900,24);target.Create();var old=Cam.targetTexture;Cam.targetTexture=target;Cam.Render();
+    // Same as the screen: HDR-capable target with 4x MSAA, so captures show what the game shows.
+   var target=new RenderTexture(1600,900,24,RenderTextureFormat.DefaultHDR){antiAliasing=4};target.Create();var old=Cam.targetTexture;Cam.targetTexture=target;Cam.Render();
     var active=RenderTexture.active;RenderTexture.active=target;var texture=new Texture2D(1600,900,TextureFormat.RGB24,false);texture.ReadPixels(new Rect(0,0,1600,900),0,0);texture.Apply();
     System.IO.File.WriteAllBytes("/tmp/bloodwake-glide-"+Mathf.RoundToInt(at*1000).ToString("000")+".png",texture.EncodeToPNG());
     RenderTexture.active=active;Cam.targetTexture=old;target.Release();Destroy(texture);
@@ -114,9 +115,15 @@ namespace Bloodwake
      foreach(var e in Enemies){if(e.Agent)e.Agent.enabled=false;}
      for(int i=0;i<Enemies.Count;i++){Enemies[i].View.transform.position=at+dir*4.5f+side*(i-2.5f)*1.7f;Enemies[i].View.transform.rotation=Quaternion.LookRotation(-dir);}
      PositionCamera(true);Cam.transform.position+=dir*2.4f;SaveView("/tmp/bloodwake-keep-garrison.png");
-     // The same lineup after one hit each: the look must not change once the flash has faded.
-     foreach(var e in Enemies)e.View.HitFlash?.Pulse(false);
-     yield return new WaitForSecondsRealtime(.6f);SaveView("/tmp/bloodwake-keep-garrison-hit.png");
+     // The same lineup after one real hit each, once the flash has faded: the look must not change.
+     void Pin(){for(int i=0;i<Enemies.Count;i++){var e=Enemies[i];if(e.Agent)e.Agent.enabled=false;e.Cooldown=float.PositiveInfinity;e.View.transform.position=at+dir*4.5f+side*(i-2.5f)*1.7f;e.View.transform.rotation=Quaternion.LookRotation(-dir);}}
+     string Look(Enemy e){var r=e.View.GetComponentInChildren<SkinnedMeshRenderer>();var block=new MaterialPropertyBlock();r.GetPropertyBlock(block,0);var m=r.sharedMaterials[0];
+      return e.Id+" mat="+m.shader.name+" base="+m.GetColor("_BaseColor")+" emis="+(m.HasProperty("_EmissionColor")?m.GetColor("_EmissionColor").ToString():"-")+" kw="+m.IsKeywordEnabled("_EMISSION")+" blockEmpty="+block.isEmpty+" blockBase="+block.GetColor("_BaseColor")+" blockEmis="+block.GetColor("_EmissionColor");}
+     foreach(var e in Enemies)Debug.Log("BLOODWAKE_GREY before "+Look(e));
+     foreach(var e in Enemies.ToArray()){invulnerable=99999;DamageEnemy(e,1);}
+     for(int f=0;f<90;f++){Pin();yield return null;}
+     foreach(var e in Enemies)Debug.Log("BLOODWAKE_GREY after "+Look(e));
+     Pin();PositionCamera(true);Cam.transform.position+=dir*2.4f;SaveView("/tmp/bloodwake-keep-garrison-hit.png");
      foreach(var e in Enemies.ToArray())Destroy(e.View.gameObject);Enemies.Clear();
     }
     if(room.S("type")=="boss")
