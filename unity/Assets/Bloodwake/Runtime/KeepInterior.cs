@@ -225,7 +225,7 @@ namespace Bloodwake
   {
    var wood=KMat("wood",new Color(.45f,.33f,.24f),new Vector2(1,4));var cloth=KMat("cloth",new Color(1.3f,.24f,.2f),new Vector2(1,6));
    // A long table down the east side of the hall arm, a carpet up its middle to the exit.
-   KBox(root,"Keep carpet",J(1.6f,-1)+Vector3.up*.012f,new Vector3(2.2f,.02f,22),cloth,false);
+   KeepRugs(root,J(1.6f,-1),2.2f,22,cloth);
    var t=J(4.4f,-4.5f);KBox(root,"Keep table",t+Vector3.up*.8f,new Vector3(1.6f,.12f,10),wood,true);
    foreach(int end in new[]{-1,1})foreach(int s2 in new[]{-1,1})KBox(root,"Keep table leg",t+new Vector3(s2*.6f,.4f,end*4.6f),new Vector3(.16f,.8f,.16f),wood,false);
    for(float z=-3.5f;z<=3.51f;z+=3.5f)KeepPiece(root,"candles",t+new Vector3(0,.86f,z),new Vector3(.5f,.36f,.44f),KR(0,90),false);
@@ -258,7 +258,7 @@ namespace Bloodwake
   void KeepThrone(Transform root)
   {
    var stone=KMat("ashlar",new Color(.58f,.58f,.64f),Vector2.one);var cloth=KMat("cloth",new Color(1.3f,.24f,.2f),new Vector2(1,8));var iron=KMat("iron",new Color(.33f,.33f,.36f),Vector2.one);
-   KBox(root,"Keep carpet",J(0,2)+Vector3.up*.012f,new Vector3(3.4f,.02f,26),cloth,false);
+   KeepRugs(root,J(0,2),3.4f,26,cloth);
    // Stepped dais: three rises to the throne.
    for(int step=0;step<3;step++)KBox(root,"Keep dais",J(0,-12.5f)+new Vector3(0,.15f+step*.15f,1.4f-step*.9f),new Vector3(12-step*3,.3f+step*.3f,3-step*.6f),stone,step==2);
    if(KeepModel(root,"keep_throne",J(0,-12.9f)+Vector3.up*.9f,0)!=null)blockers.Add(new Bounds(J(0,-12.6f)+Vector3.up,new Vector3(2,2,1.4f)));else{
@@ -383,6 +383,28 @@ namespace Bloodwake
    // Tints were set for the old flat textures; the scans carry their own tone, so keep only the hue and value.
    m.SetColor("_BaseColor",Color.Lerp(Color.white,tint,.6f)*(scan=="keepwood"?1f:.85f));
    keepMaterials[key]=m;worldUv.Add(m);return m;
+  }
+  // A runner made of Persian rugs laid end to end, each a little askew (textures/keep/keeprug: the photographed
+  // rug, its pile relief generated from it); the plain cloth strip if the rug is missing.
+  static Material rugMaterial;
+  void KeepRugs(Transform root,Vector3 centre,float width,float length,Material fallback)
+  {
+   var albedo=Resources.Load<Texture2D>("textures/keep/keeprug_albedo");
+   if(!albedo){KBox(root,"Keep carpet",centre+Vector3.up*.012f,new Vector3(width,.02f,length),fallback,false);return;}
+   if(!rugMaterial)
+   {
+    rugMaterial=new Material(Shader.Find("Universal Render Pipeline/Lit")){name="Keep rug"};rugMaterial.SetTexture("_BaseMap",albedo);
+    var normal=Resources.Load<Texture2D>("textures/keep/keeprug_normal");if(normal){rugMaterial.SetTexture("_BumpMap",normal);rugMaterial.EnableKeyword("_NORMALMAP");rugMaterial.SetFloat("_BumpScale",.8f);}
+    rugMaterial.SetFloat("_AlphaClip",1);rugMaterial.SetFloat("_Cutoff",.5f);rugMaterial.EnableKeyword("_ALPHATEST_ON");rugMaterial.SetFloat("_Smoothness",.05f);rugMaterial.SetColor("_BaseColor",new Color(.95f,.92f,.9f));
+   }
+   float rug=width*albedo.height/albedo.width;int count=Mathf.Max(1,Mathf.FloorToInt((length+.3f)/(rug+.3f)));float gap=(length-count*rug)/Mathf.Max(1,count-1);if(count==1)gap=0;
+   for(int i=0;i<count;i++)
+   {
+    var at=centre+Vector3.forward*(-length*.5f+rug*.5f+i*(rug+gap))+Vector3.up*(.012f+i*.001f);
+    var q=GameObject.CreatePrimitive(PrimitiveType.Quad);q.name="Keep rug";Destroy(q.GetComponent<Collider>());q.transform.SetParent(root,false);
+    q.transform.SetPositionAndRotation(at,Quaternion.Euler(90,KR(-2.5f,2.5f),0));q.transform.localScale=new Vector3(width,rug,1);
+    var r=q.GetComponent<MeshRenderer>();r.sharedMaterial=rugMaterial;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+   }
   }
   // Additive pale-blue glow fading upward: window panes and the moon shafts on the floor.
   static Material ShaftMaterial()
