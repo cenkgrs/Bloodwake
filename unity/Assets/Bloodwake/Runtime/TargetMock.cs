@@ -48,6 +48,38 @@ namespace Bloodwake
 #endif
   }
 
+  // Boss check (--bossfight): the keep's warden against an unkillable Vesper who keeps circling him, for 60 s
+  // per warden variant. Logs the boss every half second and flags any stretch over 3 s in which he neither
+  // casts nor moves (BLOODWAKE_BOSS_STALL). Silent.
+  public IEnumerator BossFight()
+  {
+   AudioListener.volume=0;smokeRunning=true;yield return new WaitForSeconds(.5f);
+   StartRun("vesper");invulnerable=99999;Run.Night=2;PlanNight();
+   var throne=Run.Plan.First(r=>r.StartsWith("keep_throne"));Run.RoomIndex=Run.Plan.IndexOf(throne);EnterRoom(throne);
+   yield return new WaitForSeconds(4f);
+   var boss=Enemies.FirstOrDefault(e=>e.Id=="boss");
+   if(boss==null){SpawnEnemy("boss",Point(room["markers"]["BossSpawn"]));boss=Enemies.Last();}
+   Debug.Log("BLOODWAKE_BOSS start variant="+BossVariant.S("name")+" screen="+Screen);
+   float idle=0,clock=0;int casts=0,lastPattern=boss.Pattern;Vector3 lastPos=boss.View.transform.position;
+   while(clock<60&&boss.Hp>0)
+   {
+    // Vesper walks a slow circle 3.5 m round the boss, the way a player kites.
+    float a=clock*.35f;var c=boss.View.transform.position;var want=c+new Vector3(Mathf.Cos(a),0,Mathf.Sin(a))*3.5f;
+    Player.transform.position=Move(Player.transform.position,(want-Player.transform.position)*Mathf.Min(1,Time.deltaTime*2));
+    clock+=Time.deltaTime;yield return null;
+    if(boss.Pattern!=lastPattern){casts+=boss.Pattern-lastPattern;lastPattern=boss.Pattern;idle=0;}
+    var p=boss.View.transform.position;if(Vector3.Distance(p,lastPos)>.02f||boss.Casting)idle=0;else idle+=Time.deltaTime;lastPos=p;
+    if(Mathf.Repeat(clock,.5f)<Time.deltaTime)
+     Debug.Log($"BLOODWAKE_BOSS t={clock:0.0} dist={Vector3.Distance(p,Player.transform.position):0.0} casting={boss.Casting} cd={boss.Cooldown:0.00} locked={boss.View.Locked:0.00} stagger={boss.Stagger:0.00} panic={boss.Panic:0.00} next={BossPattern[boss.Pattern%BossPattern.Length]} enemies={Enemies.Count} screen={Screen} agent={(boss.Agent?boss.Agent.enabled.ToString():"none")}");
+    if(idle>3){Debug.Log($"BLOODWAKE_BOSS_STALL t={clock:0.0} dist={Vector3.Distance(p,Player.transform.position):0.0} next={BossPattern[boss.Pattern%BossPattern.Length]} cd={boss.Cooldown:0.00} locked={boss.View.Locked:0.00} stagger={boss.Stagger:0.00} screen={Screen}");idle=-999;}
+   }
+   Debug.Log("BLOODWAKE_BOSS_DONE casts="+casts);
+#if UNITY_EDITOR
+   UnityEditor.EditorApplication.isPlaying=false;
+#else
+   Application.Quit(0);
+#endif
+  }
   // A pixel of the 1600x900 sketch to the floor point under it (or at a height above the floor).
   Vector3 Spot(float px,float py,float height=0)
   {

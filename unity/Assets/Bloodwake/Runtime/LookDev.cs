@@ -283,5 +283,6 @@ namespace Bloodwake
   public void BeginSpells(BloodwakeGame game){StartCoroutine(game.SpellCapture());}
   public void BeginKeepTour(BloodwakeGame game,int night=2){StartCoroutine(game.KeepTour(night));}
   public void BeginTarget(BloodwakeGame game){StartCoroutine(game.TargetCapture());}
+  public void BeginBossFight(BloodwakeGame game){StartCoroutine(game.BossFight());}
  }
 }
